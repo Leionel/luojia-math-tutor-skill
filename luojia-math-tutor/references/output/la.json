@@ -1,0 +1,1660 @@
+
+[
+    {
+      "id": "CH1_DEF_01",
+      "concept_zh": "二阶行列式定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["二元线性方程组"],
+      "core_content_latex": "表达式 $D=\\begin{vmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \\end{vmatrix}$ 称为二阶行列式，其值为 $a_{11} a_{22} - a_{12} a_{21}$。",
+      "intuitive_explanation": "二阶行列式用于表示二元线性方程组 $\\begin{cases} a_{11}x_1 + a_{12}x_2 = b_1 \\ a_{21}x_1 + a_{22}x_2 = b_2 \\end{cases}$ 的系数行列式 $D$。"
+    },
+    {
+      "id": "CH1_DEF_02",
+      "concept_zh": "三阶行列式定义（对角线法则）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["乘法规则"],
+      "core_content_latex": "三阶行列式 $\\begin{vmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \\end{vmatrix}$ 的值为 $a_{11} a_{22} a_{33} + a_{12} a_{23} a_{31} + a_{13} a_{21} a_{32} - a_{13} a_{22} a_{31} - a_{12} a_{21} a_{33} - a_{11} a_{23} a_{32}$。",
+      "intuitive_explanation": "三阶行列式可以按对角线法则计算，即三条主对角线乘积和减去三条副对角线乘积和。"
+    },
+    {
+      "id": "CH1_DEF_03",
+      "concept_zh": "$n$ 阶行列式定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["全排列", "逆序数"],
+      "core_content_latex": "$n$ 阶行列式 $D$ 是 $n$ 阶方阵 $A$ 的元素构成的数表。其值为 $D=\\sum_{p_1 p_2 \\cdots p_n} (-1)^t a_{1 p_1} a_{2 p_2} \\cdots a_{n p_n}$，其中 $t$ 为排列 $p_1 p_2 \\cdots p_n$ 的逆序数。",
+      "intuitive_explanation": "这是 $n$ 阶行列式的本质定义，每一项是取自不同行、不同列的 $n$ 个元素的乘积，符号由其下标排列的逆序数 $t$ 决定。"
+    },
+    {
+      "id": "CH1_THM_04",
+      "concept_zh": "行列式性质 1（转置）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式定义"],
+      "core_content_latex": "行列式 $D$ 与它的转置行列式 $D^T$ 相等，即 $D = D^T$。",
+      "intuitive_explanation": "行列式的行和列具有同等的地位，行列式的性质对行成立，对列也成立。"
+    },
+    {
+      "id": "CH1_THM_05",
+      "concept_zh": "行列式性质 2（互换）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式性质"],
+      "core_content_latex": "互换行列式 $D$ 的任意两行（列），行列式变号，即 $D_1 = -D$。",
+      "intuitive_explanation": "互换行列式的两行（列）相当于改变了其下标排列的奇偶性。"
+    },
+    {
+      "id": "CH1_THM_06",
+      "concept_zh": "行列式性质 6（线性组合）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式性质"],
+      "core_content_latex": "把行列式 $D$ 的某一列（行）的元素乘以同一数 $k$ 后加到另一列（行）对应的元素上去，行列式的值不变。",
+      "intuitive_explanation": "这是行列式初等行（列）变换中最常用的性质，可用来化简行列式，如将其化为三角行列式。"
+    },
+    {
+      "id": "CH1_EX_07",
+      "concept_zh": "上（下）三角形行列式",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["行列式计算"],
+      "core_content_latex": "证明上（下）三角形行列式的值等于主对角线元素的乘积。",
+      "intuitive_explanation": "对于三角形行列式，只有主对角线元素的乘积项不为零，其余所有项都包含至少一个零元素。"
+    },
+    {
+      "id": "CH1_EX_08",
+      "concept_zh": "行列式计算（化简）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["行列式性质"],
+      "core_content_latex": "计算行列式 $D=\\begin{vmatrix} 3 & 1 & 1 & 1 \\ 1 & 3 & 1 & 1 \\ 1 & 1 & 3 & 1 \\ 1 & 1 & 1 & 3 \\end{vmatrix}$。",
+      "intuitive_explanation": "利用性质 6，将其他行（列）加到第一行（列）上，提取公因子后，再用初等变换化简。"
+    },
+    {
+      "id": "CH1_THM_09",
+      "concept_zh": "行列式按行(列)展开法则",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "行列式等于它的任一行（列）的各元素与其对应的代数余子式乘积之和。即 $D = a_{i1}A_{i1} + a_{i2}A_{i2} + \\dots + a_{in}A_{in}$ ($i=1, 2, \\dots, n$)。",
+      "intuitive_explanation": "这是计算高阶行列式的主要方法，将 $n$ 阶行列式降阶为 $n-1$ 阶行列式来计算。"
+    },
+    {
+      "id": "CH1_THM_10",
+      "concept_zh": "异乘变零定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "行列式某一列（行）的元素与另一列（行）的对应元素的代数余子式乘积之和等于零。即 $a_{i1}A_{j1} + a_{i2}A_{j2} + \\dots + a_{in}A_{jn} = 0$, 当 $i \\ne j$ 时。",
+      "intuitive_explanation": "将 $a_{i1}, a_{i2}, \\dots, a_{in}$ 替换到第 $j$ 行（列）的行列式展开式中，由于两行（列）相同，所以行列式为 0。"
+    },
+    {
+      "id": "CH1_THM_11",
+      "concept_zh": "克拉默法则",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["非齐次线性方程组"],
+      "core_content_latex": "如果含有 $n$ 个末知数 $n$ 个方程的线性方程组 $\\mathbf{Ax=b}$ 的系数行列式 $D \\ne 0$，则方程组有唯一解 $x_j = \\frac{D_j}{D}$ ($j=1, 2, \\dots, n$)。",
+      "intuitive_explanation": "当系数行列式非零时，方程组有唯一解，且解由行列式的比值确定。"
+    },
+    {
+      "id": "CH1_EX_12",
+      "concept_zh": "范德蒙德行列式",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["行列式计算", "数学归纳法"],
+      "core_content_latex": "证明范德蒙德(Vandermonde)行列式 $D_n = \\begin{vmatrix} 1 & 1 & \\dots & 1 \\ x_1 & x_2 & \\dots & x_n \\ \\dots & \\dots & \\dots & \\dots \\ x_1^{n-1} & x_2^{n-1} & \\dots & x_n^{n-1} \\end{vmatrix} = \\prod_{1 \\le j < i \\le n} (x_i - x_j)$。",
+      "intuitive_explanation": "该行列式是代数中重要的特殊行列式，可通过降阶和数学归纳法证明。"
+    },
+    {
+      "id": "CH1_DEF_13_2nd",
+      "concept_zh": "二阶行列式定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["二元线性方程组"],
+      "core_content_latex": "表达式 $\\begin{vmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \\end{vmatrix}$ 称为二阶行列式，其值定义为 $a_{11} a_{22} - a_{12} a_{21}$。",
+      "intuitive_explanation": "这是解决二元线性方程组系数所形成的数表。其中，$D = a_{11} a_{22} - a_{12} a_{21}$ 称为系数行列式 [1, 2]。"
+    },
+    {
+      "id": "CH1_DEF_14_3rd",
+      "concept_zh": "三阶行列式定义（对角线法则）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["乘法规则"],
+      "core_content_latex": "三阶行列式的值由六项乘积组成，即 $a_{11} a_{22} a_{33} + a_{12} a_{23} a_{31} + a_{13} a_{21} a_{32} - a_{13} a_{22} a_{31} - a_{12} a_{21} a_{33} - a_{11} a_{23} a_{32}$。",
+      "intuitive_explanation": "三阶行列式的计算可采用对角线法则：主对角线及其平行的连线乘积取正号，副对角线及其平行的连线乘积取负号 [3, 4]。"
+    },
+    {
+      "id": "CH1_DEF_15_n",
+      "concept_zh": "$n$ 阶行列式定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["全排列", "逆序数"],
+      "core_content_latex": "$n$ 阶行列式 $D=\\sum_{p_1 p_2 \\cdots p_n} (-1)^t a_{1 p_1} a_{2 p_2} \\cdots a_{n p_n}$，其中 $t$ 为排列 $p_1 p_2 \\cdots p_n$ 的逆序数 [5, 6]。",
+      "intuitive_explanation": "行列式包含 $n!$ 项乘积，每一项取自不同行、不同列的 $n$ 个元素，符号由其下标排列的奇偶性决定。"
+    },
+    {
+      "id": "CH1_THM_16_Prop1",
+      "concept_zh": "行列式性质 1（转置不变性）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式定义"],
+      "core_content_latex": "行列式 $D$ 与它的转置行列式 $D^T$ 相等，即 $D = D^T$ [7, 8]。",
+      "intuitive_explanation": "该性质表明行列式的行和列具有同等的地位，行列式的性质对行成立，对列也成立 [9]。"
+    },
+    {
+      "id": "CH1_THM_17_Prop2",
+      "concept_zh": "行列式性质 2（互换变号）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对换"],
+      "core_content_latex": "互换行列式 $D$ 的任意两行（列），行列式变号，即 $D_1 = -D$ [9, 10]。",
+      "intuitive_explanation": "此性质与排列的对换改变奇偶性密切相关 [11, 12]。"
+    },
+    {
+      "id": "CH1_THM_18_Prop4",
+      "concept_zh": "行列式性质 4（两行相同）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式性质 2"],
+      "core_content_latex": "如果行列式 $D$ 中有两行（列）元素完全相同，则此行列式等于零 [9]。",
+      "intuitive_explanation": "若两行相同，互换后 $D = -D$，故 $2D=0$。"
+    },
+    {
+      "id": "CH1_THM_19_Prop6",
+      "concept_zh": "行列式性质 6（初等变换）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式性质"],
+      "core_content_latex": "把行列式 $D$ 的某一列（行）的元素乘以同一数 $k$ 后加到另一列（行）对应的元素上去，行列式的值不变 [13, 14]。",
+      "intuitive_explanation": "此性质是行列式计算中将行列式化为三角形行列式最主要的依据 [13]。"
+    },
+    {
+      "id": "CH1_THM_20_Expansion",
+      "concept_zh": "行列式按行(列)展开法则",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "行列式等于它的任一行（列）的各元素与其对应的代数余子式乘积之和。即 $D = a_{i1}A_{i1} + a_{i2}A_{i2} + \\dots + a_{in}A_{in}$ [15, 16]。",
+      "intuitive_explanation": "代数余子式 $A_{ij} = (-1)^{i+j} M_{ij}$，其中 $M_{ij}$ 是 $(i, j)$ 元的余子式 [17, 18]。该法则提供了计算高阶行列式的降阶方法。"
+    },
+    {
+      "id": "CH1_THM_21_Zero",
+      "concept_zh": "异乘变零定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "行列式某一列（行）的元素与另一列（行）的对应元素的代数余子式乘积之和等于零。即 $\\sum_{k=1}^{n} a_{ik}A_{jk} = 0$, 当 $i \\ne j$ 时 [19, 20]。",
+      "intuitive_explanation": "该结果是行列式按行（列）展开法则的重要推论。"
+    },
+    {
+      "id": "CH1_THM_22_Cramer",
+      "concept_zh": "克拉默法则",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["非齐次线性方程组", "行列式不为零"],
+      "core_content_latex": "如果含有 $n$ 个未知数 $n$ 个方程的线性方程组 $\\mathbf{Ax=b}$ 的系数行列式 $D \\ne 0$，则方程组有唯一解 $x_j = \\frac{D_j}{D}$ ($j=1, 2, \\dots, n$)。",
+      "intuitive_explanation": "当系数行列式非零时，方程组有唯一解，其中 $D_j$ 是用常数项 $\\mathbf{b}$ 替换 $D$ 中第 $j$ 列所得的行列式 [21]。"
+    },
+    {
+      "id": "CH1_THM_23_Homogeneous",
+      "concept_zh": "齐次方程组非零解判别",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["齐次线性方程组"],
+      "core_content_latex": "如果齐次线性方程组 $\\mathbf{Ax=0}$ 的系数行列式 $D \\ne 0$，则方程组没有非零解 (只有零解) [22]。",
+      "intuitive_explanation": "根据克拉默法则，当 $D \\ne 0$ 时，方程组有唯一解，而齐次方程组的零解 $\\mathbf{x}=0$ 总是存在的，因此该唯一解必然是零解。"
+    },
+    {
+      "id": "CH1_THM_24_Homogeneous_Exist",
+      "concept_zh": "齐次方程组非零解充分必要条件（预备）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["齐次线性方程组"],
+      "core_content_latex": "如果齐次线性方程组 $\\mathbf{Ax=0}$ 有非零解，则它的系数行列式必为零 ($D=0$) [22]。",
+      "intuitive_explanation": "这是非零解存在的必要条件，其充分性将在第三章由秩的理论给出 [22]。"
+    },
+    {
+      "id": "CH1_DEF_25_Permutation",
+      "concept_zh": "全排列与逆序数",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["自然数"],
+      "core_content_latex": "$n$ 个自然数 $1, 2, \\dots, n$ 排成一列，称为 $n$ 阶排列。在一个排列中，如果前面一个数大于后面一个数，则称这两个数构成一个逆序。排列中逆序的总数称为逆序数 $t$。",
+      "intuitive_explanation": "逆序数决定了 $n$ 阶行列式定义中每一项的符号 $(-1)^t$ [1-3]。"
+    },
+    {
+      "id": "CH1_DEF_26_Cofactor",
+      "concept_zh": "余子式与代数余子式",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["行列式"],
+      "core_content_latex": "在 $n$ 阶行列式 $D$ 中，划去 $(i, j)$ 元 $a_{ij}$ 所在的第 $i$ 行和第 $j$ 列，剩下的 $n-1$ 阶行列式 $M_{ij}$ 称为 $a_{ij}$ 的余子式。 $A_{ij} = (-1)^{i+j} M_{ij}$ 称为 $a_{ij}$ 的代数余子式 [4, 5]。",
+      "intuitive_explanation": "代数余子式是行列式按行（列）展开的关键组成部分 [6, 7]。"
+    },
+    {
+      "id": "CH1_THM_27_Linearity",
+      "concept_zh": "行列式性质 5（行（列）可分解性）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["行列式性质"],
+      "core_content_latex": "若行列式的某一列（行）的元素都是两数之和，则该行列式等于两个行列式之和，其中一个行列式的该列（行）为第一项，另一个行列式为第二项 [8, 9]。",
+      "intuitive_explanation": "该性质体现了行列式作为向量组的函数，对行或列向量具有线性性质。"
+    },
+    {
+      "id": "CH1_THM_28_Hom_Zero",
+      "concept_zh": "齐次方程组非零解的充分必要条件（行列式）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["齐次线性方程组", "克拉默法则"],
+      "core_content_latex": "$n$ 元齐次线性方程组 $\\mathbf{Ax=0}$ 有非零解的充分必要条件是其系数行列式 $D=0$ [10, 11]。",
+      "intuitive_explanation": "这是克拉默法则的推论，当 $D \\ne 0$ 时只有零解，故有非零解时 $D=0$。"
+    },
+    {
+      "id": "CH2_DEF_25_Equal",
+      "concept_zh": "同型矩阵与矩阵相等",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "行数与列数分别相等的矩阵称为同型矩阵。如果 $A=(a_{ij})$ 与 $B=(b_{ij})$ 是同型矩阵，且它们的对应元素相等 ($a_{ij} = b_{ij}$)，则称矩阵 $A$ 与矩阵 $B$ 相等 [12, 13]。",
+      "intuitive_explanation": "矩阵相等是逐元素定义的。"
+    },
+    {
+      "id": "CH2_DEF_26_Scalar",
+      "concept_zh": "数与矩阵相乘",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵", "数乘"],
+      "core_content_latex": "数 $\\lambda$ 与矩阵 $A$ 的乘积记作 $\\lambda A$ 或 $A\\lambda$，规定为 $\\lambda A = (\\lambda a_{ij})$ [14, 15]。数乘满足结合律、分配律等性质。",
+      "intuitive_explanation": "数乘是将矩阵的每个元素乘以该数。"
+    },
+    {
+      "id": "CH2_DEF_27_Conjugate",
+      "concept_zh": "共轭矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["复数矩阵"],
+      "core_content_latex": "设 $A=(a_{ij})$ 为复矩阵，用 $\\bar{a}$ 表示 $a_{ij}$ 的共轭复数，记 $\\bar{A} = (\\bar{a}_{ij})$ 称为 $A$ 的共轭矩阵 [16, 17]。",
+      "intuitive_explanation": "共轭矩阵常用于涉及复数域的线性代数中，如厄米特矩阵的定义。"
+    },
+    {
+      "id": "CH2_THM_28_ZeroProduct",
+      "concept_zh": "矩阵乘积性质（零因子）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵乘法"],
+      "core_content_latex": "若有两个矩阵 $A, B$ 满足 $A B = O$ (零矩阵)，不能得出 $A=O$ 或 $B=O$ 的结论 [18, 19]。",
+      "intuitive_explanation": "这表明矩阵乘法中存在零因子，这是矩阵代数与数域代数的显著区别。"
+    },
+    {
+      "id": "CH2_THM_29_Identity",
+      "concept_zh": "单位矩阵的性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["单位矩阵"],
+      "core_content_latex": "对于单位矩阵 $E$ 和任意矩阵 $A$，有 $E A = A E = A$ (如果乘法有意义) [18, 19]。",
+      "intuitive_explanation": "单位矩阵在矩阵乘法中起着数 '1' 的作用。"
+    },
+    {
+      "id": "CH2_THM_30_ATA",
+      "concept_zh": "矩阵乘积的零矩阵条件",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["转置矩阵"],
+      "core_content_latex": "证明矩阵 $A = O$ 的充分必要条件是 $\\mathbf{A^T A = O}$ [20-22]。",
+      "intuitive_explanation": "这个结论特别适用于实矩阵，它利用了 $A^T A$ 的对角元素是 $A$ 的列向量的长度平方和这一事实。"
+    },
+    {
+      "id": "CH2_DEF_01",
+      "concept_zh": "矩阵定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["数表"],
+      "core_content_latex": "由 $m \\times n$ 个数 $a_{ij}$ 排成的 $m$ 行 $n$ 列的数表 $\\mathbf{A} = (a_{ij})_{m \\times n}$ 称为 $m \\times n$ 矩阵。",
+      "intuitive_explanation": "矩阵是表示一组数据或线性变换系数的矩形阵列。"
+    },
+    {
+      "id": "CH2_DEF_02",
+      "concept_zh": "矩阵加法",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["同型矩阵"],
+      "core_content_latex": "设 $A=(a_{ij})$ 和 $B=(b_{ij})$ 都是 $m \\times n$ 矩阵，则它们的和 $A+B$ 仍是 $m \\times n$ 矩阵，且 $(A+B)_{ij} = a_{ij} + b_{ij}$。",
+      "intuitive_explanation": "矩阵加法要求矩阵同型，对应元素相加。"
+    },
+    {
+      "id": "CH2_DEF_03",
+      "concept_zh": "矩阵乘法",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵乘法条件"],
+      "core_content_latex": "设 $A$ 是 $s \\times m$ 矩阵, $B$ 是 $m \\times n$ 矩阵，则它们的乘积 $C = AB$ 是 $s \\times n$ 矩阵，其中 $c_{ij} = \\sum_{k=1}^m a_{ik} b_{kj}$。",
+      "intuitive_explanation": "矩阵乘法是行向量与列向量的内积运算。要求左矩阵的列数等于右矩阵的行数。"
+    },
+    {
+      "id": "CH2_EX_04",
+      "concept_zh": "矩阵乘法不满足交换律",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["矩阵乘法定义"],
+      "core_content_latex": "设 $A=\\begin{pmatrix} -2 & 4 \\ 1 & -2 \\end{pmatrix}$, $B=\\begin{pmatrix} 2 & 4 \\ -3 & -6 \\end{pmatrix}$，求 $AB$ 及 $BA$。",
+      "intuitive_explanation": "矩阵乘积 $AB$ 和 $BA$ 可能不相等，即使它们都是方阵。"
+    },
+    {
+      "id": "CH2_DEF_05",
+      "concept_zh": "转置矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "把矩阵 $A$ 的行换成同序数的列得到的新矩阵，称为 $A$ 的转置矩阵，记作 $A^T$。",
+      "intuitive_explanation": "矩阵的行与列互换。"
+    },
+    {
+      "id": "CH2_THM_06",
+      "concept_zh": "行列式与矩阵乘法",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵行列式"],
+      "core_content_latex": "设 $A, B$ 都是 $n$ 阶方阵，则 $|AB| = |A| |B|$。",
+      "intuitive_explanation": "矩阵乘积的行列式等于矩阵行列式的乘积。"
+    },
+    {
+      "id": "CH2_DEF_07",
+      "concept_zh": "伴随矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "矩阵 $A$ 的各个元素的代数余子式 $A_{ij}$ 所构成的矩阵 $A^* = (A_{ij})^T$ 称为矩阵 $A$ 的伴随矩阵。",
+      "intuitive_explanation": "伴随矩阵 $A^*$ 满足 $A A^* = A^* A = |A| E$。"
+    },
+    {
+      "id": "CH2_DEF_08",
+      "concept_zh": "逆矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵乘法", "单位矩阵"],
+      "core_content_latex": "对于 $n$ 阶方阵 $A$，如果存在 $n$ 阶方阵 $B$，使 $AB=BA=E$，则称 $A$ 是可逆矩阵， $B$ 称为 $A$ 的逆矩阵，记作 $A^{-1}$。",
+      "intuitive_explanation": "逆矩阵相当于矩阵世界中的倒数。"
+    },
+    {
+      "id": "CH2_THM_09",
+      "concept_zh": "逆矩阵存在定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["逆矩阵定义", "行列式"],
+      "core_content_latex": "方阵 $A$ 可逆的充分必要条件是 $|A| \\ne 0$。若 $A$ 可逆，则 $A^{-1} = \\frac{1}{|A|} A^*$。",
+      "intuitive_explanation": "可逆矩阵称为非奇异矩阵。该定理给出了求逆矩阵的公式。"
+    },
+    {
+      "id": "CH2_EX_10",
+      "concept_zh": "逆矩阵计算",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["逆矩阵公式"],
+      "core_content_latex": "求二阶矩阵 $A=\\begin{pmatrix} a & b \\ c & d \\end{pmatrix}$ 的逆矩阵。",
+      "intuitive_explanation": "利用公式 $A^{-1} = \\frac{1}{ad-bc} \\begin{pmatrix} d & -b \\ -c & a \\end{pmatrix}$。"
+    },
+    {
+      "id": "CH2_EX_11",
+      "concept_zh": "逆矩阵方程",
+      "type": "习题",
+      "knowledge_type": "Exercise",
+      "prerequisite": ["矩阵乘法", "逆矩阵"],
+      "core_content_latex": "求解矩阵方程 $AXB=C$, 其中 $A, B, C$ 均为方阵，且 $A, B$ 可逆。",
+      "intuitive_explanation": "方程的解为 $X = A^{-1} C B^{-1}$。"
+    },
+    {
+      "id": "CH2_DEF_12",
+      "concept_zh": "分块对角矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["分块矩阵", "方阵"],
+      "core_content_latex": "设 $A$ 是 $n$ 阶矩阵，若 $A$ 的分块矩阵只有在对角线上有非零子块，其余子块都为零矩阵，且对角线上的子块都是方阵，则称 $A$ 为分块对角矩阵 $A=\\begin{pmatrix} A_1 & O \\ O & A_2 \\end{pmatrix}$。",
+      "intuitive_explanation": "分块对角矩阵的行列式和逆矩阵计算通常可以简化，例如 $|A|=|A_1||A_2|$。"
+    },
+    {
+      "id": "CH2_DEF_13_Matrix",
+      "concept_zh": "矩阵定义",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["数表"],
+      "core_content_latex": "由 $m \\times n$ 个数 $a_{ij}$ 排成的 $m$ 行 $n$ 列的数表称为 $m \\times n$ 矩阵，记作 $A = (a_{ij})_{m \\times n}$ [23, 24]。",
+      "intuitive_explanation": "矩阵中的数称为元素， $a_{ij}$ 位于第 $i$ 行第 $j$ 列 [23]。"
+    },
+    {
+      "id": "CH2_DEF_14_Unit",
+      "concept_zh": "单位矩阵与对角矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵"],
+      "core_content_latex": " $n$ 阶方阵 $E$ (单位矩阵) 的主对角线元素是 1，其他元素都是 0。对角矩阵 $A$ (非对角线元素都是 0) 可记作 $A = \\mathrm{diag}(\\lambda_1, \\lambda_2, \\dots, \\lambda_n)$ [25-28]。",
+      "intuitive_explanation": "单位矩阵在矩阵乘法中起着数 1 的作用。对角矩阵对应着仅对坐标轴方向进行缩放的线性变换。"
+    },
+    {
+      "id": "CH2_DEF_15_Addition",
+      "concept_zh": "矩阵加法",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["同型矩阵"],
+      "core_content_latex": "设 $A$ 和 $B$ 都是 $m \\times n$ 矩阵，则 $A+B$ 仍是 $m \\times n$ 矩阵，且对应元素相加 $(A+B)_{ij} = a_{ij} + b_{ij}$。矩阵加法满足交换律和结合律 [29, 30]。",
+      "intuitive_explanation": "只有同型矩阵才能相加，运算简单直观。"
+    },
+    {
+      "id": "CH2_DEF_16_Multiplication",
+      "concept_zh": "矩阵乘法",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["乘法条件"],
+      "core_content_latex": "设 $A$ 是 $s \\times m$ 矩阵, $B$ 是 $m \\times n$ 矩阵，则乘积 $C = AB$ 是 $s \\times n$ 矩阵，其中 $c_{ij} = \\sum_{k=1}^m a_{ik} b_{kj}$ [31, 32]。",
+      "intuitive_explanation": "矩阵乘法必须满足左矩阵的列数等于右矩阵的行数。矩阵乘法一般不满足交换律 [33, 34]。"
+    },
+    {
+      "id": "CH2_DEF_17_Transpose",
+      "concept_zh": "转置矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "把矩阵 $A$ 的行换成同序数的列得到的新矩阵，称为 $A$ 的转置矩阵，记作 $A^T$ [35, 36]。",
+      "intuitive_explanation": "转置运算满足 $(A B)^T = B^T A^T$ [37, 38]。"
+    },
+    {
+      "id": "CH2_DEF_18_Symmetric",
+      "concept_zh": "对称矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵", "转置"],
+      "core_content_latex": "设 $A$ 为 $n$ 阶方阵，如果满足 $A^T = A$，即 $a_{ij} = a_{ji}$，则称 $A$ 为对称矩阵 [39, 40]。",
+      "intuitive_explanation": "对称矩阵的元素以主对角线为对称轴相等。"
+    },
+    {
+      "id": "CH2_DEF_19_Adjoint",
+      "concept_zh": "伴随矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["代数余子式"],
+      "core_content_latex": "矩阵 $|A|$ 的各个元素的代数余子式 $A_{ij}$ 所构成的矩阵 $A^* = (A_{ij})^T$ 称为矩阵 $A$ 的伴随矩阵 [41, 42]。",
+      "intuitive_explanation": "伴随矩阵满足 $A A^* = A^* A = |A| E$ [41, 42]。"
+    },
+    {
+      "id": "CH2_DEF_20_Inverse",
+      "concept_zh": "逆矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵"],
+      "core_content_latex": "对于 $n$ 阶方阵 $A$，如果存在 $n$ 阶方阵 $B$，使 $AB=BA=E$，则称 $A$ 是可逆矩阵， $B$ 称为 $A$ 的逆矩阵，记作 $A^{-1}$ [43, 44]。",
+      "intuitive_explanation": "逆矩阵是唯一的 [43, 44]。"
+    },
+    {
+      "id": "CH2_THM_21_Invertible",
+      "concept_zh": "逆矩阵存在判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["逆矩阵定义", "行列式"],
+      "core_content_latex": "方阵 $A$ 可逆的充分必要条件是 $|A| \\ne 0$。若 $A$ 可逆，则 $A^{-1} = \\frac{1}{|A|} A^*$ [43, 44]。",
+      "intuitive_explanation": "若 $|A| = 0$，则称 $A$ 为奇异矩阵；若 $|A| \\ne 0$，则称 $A$ 为非奇异矩阵（可逆矩阵）[43, 44]。"
+    },
+    {
+      "id": "CH2_THM_22_Inverse_Props",
+      "concept_zh": "逆矩阵的运算性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["逆矩阵"],
+      "core_content_latex": "若 $A$ 可逆，则 (i) $A^{-1}$ 亦可逆，且 $(A^{-1})^{-1}=A$； (ii) $\\lambda A$ (数 $\\lambda \\ne 0$) 均可逆，且 $(\\lambda A)^{-1}=\\frac{1}{\\lambda}A^{-1}$； (iii) $A, B$ 都可逆，则 $AB$ 可逆，且 $(AB)^{-1}=B^{-1}A^{-1}$； (iv) $A^T$ 可逆，且 $(A^T)^{-1}=(A^{-1})^T$ [45, 46]。",
+      "intuitive_explanation": "这些性质反映了逆运算在矩阵代数中的基本规律。"
+    },
+    {
+      "id": "CH2_DEF_23_Polynomial",
+      "concept_zh": "矩阵的多项式",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵", "矩阵乘法"],
+      "core_content_latex": "设 $\\varphi(x) = a_0 + a_1 x + \\dots + a_m x^m$ 是 $m$ 次多项式，则 $\\varphi(A) = a_0 E + a_1 A + \\dots + a_m A^m$ 称为矩阵 $A$ 的 $m$ 次多项式 [47, 48]。",
+      "intuitive_explanation": "矩阵多项式在计算高次幂或对角化时有重要应用。"
+    },
+    {
+      "id": "CH2_DEF_24_Partitioned",
+      "concept_zh": "分块矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "用若干条纵线和横线将矩阵 $A$ 划分成若干个小矩阵（子块），以这些子块为元素形成的矩阵称为分块矩阵 [49, 50]。",
+      "intuitive_explanation": "分块运算常用于行数和列数较高的矩阵，使运算简化 [49, 50]。"
+    },
+     {
+      "id": "CH2_DEF_25_Equal",
+      "concept_zh": "同型矩阵与矩阵相等",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "行数与列数分别相等的矩阵称为同型矩阵。如果 $A=(a_{ij})$ 与 $B=(b_{ij})$ 是同型矩阵，且它们的对应元素相等 ($a_{ij} = b_{ij}$)，则称矩阵 $A$ 与矩阵 $B$ 相等 [12, 13]。",
+      "intuitive_explanation": "矩阵相等是逐元素定义的。"
+    },
+    {
+      "id": "CH2_DEF_26_Scalar",
+      "concept_zh": "数与矩阵相乘",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵", "数乘"],
+      "core_content_latex": "数 $\\lambda$ 与矩阵 $A$ 的乘积记作 $\\lambda A$ 或 $A\\lambda$，规定为 $\\lambda A = (\\lambda a_{ij})$ [14, 15]。数乘满足结合律、分配律等性质。",
+      "intuitive_explanation": "数乘是将矩阵的每个元素乘以该数。"
+    },
+    {
+      "id": "CH2_DEF_27_Conjugate",
+      "concept_zh": "共轭矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["复数矩阵"],
+      "core_content_latex": "设 $A=(a_{ij})$ 为复矩阵，用 $\\bar{a}$ 表示 $a_{ij}$ 的共轭复数，记 $\\bar{A} = (\\bar{a}_{ij})$ 称为 $A$ 的共轭矩阵 [16, 17]。",
+      "intuitive_explanation": "共轭矩阵常用于涉及复数域的线性代数中，如厄米特矩阵的定义。"
+    },
+    {
+      "id": "CH2_THM_28_ZeroProduct",
+      "concept_zh": "矩阵乘积性质（零因子）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵乘法"],
+      "core_content_latex": "若有两个矩阵 $A, B$ 满足 $A B = O$ (零矩阵)，不能得出 $A=O$ 或 $B=O$ 的结论 [18, 19]。",
+      "intuitive_explanation": "这表明矩阵乘法中存在零因子，这是矩阵代数与数域代数的显著区别。"
+    },
+    {
+      "id": "CH2_THM_29_Identity",
+      "concept_zh": "单位矩阵的性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["单位矩阵"],
+      "core_content_latex": "对于单位矩阵 $E$ 和任意矩阵 $A$，有 $E A = A E = A$ (如果乘法有意义) [18, 19]。",
+      "intuitive_explanation": "单位矩阵在矩阵乘法中起着数 '1' 的作用。"
+    },
+    {
+      "id": "CH2_THM_30_ATA",
+      "concept_zh": "矩阵乘积的零矩阵条件",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["转置矩阵"],
+      "core_content_latex": "证明矩阵 $A = O$ 的充分必要条件是 $\\mathbf{A^T A = O}$ [20-22]。",
+      "intuitive_explanation": "这个结论特别适用于实矩阵，它利用了 $A^T A$ 的对角元素是 $A$ 的列向量的长度平方和这一事实。"
+    },
+    {
+      "id": "CH3_DEF_01",
+      "concept_zh": "矩阵初等变换",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "矩阵的初等变换包括 (i) 对调两行（列）； (ii) 以数 $k \\ne 0$ 乘某一行（列）； (iii) 把某一行（列）乘数 $k$ 加到另一行（列）上。",
+      "intuitive_explanation": "初等变换是解线性方程组时系数矩阵允许进行的基本操作。"
+    },
+    {
+      "id": "CH3_DEF_02",
+      "concept_zh": "矩阵等价",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["初等变换"],
+      "core_content_latex": "如果矩阵 $A$ 经过有限次初等行（列）变换变成矩阵 $B$，则称 $A$ 与 $B$ 行（列）等价，记作 $A \\overset{r}{\\sim} B$ 或 $A \\overset{c}{\\sim} B$。如果 $A$ 经过有限次初等变换变成 $B$，则称 $A$ 与 $B$ 等价，记作 $A \\sim B$。",
+      "intuitive_explanation": "矩阵等价是一种等价关系，满足反身性、对称性、传递性。"
+    },
+    {
+      "id": "CH3_THM_03",
+      "concept_zh": "等价的充要条件",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["初等矩阵"],
+      "core_content_latex": "设 $A$ 与 $B$ 是 $m \\times n$ 矩阵，则 $A \\sim B$ 的充要条件是存在 $m$ 阶可逆矩阵 $P$ 和 $n$ 阶可逆矩阵 $Q$，使 $PAQ=B$。",
+      "intuitive_explanation": "任何初等变换都相当于左乘或右乘一个初等矩阵。"
+    },
+    {
+      "id": "CH3_DEF_04",
+      "concept_zh": "矩阵的秩",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["$k$ 阶子式"],
+      "core_content_latex": "设在 $m \\times n$ 矩阵 $A$ 中，任取 $k$ 行 $k$ 列，位于这些行列交叉处的 $k^2$ 个元素，不改变它们在 $A$ 中所处的次序，构成的 $k$ 阶行列式，称为 $A$ 的 $k$ 阶子式。若 $A$ 中存在 $r$ 阶子式不等于 0，且所有 $r+1$ 阶子式（若存在）全等于 0，则称 $r$ 为 $A$ 的秩，记作 $R(A)$。",
+      "intuitive_explanation": "秩是矩阵最本质的数值特性，它由矩阵的最高阶非零子式的阶数决定。"
+    },
+    {
+      "id": "CH3_THM_05",
+      "concept_zh": "矩阵秩的不变性",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "初等变换不改变矩阵的秩。如果 $A \\sim B$，则 $R(A) = R(B)$。",
+      "intuitive_explanation": "秩是矩阵通过初等变换可以化简到的最简形（标准形 $F$）中非零行（或列）的数目。"
+    },
+    {
+      "id": "CH3_DEF_06",
+      "concept_zh": "行（列）阶梯形矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["初等变换"],
+      "core_content_latex": "行阶梯形矩阵满足：非零行都在零行之上；每个非零行中的第一个非零元素（称为主元）所在的列的下方元素全为 0。",
+      "intuitive_explanation": "这是通过初等行变换得到的简化形式，可以方便地读取矩阵的秩 $R(A)$，即非零行的行数。"
+    },
+    {
+      "id": "CH3_THM_07",
+      "concept_zh": "线性方程组有解判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["系数矩阵的秩", "增广矩阵的秩"],
+      "core_content_latex": "线性方程组 $Ax=b$ 有解的充分必要条件是其系数矩阵 $A$ 的秩等于其增广矩阵 $B=(A, b)$ 的秩，即 $R(A) = R(B)$。",
+      "intuitive_explanation": "若 $R(A) < R(B)$，则通过初等变换后，增广矩阵的最后一行可能形如 $(0, 0, \\dots, 0, d)$, $d \\ne 0$，对应 $0=d$，方程组无解。"
+    },
+    {
+      "id": "CH3_THM_08",
+      "concept_zh": "线性方程组解的个数",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩", "方程个数 $n$"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵， $r=R(A)=R(B)$：(i) 当 $r=n$ 时，方程组有唯一解；(ii) 当 $r<n$ 时，方程组有无穷多解，解中含有 $n-r$ 个自由未知数。",
+      "intuitive_explanation": "秩 $r$ 代表独立方程的个数。当 $r$ 等于未知数个数 $n$ 时，无自由变量，解唯一。"
+    },
+    {
+      "id": "CH3_EX_09",
+      "concept_zh": "求解齐次线性方程组",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["行最简形矩阵"],
+      "core_content_latex": "求解齐次线性方程组 $\\begin{cases} x_1+x_2-x_3 = 0 \\ 2x_1-5x_2+3x_3+2x_4 = 0 \\ 7x_1-7x_2+3x_3+x_4 = 0 \\end{cases}$ 的通解。",
+      "intuitive_explanation": "通过将系数矩阵化为行最简形，确定秩和自由未知数，从而求出通解结构。"
+    },
+    {
+      "id": "CH3_EX_10",
+      "concept_zh": "有唯一解、无解、无穷多解的判别",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["系数矩阵的秩"],
+      "core_content_latex": "设线性方程组 $\\begin{cases} (1+\\lambda)x_1 + x_2 + x_3 = 0 \\ x_1 + (1+\\lambda)x_2 + x_3 = \\lambda \\ x_1 + x_2 + (1+\\lambda)x_3 = \\lambda^2 \\end{cases}$，问 $\\lambda$ 取何值时，方程组有唯一解、无解或无穷多解? 并在有无穷多解时求其通解。",
+      "intuitive_explanation": "通过计算系数行列式 $|A|$ 和增广矩阵 $R(B)$ 的秩来分类讨论解的情况。"
+    },
+    {
+      "id": "CH3_EX_11",
+      "concept_zh": "利用初等变换求逆矩阵",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["初等变换", "逆矩阵"],
+      "core_content_latex": "已知 $A=\\begin{pmatrix} 1 & 2 & 3 \\ 2 & 2 & 1 \\ 3 & 4 & 3 \\end{pmatrix}$，求 $A^{-1}$。",
+      "intuitive_explanation": "构造增广矩阵 $(A|E)$，通过初等行变换将其化为 $(E|A^{-1})$ 来求逆矩阵。"
+    },
+    {
+      "id": "CH3_EX_12",
+      "concept_zh": "矩阵的秩（计算）",
+      "type": "习题",
+      "knowledge_type": "Exercise",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "求下列矩阵的秩： $A=\\begin{pmatrix} 3 & 1 & 0 & 2 \\ 1 & -1 & 2 & -1 \\ -1 & 3 & -4 & 3 \\end{pmatrix}$。",
+      "intuitive_explanation": "通过初等行变换将矩阵化为行阶梯形矩阵，非零行的行数即为秩。"
+    },
+    {
+      "id": "CH3_DEF_25_ElementaryMatrix",
+      "concept_zh": "初等矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["初等变换", "单位矩阵"],
+      "core_content_latex": "由单位矩阵 $E$ 经过一次初等变换得到的矩阵称为初等矩阵 [23, 24]。初等矩阵都是可逆的。",
+      "intuitive_explanation": "对矩阵 $A$ 施加初等行（列）变换，相当于左（右）乘相应的初等矩阵。"
+    },
+    {
+      "id": "CH3_THM_26_Equiv_Invertible",
+      "concept_zh": "等价与可逆矩阵的充分必要条件",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["初等矩阵", "可逆矩阵"],
+      "core_content_latex": "设 $A$ 与 $B$ 是 $m \\times n$ 矩阵，则 $A \\sim B$ 的充分必要条件是存在 $m$ 阶可逆矩阵 $P$ 和 $n$ 阶可逆矩阵 $Q$，使 $PAQ=B$ [25, 26]。",
+      "intuitive_explanation": "可逆矩阵 $P$ 和 $Q$ 是由一系列初等矩阵的乘积构成的。"
+    },
+    {
+      "id": "CH3_DEF_27_CanonicalForm",
+      "concept_zh": "行（列）最简形矩阵与标准形",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["行阶梯形"],
+      "core_content_latex": "行最简形矩阵是行阶梯形矩阵，且每个非零行的主元都为 1，且主元所在列的其他元素全为 0。矩阵 $A$ 的标准形 $F$ 形如 $F=\\begin{pmatrix} E_r & O \\ O & O \\end{pmatrix}$ [27, 28]。",
+      "intuitive_explanation": "矩阵的标准形是其通过初等变换能达到的最简单的形式，其中 $r$ 即为矩阵的秩 $R(A)$。"
+    },
+    {
+      "id": "CH3_DEF_28_K_Subform",
+      "concept_zh": "$k$ 阶子式",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["行列式"],
+      "core_content_latex": "在 $m \\times n$ 矩阵 $A$ 中，任取 $k$ 行 $k$ 列，位于这些行列交叉处的 $k^2$ 个元素按原次序构成的 $k$ 阶行列式，称为 $A$ 的 $k$ 阶子式 [29, 30]。",
+      "intuitive_explanation": "秩的定义正是基于矩阵中最高阶非零子式的阶数。"
+    },
+    {
+      "id": "CH3_THM_29_Hom_Solution",
+      "concept_zh": "齐次方程组解的结构",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["解空间维数"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵，$R(A)=r$。当 $r<n$ 时，齐次线性方程组 $A\\mathbf{x}=0$ 有无穷多解，解集 $S$ 的维数 $R_S = n-r$ [31, 32]。",
+      "intuitive_explanation": " $n-r$ 个自由未知数对应 $n-r$ 维的解空间。"
+    },
+    {
+      "id": "CH3_THM_30_Rank_Mult",
+      "concept_zh": "矩阵乘积的秩不等式",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵秩"],
+      "core_content_latex": "设 $A$ 为 $m \\times n$ 矩阵, $B$ 为 $n \\times l$ 矩阵，则 $R(A B) \\le \\min\\{R(A), R(B)\\}$ [33, 34]。",
+      "intuitive_explanation": "矩阵乘积不会增加秩，秩总是受限于秩较小的矩阵。"
+    },
+    {
+      "id": "CH3_DEF_13_Trans",
+      "concept_zh": "矩阵的初等变换",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵"],
+      "core_content_latex": "矩阵的初等行（列）变换包括：(i) 对调两行（列）；(ii) 以非零数 $k$ 乘某一行（列）；(iii) 把某一行（列）乘数 $k$ 加到另一行（列）上 [51, 52]。",
+      "intuitive_explanation": "这些变换与线性方程组的同解变换相对应，不会改变方程组的解 [51, 52]。"
+    },
+    {
+      "id": "CH3_DEF_14_Equivalent",
+      "concept_zh": "矩阵等价",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["初等变换"],
+      "core_content_latex": "如果矩阵 $A$ 经过有限次初等变换（包括行变换和列变换）变成矩阵 $B$，则称 $A$ 与 $B$ 等价，记作 $A \\sim B$ [51, 52]。",
+      "intuitive_explanation": "矩阵等价是一种满足反身性、对称性和传递性的等价关系 [51, 52]。"
+    },
+    {
+      "id": "CH3_DEF_15_Echelon",
+      "concept_zh": "行阶梯形矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["初等变换"],
+      "core_content_latex": "行阶梯形矩阵 $B$ 的特点是：非零行都在零行之上；每个非零行的第一个非零元素（主元）所在的列的下方元素全为 0 [53, 54]。",
+      "intuitive_explanation": "通过初等行变换可以将任何矩阵化为行阶梯形矩阵 $B$ [55, 56]。"
+    },
+    {
+      "id": "CH3_DEF_16_Rank",
+      "concept_zh": "矩阵的秩",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["子式"],
+      "core_content_latex": "若 $m \\times n$ 矩阵 $A$ 中存在 $r$ 阶子式不等于 0，而所有 $r+1$ 阶子式（若存在）全等于 0，则称 $r$ 为 $A$ 的秩，记作 $R(A)$ [57, 58]。",
+      "intuitive_explanation": "秩是矩阵的一个重要不变量，它等于行阶梯形矩阵中非零行的行数 [57-59]。"
+    },
+    {
+      "id": "CH3_THM_17_Rank_Invariant",
+      "concept_zh": "矩阵秩的不变性",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩", "初等变换"],
+      "core_content_latex": "初等变换不改变矩阵的秩。即如果 $A \\sim B$，则 $R(A) = R(B)$ [59, 60]。",
+      "intuitive_explanation": "这是通过证明初等行（列）变换不改变 $r$ 阶子式的最高阶数来完成的 [59, 60]。"
+    },
+    {
+      "id": "CH3_THM_18_Sol_Exist",
+      "concept_zh": "线性方程组有解判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "线性方程组 $A\\mathbf{x}=\\mathbf{b}$ 有解的充分必要条件是其系数矩阵 $A$ 的秩等于其增广矩阵 $B=(A, \\mathbf{b})$ 的秩，即 $R(A) = R(B)$ [61, 62]。",
+      "intuitive_explanation": "若 $R(A) < R(B)$，则增广矩阵化简后会出现形如 $0=d, d\\ne 0$ 的矛盾方程，导致无解 [61, 62]。"
+    },
+    {
+      "id": "CH3_THM_19_Sol_Unique",
+      "concept_zh": "线性方程组唯一解判别",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["解的存在性", "自由未知数"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵，$R(A)=r$。当 $R(A) = R(B) = n$ 时，方程组有唯一解 [61-63]。",
+      "intuitive_explanation": "当秩 $r$ 等于未知数个数 $n$ 时，方程组中不存在自由未知数，解唯一 [63]。"
+    },
+    {
+      "id": "CH3_THM_20_Inf_Sol",
+      "concept_zh": "线性方程组无穷多解判别",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["秩与未知数个数"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵，$R(A)=r$。当 $R(A) = R(B) = r < n$ 时，方程组有无穷多解，且解中含有 $n-r$ 个自由未知数 [61-63]。",
+      "intuitive_explanation": "当 $r<n$ 时，有 $n-r$ 个自由未知数，解可以写成含 $n-r$ 个参数的通解形式 [63]。"
+    },
+    {
+      "id": "CH3_THM_21_Rank_Prop_7",
+      "concept_zh": "矩阵秩的不等式",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵秩"],
+      "core_content_latex": "设 $A$ 为 $m \\times n$ 矩阵, $B$ 为 $n \\times l$ 矩阵，则 $R(A B) \\le \\min\\{R(A), R(B)\\}$ [64, 65]。",
+      "intuitive_explanation": "矩阵乘积的秩不会超过乘法中任一个矩阵的秩 [64, 65]。"
+    },
+    {
+      "id": "CH3_THM_22_Rank_Prop_5",
+      "concept_zh": "秩的加法不等式",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵秩"],
+      "core_content_latex": "设 $A, B$ 都是 $m \\times n$ 矩阵，则 $R(A+B) \\le R(A) + R(B)$ [66, 67]。",
+      "intuitive_explanation": "两个矩阵和的秩，不会超过它们各自秩的和 [66, 67]。"
+    },
+    {
+      "id": "CH3_THM_23_Rank_Prop_6",
+      "concept_zh": "秩的广义不等式",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵秩"],
+      "core_content_latex": "设 $A$ 为 $m \\times n$ 矩阵, $B$ 为 $n \\times l$ 矩阵，则 $\\max\\{R(A), R(B)\\} \\le R(A, B) \\le R(A) + R(B)$ [68]。",
+      "intuitive_explanation": "增广矩阵 $A, B$ 的秩，介于 $\\max\\{R(A), R(B)\\}$ 和 $R(A)+R(B)$ 之间 [68]。"
+    },
+    {
+      "id": "CH3_EX_24_Inverse_by_Trans",
+      "concept_zh": "用初等变换求逆矩阵",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["初等变换", "逆矩阵"],
+      "core_content_latex": "通过初等行变换将 $(A|E)$ 化为 $(E|A^{-1})$，即可求出 $A$ 的逆矩阵 [69, 70]。",
+      "intuitive_explanation": "初等行变换相当于左乘可逆矩阵 $P$，使 $PA=E$，故 $P=A^{-1}$。"
+    },
+     {
+      "id": "CH4_DEF_25_GeneratingSpace",
+      "concept_zh": "向量组生成的空间",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性组合"],
+      "core_content_latex": "由向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$ 的所有线性组合所构成的集合 $L = \\{x_1 \\mathbf{a}_1 + \\dots + x_m \\mathbf{a}_m \\mid x_i \\in \\mathbb{R}\\}$ 称为由向量组 $A$ 所生成的向量空间 [35-37]。",
+      "intuitive_explanation": "这个空间是向量组 $A$ 的所有可能线性扩展。"
+    },
+    {
+      "id": "CH4_THM_26_Basis_Rank",
+      "concept_zh": "向量组的秩（生成空间）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["向量组的秩"],
+      "core_content_latex": "向量组 $A$ 的秩等于其所生成的向量空间 $L$ 的维数 [37, 38]。",
+      "intuitive_explanation": "最大无关组是生成空间 $L$ 的基，故其个数 $r$ 即为维度。"
+    },
+    {
+      "id": "CH4_THM_27_Equivalence_Rank",
+      "concept_zh": "向量组等价与秩的关系",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["向量组等价", "矩阵的秩"],
+      "core_content_latex": "向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$ 与向量组 $B: \\mathbf{b}_1, \\dots, \\mathbf{b}_l$ 等价的充分必要条件是 $R(A) = R(B) = R(A, B)$ [39, 40]。",
+      "intuitive_explanation": "等价向量组能互相表示，意味着它们有相同的秩和生成空间。"
+    },
+    {
+      "id": "CH4_THM_28_NonHom_Structure",
+      "concept_zh": "非齐次方程组解的性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["齐次解空间"],
+      "core_content_latex": "设 $\\mathbf{x} = \\eta_1$ 与 $\\mathbf{x} = \\eta_2$ 都是非齐次方程组 $A\\mathbf{x}=\\mathbf{b}$ 的解，则 $\\eta_1 - \\eta_2$ 是对应齐次方程组 $A\\mathbf{x}=0$ 的解 [41, 42]。",
+      "intuitive_explanation": "任何两个非齐次解的差是齐次解，体现了非齐次解集的平移结构。"
+    },
+    {
+      "id": "CH4_THM_29_Orthogonal_Kernel",
+      "concept_zh": "矩阵 $A^T A$ 与 $A$ 的秩",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵秩"],
+      "core_content_latex": "证明 $R(A^T A) = R(A)$ [43, 44]。",
+      "intuitive_explanation": "该定理用于最小二乘法等应用，意味着 $A\\mathbf{x}=0$ 与 $A^T A \\mathbf{x}=0$ 同解，它们的解空间相同，故秩也相同。"
+    },
+    {
+      "id": "CH4_EX_30_Basis",
+      "concept_zh": "标准基（自然基）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量空间"],
+      "core_content_latex": " $n$ 维向量空间 $\\mathbb{R}^n$ 中的 $n$ 个单位坐标向量 $\\mathbf{e}_1, \\dots, \\mathbf{e}_n$ 构成一个基，称为 $n$ 维向量空间的自然基 [37, 38]。",
+      "intuitive_explanation": "自然基的坐标是 $(1, 0, \\dots, 0)^T, (0, 1, \\dots, 0)^T, \\dots$"
+    },
+    {
+      "id": "CH4_DEF_01",
+      "concept_zh": "$n$ 维向量",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["数集"],
+      "core_content_latex": " $n$ 个有次序的数 $a_1, a_2, \\dots, a_n$ 所组成的数组称为 $n$ 维向量。",
+      "intuitive_explanation": "向量可以是行向量或列向量。"
+    },
+    {
+      "id": "CH4_DEF_02",
+      "concept_zh": "线性组合",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量组", "数乘"],
+      "core_content_latex": "给定向量组 $A: \\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m$，对于任意一组实数 $k_1, k_2, \\dots, k_m$，表达式 $k_1 \\mathbf{a}_1 + k_2 \\mathbf{a}_2 + \\dots + k_m \\mathbf{a}_m$ 称为向量 $\\mathbf{a}$ 的一个线性组合。",
+      "intuitive_explanation": "线性组合是向量组中所有向量加权求和的结果。"
+    },
+    {
+      "id": "CH4_THM_03",
+      "concept_zh": "向量 $\\mathbf{b}$ 可由向量组 $A$ 线性表示",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "向量 $\\mathbf{b}$ 能由向量组 $A: \\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m$ 线性表示的充分必要条件是矩阵 $A = (\\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m)$ 的秩等于增广矩阵 $B = (A, \\mathbf{b})$ 的秩，即 $R(A) = R(A, \\mathbf{b})$。",
+      "intuitive_explanation": "这等价于非齐次线性方程组 $A\\mathbf{x} = \\mathbf{b}$ 有解的条件。"
+    },
+    {
+      "id": "CH4_DEF_04",
+      "concept_zh": "线性相关性",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性组合"],
+      "core_content_latex": "给定向量组 $A: \\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m$，如果存在不全为零的数 $k_1, k_2, \\dots, k_m$，使 $k_1 \\mathbf{a}_1 + k_2 \\mathbf{a}_2 + \\dots + k_m \\mathbf{a}_m = 0$，则称向量组 $A$ 线性相关。否则称为线性无关。",
+      "intuitive_explanation": "线性相关意味着至少有一个向量可以由其他向量线性表示。"
+    },
+    {
+      "id": "CH4_THM_05",
+      "concept_zh": "线性相关性判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": " $n$ 维向量组 $A: \\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m$ 线性无关的充分必要条件是它所构成的矩阵 $A = (\\mathbf{a}_1, \\mathbf{a}_2, \\dots, \\mathbf{a}_m)$ 的秩 $R(A)$ 等于向量的个数 $m$。",
+      "intuitive_explanation": "当 $R(A) < m$ 时，齐次线性方程组 $A\\mathbf{x}=0$ 有非零解，向量组线性相关。"
+    },
+    {
+      "id": "CH4_DEF_06",
+      "concept_zh": "向量组的秩（最大无关组）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关"],
+      "core_content_latex": "设向量组 $A$ 中存在一个最大线性无关组 $A_0: \\mathbf{a}_{i_1}, \\mathbf{a}_{i_2}, \\dots, \\mathbf{a}_{i_r}$，其中 $r$ 个向量线性无关，且 $r$ 个以上的向量都线性相关。 $r$ 称为向量组 $A$ 的秩，记作 $R_A$。",
+      "intuitive_explanation": "向量组的秩是其最大线性无关组所含向量的个数。"
+    },
+    {
+      "id": "CH4_THM_07",
+      "concept_zh": "向量组的秩与矩阵的秩",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "矩阵的秩等于它的列向量组的秩，也等于它的行向量组的秩。 $R(A) = R_A$。",
+      "intuitive_explanation": "矩阵 $A$ 的秩 $R(A)$ 统一了矩阵的非零子式阶数和向量组的最大无关组中向量的个数。"
+    },
+    {
+      "id": "CH4_DEF_08",
+      "concept_zh": "解空间（向量空间）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量空间"],
+      "core_content_latex": "齐次线性方程组 $A\\mathbf{x}=0$ 的解的全体构成的集合 $S$ 是一个向量空间，称为齐次线性方程组的解空间。",
+      "intuitive_explanation": "齐次解的任意线性组合仍是齐次解，满足向量空间的封闭性。"
+    },
+    {
+      "id": "CH4_THM_09",
+      "concept_zh": "基础解系",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["解空间维数"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵， $R(A)=r$。则齐次线性方程组 $A\\mathbf{x}=0$ 的解空间 $S$ 的维数是 $n-r$。 $S$ 的任意一组基 $\\xi_1, \\xi_2, \\dots, \\xi_{n-r}$ 称为该方程组的基础解系。",
+      "intuitive_explanation": "基础解系是解空间的一组线性无关的向量，任意解都是基础解系的线性组合。"
+    },
+    {
+      "id": "CH4_DEF_10",
+      "concept_zh": "向量空间",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量加法", "数乘"],
+      "core_content_latex": "设 $V$ 是 $n$ 维向量的全体构成的集合，且 $V$ 对向量的加法及数乘两种运算封闭，则称集合 $V$ 为向量空间。",
+      "intuitive_explanation": "向量空间是满足加法和数乘运算封闭性的向量集合，它是抽象的线性空间在 $R^n$ 中的具体表现。"
+    },
+    {
+      "id": "CH4_DEF_11",
+      "concept_zh": "向量空间维数和基",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关"],
+      "core_content_latex": "设 $V$ 为向量空间，如果 $V$ 中 $r$ 个向量 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 满足：(i) $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 线性无关；(ii) $V$ 中任一向量都可由 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 线性表示。那么 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 称为向量空间 $V$ 的一个基，并称 $r$ 为 $V$ 的维数。",
+      "intuitive_explanation": "基是生成向量空间的最小线性无关向量组。"
+    },
+    {
+      "id": "CH4_DEF_13_Vector",
+      "concept_zh": "$n$ 维向量",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["有序数组"],
+      "core_content_latex": "$n$ 个有次序的数 $a_1, a_2, \\dots, a_n$ 所组成的数组称为 $n$ 维向量。其中 $a_i$ 称为向量的第 $i$ 个分量 [71, 72]。",
+      "intuitive_explanation": "$n$ 维向量可以写成行向量或列向量形式 [71, 72]。"
+    },
+    {
+      "id": "CH4_DEF_14_L_Comb",
+      "concept_zh": "向量的线性组合",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量组"],
+      "core_content_latex": "给定向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$，对于任意一组实数 $k_1, \\dots, k_m$，表达式 $k_1 \\mathbf{a}_1 + \\dots + k_m \\mathbf{a}_m$ 称为向量 $\\mathbf{a}$ 的一个线性组合 [73, 74]。",
+      "intuitive_explanation": "线性组合是向量在特定系数下的加权求和。"
+    },
+    {
+      "id": "CH4_THM_15_L_Rep",
+      "concept_zh": "向量 $\\mathbf{b}$ 线性表示定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "向量 $\\mathbf{b}$ 能由向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$ 线性表示的充分必要条件是矩阵 $A = (\\mathbf{a}_1, \\dots, \\mathbf{a}_m)$ 的秩等于增广矩阵 $(A, \\mathbf{b})$ 的秩，即 $R(A) = R(A, \\mathbf{b})$ [75, 76]。",
+      "intuitive_explanation": "该条件等价于线性方程组 $A\\mathbf{x} = \\mathbf{b}$ 有解 [75, 76]。"
+    },
+    {
+      "id": "CH4_DEF_16_L_Equiv",
+      "concept_zh": "向量组等价",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性表示"],
+      "core_content_latex": "设有两个向量组 $A$ 和 $B$，若 $B$ 中的每个向量都能由 $A$ 线性表示，且 $A$ 中的每个向量都能由 $B$ 线性表示，则称向量组 $A$ 与向量组 $B$ 互相线性表示，称这两个向量组等价 [75, 76]。",
+      "intuitive_explanation": "等价的向量组具有相同的线性表示能力。"
+    },
+    {
+      "id": "CH4_DEF_17_L_Dep",
+      "concept_zh": "线性相关性",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性组合"],
+      "core_content_latex": "若存在不全为零的数 $k_1, \\dots, k_m$，使 $k_1 \\mathbf{a}_1 + \\dots + k_m \\mathbf{a}_m = 0$，则称向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$ 线性相关。否则称为线性无关 [77, 78]。",
+      "intuitive_explanation": "线性相关意味着向量组中至少有一个向量是多余的，可由其他向量表示 [77, 78]。"
+    },
+    {
+      "id": "CH4_THM_18_L_Indep",
+      "concept_zh": "线性无关判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": " $n$ 维向量组 $A: \\mathbf{a}_1, \\dots, \\mathbf{a}_m$ 线性无关的充分必要条件是它所构成的矩阵 $A$ 的秩 $R(A)$ 等于向量的个数 $m$ [79, 80]。",
+      "intuitive_explanation": "这等价于齐次线性方程组 $A\\mathbf{x}=0$ 只有零解 [79, 80]。"
+    },
+    {
+      "id": "CH4_DEF_19_Basis",
+      "concept_zh": "向量组的秩与最大无关组",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关"],
+      "core_content_latex": "设向量组 $A$ 中存在一个最大线性无关组 $A_0$，其中包含 $r$ 个向量，则 $r$ 称为向量组 $A$ 的秩，记作 $R_A$ [81, 82]。",
+      "intuitive_explanation": "最大无关组是 $A$ 的一个子集，满足线性无关且 $A$ 中任一向量都可由 $A_0$ 线性表示 [83, 84]。"
+    },
+    {
+      "id": "CH4_THM_20_Rank_Matrix",
+      "concept_zh": "向量组的秩与矩阵的秩",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "矩阵的秩等于它的列向量组的秩，也等于它的行向量组的秩 [81, 82]。",
+      "intuitive_explanation": "该定理将矩阵的秩的概念与向量组的线性性质紧密联系起来 [81, 82]。"
+    },
+    {
+      "id": "CH4_THM_21_Hom_Basis",
+      "concept_zh": "齐次方程组解空间维数",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["解空间", "矩阵的秩"],
+      "core_content_latex": "设 $A$ 是 $m \\times n$ 矩阵，$R(A)=r$。则齐次线性方程组 $A\\mathbf{x}=0$ 的解空间 $S$ 的维数是 $n-r$ [85, 86]。",
+      "intuitive_explanation": "解空间 $S$ 的任意一组基称为基础解系，其个数为 $n-r$，即自由未知数的个数 [85, 86]。"
+    },
+    {
+      "id": "CH4_THM_22_NonHom_General",
+      "concept_zh": "非齐次方程组通解结构",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["特解", "基础解系"],
+      "core_content_latex": "非齐次方程组 $A\\mathbf{x}=\\mathbf{b}$ 的通解可表示为 $\\mathbf{x} = k_1 \\xi_1 + \\dots + k_{n-r} \\xi_{n-r} + \\eta^*$，其中 $\\xi_i$ 为对应齐次方程组的基础解系， $\\eta^*$ 为非齐次方程组的一个特解 [87, 88]。",
+      "intuitive_explanation": "非齐次方程组的解集是一个平移的子空间，解的结构是 '齐次通解 + 特解'。"
+    },
+    {
+      "id": "CH4_DEF_23_Space",
+      "concept_zh": "向量空间（$R^n$）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量加法", "数乘封闭性"],
+      "core_content_latex": "设 $V$ 为 $n$ 维向量的集合，若 $V$ 非空，且 $V$ 对于向量的加法及数乘两种运算封闭，则称集合 $V$ 为向量空间 [89, 90]。",
+      "intuitive_explanation": " $n$ 维向量的全体 $\\mathbb{R}^n$ 是一个向量空间 [91, 92]。"
+    },
+    {
+      "id": "CH4_DEF_24_Basis_R",
+      "concept_zh": "向量空间基与维数",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关", "线性表示"],
+      "core_content_latex": "向量空间 $V$ 中，满足 (i) $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 线性无关；(ii) $V$ 中任一向量都可由 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 线性表示。那么 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 称为 $V$ 的一个基， $r$ 称为维数 [93, 94]。",
+      "intuitive_explanation": "维度是空间中最少的线性无关向量的个数。"
+    },
+    {
+      "id": "CH4_EX_12",
+      "concept_zh": "非齐次方程组通解结构",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["基础解系", "特解"],
+      "core_content_latex": "求非齐次线性方程组 $A\\mathbf{x}=\\mathbf{b}$ 的通解。",
+      "intuitive_explanation": "非齐次方程组的通解结构为 $\\mathbf{x} = k_1 \\xi_1 + k_2 \\xi_2 + \\dots + k_{n-r} \\xi_{n-r} + \\eta^*$，即齐次通解加上一个非齐次特解 $\\eta^*$。"
+    },
+    {
+      "id": "CH5_DEF_25_Orthonormal",
+      "concept_zh": "规范正交基",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["正交", "单位向量"],
+      "core_content_latex": "一个向量组 $\\mathbf{e}_1, \\dots, \\mathbf{e}_n$ 如果是正交向量组，且所有向量都是单位向量（长度为 1），则称为规范正交基 [45, 46]。",
+      "intuitive_explanation": "在规范正交基下，向量的坐标计算非常简单。"
+    },
+    {
+      "id": "CH5_ALG_26_Schimdt",
+      "concept_zh": "施密特正交化",
+      "type": "方法",
+      "knowledge_type": "Algorithm",
+      "prerequisite": ["线性无关向量组"],
+      "core_content_latex": "将线性无关向量组 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 转化为正交向量组 $\\mathbf{b}_1, \\dots, \\mathbf{b}_r$ 的方法，满足 $\\mathbf{b}_k = \\mathbf{a}_k - \\sum_{j=1}^{k-1} \\frac{[\\mathbf{a}_k, \\mathbf{b}_j]}{[\\mathbf{b}_j, \\mathbf{b}_j]} \\mathbf{b}_j$ [47, 48]。",
+      "intuitive_explanation": "这是构造规范正交基的重要算法。"
+    },
+    {
+      "id": "CH5_THM_27_Ortho_Prop",
+      "concept_zh": "正交矩阵性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["正交矩阵"],
+      "core_content_latex": "若 $P$ 是正交矩阵，则 (i) $P^{-1}=P^T$； (ii) $|P|=1$ 或 $|P|=-1$ [49, 50]。",
+      "intuitive_explanation": "正交矩阵的逆矩阵等于其转置矩阵。"
+    },
+    {
+      "id": "CH5_THM_28_Symmetric_Ortho",
+      "concept_zh": "对称矩阵特征向量正交性",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对称矩阵"],
+      "core_content_latex": "对称矩阵 $A$ 属于不同特征值 $\\lambda_1, \\lambda_2$ 的特征向量 $\\mathbf{x}_1, \\mathbf{x}_2$ 相互正交。",
+      "intuitive_explanation": "这一性质保证了对称矩阵可以被正交矩阵对角化。"
+    },
+    {
+      "id": "CH5_DEF_29_StandardForm",
+      "concept_zh": "二次型标准形",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["二次型"],
+      "core_content_latex": "二次型 $f$ 仅含有平方项，即 $f = k_1 y_1^2 + k_2 y_2^2 + \\dots + k_n y_n^2$，则称该形式为二次型 $f$ 的标准形 [51, 52]。",
+      "intuitive_explanation": "二次型化标准形是研究其几何性质的关键，可以消除交叉项。"
+    },
+    {
+      "id": "CH5_THM_30_StandardForm_Orthogonal",
+      "concept_zh": "二次型正交变换化标准形",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对称矩阵对角化"],
+      "core_content_latex": "任给二次型 $f(\\mathbf{x})=\\mathbf{x}^T A \\mathbf{x}$，总有正交变换 $\\mathbf{x}=P\\mathbf{y}$，使 $f$ 化为标准形 $f = \\lambda_1 y_1^2 + \\lambda_2 y_2^2 + \\dots + \\lambda_n y_n^2$，其中 $\\lambda_i$ 是 $A$ 的特征值 [53, 54]。",
+      "intuitive_explanation": "正交变换保持了向量的长度不变，是保形变换。"
+    },
+    {
+      "id": "CH5_DEF_01",
+      "concept_zh": "内积与长度",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量"],
+      "core_content_latex": " $n$ 维向量 $\\mathbf{x}=(x_1, \\dots, x_n)^T$ 与 $\\mathbf{y}=(y_1, \\dots, y_n)^T$ 的内积定义为 $[\\mathbf{x}, \\mathbf{y}] = x_1 y_1 + \\dots + x_n y_n = \\mathbf{x}^T \\mathbf{y}$。向量 $\\mathbf{x}$ 的长度为 $|\\mathbf{x}| = \\sqrt{[\\mathbf{x}, \\mathbf{x}]}$。",
+      "intuitive_explanation": "内积是向量之间的一种运算，结果是一个标量；长度是向量的模长。"
+    },
+    {
+      "id": "CH5_DEF_02",
+      "concept_zh": "正交（垂直）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["内积"],
+      "core_content_latex": "当 $[\\mathbf{x}, \\mathbf{y}]=0$ 时，称 $n$ 维向量 $\\mathbf{x}$ 与 $\\mathbf{y}$ 正交。",
+      "intuitive_explanation": "正交性是内积为零的几何体现。"
+    },
+    {
+      "id": "CH5_DEF_03",
+      "concept_zh": "正交矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵", "转置"],
+      "core_content_latex": "如果 $n$ 阶矩阵 $A$ 满足 $A^T A = E$ (单位矩阵)，那么称 $A$ 为正交矩阵，简称正交阵。",
+      "intuitive_explanation": "正交矩阵的充要条件是其列向量都是单位向量，且两两正交。"
+    },
+    {
+      "id": "CH5_DEF_04",
+      "concept_zh": "特征值与特征向量",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵"],
+      "core_content_latex": "设 $A$ 是 $n$ 阶方阵，如果数 $\\lambda$ 和非零向量 $\\mathbf{x}$ 使关系式 $A\\mathbf{x} = \\lambda \\mathbf{x}$ 成立，那么数 $\\lambda$ 称为矩阵 $A$ 的特征值，非零向量 $\\mathbf{x}$ 称为 $A$ 的对应于 $\\lambda$ 的特征向量。",
+      "intuitive_explanation": "特征向量在经过线性变换（矩阵 $A$）后，方向不变或反向，只是长度被 $\\lambda$ 倍缩放。"
+    },
+    {
+      "id": "CH5_DEF_05",
+      "concept_zh": "相似矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["可逆矩阵"],
+      "core_content_latex": "设 $A, B$ 都是 $n$ 阶方阵，若存在可逆矩阵 $P$，使 $P^{-1}AP=B$，则称 $A$ 与 $B$ 相似，记作 $A \\sim B$。",
+      "intuitive_explanation": "相似关系意味着 $A$ 和 $B$ 代表同一个线性变换在不同基下的矩阵表示。"
+    },
+    {
+      "id": "CH5_THM_06",
+      "concept_zh": "相似矩阵的性质",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["相似矩阵"],
+      "core_content_latex": "若 $n$ 阶矩阵 $A$ 与 $B$ 相似，则 $A$ 与 $B$ 有相同的特征多项式，从而有相同的特征值。",
+      "intuitive_explanation": "相似矩阵具有相同的特征，如秩、行列式、特征值等。"
+    },
+    {
+      "id": "CH5_THM_07",
+      "concept_zh": "可对角化定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["特征向量"],
+      "core_content_latex": "$n$ 阶矩阵 $A$ 与对角矩阵相似（即 $A$ 能对角化）的充分必要条件是 $A$ 有 $n$ 个线性无关的特征向量。",
+      "intuitive_explanation": "如果 $A$ 能对角化，则相似变换矩阵 $P$ 的列向量即为 $A$ 的 $n$ 个线性无关的特征向量。"
+    },
+    {
+      "id": "CH5_THM_08",
+      "concept_zh": "对称矩阵对角化定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对称矩阵", "正交矩阵"],
+      "core_content_latex": "设 $A$ 是 $n$ 阶对称矩阵，则必有正交矩阵 $P$，使 $P^{-1}AP = P^T A P = \\Lambda$ ($\\Lambda$ 是以 $A$ 的 $n$ 个特征值为对角元的对角矩阵)。",
+      "intuitive_explanation": "对称矩阵总是可以对角化的，且可以通过正交变换实现对角化，这意味着其特征向量总是可以找到一组规范正交基。"
+    },
+    {
+      "id": "CH5_DEF_09",
+      "concept_zh": "二次型",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["多元多项式"],
+      "core_content_latex": "含有 $n$ 个变量 $x_1, x_2, \\dots, x_n$ 的二次齐次多项式 $f(x_1, x_2, \\dots, x_n) = \\sum_{i=1}^n \\sum_{j=1}^n a_{ij} x_i x_j$ 称为二次型。",
+      "intuitive_explanation": "二次型可以表示为矩阵形式 $f = \\mathbf{x}^T A \\mathbf{x}$，其中 $A$ 为对称矩阵。"
+    },
+    {
+      "id": "CH5_THM_10",
+      "concept_zh": "二次型化标准形定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对称矩阵对角化"],
+      "core_content_latex": "任给二次型 $f(\\mathbf{x})=\\mathbf{x}^T A \\mathbf{x}$，总有正交变换 $\\mathbf{x}=P\\mathbf{y}$，使 $f$ 化为标准形 $f = \\lambda_1 y_1^2 + \\lambda_2 y_2^2 + \\dots + \\lambda_n y_n^2$。",
+      "intuitive_explanation": "利用对称矩阵的性质，通过正交变换可以将二次型化为只包含平方项的标准形式，其中 $\\lambda_i$ 是矩阵 $A$ 的特征值。"
+    },
+    {
+      "id": "CH5_DEF_11",
+      "concept_zh": "正定二次型",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["二次型"],
+      "core_content_latex": "设二次型 $f(\\mathbf{x})=\\mathbf{x}^T A \\mathbf{x}$，如果对任何 $\\mathbf{x} \\ne 0$ 都有 $f(\\mathbf{x}) > 0$，则称 $f$ 为正定二次型，并称对称矩阵 $A$ 是正定的。",
+      "intuitive_explanation": "正定二次型在几何上对应着椭球体。"
+    },
+    {
+      "id": "CH5_THM_12",
+      "concept_zh": "正定判别定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["特征值", "主子式"],
+      "core_content_latex": "对称矩阵 $A$ 为正定的充分必要条件是 $A$ 的所有特征值全为正，或 $A$ 的各阶主子式都为正。",
+      "intuitive_explanation": "这是判断二次型正定性的两种常用方法 (特征值法或顺序主子式法)。"
+    },
+     {
+      "id": "CH5_DEF_13_Inner",
+      "concept_zh": "向量内积与长度",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["向量"],
+      "core_content_latex": " $n$ 维列向量 $\\mathbf{x}$ 与 $\\mathbf{y}$ 的内积定义为 $[\\mathbf{x}, \\mathbf{y}] = \\mathbf{x}^T \\mathbf{y} = \\sum_{i=1}^n x_i y_i$。向量 $\\mathbf{x}$ 的长度为 $|\\mathbf{x}| = \\sqrt{[\\mathbf{x}, \\mathbf{x}]}$ [95-98]。",
+      "intuitive_explanation": "内积可用于计算向量的长度和夹角。长度为 1 的向量称为单位向量 [97, 98]。"
+    },
+    {
+      "id": "CH5_DEF_14_Ortho",
+      "concept_zh": "向量正交",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["内积"],
+      "core_content_latex": "当 $[\\mathbf{x}, \\mathbf{y}]=0$ 时，称向量 $\\mathbf{x}$ 与 $\\mathbf{y}$ 正交 [97, 98]。",
+      "intuitive_explanation": "正交即几何上的垂直关系。"
+    },
+    {
+      "id": "CH5_DEF_15_OrthoBasis",
+      "concept_zh": "规范正交基",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["正交", "单位向量"],
+      "core_content_latex": "设 $\\mathbf{e}_1, \\dots, \\mathbf{e}_n$ 是向量空间 $V$ 的一个基，如果 $\\mathbf{e}_i, \\mathbf{e}_j$ 两两正交，且都是单位向量，则称 $\\mathbf{e}_1, \\dots, \\mathbf{e}_n$ 是 $V$ 的一个规范正交基 [99, 100]。",
+      "intuitive_explanation": "规范正交基具有良好的计算性质，可用于简化坐标计算。"
+    },
+    {
+      "id": "CH5_ALG_16_GS",
+      "concept_zh": "施密特正交化过程",
+      "type": "方法",
+      "knowledge_type": "Algorithm",
+      "prerequisite": ["内积"],
+      "core_content_latex": "将线性无关向量组 $\\mathbf{a}_1, \\dots, \\mathbf{a}_r$ 转化为正交向量组 $\\mathbf{b}_1, \\dots, \\mathbf{b}_r$ 的过程 [101, 102]。 $\\mathbf{b}_1 = \\mathbf{a}_1; \\mathbf{b}_k = \\mathbf{a}_k - \\sum_{j=1}^{k-1} \\frac{[\\mathbf{a}_k, \\mathbf{b}_j]}{[\\mathbf{b}_j, \\mathbf{b}_j]} \\mathbf{b}_j$ ($k=2, \\dots, r$)。",
+      "intuitive_explanation": "该方法用于构造正交基。"
+    },
+    {
+      "id": "CH5_DEF_17_OrthogonalMatrix",
+      "concept_zh": "正交矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵", "转置"],
+      "core_content_latex": "如果 $n$ 阶矩阵 $A$ 满足 $A^T A = E$，则称 $A$ 为正交矩阵 [103, 104]。",
+      "intuitive_explanation": "方阵 $A$ 为正交矩阵的充要条件是 $A$ 的列向量是单位向量且两两正交 [105, 106]。"
+    },
+    {
+      "id": "CH5_DEF_18_Eigen",
+      "concept_zh": "特征值与特征向量",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["方阵"],
+      "core_content_latex": "设 $A$ 是 $n$ 阶方阵，如果数 $\\lambda$ 和非零向量 $\\mathbf{x}$ 使 $A\\mathbf{x} = \\lambda \\mathbf{x}$ 成立， $\\lambda$ 称为 $A$ 的特征值， $\\mathbf{x}$ 称为 $A$ 的对应于 $\\lambda$ 的特征向量 [107, 108]。",
+      "intuitive_explanation": "特征向量在 $A$ 变换下只发生伸缩，不改变方向。"
+    },
+    {
+      "id": "CH5_THM_19_CharPoly",
+      "concept_zh": "特征方程",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["特征值"],
+      "core_content_latex": "矩阵 $A$ 的特征值是其特征方程 $|A-\\lambda E| = 0$ 的根。 $|A-\\lambda E|$ 称为 $A$ 的特征多项式 [107, 108]。",
+      "intuitive_explanation": "求解特征方程是求特征值的关键步骤。"
+    },
+    {
+      "id": "CH5_DEF_20_Similar",
+      "concept_zh": "相似矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["可逆矩阵"],
+      "core_content_latex": "设 $A, B$ 都是 $n$ 阶方阵，若存在可逆矩阵 $P$，使 $P^{-1}AP=B$，则称 $A$ 与 $B$ 相似 [109, 110]。",
+      "intuitive_explanation": "相似矩阵具有相同的特征值 [109, 110]。"
+    },
+    {
+      "id": "CH5_THM_21_Diagonalize",
+      "concept_zh": "矩阵可对角化充要条件",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["相似矩阵", "特征向量"],
+      "core_content_latex": " $n$ 阶矩阵 $A$ 与对角矩阵相似（能对角化）的充分必要条件是 $A$ 有 $n$ 个线性无关的特征向量 [111, 112]。",
+      "intuitive_explanation": "线性无关的特征向量构成了相似变换矩阵 $P$ 的列向量。"
+    },
+    {
+      "id": "CH5_THM_22_Sym_Diagonalize",
+      "concept_zh": "对称矩阵对角化定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["对称矩阵", "正交矩阵"],
+      "core_content_latex": "设 $A$ 是 $n$ 阶对称矩阵，则必存在正交矩阵 $P$，使 $P^{-1}AP = P^T A P = \\Lambda$ 为对角矩阵 [113, 114]。",
+      "intuitive_explanation": "对称矩阵总是可以通过正交变换对角化，其特征向量总是可以找到一组规范正交基。"
+    },
+    {
+      "id": "CH5_DEF_23_QF",
+      "concept_zh": "二次型",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["多元多项式"],
+      "core_content_latex": " $n$ 个变量 $x_1, \\dots, x_n$ 的二次齐次多项式 $f(x_1, \\dots, x_n) = \\sum_{i=1}^n \\sum_{j=1}^n a_{ij} x_i x_j$ 称为二次型 [115, 116]。二次型可记作矩阵形式 $f = \\mathbf{x}^T A \\mathbf{x}$，其中 $A$ 为对称矩阵 [117, 118]。",
+      "intuitive_explanation": "二次型用于研究二阶曲线、曲面的几何性质。"
+    },
+    {
+      "id": "CH5_DEF_24_Positive",
+      "concept_zh": "正定二次型",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["二次型"],
+      "core_content_latex": "如果对任何 $\\mathbf{x} \\ne 0$ 都有 $f(\\mathbf{x}) > 0$，则称二次型 $f$ 为正定二次型，矩阵 $A$ 是正定的 [119, 120]。",
+      "intuitive_explanation": "正定性是多元函数取极小值的重要条件。"
+    },
+    {
+      "id": "CH6_DEF_01",
+      "concept_zh": "线性空间（抽象）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["八条运算规律"],
+      "core_content_latex": "设 $V$ 是一个非空集合， $\\mathbb{R}$ 为实数域。如果对于 $V$ 中任意元素定义了加法和数乘运算，并满足八条运算规律，则称 $V$ 为线性空间（或向量空间）。",
+      "intuitive_explanation": "线性空间是向量概念的抽象推广，不要求元素必须是 $n$ 维向量，如多项式集合、函数集合等也可以是线性空间。"
+    },
+    {
+      "id": "CH6_DEF_02",
+      "concept_zh": "线性空间基与维数",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关", "线性表示"],
+      "core_content_latex": "设 $V$ 为线性空间，如果存在 $n$ 个元素 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n \\in V$ 满足 (i) $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 线性无关；(ii) $V$ 中任一元素都可由 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 线性表示。那么 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 称为向量空间 $V$ 的一个基， $n$ 称为维数。",
+      "intuitive_explanation": "在线性空间中，基的作用类似于坐标系中的坐标轴。"
+    },
+    {
+      "id": "CH6_DEF_03",
+      "concept_zh": "线性变换",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["映射"],
+      "core_content_latex": "设 $T$ 是从线性空间 $V$ 到 $U$ 的一个映射，如果对任给的 $\\mathbf{\\alpha}, \\mathbf{\\beta} \\in V, \\lambda \\in \\mathbb{R}$ 满足 (i) $T(\\mathbf{\\alpha} + \\mathbf{\\beta}) = T(\\mathbf{\\alpha}) + T(\\mathbf{\\beta})$; (ii) $T(\\lambda \\mathbf{\\alpha}) = \\lambda T(\\mathbf{\\alpha})$，则称 $T$ 为线性变换。",
+      "intuitive_explanation": "线性变换保持了向量的加法和数乘运算，如微分运算 $D$ 是一个线性变换。"
+    },
+    {
+      "id": "CH6_EX_04",
+      "concept_zh": "线性变换（几何意义）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["矩阵乘法"],
+      "core_content_latex": "用矩阵 $A=\\begin{pmatrix} \\cos \\varphi & -\\sin \\varphi \\ \\sin \\varphi & \\cos \\varphi \\end{pmatrix}$ 左乘向量 $\\mathbf{x}=(x, y)^T$，说明变换 $T$ 的几何意义。",
+      "intuitive_explanation": "该矩阵 $A$ 对应着将 $xOy$ 平面上的向量以原点为中心逆时针旋转 $\\varphi$ 角的旋转变换。"
+    },
+    {
+      "id": "CH6_DEF_05",
+      "concept_zh": "线性变换的核与像",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性变换"],
+      "core_content_latex": "设 $T$ 是线性变换， $T$ 的像空间 $T(V)$ 称为线性变换的像； $S_T = \\{\\mathbf{\\alpha} \\in V \\mid T(\\mathbf{\\alpha}) = 0\\}$ 称为线性变换 $T$ 的核。",
+      "intuitive_explanation": "核 $S_T$ 是齐次线性方程组 $A\\mathbf{x}=0$ 的解空间。"
+    },
+    {
+      "id": "CH6_DEF_06",
+      "concept_zh": "线性变换的矩阵表示",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["基与坐标"],
+      "core_content_latex": "设 $T$ 是 $n$ 维线性空间 $V$ 上的线性变换，在基 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 下， $T$ 的矩阵表示式 $A$ 满足 $T(\\mathbf{a}_1, \\dots, \\mathbf{a}_n) = (\\mathbf{a}_1, \\dots, \\mathbf{a}_n)A$。 $A$ 称为线性变换 $T$ 在基 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 下的矩阵。",
+      "intuitive_explanation": "矩阵 $A$ 的第 $j$ 列是 $T(\\mathbf{a}_j)$ 在基 $\\mathbf{a}_1, \\dots, \\mathbf{a}_n$ 下的坐标。"
+    },
+    {
+      "id": "CH6_EX_07",
+      "concept_zh": "线性变换（投影）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["矩阵表示"],
+      "core_content_latex": "在 $R^3$ 中， $T$ 表示将向量投影到 $xOy$ 平面的线性变换，求 $T$ 的矩阵。",
+      "intuitive_explanation": "该变换将 $(x, y, z)$ 变为 $(x, y, 0)$，在标准基下的矩阵为 $\\begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 0 \\end{pmatrix}$。"
+    },
+    {
+      "id": "CH6_THM_08",
+      "concept_zh": "线性变换矩阵与相似关系",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["相似矩阵"],
+      "core_content_latex": "设 $T$ 是线性空间 $V$ 上的线性变换，在两组基 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 和 $\\mathbf{\\beta}_1, \\dots, \\mathbf{\\beta}_n$ 下的矩阵依次为 $A$ 和 $B$，则 $B$ 与 $A$ 相似，且 $B = P^{-1}AP$，其中 $P$ 为从基 $\\mathbf{\\alpha}_i$ 到基 $\\mathbf{\\beta}_i$ 的过渡矩阵。",
+      "intuitive_explanation": "同一个线性变换在不同基下的矩阵表示是相似的。"
+    },
+    {
+      "id": "CH6_EX_09",
+      "concept_zh": "基变换与坐标变换（多项式）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["基变换公式"],
+      "core_content_latex": "在多项式空间 $P[x]$ 中取两个基，求坐标变换公式。",
+      "intuitive_explanation": "将多项式看作向量，求出过渡矩阵 $P$，然后使用坐标变换公式 $\\mathbf{x}=P\\mathbf{x}'$。"
+    },
+    {
+      "id": "CH6_EX_10",
+      "concept_zh": "线性空间的基（验证）",
+      "type": "习题",
+      "knowledge_type": "Exercise",
+      "prerequisite": ["线性无关", "生成空间"],
+      "core_content_latex": "求 2 阶矩阵的全体 $S_1$ 和对角线上元素等于 0 的 2 阶矩阵的全体 $S_2$ 的线性空间的基。",
+      "intuitive_explanation": "验证这些集合是否构成线性空间，并找到其生成基。"
+    },
+    {
+      "id": "CH6_EX_11",
+      "concept_zh": "线性变换的核与像（计算）",
+      "type": "习题",
+      "knowledge_type": "Exercise",
+      "prerequisite": ["核与像的定义"],
+      "core_content_latex": "已知线性变换 $T(\\mathbf{x})=A\\mathbf{x}$，求 $T$ 的核和像空间的维数。",
+      "intuitive_explanation": "核的维数 $\\dim(S_T) = n - R(A)$；像的维数 $\\dim(T(V)) = R(A)$。"
+    },
+    {
+      "id": "CH6_DEF_13_Space",
+      "concept_zh": "线性空间（抽象定义）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["集合", "八条运算规律"],
+      "core_content_latex": "设 $V$ 是一个非空集合， $V$ 上的元素定义了加法和数乘运算，且满足八条运算规律，则称 $V$ 为线性空间 [121, 122]。",
+      "intuitive_explanation": "线性空间将 $n$ 维向量的概念推广到抽象元素集合，如多项式集合、函数集合等 [123, 124]。"
+    },
+    {
+      "id": "CH6_DEF_14_Basis",
+      "concept_zh": "线性空间的基与维数",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性无关"],
+      "core_content_latex": "线性空间 $V$ 中，满足线性无关且可线性表示 $V$ 中所有元素的 $n$ 个元素 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 称为 $V$ 的一个基， $n$ 称为维数 [125, 126]。",
+      "intuitive_explanation": "维数决定了线性空间的规模，是其本质特征。"
+    },
+    {
+      "id": "CH6_DEF_15_Coordinate",
+      "concept_zh": "坐标",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["基"],
+      "core_content_latex": "设 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 为线性空间 $V$ 的一个基，对于任一元素 $\\mathbf{\\alpha} \\in V$，总有唯一的有序数组 $x_1, \\dots, x_n$ 使 $\\mathbf{\\alpha} = x_1 \\mathbf{\\alpha}_1 + \\dots + x_n \\mathbf{\\alpha}_n$，则该有序数组称为元素 $\\mathbf{\\alpha}$ 在基 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 中的坐标 [127, 128]。",
+      "intuitive_explanation": "将抽象空间中的元素转化为 $\\mathbb{R}^n$ 中的坐标向量进行计算。"
+    },
+    {
+      "id": "CH6_DEF_16_L_Trans",
+      "concept_zh": "线性变换",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["映射"],
+      "core_content_latex": "设 $T$ 是从线性空间 $V$ 到 $U$ 的一个映射，如果 $T$ 满足 $T(\\mathbf{\\alpha} + \\mathbf{\\beta}) = T(\\mathbf{\\alpha}) + T(\\mathbf{\\beta})$ 和 $T(\\lambda \\mathbf{\\alpha}) = \\lambda T(\\mathbf{\\alpha})$，则称 $T$ 为线性变换 [129-132]。",
+      "intuitive_explanation": "线性变换保持了向量的线性组合关系。"
+    },
+    {
+      "id": "CH6_DEF_17_Image_Kernel",
+      "concept_zh": "线性变换的核与像",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性变换"],
+      "core_content_latex": "线性变换 $T$ 的像空间 $T(V)$ 称为 $T$ 的像，由 $V$ 中所有元素被 $T$ 映射后得到的集合组成 [133, 134]。 $S_T = \\{\\mathbf{\\alpha} \\in V \\mid T(\\mathbf{\\alpha}) = 0\\}$ 称为 $T$ 的核 [133, 134]。",
+      "intuitive_explanation": "核是 $V$ 中被 $T$ 映射到零向量的元素的集合，像 $T(V)$ 是变换后 $U$ 中的子空间。"
+    },
+    {
+      "id": "CH6_DEF_18_Matrix_Rep",
+      "concept_zh": "线性变换的矩阵表示",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["基与坐标"],
+      "core_content_latex": "在线性空间 $V$ 的基 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 下，线性变换 $T$ 的矩阵 $A$ 满足 $T(\\mathbf{\\alpha}) = A \\mathbf{x}$ (按坐标表示)，其中 $A$ 的第 $j$ 列是 $T(\\mathbf{\\alpha}_j)$ 在该基下的坐标 [135, 136]。",
+      "intuitive_explanation": "矩阵 $A$ 是线性变换在特定基下的坐标运算工具。"
+    },
+    {
+      "id": "CH6_THM_19_Similarity",
+      "concept_zh": "线性变换矩阵相似关系",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["基变换", "相似矩阵"],
+      "core_content_latex": "同一线性变换 $T$ 在两组基下的矩阵 $A$ 和 $B$ 相似， $B = P^{-1}AP$，其中 $P$ 是基之间的过渡矩阵 [137, 138]。",
+      "intuitive_explanation": "这表明相似矩阵对应着同一个线性变换在不同坐标系下的表示。"
+    },
+    {
+      "id": "CH6_DEF_20_Rank",
+      "concept_zh": "线性变换的秩与零度",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["矩阵的秩"],
+      "core_content_latex": "线性变换 $T$ 的像空间 $T(V)$ 的维数，称为线性变换 $T$ 的秩，记作 $R_T$。 $R_T$ 等于 $T$ 的矩阵 $A$ 的秩 $R(A)$ [137-140]。",
+      "intuitive_explanation": "秩表示了线性变换后空间 '生成' 的维数。"
+    },
+    {
+      "id": "CH6_DEF_21_Nullity",
+      "concept_zh": "线性变换的核的维数（零度）",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["核空间"],
+      "core_content_latex": "线性变换 $T$ 的核 $S_T$ 的维数称为 $T$ 的零度。显然，若 $T$ 的矩阵 $A$ 为 $n$ 阶矩阵，$T$ 的秩为 $r$，则 $T$ 的核的维数为 $n-r$ [139, 140]。",
+      "intuitive_explanation": "零度表示被映射到零向量的元素的维数，即 $T$ 损失的维度。"
+    },
+    {
+      "id": "CH6_EX_22_Rotation",
+      "concept_zh": "线性变换的几何意义（旋转）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["矩阵乘法"],
+      "core_content_latex": "矩阵 $A = \\begin{pmatrix} \\cos \\varphi & -\\sin \\varphi \\ \\sin \\varphi & \\cos \\varphi \\end{pmatrix}$ 对应的线性变换 $T$ 是将向量 $\\vec{OP}$ 绕原点逆时针旋转 $\\varphi$ 角的旋转变换 [133, 134]。",
+      "intuitive_explanation": "通过极坐标可以将矩阵乘法的结果解释为几何旋转。"
+    },
+    {
+      "id": "CH6_EX_23_Projection",
+      "concept_zh": "线性变换的几何意义（投影）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["矩阵乘法"],
+      "core_content_latex": "矩阵 $A = \\begin{pmatrix} 1 & 0 \\ 0 & 0 \\end{pmatrix}$ 对应的线性变换 $T$ 是将向量投影到 $x$ 轴上的投影变换 [27, 28]。",
+      "intuitive_explanation": "投影是一种非可逆的线性变换。"
+    },
+    {
+      "id": "CH6_EX_24_Differential",
+      "concept_zh": "线性变换（微分算子）",
+      "type": "例题",
+      "knowledge_type": "Example",
+      "prerequisite": ["微分"],
+      "core_content_latex": "在多项式空间 $P[x]$ 中，微分算子 $D$ 是一个线性变换 [131, 132]。",
+      "intuitive_explanation": "微分运算满足线性性质 $D(p+q)=Dp+Dq$ 和 $D(\\lambda p) = \\lambda Dp$。"
+    },
+    {
+      "id": "CH6_DEF_25_Homomorphism",
+      "concept_zh": "线性空间同构",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["线性变换", "双射"],
+      "core_content_latex": "设 $V$ 与 $U$ 是两个线性空间，如果存在一个从 $V$ 到 $U$ 的线性变换 $T$，且 $T$ 是一个双射（即 $T$ 的核只含零向量，且 $T$ 的像等于 $U$），则称 $V$ 与 $U$ 同构 [55, 56]。",
+      "intuitive_explanation": "同构的线性空间具有相同的代数结构，特别是维数相同。"
+    },
+    {
+      "id": "CH6_THM_26_Dimension_Homomorphism",
+      "concept_zh": "线性空间同构的充要条件（维数）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["维数"],
+      "core_content_latex": "有限维线性空间 $V$ 与 $U$ 同构的充分必要条件是 $\\dim(V) = \\dim(U)$。",
+      "intuitive_explanation": "这表明维数是线性空间的本质属性。"
+    },
+    {
+      "id": "CH6_DEF_27_CoordTransMatrix",
+      "concept_zh": "基变换与过渡矩阵",
+      "type": "定义",
+      "knowledge_type": "Definition",
+      "prerequisite": ["基"],
+      "core_content_latex": "设 $\\mathbf{\\alpha}_1, \\dots, \\mathbf{\\alpha}_n$ 和 $\\mathbf{\\beta}_1, \\dots, \\mathbf{\\beta}_n$ 是线性空间 $V$ 的两组基，若 $\\mathbf{\\beta}_j = \\sum_{i=1}^n p_{ij} \\mathbf{\\alpha}_i$ ($j=1, \\dots, n$)，则矩阵 $P=(p_{ij})$ 称为从基 $\\mathbf{\\alpha}_i$ 到基 $\\mathbf{\\beta}_i$ 的过渡矩阵 [55, 56]。",
+      "intuitive_explanation": "过渡矩阵用于实现基坐标的转换。"
+    },
+    {
+      "id": "CH6_THM_28_CoordTransFormula",
+      "concept_zh": "坐标变换公式",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["过渡矩阵"],
+      "core_content_latex": "设 $\\mathbf{x}$ 为元素 $\\mathbf{\\alpha}$ 在旧基下的坐标， $\\mathbf{x}'$ 为 $\\mathbf{\\alpha}$ 在新基下的坐标，则坐标变换公式为 $\\mathbf{x} = P \\mathbf{x}'$，其中 $P$ 是从旧基到新基的过渡矩阵 [55, 56]。",
+      "intuitive_explanation": "注意 $P$ 是 '新基向量在旧基下的坐标' 构成的矩阵。"
+    },
+    {
+      "id": "CH6_THM_29_Rank_Nullity",
+      "concept_zh": "维数定理（秩-零度定理）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["秩", "零度"],
+      "core_content_latex": "设 $T$ 是 $n$ 维线性空间 $V$ 上的线性变换，则 $V$ 的维数等于 $T$ 的核的维数（零度）与 $T$ 的像的维数（秩）之和，即 $\\dim(V) = \\dim(S_T) + R_T$ [57, 58]。",
+      "intuitive_explanation": "该定理量化了线性变换过程中维度的损失 ($S_T$) 和保留 ($T(V)$)。"
+    },
+    {
+      "id": "CH6_THM_30_L_Trans_Matrix",
+      "concept_zh": "线性变换的可对角化（特征向量）",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["特征向量"],
+      "core_content_latex": "线性变换 $T$ 可由对角矩阵表示的充分必要条件是 $T$ 存在 $n$ 个线性无关的特征向量。",
+      "intuitive_explanation": "这与矩阵对角化的条件完全一致，是线性变换与矩阵表示的对应关系。"
+    },
+    {
+      "id": "CH6_EX_12",
+      "concept_zh": "维数定理",
+      "type": "定理",
+      "knowledge_type": "Theorem",
+      "prerequisite": ["线性变换的核与像"],
+      "core_content_latex": "设 $T$ 是 $n$ 维线性空间 $V$ 到 $U$ 的线性变换，则 $\\dim(V) = \\dim(S_T) + \\dim(T(V))$。",
+      "intuitive_explanation": "该定理指出，原空间的维数等于核空间的维数（零度）与像空间的维数（秩）之和。"
+    }
+  ]
+
