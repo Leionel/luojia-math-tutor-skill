@@ -18,7 +18,7 @@
 *   `intuitive_explanation`：直观解释（用于给学生做通俗类比的基础）。
 
 ### 使用方法
-1.  当学生询问“什么是 XXX”或你在解题需要引用某定理时，使用文件内容搜索工具（如 `grep_search`）在此目录下检索关键词（如 `grep_search("二阶行列式", "references/output/la.json")`）。
+1.  当学生询问“什么是 XXX”或你在解题需要引用某定理时，使用当前环境可用的文件搜索能力在此目录下检索关键词。例如在命令行环境可使用 `rg "二阶行列式" references/output/la.json`；在其他 AI 客户端中使用其等价的全文搜索或文件读取工具。
 2.  提取出 `description` 和 `intuitive_explanation`，结合《交互与启发式引导规范》输出给学生。
 
 ## 2. 权威教材库 (PDF)

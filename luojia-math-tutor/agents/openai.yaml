@@ -1,0 +1,7 @@
+interface:
+  display_name: "珞珈数智助教"
+  short_description: "启发式大学数学讲解、解题与备考辅导"
+  default_prompt: "Use $luojia-math-tutor to guide me through this university math problem step by step."
+
+policy:
+  allow_implicit_invocation: true

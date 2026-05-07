@@ -34,11 +34,13 @@
 npx github:Leionel/luojia-math-tutor-skill
 ```
 
+初始化器会先确认 `luojia-math-tutor/` 知识库可用，再写入对应 AI 工具的配置文件，避免出现“配置已写入但知识库不存在”的半安装状态。
+
 ### 2. 手动配置方案
 
 #### **方案 A：针对 Claude Code / Gemini CLI**
 在项目根目录创建或编辑配置文件，添加以下核心指令：
-- **Gemini CLI**: `gemini install luojia-math-tutor.skill` (直接安装打包好的包)
+- **Gemini CLI**: 将本仓库克隆到项目目录后，在 Gemini 的项目指令中引用 `luojia-math-tutor/SKILL.md`。
 - **Claude Code**: 在对话开始前，直接将 `luojia-math-tutor/SKILL.md` 的内容粘贴为 System Prompt，或在项目说明中指定：
   > "请严格遵循 ./luojia-math-tutor/SKILL.md 中的助教工作流进行所有数学问题的解答。"
 
@@ -50,6 +52,8 @@ npx github:Leionel/luojia-math-tutor-skill
 2. 解题时，必须优先检索 ./luojia-math-tutor/references/ 下 a JSON/PDF 知识库。
 3. 严格执行“思路提示 -> 代码验算 -> 分步提问”的工作流。
 ```
+
+> 注：不同 AI 客户端的文件搜索、绘图、Python 执行能力不同。本 skill 的指令已按“可用工具优先、不可用则降级说明”的原则编写。
 
 ---
 
@@ -67,10 +71,27 @@ npx github:Leionel/luojia-math-tutor-skill
 
 ## 📂 项目结构 (大脑组成)
 - `luojia-math-tutor/SKILL.md`: **核心大脑**。包含了所有的人设约束、工作流和输出模板。
+- `luojia-math-tutor/agents/openai.yaml`: Codex / OpenAI 侧的展示信息与默认调用提示。
 - `luojia-math-tutor/references/`: 
   - `output/`: 结构化知识库 (GS/LA/Proba)。
   - `math-tools-guidelines.md`: 规范 AI 如何使用 Python 工具。
   - `interactive-tutoring.md`: 规范 AI 如何进行启发式提问。
+
+---
+
+## ✅ 质量检查
+
+```bash
+npm test
+```
+
+该命令会校验 `references/output/` 下的 JSON 知识库是否都能被正常解析，避免检索或结构化读取时中断。
+
+---
+
+## ⚖️ 许可与资源说明
+
+本仓库中的代码、脚本与 skill 指令文本采用 MIT License。`references/textbook/` 下的教材 PDF 仅作为本地学习参考资源，请在拥有合法使用权的前提下使用；若要再分发或公开发布，请自行确认对应教材、出版社或作者授权。建议发布 npm 包时只发布初始化器、skill 指令与结构化 JSON/Markdown 资源，避免将大体积或授权不明确的教材文件打入包体。
 
 ---
 

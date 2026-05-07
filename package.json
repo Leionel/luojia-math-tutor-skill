@@ -6,8 +6,18 @@
   "bin": {
     "luojia-math-init": "bin/init.js"
   },
+  "files": [
+    "bin/",
+    "scripts/",
+    "luojia-math-tutor/SKILL.md",
+    "luojia-math-tutor/agents/",
+    "luojia-math-tutor/references/*.md",
+    "luojia-math-tutor/references/output/*.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/validate-json.js"
   },
   "keywords": [
     "math",
@@ -17,5 +27,13 @@
     "gemini"
   ],
   "author": "Luojia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leionel/luojia-math-tutor-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Leionel/luojia-math-tutor-skill/issues"
+  },
+  "homepage": "https://github.com/Leionel/luojia-math-tutor-skill#readme",
   "license": "MIT"
 }
