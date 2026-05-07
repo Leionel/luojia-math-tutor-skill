@@ -1,0 +1,21 @@
+{
+  "name": "luojia-math-tutor-init",
+  "version": "1.0.0",
+  "description": "珞珈数智助教 - 全平台数学 AI 助教初始化工具",
+  "main": "bin/init.js",
+  "bin": {
+    "luojia-math-init": "bin/init.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "math",
+    "ai",
+    "claude",
+    "cursor",
+    "gemini"
+  ],
+  "author": "Luojia",
+  "license": "MIT"
+}
