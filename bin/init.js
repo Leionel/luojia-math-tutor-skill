@@ -16,15 +16,16 @@ console.log('此工具将帮助您在当前项目中快速接入硬核数学 AI 
 const repoUrl = 'https://github.com/Leionel/luojia-math-tutor-skill.git';
 const repoPath = 'luojia-math-tutor';
 
-const cursorRulesContent = `
+const cursorRulesContent = \`
 # 珞珈助教激活指令
 
-1. 立即读取并内化本项目中 \`${repoPath}/SKILL.md\` 的人设与行为准则。
-2. 解题时，必须优先检索 \`${repoPath}/references/\` 下的 JSON/PDF 知识库。
+1. 立即读取并内化本项目中 \\\`\${repoPath}/SKILL.md\\\` 的人设与行为准则。
+2. 解题时，必须优先检索 \\\`\${repoPath}/references/\\\` 下的 JSON/PDF 知识库。
 3. 严格执行“思路提示 -> 代码验算 -> 分步提问”的工作流。
 4. 开启数学建模或特训模式时，严格遵循指定的输出模板。
-5. 若本地不存在 \`${repoPath}\` 目录，请提示用户从 ${repoUrl} 克隆。
-`;
+5. 本项目支持跨技能联动。遇到文献检索、学术配图或深度建模需求时，将自动激活相应的专业技能范式（如 Real Literature Trace, Academic Figure Prompt, math-modeling）。
+6. 若本地不存在 \\\`\${repoPath}\\\` 目录，请提示用户从 \${repoUrl} 克隆。
+\`;
 
 const claudeCodeContent = {
   "instructions": `请严格遵循当前目录下 ${repoPath}/SKILL.md 中的助教工作流进行所有数学问题的解答。支持考研特训与数学建模模式。若该目录不存在，请提示用户从 ${repoUrl} 克隆。`

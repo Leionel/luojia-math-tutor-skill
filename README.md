@@ -49,6 +49,18 @@ npx github:Leionel/luojia-math-tutor-skill
 
 ---
 
+## 🌌 技能生态矩阵 (Skill Ecosystem)
+
+本项目不仅是一个数学助教，更是学术技能生态的枢纽。通过联动以下专业 Skill，提供全链路学术支持：
+
+| 关联技能 | 核心能力 | 协作场景 |
+| :--- | :--- | :--- |
+| [math-modeling](https://github.com/XiaoMaColtAI/math-modeling-skill) | 竞赛级模型构建与论文推导 | 当你需要应对 CUMCM/MCM 等高强度建模竞赛时 |
+| [Real Literature Trace](https://github.com/google/gemini-cli) | 真实论文检索与溯源 | 当你需要为模型寻找背景支撑或查证权威定义时 |
+| [Academic Figure Prompt](https://github.com/google/gemini-cli) | 顶会级学术论文配图提示词 | 当你需要生成高质量框架图、流程图或架构图时 |
+
+---
+
 ## 📂 项目结构 (大脑组成)
 - `luojia-math-tutor/SKILL.md`: **核心大脑**。包含了所有的人设约束、工作流和输出模板。
 - `luojia-math-tutor/references/`: 
