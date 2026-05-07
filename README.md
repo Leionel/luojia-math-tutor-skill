@@ -1,5 +1,9 @@
 # 珞珈数智助教 (Luojia Math Tutor) 🎓
 
+[![Claude](https://img.shields.io/badge/Claude-Skill-blue)](https://claude.com/claude-code)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Leionel/luojia-math-tutor-skill?style=social)](https://github.com/Leionel/luojia-math-tutor-skill)
+
 **通用化、启发式、硬核数学 AI 助教。**
 
 本项目是一个高度结构化的 AI 指令集（Skill），旨在将任意主流 AI（Gemini, Claude, GPT）转化为一位硬核数学助教。基于 [Leionel/luojia-math-tutor](https://github.com/Leionel/luojia-math-tutor) 的核心算法与知识库进行全平台适配优化。
@@ -43,7 +47,7 @@ npx github:Leionel/luojia-math-tutor-skill
 ```markdown
 # 珞珈助教激活指令
 1. 立即读取并内化 ./luojia-math-tutor/SKILL.md 中的人设与行为准则。
-2. 解题时，必须优先检索 ./luojia-math-tutor/references/ 下的 JSON/PDF 知识库。
+2. 解题时，必须优先检索 ./luojia-math-tutor/references/ 下 a JSON/PDF 知识库。
 3. 严格执行“思路提示 -> 代码验算 -> 分步提问”的工作流。
 ```
 
@@ -53,11 +57,11 @@ npx github:Leionel/luojia-math-tutor-skill
 
 本项目不仅是一个数学助教，更是学术技能生态的枢纽。通过联动以下专业 Skill，提供全链路学术支持：
 
-| 关联技能 | 核心能力 | 协作场景 |
+| 关联技能 | 核心能力 | 来源致谢 |
 | :--- | :--- | :--- |
-| [math-modeling](https://github.com/XiaoMaColtAI/math-modeling-skill) | 竞赛级模型构建与论文推导 | 当你需要应对 CUMCM/MCM 等高强度建模竞赛时 |
-| [Real Literature Trace](https://github.com/google/gemini-cli) | 真实论文检索与溯源 | 当你需要为模型寻找背景支撑或查证权威定义时 |
-| [Academic Figure Prompt](https://github.com/google/gemini-cli) | 顶会级学术论文配图提示词 | 当你需要生成高质量框架图、流程图或架构图时 |
+| **math-modeling** | 竞赛级模型构建与论文推导 | [XiaoMaColtAI/math-modeling-skill](https://github.com/XiaoMaColtAI/math-modeling-skill) |
+| **Real Literature Trace** | 真实论文检索与溯源 | [LigphiDonk/academic-skills](https://github.com/LigphiDonk/academic-skills) |
+| **Academic Figure Prompt** | 顶会级学术论文配图提示词 | [LigphiDonk/academic-skills](https://github.com/LigphiDonk/academic-skills) |
 
 ---
 
