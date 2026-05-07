@@ -2,7 +2,9 @@
 
 **通用化、启发式、硬核数学 AI 助教。**
 
-本项目是一个高度结构化的 AI 指令集（Skill），旨在将任意主流 AI（Gemini, Claude, GPT）转化为一位硬核数学助教。无需复杂的服务器配置，通过简单的文件引用即可在全平台适配。
+本项目是一个高度结构化的 AI 指令集（Skill），旨在将任意主流 AI（Gemini, Claude, GPT）转化为一位硬核数学助教。基于 [Leionel/luojia-math-tutor](https://github.com/Leionel/luojia-math-tutor) 的核心算法与知识库进行全平台适配优化。
+
+无需复杂的服务器配置，通过简单的文件引用即可在全平台适配。
 
 ---
 
@@ -36,8 +38,8 @@ npx github:Leionel/luojia-math-tutor-skill
 - **Claude Code**: 在对话开始前，直接将 `luojia-math-tutor/SKILL.md` 的内容粘贴为 System Prompt，或在项目说明中指定：
   > "请严格遵循 ./luojia-math-tutor/SKILL.md 中的助教工作流进行所有数学问题的解答。"
 
-#### **方案 B：针对 Cursor / Windsurf / VSCode Copilot**
-在项目根目录创建 `.cursorrules` (或对应的规则文件)，内容如下：
+#### **方案 B：针对 Cursor / Windsurf / VSCode Copilot / Cline**
+在项目根目录创建 `.cursorrules` (或 `.clinerules`)，内容如下：
 ```markdown
 # 珞珈助教激活指令
 1. 立即读取并内化 ./luojia-math-tutor/SKILL.md 中的人设与行为准则。
@@ -53,6 +55,12 @@ npx github:Leionel/luojia-math-tutor-skill
   - `output/`: 结构化知识库 (GS/LA/Proba)。
   - `math-tools-guidelines.md`: 规范 AI 如何使用 Python 工具。
   - `interactive-tutoring.md`: 规范 AI 如何进行启发式提问。
+
+---
+
+## 🤝 贡献与反馈
+本项目源自对硬核数学教育的热爱，欢迎在 GitHub 上提交 Issue 或 PR，一起完善助教的知识库！
+关联主项目：[Leionel/luojia-math-tutor](https://github.com/Leionel/luojia-math-tutor)
 
 ---
 
