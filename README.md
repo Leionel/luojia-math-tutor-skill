@@ -24,8 +24,8 @@
 ### 1. 自动初始化 (推荐)
 在你的数学学习项目根目录下运行：
 ```bash
-# 自动将本项目指令注入到当前目录的 AI 配置文件中
-npx luojia-math-init --repo https://github.com/your-repo/luojia-math-tutor
+# 自动将本项目指令注入到当前目录的 AI 配置文件中并拉取知识库
+npx github:Leionel/luojia-math-tutor-skill
 ```
 
 ### 2. 手动配置方案
