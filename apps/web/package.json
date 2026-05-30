@@ -1,0 +1,31 @@
+{
+  "name": "luojia-math-tutor-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.40.0",
+    "katex": "^0.16.9",
+    "lucide-react": "^1.16.0",
+    "next": "^14.2.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.6.0",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
+  }
+}

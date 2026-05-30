@@ -17,7 +17,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node scripts/validate-json.js"
+    "test": "node scripts/validate-json.js && python -m pytest apps/api",
+    "test:knowledge": "node scripts/validate-json.js",
+    "test:api": "python -m pytest apps/api",
+    "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
+    "dev:web": "cd apps/web && npm.cmd run dev",
+    "build:web": "cd apps/web && npm.cmd run build",
+    "test:web": "cd apps/web && npm.cmd run build"
   },
   "keywords": [
     "math",

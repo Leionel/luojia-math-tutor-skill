@@ -1,0 +1,18 @@
+[project]
+name = "luojia-math-tutor-api"
+version = "0.1.0"
+description = "FastAPI backend for Luojia Math Tutor MVP"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  "sympy",
+  "httpx",
+  "pytest"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
