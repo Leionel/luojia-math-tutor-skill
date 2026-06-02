@@ -29,7 +29,7 @@ class Settings(BaseModel):
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./luojia_tutor.db")
     llm_provider: str = os.getenv("LLM_PROVIDER", "deepseek")
     llm_base_url: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    llm_api_key: str = os.getenv("LLM_API_KEY", "sk-5fb21dc286524aab8558e739e64dce08")
+    llm_api_key: str = os.getenv("LLM_API_KEY", "")
     llm_model: str = os.getenv("LLM_MODEL", "deepseek-chat")
     allow_user_api_key: bool = os.getenv("ALLOW_USER_API_KEY", "true").lower() == "true"
 
