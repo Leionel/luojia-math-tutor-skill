@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, AlertCircle, Plus, X, Flame, Printer } from "lucide-react";
 import { listUserMistakes, addMistake, generateQuiz, createSession } from "@/lib/api";
+import { KnowledgeGraph } from "@/components/knowledge-graph";
 
 export default function MistakeBookPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function MistakeBookPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const [formData, setFormData] = useState({ subject: "foundations", mistake_code: "", concept: "" });
+  const [activeTab, setActiveTab] = useState<"list" | "tree">("list");
 
   const refresh = () => {
     setLoading(true);
@@ -77,12 +79,33 @@ export default function MistakeBookPage() {
           <h1 className="text-3xl font-bold mb-4 font-mono">
             LOGIC <span className="text-rose-500">DEVIATIONS</span>
           </h1>
-          <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed">
+          <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed mb-8">
             Every mistake is an opportunity to refine the architecture of your mathematical understanding. Review your past deviations here.
           </p>
+
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center gap-1 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-subtle)]">
+              <button 
+                onClick={() => setActiveTab("list")}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "list" ? "bg-[var(--bg-card)] shadow-sm text-rose-500" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+              >
+                错题追踪
+              </button>
+              <button 
+                onClick={() => setActiveTab("tree")}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "tree" ? "bg-[var(--bg-card)] shadow-sm text-cyan-500" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+              >
+                技能树谱
+              </button>
+            </div>
+          </div>
         </div>
 
-        {loading ? (
+        {activeTab === "tree" ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <KnowledgeGraph />
+          </div>
+        ) : loading ? (
           <div className="flex justify-center p-12">
             <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
           </div>

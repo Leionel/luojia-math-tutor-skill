@@ -197,6 +197,85 @@ export default function SplashPage() {
           </div>
         </div>
       </section>
+      {/* SECTION 0.5: EPIC UPGRADES (四大史诗级升级) */}
+      <section className="relative z-10 w-full py-24 px-4 bg-[#617a55]/5 dark:bg-[#617a55]/10 border-t border-[#d6d0ba]/30 dark:border-[#3e3f36]/30">
+        <div className="max-w-6xl mx-auto">
+          <motion.div 
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="text-center mb-16"
+          >
+            <motion.h2 variants={fadeUpVariants} className="text-4xl sm:text-5xl font-bold tracking-widest font-title text-[#2a2b26] dark:text-[#e6e4dc] mb-4">
+              史诗进化 / <span className="text-[#617a55]">全新纪元</span>
+            </motion.h2>
+            <motion.p variants={fadeUpVariants} className="text-lg font-body text-[#757a6b] dark:text-[#8d8a7d]">
+              突破维度的四大全新能力，重塑数字学习的交互边界。
+            </motion.p>
+          </motion.div>
+
+          <motion.div 
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 relative"
+          >
+            {/* Upgrade 1 */}
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#617a55] transition-all backdrop-blur-sm">
+              <div className="w-12 h-12 shrink-0 rounded-full bg-[#617a55]/10 flex items-center justify-center">
+                <Video className="w-6 h-6 text-[#617a55]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">语音伴读 (Voice TTS)</h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                  通过正则表达式无损过滤数学公式代码，调用原生接口带来沉浸式的女声流利朗读，让枯燥的推导变得生动。
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Upgrade 2 */}
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#c44a3d] transition-all backdrop-blur-sm">
+              <div className="w-12 h-12 shrink-0 rounded-full bg-[#c44a3d]/10 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-[#c44a3d]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">随堂笔记 (Notes Agent)</h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                  一键从散乱的对话中提炼出结构化的核心考点、推导过程与易错陷阱，并支持原生排版打印与PDF导出。
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Upgrade 3 */}
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#617a55] transition-all backdrop-blur-sm">
+              <div className="w-12 h-12 shrink-0 rounded-full bg-[#617a55]/10 flex items-center justify-center">
+                <Quote className="w-6 h-6 text-[#617a55]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">理科键盘 (Math Keyboard)</h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                  全面进化的虚拟符号面板，微积分、希腊字母一应俱全。告别复杂的代码输入，实现所见即所得的极客输入体验。
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Upgrade 4 */}
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#c44a3d] transition-all backdrop-blur-sm">
+              <div className="w-12 h-12 shrink-0 rounded-full bg-[#c44a3d]/10 flex items-center justify-center">
+                <BrainCircuit className="w-6 h-6 text-[#c44a3d]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">动态技能树 (Knowledge Graph)</h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                  错题本不再是冰冷的列表，而是跨越三大知识谱系的23个核心节点技能树。结合游戏化理念点亮属于你的数理世界观。
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* SECTION 1: WORKFLOW (学习之境 / 耕读流转) */}
       <section className="relative z-10 w-full py-24 px-4 border-t border-[#d6d0ba]/30 dark:border-[#3e3f36]/30">

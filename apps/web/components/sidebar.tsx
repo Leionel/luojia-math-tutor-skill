@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Session } from "@/lib/api";
-import { Edit2, Trash2, Check, X, User } from "lucide-react";
+import { Edit2, Trash2, Check, X, User, Search } from "lucide-react";
 import { deleteSession, renameSession } from "@/lib/api";
 
 export function Sidebar({
@@ -11,15 +11,29 @@ export function Sidebar({
   activeSessionId,
   onSelect,
   onRefresh,
+  searchQuery,
+  onSearchChange,
 }: {
   sessions: Session[];
   activeSessionId: string | null;
   onSelect: (sessionId: string) => void;
   onRefresh?: () => void;
+  searchQuery?: string;
+  onSearchChange?: (val: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+
+  const SUBJECT_MAP: Record<string, string> = {
+    foundations: "基础概念",
+    derivation: "深度推导",
+    problem_solving: "实战解题",
+    auto: "综合会话",
+    calculus: "高等数学",
+    linear_algebra: "线性代数",
+    probability: "概率论"
+  };
 
   const handleRename = async (id: string) => {
     if (!editTitle.trim()) return setEditingId(null);
@@ -47,7 +61,7 @@ export function Sidebar({
             <User className="h-5 w-5" />
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="truncate text-sm font-bold text-[var(--text-primary)] font-body">注册用户 (demo)</span>
+            <span className="truncate text-sm font-bold text-[var(--text-primary)] font-body">珞珈学员</span>
             <span className="text-xs text-[#757a6b] font-body mt-0.5">角色: 学生</span>
           </div>
         </div>
@@ -82,7 +96,24 @@ export function Sidebar({
           </div>
         ))}
       </div>
-      <div className="mb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--text-muted)]">最近会话 (Sessions)</div>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--text-muted)]">最近会话 (Sessions)</div>
+      </div>
+      
+      {onSearchChange && (
+        <div className="mb-3 relative">
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            <Search className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-8 pr-3 py-1.5 border border-[var(--border-subtle)] rounded-md text-[13px] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#617a55] focus:border-[#617a55] transition-colors"
+            placeholder="搜索历史对话内容..."
+            value={searchQuery || ""}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+      )}
       <div className="space-y-1.5 font-body">
         {sessions.map((session) => (
           <div
@@ -126,7 +157,11 @@ export function Sidebar({
                     </button>
                   </div>
                 </div>
-                <div className="text-[11px] opacity-70 mt-0.5">{session.subject}</div>
+                <div className="mt-1.5">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border border-[#617a55]/20 bg-[#617a55]/5 text-[#617a55] dark:border-[#8da47e]/30 dark:bg-[#8da47e]/10 dark:text-[#8da47e]">
+                    {SUBJECT_MAP[session.subject] || session.subject}
+                  </span>
+                </div>
               </>
             )}
           </div>

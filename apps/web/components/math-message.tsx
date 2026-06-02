@@ -4,8 +4,20 @@ import { useState, useEffect } from "react";
 import { LatexRenderer } from "./latex-renderer";
 import { ReviewCard, type ReviewData } from "./review-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw } from "lucide-react";
+import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function cleanMathForSpeech(text: string) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1") // bold
+    .replace(/\*(.*?)\*/g, "$1")     // italic
+    .replace(/\\frac{([^}]+)}{([^}]+)}/g, "$2分之$1")
+    .replace(/\\int/g, "积分")
+    .replace(/\\to/g, "趋向于")
+    .replace(/\\infty/g, "无穷大")
+    .replace(/\$\$/g, "")
+    .replace(/\$/g, "");
+}
 
 function ThinkingIndicator({ elapsed }: { elapsed: number }) {
   const dots = ".".repeat((elapsed % 3) + 1);
@@ -72,6 +84,30 @@ export function MathMessage({
 }) {
   const isUser = role === "user";
   const [isChainExpanded, setIsChainExpanded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const playSpeech = () => {
+    if (isPlaying) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      return;
+    }
+
+    const cleanedText = cleanMathForSpeech(content);
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    utterance.lang = 'zh-CN';
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+
+    setIsPlaying(true);
+    window.speechSynthesis.speak(utterance);
+  };
 
   return (
     <motion.div
@@ -134,6 +170,19 @@ export function MathMessage({
                 >
                   <Edit2 className="w-3 h-3" />
                   <span className="hidden sm:inline">编辑</span>
+                </button>
+              )}
+              {!isUser && (
+                <button
+                  onClick={playSpeech}
+                  className={cn(
+                    "flex items-center gap-1 text-[10px] font-medium transition-opacity",
+                    isPlaying ? "text-emerald-500 opacity-100" : "text-inherit opacity-70 hover:opacity-100"
+                  )}
+                  title={isPlaying ? "停止播放" : "朗读"}
+                >
+                  {isPlaying ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  <span className="hidden sm:inline">{isPlaying ? "停止" : "朗读"}</span>
                 </button>
               )}
               {!isUser && onRetry && (

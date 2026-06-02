@@ -45,8 +45,10 @@ export async function createSession(subject: Subject = "foundations") {
   return res.json() as Promise<{ session_id: string; title: string; subject: string }>;
 }
 
-export async function listSessions() {
-  const res = await fetch(`${API_BASE}/api/sessions?user_id=demo-user`, { cache: "no-store" });
+export async function listSessions(userId: string = "demo-user", q?: string): Promise<Session[]> {
+  const query = new URLSearchParams({ user_id: userId });
+  if (q) query.append("q", q);
+  const res = await fetch(`${API_BASE}/api/sessions?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("获取会话失败");
   const data = await res.json();
   return data.items as Session[];
@@ -56,6 +58,17 @@ export async function deleteSession(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}`, { method: "DELETE" });
   if (!res.ok) throw new Error("删除会话失败");
   return res.json();
+}
+
+export async function generateTitle(message: string, userApiKey?: string | null, model?: string | null): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/tutor/generate_title`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, user_api_key: userApiKey, model })
+  });
+  if (!res.ok) return message.length > 10 ? message.slice(0, 10) + "..." : message;
+  const data = await res.json();
+  return data.title;
 }
 
 export async function renameSession(sessionId: string, title: string) {
@@ -190,4 +203,13 @@ export async function generateSimilarExercises(concept: string, difficulty: numb
   return data.exercises as Array<{ text: string; answer: string; concept: string; difficulty: number }>;
 }
 
-
+export async function generateNote(sessionId: string) {
+  const res = await fetch(`${API_BASE}/api/tutor/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId })
+  });
+  if (!res.ok) throw new Error("生成笔记失败");
+  const data = await res.json();
+  return data as { note: string };
+}

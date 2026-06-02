@@ -8,6 +8,7 @@ from app.api.routes_models import router as models_router
 from app.api.routes_sessions import router as sessions_router
 from app.api.routes_tutor import router as tutor_router
 from app.api.routes_viz import router as viz_router
+from app.api.routes_notes import router as notes_router
 from app.api.routes_uploads import router as uploads_router
 from app.api.routes_resources import router as resources_router
 
@@ -36,3 +37,4 @@ app.include_router(uploads_router)
 app.include_router(mistakes_router)
 app.include_router(mastery_router)
 app.include_router(resources_router)
+app.include_router(notes_router)

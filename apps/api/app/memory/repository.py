@@ -108,18 +108,32 @@ class Repository:
             )
         return {"session_id": session_id, "title": title, "subject": subject}
 
-    def list_sessions(self, user_id: str) -> list[dict[str, Any]]:
+    def list_sessions(self, user_id: str, query: str | None = None) -> list[dict[str, Any]]:
         with self.connect() as conn:
-            rows = conn.execute(
-                """
-                select id, user_id, title, subject, created_at, updated_at
-                from sessions
-                where user_id = ?
-                order by updated_at desc
-                """,
-                (user_id,),
-            ).fetchall()
-        return [dict(row) for row in rows]
+            if query:
+                rows = conn.execute(
+                    """
+                    SELECT DISTINCT s.id, s.user_id, s.title, s.subject, s.created_at, s.updated_at
+                    FROM sessions s
+                    LEFT JOIN messages m ON s.id = m.session_id
+                    WHERE s.user_id = ? AND (
+                        s.title LIKE ? OR m.content LIKE ?
+                    )
+                    ORDER BY s.updated_at DESC
+                    """,
+                    (user_id, f"%{query}%", f"%{query}%")
+                )
+            else:
+                rows = conn.execute(
+                    """
+                    select id, user_id, title, subject, created_at, updated_at
+                    from sessions
+                    where user_id = ?
+                    order by updated_at desc
+                    """,
+                    (user_id,),
+                )
+            return [dict(row) for row in rows.fetchall()]
 
     def delete_session(self, session_id: str) -> None:
         with self.connect() as conn:

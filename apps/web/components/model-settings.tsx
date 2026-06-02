@@ -35,7 +35,7 @@ export function ModelSettings() {
   return (
     <Card>
       <CardTitle>模型设置</CardTitle>
-      <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">平台默认 Key 由服务端配置；你也可以使用自己的 Key。</div>
+      <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">系统已内置免费的 DeepSeek 兜底 Key，您可以直接使用！若额度耗尽，您也可以在此输入私人 Key 以接管服务。</div>
       <Select
         className="mb-2"
         value={model}

@@ -20,8 +20,8 @@ def create_session(payload: CreateSessionRequest, repo: Repository = Depends(get
 
 
 @router.get("/sessions")
-def list_sessions(user_id: str = "demo-user", repo: Repository = Depends(get_repository)):
-    return {"items": repo.list_sessions(user_id)}
+def list_sessions(user_id: str = "demo-user", q: str | None = None, repo: Repository = Depends(get_repository)):
+    return {"items": repo.list_sessions(user_id, q)}
 
 
 @router.get("/sessions/{session_id}/messages")

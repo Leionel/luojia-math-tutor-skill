@@ -98,24 +98,17 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">当前攻读课程</label>
-          <div className="relative">
-            <select className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all rounded-md appearance-none">
-              <option value="math_analysis">数学分析 / 高等数学</option>
-              <option value="linear_algebra">高等代数 / 线性代数</option>
-              <option value="probability">概率论与数理统计</option>
-              <option value="discrete_math">离散数学</option>
-            </select>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">密码</label>
+            <span className="text-xs text-[#a0a596] dark:text-[#757a6b]">至少 8 个字符</span>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">密码</label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757a6b]" />
             <input 
               type="password" 
               required
+              minLength={8}
+              maxLength={32}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="••••••••"
             />

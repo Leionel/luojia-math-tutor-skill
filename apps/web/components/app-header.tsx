@@ -5,27 +5,46 @@ import Link from "next/link";
 import type { Subject, TutorMode } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { Menu, LayoutPanelLeft, Target } from "lucide-react";
 import { ModeSwitcher } from "./mode-switcher";
 import { SettingsDrawer } from "./settings-drawer";
+import { ThemeToggle } from "./theme-toggle";
 
 export function AppHeader({
   subject,
   mode,
   onSubjectChange,
   onModeChange,
-  onNewSession
+  onNewSession,
+  onToggleSidebar,
+  onToggleLearning,
+  onToggleZenMode
 }: {
   subject: Subject;
   mode: TutorMode;
   onSubjectChange: (subject: Subject) => void;
   onModeChange: (mode: TutorMode) => void;
   onNewSession: () => void;
+  onToggleSidebar?: () => void;
+  onToggleLearning?: () => void;
+  onToggleZenMode?: () => void;
 }) {
   return (
     <header className="sticky top-0 z-50 flex h-16 flex-shrink-0 items-center justify-between border-b border-[var(--border-primary)] bg-white dark:bg-[var(--bg-header)] dark:backdrop-blur-2xl px-4 sm:px-6 transition-colors duration-300">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {onToggleSidebar && (
+          <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="lg:hidden h-9 w-9 -ml-2 text-[var(--text-secondary)]">
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
         <SettingsDrawer />
-        <Link href="/" className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors shadow-sm" title="农场主页 (Home)">
+        <ThemeToggle />
+        {onToggleZenMode && (
+          <Button variant="ghost" size="icon" onClick={onToggleZenMode} className="h-9 w-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-indigo-500 hover:bg-indigo-500/10 transition-colors shadow-sm" title="进入沉浸模式 (Zen Mode)">
+            <Target className="w-4 h-4" />
+          </Button>
+        )}
+        <Link href="/" className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors shadow-sm" title="农场主页 (Home)">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </Link>
         <div className="flex flex-col">
@@ -44,7 +63,12 @@ export function AppHeader({
           <option value="problem_solving">实战解题</option>
         </Select>
         <ModeSwitcher value={mode} onChange={onModeChange} />
-        <Button variant="secondary" size="sm" onClick={onNewSession}>新会话</Button>
+        <Button variant="secondary" size="sm" onClick={onNewSession} className="hidden sm:flex">新会话</Button>
+        {onToggleLearning && (
+          <Button variant="ghost" size="icon" onClick={onToggleLearning} className="xl:hidden h-9 w-9 -mr-2 text-[var(--text-secondary)]">
+            <LayoutPanelLeft className="w-5 h-5" />
+          </Button>
+        )}
       </div>
     </header>
   );
