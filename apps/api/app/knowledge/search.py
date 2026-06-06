@@ -1,8 +1,11 @@
 import re
-
+import copy
+from pathlib import Path
+from app.config import get_settings
 from app.knowledge.loader import load_knowledge
-from app.knowledge.schema import KnowledgeHit
-
+from app.knowledge.schema import KnowledgeHit, KnowledgeItem
+from app.knowledge.vector_store import LocalVectorStore
+from app.llm.openai_compatible import OpenAICompatibleClient
 
 SUBJECT_HINTS = {
     "calculus": ["高数", "微积分", "导数", "积分", "极限", "洛必达", "函数"],
@@ -34,27 +37,95 @@ def _tokens(query: str) -> list[str]:
     return list(dict.fromkeys(tokens))
 
 
-def search_knowledge(query: str, subject: str | None = None, limit: int = 5) -> list[KnowledgeHit]:
+_vector_store = None
+
+
+async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
+    global _vector_store
+    if _vector_store is not None:
+        return _vector_store
+        
+    settings = get_settings()
+    cache_path = settings.knowledge_root / "embeddings.json"
+    
+    store = LocalVectorStore(cache_path=cache_path)
+    if store.load():
+        _vector_store = store
+        return _vector_store
+        
+    items = load_knowledge()
+    docs = []
+    for item in items:
+        full_text = _get_item_full_text(item)
+        docs.append({
+            "id": item.id,
+            "text": full_text
+        })
+        
+    store.build_bm25_index(docs)
+    
+    client = OpenAICompatibleClient(settings)
+    chunk_embeddings = {}
+    for chunk in store.chunks:
+        emb = await client.create_embedding(chunk["text"], api_key=api_key)
+        if emb:
+            chunk_embeddings[chunk["id"]] = emb
+            
+    store.add_embeddings(chunk_embeddings)
+    store.save()
+    
+    _vector_store = store
+    return _vector_store
+
+
+def _get_item_full_text(item: KnowledgeItem) -> str:
+    parts = []
+    if item.concept_zh:
+        parts.append(f"概念：{item.concept_zh}")
+    if item.prerequisite:
+        parts.append(f"先修知识：{' '.join(item.prerequisite)}")
+    if item.description:
+        parts.append(f"描述：{item.description}")
+    if item.intuitive_explanation:
+        parts.append(f"直观解释：{item.intuitive_explanation}")
+    if item.solution:
+        parts.append(f"解题方法：{item.solution}")
+    return "\n".join(parts)
+
+
+async def search_knowledge(
+    query: str, subject: str | None = None, limit: int = 5, api_key: str | None = None
+) -> list[KnowledgeHit]:
     detected_subject = detect_subject(query, subject)
-    tokens = _tokens(query)
+    
+    store = await get_vector_store(api_key=api_key)
+    
+    settings = get_settings()
+    client = OpenAICompatibleClient(settings)
+    query_vector = await client.create_embedding(query, api_key=api_key)
+    
+    # 混合检索
+    results = store.search_hybrid(query, query_vector=query_vector, top_n=limit * 2)
+    
+    items = {item.id: item for item in load_knowledge()}
+    
     hits: list[KnowledgeHit] = []
-    for item in load_knowledge():
-        hay_concept = item.concept_zh.lower()
-        hay_prereq = " ".join(item.prerequisite).lower()
-        hay_body = " ".join(
-            [item.description, item.intuitive_explanation, item.solution, item.source_file]
-        ).lower()
-        score = 0
+    for res in results:
+        doc_id = res["doc_id"]
+        if doc_id not in items:
+            continue
+        orig_item = items[doc_id]
+        
+        item = copy.copy(orig_item)
+        item.description = res["text"]
+        item.intuitive_explanation = ""
+        
+        score = int(res["rrf_score"] * 100000)
         if detected_subject and item.subject == detected_subject:
-            score += 2
-        for token in tokens:
-            if token in hay_concept:
-                score += 5
-            if token in hay_prereq:
-                score += 3
-            if token in hay_body:
-                score += 1
-        if score > 0:
-            hits.append(KnowledgeHit(item=item, score=score))
+            score += 20000
+            
+        hits.append(KnowledgeHit(item=item, score=score))
+        
     hits.sort(key=lambda hit: (hit.score, hit.item.concept_zh), reverse=True)
     return hits[:limit]
+

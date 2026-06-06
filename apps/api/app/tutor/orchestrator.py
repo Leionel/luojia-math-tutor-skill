@@ -50,7 +50,7 @@ class TutorOrchestrator:
         detected_subject = detect_subject(message, subject)
         if detected_subject is None:
             detected_subject = subject
-        hits = search_knowledge(message, detected_subject, limit=5)
+        hits = await search_knowledge(message, detected_subject, limit=5, api_key=user_api_key)
 
         verifier_result = VerifyResult(False, None, "本轮未触发自动验算。")
         mistake = None
