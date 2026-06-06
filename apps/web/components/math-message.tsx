@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { LatexRenderer } from "./latex-renderer";
 import { ReviewCard, type ReviewData } from "./review-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX } from "lucide-react";
+import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX, Search, Terminal, Cpu, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function cleanMathForSpeech(text: string) {
@@ -19,6 +19,83 @@ function cleanMathForSpeech(text: string) {
     .replace(/\$/g, "");
 }
 
+interface ThinkingStep {
+  title: string;
+  type: 'rag' | 'orchestrator' | 'sandbox' | 'result' | 'plan' | 'verify' | 'correct' | 'generic';
+  content: string;
+}
+
+function parseThinkingChain(text: string): ThinkingStep[] {
+  const steps: ThinkingStep[] = [];
+  if (!text) return steps;
+
+  const pattern = /(\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|CORRECT)\])/g;
+  const parts = text.split(pattern);
+
+  let currentTitle = "内部思考";
+  let currentType: ThinkingStep['type'] = "generic";
+  let currentContent = "";
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!part) continue;
+
+    if (pattern.test(part)) {
+      if (currentContent.trim()) {
+        steps.push({
+          title: currentTitle,
+          type: currentType,
+          content: currentContent.trim()
+        });
+      }
+      currentTitle = part.replace(/[\[\]]/g, "");
+      currentContent = "";
+
+      if (part.includes("RAG")) currentType = "rag";
+      else if (part.includes("Orchestrator")) currentType = "orchestrator";
+      else if (part.includes("沙箱执行")) currentType = "sandbox";
+      else if (part.includes("执行结果")) currentType = "result";
+      else if (part.includes("PLAN")) currentType = "plan";
+      else if (part.includes("VERIFY")) currentType = "verify";
+      else if (part.includes("CORRECT")) currentType = "correct";
+      else currentType = "generic";
+    } else {
+      currentContent += part;
+    }
+  }
+
+  if (currentContent.trim()) {
+    steps.push({
+      title: currentTitle,
+      type: currentType,
+      content: currentContent.trim()
+    });
+  }
+
+  return steps;
+}
+
+function getStepIcon(type: ThinkingStep['type']) {
+  switch (type) {
+    case 'rag':
+      return <Search className="w-3.5 h-3.5 text-blue-500" />;
+    case 'orchestrator':
+      return <BrainCircuit className="w-3.5 h-3.5 text-purple-500" />;
+    case 'sandbox':
+      return <Terminal className="w-3.5 h-3.5 text-amber-500" />;
+    case 'result':
+      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
+    case 'plan':
+      return <ListChecks className="w-3.5 h-3.5 text-cyan-500" />;
+    case 'verify':
+      return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+    case 'correct':
+      return <RefreshCcw className="w-3.5 h-3.5 text-red-500 animate-spin" style={{ animationDuration: '3s' }} />;
+    default:
+      return <ChevronRight className="w-3.5 h-3.5 text-slate-500" />;
+  }
+}
+
 function ThinkingIndicator({ elapsed }: { elapsed: number }) {
   const dots = ".".repeat((elapsed % 3) + 1);
   return (
@@ -31,6 +108,8 @@ function ThinkingIndicator({ elapsed }: { elapsed: number }) {
 
 function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isExpanded: boolean; onToggle: () => void }) {
   if (!content) return null;
+  const steps = parseThinkingChain(content);
+
   return (
     <div className="mt-3 border-t border-[var(--border-subtle)] pt-2">
       <button
@@ -38,7 +117,7 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
         onClick={onToggle}
       >
         <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
-        <span className="font-medium">查看思考过程</span>
+        <span className="font-medium">查看思考过程 ({steps.length} 步)</span>
       </button>
       <AnimatePresence>
         {isExpanded && (
@@ -49,8 +128,25 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
             transition={{ duration: 0.2 }}
             className="overflow-hidden mt-2"
           >
-            <div className="rounded-md bg-[var(--bg-tertiary)] backdrop-blur-sm p-3 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)]">
-              <LatexRenderer content={content} />
+            <div className="rounded-md bg-[var(--bg-tertiary)] backdrop-blur-sm p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] flex flex-col gap-4">
+              <div className="relative pl-6 border-l border-slate-200 dark:border-slate-800 ml-2.5 flex flex-col gap-5 py-1">
+                {steps.map((step, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="absolute -left-[31px] top-0.5 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm z-10">
+                      {getStepIcon(step.type)}
+                    </div>
+                    <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
+                      <span>{step.title}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
+                        步骤 {idx + 1}
+                      </span>
+                    </div>
+                    <div className="prose-xs text-[var(--text-secondary)] bg-white/40 dark:bg-black/10 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800/50 mt-1 select-text">
+                      <LatexRenderer content={step.content} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
