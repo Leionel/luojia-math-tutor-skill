@@ -31,7 +31,7 @@ export default function SplashPage() {
   const fadeUpVariants = {
     hidden: { opacity: 0, y: 40 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
-  };
+  } as const;
 
   const staggerContainer = {
     hidden: { opacity: 0 },
@@ -42,7 +42,7 @@ export default function SplashPage() {
         delayChildren: 0.2,
       }
     }
-  };
+  } as const;
 
   return (
     <div className="relative flex flex-col w-full min-h-screen bg-[#faf7f2] dark:bg-[#1e1e1b] text-[#2a2b26] dark:text-[#e6e4dc] selection:bg-[#617a55]/30">

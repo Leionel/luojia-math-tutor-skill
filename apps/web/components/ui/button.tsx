@@ -8,7 +8,7 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
   children: ReactNode;
 }) {
   const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50";
@@ -22,6 +22,7 @@ export function Button({
     sm: "px-2 py-1 text-xs",
     md: "px-4 py-2 text-sm",
     lg: "px-5 py-2.5 text-base",
+    icon: "p-0 flex items-center justify-center",
   };
   return (
     <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>

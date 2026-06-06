@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode } from "@/lib/api";
 import type { ReviewData } from "./review-card";
 import { createSession, listMessages, listMistakes, listSessions, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles } from "lucide-react";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
 import { LearningPanel } from "./learning-panel";
@@ -64,7 +64,21 @@ export function TutorChat() {
   const [showZenConfirm, setShowZenConfirm] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+
+  // Sync collapsed state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("luojia_sidebar_collapsed");
+    if (saved === "true") {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const handleToggleSidebar = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    localStorage.setItem("luojia_sidebar_collapsed", String(collapsed));
+  };
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -246,7 +260,7 @@ export function TutorChat() {
           user_api_key: getUserApiKey() || null,
           model: getPreferredModel(),
           requested_hint: requestedHint,
-          image_urls: attachments.length > 0 ? attachments : undefined,
+          image_urls: undefined,
           abortSignal: abortControllerRef.current.signal
         },
         (nextMeta) => {
@@ -296,10 +310,13 @@ export function TutorChat() {
       const res = await generateNote(sessionId);
       setNoteContent(res.note);
       
+      const currentSession = sessions.find((s) => s.id === sessionId);
+      const sessionSubject = currentSession?.subject || "综合";
+      
       // Auto-save to notebook
       await saveNote("demo-user", {
         session_id: sessionId,
-        subject: subject,
+        subject: sessionSubject,
         content: res.note
       });
       
@@ -363,7 +380,13 @@ export function TutorChat() {
           mode={mode}
           onModeChange={setMode}
           onNewSession={() => void newSession()}
-          onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          onToggleSidebar={() => {
+            if (window.innerWidth >= 1024) {
+              handleToggleSidebar(!isSidebarCollapsed);
+            } else {
+              setIsMobileSidebarOpen(!isMobileSidebarOpen);
+            }
+          }}
           onToggleLearning={() => setIsMobileLearningOpen(!isMobileLearningOpen)}
           onToggleZenMode={() => {
             if (!isZenMode) setShowZenConfirm(true);
@@ -391,12 +414,29 @@ export function TutorChat() {
           </div>
         )}
 
-        {!isZenMode && (
-          <div className="hidden shrink-0 flex-col lg:flex" style={{ width: sidebarWidth }}>
+        {!isZenMode && !isSidebarCollapsed && (
+          <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
             <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => void bootstrap()} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <button
+              onClick={() => handleToggleSidebar(true)}
+              className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
+              title="收起侧边栏"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
-        {!isZenMode && <ResizeHandle target="sidebar" className="hidden lg:block" />}
+        {!isZenMode && !isSidebarCollapsed && <ResizeHandle target="sidebar" className="hidden lg:block" />}
+
+        {!isZenMode && isSidebarCollapsed && (
+          <button
+            onClick={() => handleToggleSidebar(false)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 group flex h-20 w-4 items-center justify-center rounded-r-md border border-l-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
+            title="展开侧边栏"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
           <div className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}>
             <div className="mx-auto max-w-3xl px-4 py-8 pb-32">

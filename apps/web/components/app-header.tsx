@@ -29,7 +29,7 @@ export function AppHeader({
     <header className="sticky top-0 z-50 flex h-16 flex-shrink-0 items-center justify-between border-b border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-header)] backdrop-blur-md px-4 sm:px-6 transition-colors duration-300">
       <div className="flex items-center gap-2 sm:gap-4">
         {onToggleSidebar && (
-          <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="lg:hidden h-9 w-9 -ml-2 text-[var(--text-secondary)]">
+          <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-9 w-9 -ml-2 text-[var(--text-secondary)]">
             <Menu className="w-5 h-5" />
           </Button>
         )}

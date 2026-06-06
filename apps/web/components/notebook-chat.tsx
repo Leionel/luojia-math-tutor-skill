@@ -31,10 +31,10 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
   }, [messages, isStreaming]);
 
   async function submit(value: string, mode: TutorMode = "socratic") {
-    const userMsg = { id: crypto.randomUUID(), role: "user" as const, content: value, created_at: new Date().toISOString() };
+    const userMsg = { id: crypto.randomUUID(), session_id: sessionId, role: "user" as const, content: value, created_at: new Date().toISOString() };
     const assistantId = crypto.randomUUID();
     
-    setMessages(prev => [...prev, userMsg, { id: assistantId, role: "assistant", content: "", status: "thinking", created_at: new Date().toISOString() }]);
+    setMessages(prev => [...prev, userMsg, { id: assistantId, session_id: sessionId, role: "assistant", content: "", status: "thinking", created_at: new Date().toISOString() }]);
     setIsStreaming(true);
     abortControllerRef.current = new AbortController();
 
@@ -42,11 +42,11 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
       await streamTutor(
         {
           session_id: sessionId,
-          user_message: value,
+          message: value,
           subject: subject as any,
           mode,
           user_api_key: getUserApiKey() || null,
-          model: getPreferredModel() || null,
+          model: getPreferredModel() || undefined,
           abortSignal: abortControllerRef.current.signal
         },
         () => {}, // ignore meta
@@ -87,7 +87,7 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
           </div>
         ) : (
           messages.map(m => (
-            <MathMessage key={m.id} content={m.content} isUser={m.role === "user"} isThinking={m.status === "thinking"} />
+            <MathMessage key={m.id} content={m.content} role={m.role} isThinking={m.status === "thinking"} />
           ))
         )}
         <div ref={messagesEndRef} />

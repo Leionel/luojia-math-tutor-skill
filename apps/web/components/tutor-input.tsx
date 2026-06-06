@@ -16,14 +16,16 @@ export function TutorInput({
   onDirect,
   onHint,
   onSimilar,
+  placeholder,
 }: {
   value: string;
   onChange: (val: string) => void;
   disabled: boolean;
   onSubmit: (value: string, forcedMode?: "socratic" | "practice" | "direct") => void;
-  onDirect: () => void;
-  onHint: () => void;
-  onSimilar: () => void;
+  onDirect?: () => void;
+  onHint?: () => void;
+  onSimilar?: () => void;
+  placeholder?: string;
 }) {
   function insert(text: string) {
     onChange(`${value}${text}`);
@@ -177,7 +179,7 @@ export function TutorInput({
         )}
         <Textarea
           className="min-h-[6rem] resize-none overflow-y-auto rounded-none rounded-t-xl border-0 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-          placeholder="上传问题照片或试卷文档 (PDF/Word)，或直接输入...（Enter 发送，Shift+Enter 换行）"
+          placeholder={placeholder || "上传问题照片或试卷文档 (PDF/Word)，或直接输入...（Enter 发送，Shift+Enter 换行）"}
           value={value}
           onChange={(event) => {
             onChange(event.target.value);
@@ -420,36 +422,41 @@ export function TutorInput({
               图形引擎
             </Button>
 
-            <div className="w-px h-4 bg-[var(--border-primary)] my-auto mx-1" />
+                      {onDirect && onHint && onSimilar && (
+              <>
+                <div className="w-px h-4 bg-[var(--border-primary)] my-auto mx-1" />
 
-            {/* AI 辅助二级菜单 */}
-            <div className="relative">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowAIAsst(!showAIAsst)} 
-                className={`h-8 rounded-full font-medium transition-all ${showAIAsst ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 hover:bg-[var(--bg-hover)]"}`}
-              >
-                解题锦囊
-                <svg className={`w-3.5 h-3.5 ml-1 transition-transform ${showAIAsst ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </Button>
-              {showAIAsst && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowAIAsst(false)} />
-                  <div className="absolute bottom-full left-0 mb-2 w-36 bg-white dark:bg-[#1a1a18] border border-[var(--border-subtle)] shadow-xl rounded-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <button className="text-left px-3 py-2 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onHint(); setShowAIAsst(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>获取提示
-                    </button>
-                    <button className="text-left px-3 py-2 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onDirect(); setShowAIAsst(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>看完整解答
-                    </button>
-                    <button className="text-left px-3 py-2 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onSimilar(); setShowAIAsst(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>生成类似题
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                {/* AI 辅助二级菜单 */}
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAIAsst(!showAIAsst)} 
+                    className={`h-8 rounded-full font-medium transition-all ${showAIAsst ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 hover:bg-[var(--bg-hover)]"}`}
+                  >
+                    解题锦囊
+                    <svg className={`w-3.5 h-3.5 ml-1 transition-transform ${showAIAsst ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </Button>
+                  {showAIAsst && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowAIAsst(false)} />
+                      <div className="absolute bottom-full left-0 mb-2 w-36 bg-white dark:bg-[#1a1a18] border border-[var(--border-subtle)] shadow-xl rounded-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <button className="text-left px-3 py-2 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onHint && onHint(); setShowAIAsst(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>获取提示
+                        </button>
+                        <button className="text-left px-3 py-2 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onDirect && onDirect(); setShowAIAsst(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>看完整解答
+                        </button>
+                        <button className="text-left px-3 py-2 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onSimilar && onSimilar(); setShowAIAsst(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>生成类似题
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
           </div>
 
           <div className="flex items-center justify-end gap-3 shrink-0 ml-auto w-full sm:w-auto">
