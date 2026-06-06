@@ -78,8 +78,8 @@ class LocalVectorStore:
         total_len = 0
         df = {}
         
-        for doc in docs:
-            doc_id = doc.get("id") or doc.get("doc_id")
+        for idx_doc, doc in enumerate(docs):
+            doc_id = doc.get("id") or doc.get("doc_id") or f"doc_fallback_{idx_doc}"
             text = doc.get("text") or doc.get("content") or ""
             
             # 缓存全文，以便 context merge 时能还原连续文本
@@ -297,6 +297,7 @@ class LocalVectorStore:
                         last["end"] = max(last["end"], chunk["end"])
                         last["best_rrf_score"] = max(last["best_rrf_score"], chunk["rrf_score"])
                         last["best_rank_idx"] = min(last["best_rank_idx"], original_rank_idx)
+                        last["texts"].append(chunk["text"])
                     else:
                         merged_list.append({
                             "doc_id": doc_id,

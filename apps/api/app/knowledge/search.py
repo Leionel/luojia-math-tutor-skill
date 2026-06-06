@@ -1,5 +1,6 @@
 import re
 import copy
+import asyncio
 from pathlib import Path
 from app.config import get_settings
 from app.knowledge.loader import load_knowledge
@@ -40,6 +41,33 @@ def _tokens(query: str) -> list[str]:
 _vector_store = None
 
 
+def is_cache_valid(store: LocalVectorStore, current_items: tuple[KnowledgeItem, ...]) -> bool:
+    """
+    检查缓存的文档 ID 和文本内容是否与当前 load_knowledge() 完全一致。
+    支持修改、删除和新增的检测。
+    """
+    if not hasattr(store, "doc_id_to_metadata") or not store.doc_id_to_metadata:
+        return False
+        
+    current_docs = {}
+    for item in current_items:
+        current_docs[item.id] = _get_item_full_text(item)
+        
+    # 数量不匹配说明有新增或删除
+    if len(current_docs) != len(store.doc_id_to_metadata):
+        return False
+        
+    # 检查内容是否改变，或者是否有 ID 不匹配
+    for doc_id, current_text in current_docs.items():
+        if doc_id not in store.doc_id_to_metadata:
+            return False
+        cached_text = store.doc_id_to_metadata[doc_id].get("full_text", "")
+        if cached_text != current_text:
+            return False
+            
+    return True
+
+
 async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
     global _vector_store
     if _vector_store is not None:
@@ -49,11 +77,13 @@ async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
     cache_path = settings.knowledge_root / "embeddings.json"
     
     store = LocalVectorStore(cache_path=cache_path)
-    if store.load():
+    items = load_knowledge()
+    
+    # 校验缓存是否有效
+    if store.load() and is_cache_valid(store, items):
         _vector_store = store
         return _vector_store
         
-    items = load_knowledge()
     docs = []
     for item in items:
         full_text = _get_item_full_text(item)
@@ -64,18 +94,39 @@ async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
         
     store.build_bm25_index(docs)
     
+    # 使用 asyncio.gather 和 asyncio.Semaphore(5) 并发获取 embeddings
     client = OpenAICompatibleClient(settings)
-    chunk_embeddings = {}
+    sem = asyncio.Semaphore(5)
+    
+    async def fetch_with_semaphore(chunk_text: str):
+        async with sem:
+            return await client.create_embedding(chunk_text, api_key=api_key)
+            
+    tasks = []
+    chunk_ids = []
     for chunk in store.chunks:
-        emb = await client.create_embedding(chunk["text"], api_key=api_key)
-        if emb:
-            chunk_embeddings[chunk["id"]] = emb
+        chunk_ids.append(chunk["id"])
+        tasks.append(fetch_with_semaphore(chunk["text"]))
+        
+    results = await asyncio.gather(*tasks)
+    
+    chunk_embeddings = {}
+    all_success = True
+    for chunk_id, emb in zip(chunk_ids, results):
+        if emb and len(emb) > 0:
+            chunk_embeddings[chunk_id] = emb
+        else:
+            all_success = False
             
     store.add_embeddings(chunk_embeddings)
-    store.save()
     
+    # 只有当所有的 chunk 都成功生成了有效向量时才写盘
+    if all_success and len(store.chunks) > 0:
+        store.save()
+        
     _vector_store = store
     return _vector_store
+
 
 
 def _get_item_full_text(item: KnowledgeItem) -> str:
