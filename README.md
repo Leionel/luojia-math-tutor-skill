@@ -1,324 +1,155 @@
-# 珞珈数智助教（Luojia Math Tutor）
+# 珞珈数智农场 (Luojia Math Farm / Luojia Math Tutor)
 
-[![Claude](https://img.shields.io/badge/Claude-Skill-blue)](https://claude.com/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **面向 STEM 教育的可验证学习智能体，以大学数学为首个落地场景。**
 
-珞珈数智助教最初是一个数学 AI Tutor Skill，现在已经扩展为本地可运行的 Web App。项目通过大模型完成自然语言理解、教学规划和表达生成，通过本地知识库提供课程依据，通过 SymPy/Python 工具验证关键推导步骤，并结合错因记录、掌握度和类似题训练形成学习闭环。
+珞珈数智农场（原“珞珈数智助教”）是一款基于大模型与数学物理符号运算的可验证学习智能体 Web 平台。系统将单纯的“AI 问答”重构为**具有持久化记忆、弱点洞察与教学步骤验证的自适应辅导系统**。项目采用双轨执行引擎，完美平衡了“大模型的启发式引导”与“符号引擎（SymPy）的确定性校验”。
 
-当前版本聚焦高数、线代、概率论三类大学数学基础内容，可用于演示“生成式 AI + 符号验证 + 错因记忆 + 自适应练习”的可验证 Tutor Agent。
+---
 
-## 项目定位
+## 🌾 核心设计美学：农场中国风 (Zen Pastoral Style)
 
-本项目不只是一个“会讲题”的聊天机器人，而是一个可验证学习智能体：
+平台摒弃了冷冰冰的科技蓝与千篇一律的暗黑风，首创**“农场中国风（Zen Pastoral Style）”**的教学设计理念，将学习比作“耕耘”与“播种”：
 
-- **Planning**：识别学科、题型、用户意图和教学模式。
-- **Knowledge Grounding**：检索本地结构化数学知识库。
-- **Tool Use**：调用 SymPy/Python 对关键步骤进行确定性验算。
-- **Memory**：记录会话、消息、尝试、错因事件和轻量掌握度。
-- **Adaptive Feedback**：根据错因、掌握度和用户模式调整提示层级。
-- **Practice Loop**：基于当前考点生成类似题，支持复练闭环。
+*   **自然色彩系统**：以宣纸白（`#faf7f2`）为背景底色，辅以茶绿（`#617a55`）作为主品牌色，点缀印章朱红（`#c44a3d`）和水墨黑（`#2a2b26`）。
+*   **古典排版艺术**：引入 `Noto Serif SC` 与 `ZCOOL XiaoWei`（仿宋/小薇体）国风字体，配以竖排书法艺术字饰，实现温润儒雅的交互质感。
+*   **耕读学习意象**：
+    *   **启发式播种**：苏格拉底式提问引导，让知识的种子自行破土。
+    *   **错题本堆肥**：收集学习漏洞，作为自适应巩固的养分。
+    *   **动态水墨**：可视化图表与数学函数曲线，如水墨山水般呈现。
 
-面向比赛或路演时，推荐表述为：
+---
 
-> 珞珈数智助教是面向 STEM 教育的可验证学习智能体，以大学数学为首个落地场景，构建“生成式 AI + 符号验证 + 错因记忆 + 自适应练习”的学习闭环。
+## 🚀 核心突破 (V4.0 功能矩阵)
 
-## 当前能力
+项目已全面完成全场景学习闭环，包含以下核心模块：
 
-### 🚀 V4.0 核心突破：全场景学习工作流闭环
+### 1. 🎛️ 智能双栏工作台
+*   **启发式苏格拉底对话**：引导式提问（Socratic Mode），只给思路，不漏答案，通过提问启发学生自主思考。
+*   **智能随堂笔记 (Smart Notes)**：双栏布局，一键将冗长的问答记录提炼为排版极致优雅的 Markdown/LaTeX 笔记，支持直达笔记册 (`/notebook`)。
+*   **A4 纸打印导出**：笔记册专为线下复习优化了 A4 排版格式，支持一键调用 `window.print()` 导出并自动隐藏非必要 UI。
 
-- **一键智能笔记 (Smart Notes Workflow)**：打通了左侧对话、右侧总结的双栏交互流。随时一键让大模型从漫长的对话中萃取出核心考点与错题陷阱，并直达专属智能笔记本 (`/notebook`)。
-- **全局错题本与雷达图画像 (Mistake Book & Mastery Dashboard)**：引入了全新的 `/mistake-book` 和 `/dashboard`。不论是手动记录，还是 AI 抓取，每一次犯错都会成为底层 SQLite 的事件数据，最终在用户的“能力雷达图”上动态描绘出薄弱环节。
-- **无感化智能动态标签 (Dynamic AI Tagging System)**：彻底抛弃了反人性的“下拉框选科目”。现在大模型会根据首条消息自动推断专属领域标签（如微积分、物理、逻辑推理），并在侧边栏提供一键聚合筛选。
-- **会话高阶管控 (Advanced Session Management)**：完善了对话流的分支剪枝能力（消息编辑与重试自动截断历史），以及会话的无缝重命名与一键删除。
+### 2. 📊 错题堆肥与掌握度大盘 (Mistake Book & Mastery Dashboard)
+*   **弱点自动侦测**：后台静默校验学生推导步骤，自动识别并分类错因（如符号错误、公式记错、边界条件遗漏等）。
+*   **持久化错题本**：支持手动收藏与 AI 识别自动入库（SQLite 驱动），提供专属错题本视图 (`/mistake-book`)。
+*   **自适应能力雷达图**：基于用户的做题与错题数据，在 `/dashboard` 中动态绘制多维度的“能力雷达图”，实时直观展示知识掌握度。
+*   **举一反三 (Quiz Gen)**：针对错题一键生成概念相似、数值不同的复练题，真正打通学习闭环。
 
-### 🖥️ Tutor 工作台 (App 端详细介绍)
+### 3. 🏷️ 无感化智能动态标签 (Dynamic AI Tagging)
+*   **智能首问分类**：彻底抛弃繁琐的下拉框。大模型自动根据首条聊天内容分析并赋予精准的标签（如“微积分”、“矩阵变换”、“随机分布”）。
+*   **侧边栏多维过滤**：历史对话栏支持根据动态标签一键聚合和筛选，支持会话的随时重命名与快速删除。
 
-基于 Next.js App Router + TypeScript + TailwindCSS 构建，采用了**“几何静默 (Geometric Silence)”**的东方极简融合 Cyberpunk 专属设计美学（深色毛玻璃、青/墨绿/赤红强调色、呼吸动效）。
+### 4. 🧮 可验证数学引擎与高阶交互
+*   **Label-Driven 内部推理闭环**：后端结合 `[PLAN] -> [VERIFY] -> [CORRECT] -> [OUTPUT]` 机制，使用 SymPy 对求导、积分、矩阵计算等过程进行严密验算，避免大模型数学幻觉。
+*   **课件 RAG 检索 (FTS5)**：支持上传 PDF 讲义并使用 SQLite FTS5 虚拟表进行高精准的段落检索。
+*   **手写板与 OCR**：集成草稿板（Whiteboard），并接入 MinerU API 进行复杂的公式提取与图像拍照搜题识别。
+*   **数学虚拟键盘**：内置定制的 LaTeX 数学键盘，降低用户输入复杂公式的门槛。
+*   **语音播报 (TTS)**：支持将包含 LaTeX 公式的数学解题思路转化为自然的中文语音朗读。
+*   **资源推荐**：自动联网检索并联想 Bilibili 相关考点的优质讲解视频。
 
-1. **四大学习模式**
+---
 
-   - **引导模式 (Socratic)**：采用苏格拉底式提问，一步步引导自行推导，培养数学直觉。
-   - **直接讲解 (Direct)**：直接给出详尽、严谨的数学推导过程和最终答案。
-   - **练习模式 (Practice)**：智能生成难度递进的相似练习题，辅助巩固概念。
-   - **整理笔记 (Notes)**：化身知识萃取机，将凌乱草稿提炼为极致排版的 Markdown/LaTeX 笔记。
-2. **三大场景分类**
-
-   - **基础概念**：侧重于对定义、定理来源的通俗化解释，帮助扫盲并建立直觉基石。
-   - **深度推导**：侧重于严谨的数学推演、证明步骤与逻辑链条，适合冲刺高分的拔高训练。
-   - **实战解题**：侧重于解题技巧、套路总结和错题分析，直接面向应试拿分。
-3. **沉浸式画板与识图 (Whiteboard & OCR)**
-
-   - 内置全屏级沉浸式草稿板，支持手写绘图推演。
-   - 接入 **MinerU API** 进行多模态深度公式识别提取。
-   - 配备了优雅的全局网络代理防呆拦截弹窗，防止上传超时。
-4. **全局错题本与 A4 打印导出**
-
-   - SQLite 自动记忆错因与考点，生成专属错题本。
-   - 专为线下复习优化的 **A4 纸打印排版格式**，自动留出笔记书写空间并隐藏非必要 UI。
-
-### 🧮 可验证数学推理 (后端能力)
-
-- 后端使用 FastAPI + Pydantic + SymPy + SQLite。
-- 支持积分候选验证、求导验证、矩阵计算、二阶行列式、洛必达条件判断等基础能力。
-- **StepChecker** 可识别学生步骤中的常见错误。
-- **Misconception** 规则库记录高数、线代、概率论常见错因。
-- SSE 返回稳定的 `meta/token/done` 事件，前端可实时展示验证状态和错因。
-
-### 🔄 学习闭环
-
-- SQLite 保存会话、消息、尝试、错因事件和轻量掌握度。
-- 错题本 API 支持按用户聚合错因。
-- **Mastery** 记录概念掌握度变化。
-- **Hint Policy** 根据掌握度、连续错误和用户请求调整提示深度。
-- **复盘卡片** 用于总结本题考点、判断、错因和下一步建议。
-- **类似题 API** 支持围绕当前概念生成复练题。
-
-### 🌐 多模态与视频资源
-
-- 首页采用 Bento Grid（便当盒）布局一览系统核心特色。
-- 可视化接口支持生成函数曲线、积分面积、概率密度等基础图像。
-- 视频推荐接口可搜索 Bilibili 视频，并提供本地兜底结果辅助学习。
-
-### 🧠 最强多模型接入基座
-
-内置统一 OpenAI-compatible LLM Client，已配置 2026 年最新地表最强模型矩阵：
-
-- **海外旗舰**：OpenAI (GPT-5.5 / GPT-5.5 Pro / GPT-5.3 Codex / o1), Anthropic (Claude Opus 4.8 / Sonnet 4.6), Google (Gemini 3.5 Flash / 3.1 Pro)。
-- **国产巅峰**：DeepSeek (v4 Flash / v4 Pro), 通义千问 (Qwen3.7-Max), Kimi (K2.6 / K2.5), 智谱 (GLM-5 / GLM-5-Turbo)。
-- 支持平台统一 Key 或 用户自定义前端 Key，保障数据安全与灵活性。
-
-## 技术架构
+## 📁 项目目录结构
 
 ```text
-用户输入/图片上传
-  -> Intent Router
-  -> Knowledge Search
-  -> Step Checker / Verifier
-  -> Misconception Detector
-  -> Hint Policy
-  -> Prompt Builder
-  -> OpenAI-compatible LLM Stream
-  -> Memory Update
-  -> Review / Similar Exercise / Learning Panel
+├── apps/web                     # Next.js 14 前端项目 (React, TypeScript, Tailwind)
+│   ├── app/                     # App Router 路由 (chat, mistake-book, notebook, dashboard)
+│   ├── components/              # 核心 UI 组件 (草稿板, 公式键盘, 消息泡, 雷达图等)
+│   └── lib/                     # API 请求与前端封装
+├── apps/api                     # FastAPI 后端项目 (Python, SymPy, SQLite)
+│   ├── app/
+│   │   ├── api/                 # API 路由接口 (会话, 错题, 掌握度, RAG, Bilibili)
+│   │   ├── agents/              # 智能体组件 (Harness 质量评估器, Vision 识图)
+│   │   ├── memory/              # SQLite 数据库模型与仓储 (repository.py)
+│   │   └── tutor/               # 核心调度中枢 (orchestrator.py, prompt_builder.py)
+│   └── pyproject.toml           # 依赖与打包配置
+└── luojia-math-tutor/           # 珞珈数智助教核心 Skill 定义文件夹
+    ├── SKILL.md                 # 助教的核心工作流提示词与平台联动指令
+    └── references/              # 本地数学概念参考知识库与工具使用指南
 ```
 
-核心目录：
+---
 
-```text
-apps/web                       Next.js Tutor 工作台
-apps/api                       FastAPI 后端
-luojia-math-tutor/SKILL.md     数学助教核心工作流与提示约束
-luojia-math-tutor/references   本地知识库、工具规范与参考资料
-scripts/validate-json.js       知识库 JSON 校验脚本
-```
+## ⚙️ 本地快速部署
 
-## 本地启动
+### 1. 前置准备
+*   安装 [Node.js](https://nodejs.org/) (v18+)
+*   安装 [Python](https://www.python.org/) (v3.10+)
 
-### 1. 环境变量
+### 2. 配置环境变量
 
-后端参考 `apps/api/.env.example`：
-
+**后端配置**：在 `apps/api/` 下创建 `.env`，参考 `apps/api/.env.example`：
 ```env
 APP_ENV=local
 DATABASE_URL=sqlite:///./luojia_tutor.db
 LLM_PROVIDER=deepseek
 LLM_BASE_URL=https://api.deepseek.com
-LLM_API_KEY=
+LLM_API_KEY=your_deepseek_api_key
 LLM_MODEL=deepseek-chat
 ALLOW_USER_API_KEY=true
 ```
 
-前端参考 `apps/web/.env.local.example`：
-
+**前端配置**：在 `apps/web/` 下创建 `.env.local`：
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-### 2. 安装依赖
+### 3. 安装与运行
 
-前端：
+在根目录下使用以下命令启动全栈服务：
 
 ```bash
+# 1. 安装前端依赖并运行
 cd apps/web
 npm install
-```
+npm run dev
 
-后端建议在 Python 3.10+ 环境中安装：
-
-```bash
+# 2. 安装后端依赖并运行 (新终端)
 cd apps/api
-python -m pip install -e .
-```
-
-如果当前环境不支持 editable install，也可以安装主要依赖：
-
-```bash
-python -m pip install fastapi uvicorn pydantic sympy httpx pytest
-```
-
-### 3. 启动后端
-
-```bash
-cd apps/api
+pip install -e .
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-健康检查：
+你也可以在根目录下直接使用脚本：
+*   启动 API 端：`npm run dev:api`
+*   启动 Web 端：`npm run dev:web`
+
+启动成功后，打开浏览器访问 [http://localhost:3000](http://localhost:3000) 即可入园耕读。
+
+---
+
+## 🧪 自动化测试与质量校验
+
+项目内置了完整的校验链条，可以通过根目录的测试指令验证系统正确性：
 
 ```bash
-curl http://localhost:8000/health
-```
-
-预期返回：
-
-```json
-{"ok": true}
-```
-
-### 4. 启动前端
-
-```bash
-cd apps/web
-npm run dev
-```
-
-打开：
-
-```text
-http://localhost:3000
-```
-
-也可以在根目录使用脚本：
-
-```bash
-npm run dev:api
-npm run dev:web
-```
-
-## API 概览
-
-主要 API：
-
-- `GET /health`
-- `POST /api/sessions`
-- `GET /api/sessions`
-- `GET /api/sessions/{session_id}/messages`
-- `GET /api/sessions/{session_id}/mistakes`
-- `POST /api/tutor/stream`
-- `POST /api/models/test`
-- `GET /api/users/{user_id}/mastery`
-- `GET /api/users/{user_id}/mastery/summary`
-- `GET /api/users/{user_id}/mistakes`
-- `POST /api/exercises/similar`
-- `POST /api/viz/plot`
-- `POST /api/uploads`
-- `GET /api/resources/bilibili/search`
-
-`POST /api/tutor/stream` 支持请求级模型覆盖：
-
-```json
-{
-  "session_id": "sess_xxx",
-  "user_id": "demo-user",
-  "message": "我算 ∫ x^2 dx = x^3，对吗？",
-  "subject": "calculus",
-  "mode": "socratic",
-  "model": "deepseek-v4-flash",
-  "user_api_key": null
-}
-```
-
-SSE 事件包含：
-
-```text
-event: meta
-event: token
-event: done
-```
-
-部分版本还会发送：
-
-```text
-event: thinking_start
-event: thinking
-event: thinking_end
-event: review
-event: video_recommend
-```
-
-## 质量检查
-
-根目录：
-
-```bash
-# 知识库校验 + 后端测试
+# 执行全部校验 (包含知识库 JSON 格式自检与 API 端 pytest)
 npm test
 
-# 仅校验知识库 JSON
+# 仅执行数学知识库 JSON 校验
 npm run test:knowledge
 
-# 仅后端测试
+# 仅运行后端 API 测试
 npm run test:api
-
-# 前端生产构建
-npm run build:web
 ```
 
-前端目录：
+---
 
-```bash
-cd apps/web
-npm.cmd run build
-```
+## 💡 经典演示路径 (演示建议)
 
-注意：后端测试依赖当前 Python 环境中已安装 `fastapi/sympy/httpx/pytest` 等依赖。如果根目录 `npm test` 报 `ModuleNotFoundError`，请先按“安装依赖”部分配置后端环境。
+你可以使用以下数学典型问题来体验完整的“启发式引导 + 错题记录 + 掌握度分析”闭环：
 
-## 演示验收题
+1.  **初次试探（触发引导）**：输入 `“我算 ∫ x^2 dx = x^3，对吗？”`
+    *   *AI 表现*：后台会静默通过 SymPy 验算得出错误，识别原因为“漏掉常数项或系数算错”，并在前端给出考点分析，以苏格拉底式提问引导你发现漏了什么（不直接说答案）。
+2.  **查看面板**：右侧学习面板会展现被识别的考点（不定积分）和掌握度。
+3.  **整理随堂笔记**：点击输入框上方的“生成随堂笔记”按钮，AI 会提炼本段对话并自动在 `/notebook` 视图生成漂亮的 LaTeX 整理文档。
+4.  **错题本与雷达图**：点击该题的“加入错题本”按钮，然后访问 `/dashboard` 和 `/mistake-book`，可以看见错题记录和更新后的掌握度能力雷达图。
+5.  **举一反三**：在错题本卡片上点击“举一反三”，系统将基于该错题考点自动生成一道相似计算，测试你是否真正掌握。
 
-建议用以下问题验证核心闭环：
+---
 
-```text
-1. 我算 ∫ x^2 dx = x^3，对吗？
-2. 求 d/dx sin(x^2)
-3. 这个极限能直接用洛必达吗：lim x->0 sinx/x
-4. 计算二阶行列式 |1 2; 3 4|
-5. A、B 互斥是不是就独立？
-```
+## 👥 许可证与说明
 
-预期效果：
-
-- 对话区流式输出 Tutor 式回复。
-- 公式正常渲染。
-- 后端可识别考点、验证状态和错因。
-- 右侧学习面板展示当前考点、错因、掌握度和下一步建议。
-- 错因进入本地记录，刷新后会话历史仍可恢复。
-
-## Skill 模式
-
-本仓库仍保留原始 Skill 使用方式。你可以通过 `npx` 或手动配置，让其他 AI 工具读取 `luojia-math-tutor/SKILL.md` 和本地知识库。
-
-自动初始化：
-
-```bash
-npx github:Leionel/luojia-math-tutor-skill
-```
-
-手动配置：
-
-- Gemini CLI：在项目指令中引用 `luojia-math-tutor/SKILL.md`。
-- Claude Code：将 `SKILL.md` 作为 System Prompt 或项目说明。
-- Cursor / Windsurf / VSCode Copilot / Cline：在规则文件中引用 `SKILL.md` 与 `references/`。
-
-## 许可与资源说明
-
-本仓库中的代码、脚本与 Skill 指令文本采用 MIT License。
-
-`luojia-math-tutor/references/textbook/` 下的教材 PDF 仅作为本地学习参考资源，请在拥有合法使用权的前提下使用；如需再分发或公开发布，请自行确认对应教材、出版社或作者授权。
-
-## 贡献
-
-欢迎提交 Issue 或 PR，一起完善可验证学习智能体、数学知识库、错因规则和 STEM 课程扩展能力。
-
-关联主项目：[Leionel/luojia-math-tutor](https://github.com/Leionel/luojia-math-tutor)
+*   本项目核心代码、脚本及 Skill 配置遵循 [MIT License](LICENSE)。
+*   `luojia-math-tutor/references/textbook/` 下的教材 PDF 仅供本地科研与学习参考，请在遵守法律的前提下合规使用。
