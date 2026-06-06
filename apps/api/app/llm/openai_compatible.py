@@ -3,7 +3,7 @@ from typing import AsyncIterator
 
 import httpx
 
-from app.config import Settings
+from app.config import Settings, PROVIDER_BASE_URLS
 
 
 class OpenAICompatibleClient:
@@ -93,6 +93,46 @@ class OpenAICompatibleClient:
             return {"ok": True, "message": "模型连接成功。"}
         except Exception as exc:
             return {"ok": False, "message": f"模型连接失败：{exc}"}
+
+    async def create_embedding(
+        self, text: str, api_key: str | None = None, model: str | None = None
+    ) -> list[float]:
+        key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
+        if not key:
+            return []
+
+        resolved_model = model
+        if not resolved_model:
+            if self.settings.llm_provider == "qwen":
+                resolved_model = "text-embedding-v3"
+            elif self.settings.llm_provider == "glm":
+                resolved_model = "embedding-3"
+            else:
+                resolved_model = "text-embedding-v3"
+
+        if "qwen" in resolved_model or self.settings.llm_provider == "qwen":
+            base_url = PROVIDER_BASE_URLS["qwen"]
+        elif "glm" in resolved_model or self.settings.llm_provider == "glm":
+            base_url = PROVIDER_BASE_URLS["glm"]
+        elif "moonshot" in resolved_model or self.settings.llm_provider == "moonshot":
+            base_url = PROVIDER_BASE_URLS["moonshot"]
+        else:
+            base_url = self.settings.resolve_base_url(resolved_model)
+
+        url = f"{base_url.rstrip('/')}/embeddings"
+        payload = {
+            "model": resolved_model,
+            "input": text,
+        }
+        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                return data["data"][0]["embedding"]
+        except Exception:
+            return []
 
     async def _fallback_stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
         user = messages[-1]["content"]
