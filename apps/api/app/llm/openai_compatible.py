@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import AsyncIterator
 
 import httpx
@@ -100,35 +101,64 @@ class OpenAICompatibleClient:
     async def create_embedding(
         self, text: str, api_key: str | None = None, model: str | None = None
     ) -> list[float]:
-        key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        if not key:
-            return []
-
+        # 1. 确定 resolved_model
         resolved_model = model
         if not resolved_model:
             if self.settings.llm_provider == "qwen":
                 resolved_model = "text-embedding-v3"
             elif self.settings.llm_provider == "glm":
                 resolved_model = "embedding-3"
+            elif self.settings.llm_provider == "moonshot":
+                resolved_model = "moonshot-embed"
             else:
                 resolved_model = "text-embedding-v3"
 
+        # 2. 确定 target_provider
+        target_provider = None
         if "qwen" in resolved_model:
-            base_url = PROVIDER_BASE_URLS["qwen"]
+            target_provider = "qwen"
         elif "glm" in resolved_model:
-            base_url = PROVIDER_BASE_URLS["glm"]
+            target_provider = "glm"
         elif "moonshot" in resolved_model:
-            base_url = PROVIDER_BASE_URLS["moonshot"]
-        elif self.settings.llm_provider == "qwen":
-            base_url = PROVIDER_BASE_URLS["qwen"]
-        elif self.settings.llm_provider == "glm":
-            base_url = PROVIDER_BASE_URLS["glm"]
-        elif self.settings.llm_provider == "moonshot":
-            base_url = PROVIDER_BASE_URLS["moonshot"]
+            target_provider = "moonshot"
         elif resolved_model in ("text-embedding-v3", "text-embedding-v2", "text-embedding-v1", "text-embedding"):
+            target_provider = "qwen"
+        elif self.settings.llm_provider == "qwen":
+            target_provider = "qwen"
+        elif self.settings.llm_provider == "glm":
+            target_provider = "glm"
+        elif self.settings.llm_provider == "moonshot":
+            target_provider = "moonshot"
+        else:
+            target_provider = self.settings.llm_provider
+
+        # 3. 确定 base_url
+        if target_provider == "qwen":
             base_url = PROVIDER_BASE_URLS["qwen"]
+        elif target_provider == "glm":
+            base_url = PROVIDER_BASE_URLS["glm"]
+        elif target_provider == "moonshot":
+            base_url = PROVIDER_BASE_URLS["moonshot"]
         else:
             base_url = self.settings.resolve_base_url(resolved_model)
+
+        # 4. 解析 api_key
+        key = None
+        if self.settings.allow_user_api_key and api_key:
+            key = api_key
+        else:
+            if target_provider == "qwen":
+                key = os.getenv("QWEN_API_KEY") or os.getenv("DASHSCOPE_API_KEY")
+            elif target_provider == "glm":
+                key = os.getenv("ZHIPU_API_KEY") or os.getenv("GLM_API_KEY")
+            elif target_provider == "moonshot":
+                key = os.getenv("MOONSHOT_API_KEY")
+            
+            if not key:
+                key = self.settings.llm_api_key
+
+        if not key:
+            return []
 
         url = f"{base_url.rstrip('/')}/embeddings"
         payload = {
