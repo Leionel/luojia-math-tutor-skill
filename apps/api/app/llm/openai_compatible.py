@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import AsyncIterator
 
 import httpx
 
 from app.config import Settings, PROVIDER_BASE_URLS
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAICompatibleClient:
@@ -110,12 +113,20 @@ class OpenAICompatibleClient:
             else:
                 resolved_model = "text-embedding-v3"
 
-        if "qwen" in resolved_model or self.settings.llm_provider == "qwen":
+        if "qwen" in resolved_model:
             base_url = PROVIDER_BASE_URLS["qwen"]
-        elif "glm" in resolved_model or self.settings.llm_provider == "glm":
+        elif "glm" in resolved_model:
             base_url = PROVIDER_BASE_URLS["glm"]
-        elif "moonshot" in resolved_model or self.settings.llm_provider == "moonshot":
+        elif "moonshot" in resolved_model:
             base_url = PROVIDER_BASE_URLS["moonshot"]
+        elif self.settings.llm_provider == "qwen":
+            base_url = PROVIDER_BASE_URLS["qwen"]
+        elif self.settings.llm_provider == "glm":
+            base_url = PROVIDER_BASE_URLS["glm"]
+        elif self.settings.llm_provider == "moonshot":
+            base_url = PROVIDER_BASE_URLS["moonshot"]
+        elif resolved_model in ("text-embedding-v3", "text-embedding-v2", "text-embedding-v1", "text-embedding"):
+            base_url = PROVIDER_BASE_URLS["qwen"]
         else:
             base_url = self.settings.resolve_base_url(resolved_model)
 
@@ -131,7 +142,8 @@ class OpenAICompatibleClient:
                 response.raise_for_status()
                 data = response.json()
                 return data["data"][0]["embedding"]
-        except Exception:
+        except Exception as exc:
+            logger.error(f"Embedding API call failed for model {resolved_model} (url: {url}): {exc}", exc_info=True)
             return []
 
     async def _fallback_stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
