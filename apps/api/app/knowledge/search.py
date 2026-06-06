@@ -162,10 +162,14 @@ async def search_knowledge(
     
     settings = get_settings()
     client = OpenAICompatibleClient(settings)
-    query_vector = await client.create_embedding(query, api_key=api_key)
     
-    # 混合检索
-    results = store.search_hybrid(query, query_vector=query_vector, top_n=limit * 2)
+    try:
+        query_vector = await client.create_embedding(query)
+        # 混合检索
+        results = store.search_hybrid(query, query_vector=query_vector, top_n=limit * 2)
+    except Exception as e:
+        # Fallback if embedding fails
+        results = store.search_hybrid(query, query_vector=[], top_n=limit * 2)
     
     items = {item.id: item for item in load_knowledge()}
     

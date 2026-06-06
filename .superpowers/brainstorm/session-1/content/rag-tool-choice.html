@@ -1,0 +1,67 @@
+<h2>后端 Agent 架构：RAG 如何融入 LangGraph 状态机？</h2>
+<p class="subtitle">我们要把语义检索 (RAG) 和 LangGraph 状态机结合。请选择你期望 RAG 在工作流中的触发机制：</p>
+
+<div class="split">
+  <div class="mockup" style="flex: 1; min-height: 480px;">
+    <div class="mockup-header">方案 A：前置隐式检索 (Implicit Retrieval Node)</div>
+    <div class="mockup-body" style="padding: 20px; font-family: sans-serif; font-size: 13px;">
+      <!-- Diagram -->
+      <div style="background: #fafafa; border: 1px solid #ddd; padding: 15px; border-radius: 8px; font-family: monospace; line-height: 1.5; color: #444;">
+        [用户输入] <br/>
+        &nbsp;&nbsp;│<br/>
+        &nbsp;&nbsp;▼<br/>
+        <b>[意图识别]</b> (Intent Detect)<br/>
+        &nbsp;&nbsp;│<br/>
+        &nbsp;&nbsp;▼<br/>
+        <b style="color: #617a55;">[自动 RAG]</b> (后台静默检索知识库及课件)<br/>
+        &nbsp;&nbsp;│<br/>
+        &nbsp;&nbsp;▼<br/>
+        <b>[LLM 思考 & 验算]</b> (携带检索到的 context 进行推理与 Sandbox 执行)<br/>
+        &nbsp;&nbsp;│<br/>
+        &nbsp;&nbsp;▼<br/>
+        [输出结果]<br/>
+      </div>
+      <div style="font-size: 12px; color: #666; font-style: italic; margin-top: 25px;">
+        🔍 <b>特点</b>：用户发送问题后，系统立刻调用 Embedding 进行匹配并注入 Prompt。大模型在动笔前就拥有了知识库，反应速度快，开发简单。
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex: 1; min-height: 480px;">
+    <div class="mockup-header">方案 B：主动工具调用 (Explicit Tool Node)</div>
+    <div class="mockup-body" style="padding: 20px; font-family: sans-serif; font-size: 13px;">
+      <!-- Diagram -->
+      <div style="background: #fafafa; border: 1px solid #ddd; padding: 15px; border-radius: 8px; font-family: monospace; line-height: 1.5; color: #444;">
+        [用户输入] <br/>
+        &nbsp;&nbsp;│<br/>
+        &nbsp;&nbsp;▼<br/>
+        <b>[LLM 启动分析]</b> (主控 Node)<br/>
+        &nbsp;&nbsp;├──► [需知识库] ──► <b style="color: #617a55;">[Tool: Search_Knowledge]</b> ──┐<br/>
+        &nbsp;&nbsp;├──► [需验算]   ──► <b>[Tool: Sandbox_Exec]</b> ────┼─► [LLM 再决策]<br/>
+        &nbsp;&nbsp;└──► [已完成]   ──► [生成最终回复] ◄──────────┘<br/>
+      </div>
+      <div style="font-size: 12px; color: #666; font-style: italic; margin-top: 25px;">
+        🔍 <b>特点</b>：大模型自己决定是否需要去翻书（调用 RAG 工具）。如果问题很简单，就不去查，如果发现复杂，就发指令检索，极具 Agent 自主性。
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 30px;">请点击下方选择你更倾向的架构：</h3>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案 A (前置隐式检索)</h3>
+      <p>自动把可能相关的知识点拼进 Prompt，速度较快，生成质量稳定。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案 B (主动工具调用)</h3>
+      <p>作为 Agent Tool 让模型自由查阅。逻辑更加灵动，更符合 ReAct / LangGraph 的规范，但耗时可能稍长。</p>
+    </div>
+  </div>
+</div>

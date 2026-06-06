@@ -1,0 +1,105 @@
+<h2>选择 Agent Trace (思考轨迹) 的前端展现形式</h2>
+<p class="subtitle">大模型的思考链、工具调用和沙箱执行结果该如何优雅地展示给用户？</p>
+
+<div class="split">
+  <div class="mockup" style="flex: 1; min-height: 450px;">
+    <div class="mockup-header">方案 A：消息内嵌时间轴 (Inline Timeline)</div>
+    <div class="mockup-body" style="padding: 15px; font-family: sans-serif;">
+      <!-- Mock User Message -->
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+        <div style="background: #617a55; color: white; padding: 8px 12px; border-radius: 15px; max-width: 70%; font-size: 13px;">
+          我算 \(\int x^2 dx = x^3\)，对吗？
+        </div>
+      </div>
+      <!-- Mock Assistant Message with Inline Trace -->
+      <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+        <div style="background: #f1f3f4; color: #333; padding: 12px; border-radius: 15px; max-width: 85%; font-size: 13px; border: 1px solid #e0e0e0;">
+          <div>你的方向是对的，但是系数不对...</div>
+          
+          <!-- Embedded Timeline -->
+          <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+            <div style="font-size: 11px; color: #666; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+              🧠 Agent 思考过程
+            </div>
+            
+            <div style="border-left: 2px solid #617a55; padding-left: 10px; margin-left: 5px; font-size: 11px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="position: relative;">
+                <div style="position: absolute; left: -15px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: #617a55;"></div>
+                <span style="font-weight: bold; color: #444;">[意图识别]</span> 识别为“解题步骤检查 (Intent.CHECK_STUDENT_STEP)”
+              </div>
+              <div style="position: relative;">
+                <div style="position: absolute; left: -15px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: #617a55;"></div>
+                <span style="font-weight: bold; color: #444;">[知识库检索]</span> 检索到概念 <b>“幂函数积分”</b>
+              </div>
+              <div style="position: relative;">
+                <div style="position: absolute; left: -15px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: #c44a3d;"></div>
+                <span style="font-weight: bold; color: #c44a3d;">[后台验算异常]</span> 发现系数错误：\(\frac{d}{dx}(x^3) = 3x^2 \neq x^2\)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #666; font-style: italic; text-align: center; margin-top: 20px;">
+        🔍 优点：内嵌于对话流，阅读连贯，符合直觉。
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex: 1; min-height: 450px;">
+    <div class="mockup-header">方案 B：独立右侧折叠面板 (Sidebar Trace Panel)</div>
+    <div class="mockup-body" style="padding: 15px; font-family: sans-serif; display: flex; gap: 10px;">
+      <!-- Chat Area Mock -->
+      <div style="flex: 2; border-right: 1px solid #eee; padding-right: 10px; font-size: 12px;">
+        <div style="background: #f1f3f4; padding: 8px; border-radius: 8px; margin-bottom: 8px;">
+          <b>山野农夫:</b> 我算积分对吗？
+        </div>
+        <div style="background: #e6f4ea; padding: 8px; border-radius: 8px;">
+          <b>助教:</b> 你的系数计算有误...
+        </div>
+        <div style="font-size: 11px; color: #999; margin-top: 50px; text-align: center;">
+          ← 聊天主窗口保持极简干净
+        </div>
+      </div>
+      <!-- Trace Panel Mock -->
+      <div style="flex: 1.5; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-size: 11px;">
+        <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+          <span>⚙️ 决策分析轨迹</span>
+          <span style="color: #617a55; font-size: 9px;">● 实时</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #fff; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
+            <b style="color: #617a55;">#1 Intent</b><br/>CHECK_STEP (Confidence: 0.98)
+          </div>
+          <div style="background: #fff; border: 1px solid #eee; padding: 5px; border-radius: 4px;">
+            <b style="color: #617a55;">#2 Knowledge RAG</b><br/>Found 2 docs for "幂函数"
+          </div>
+          <div style="background: #fff; border: 1px solid #eee; padding: 5px; border-radius: 4px; border-left: 3px solid #c44a3d;">
+            <b style="color: #c44a3d;">#3 Sandbox Exec</b><br/>sympy.diff(x**3) => 3*x**2 (Mismatch!)
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: #666; font-style: italic; text-align: center; margin-top: 40px; padding: 15px;">
+      🔍 优点：主对话区非常干净，适合高阶玩家深入分析 Agent 链条。
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 30px;">请点击下方选择你更倾向的交互设计：</h3>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案 A (Inline Timeline)</h3>
+      <p>作为消息的一部分，在气泡下方以时间轴展示思考和调用步骤，体验最丝滑。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案 B (Sidebar Trace Panel)</h3>
+      <p>在屏幕右侧（比如替代原有的“状态复盘”面板），专门开辟一个独立页签展示高阶决策流。</p>
+    </div>
+  </div>
+</div>

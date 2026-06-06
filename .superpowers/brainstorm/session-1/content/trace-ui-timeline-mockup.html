@@ -1,0 +1,95 @@
+<h2>Agent Trace UI 详细视觉与交互设计</h2>
+<p class="subtitle">下面是内嵌于对话框的消息时间轴 (Timeline) 详细方案，包含工具调用和检索结果。请确认样式细节：</p>
+
+<div class="mockup" style="max-width: 600px; margin: 0 auto; font-family: 'Noto Serif SC', serif; background: #faf7f2; border: 1px solid #dcd7cd; border-radius: 12px; padding: 20px;">
+  <!-- Avatar and Header -->
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid #e8e4dc; padding-bottom: 8px;">
+    <div style="width: 24px; height: 24px; border-radius: 50%; background: #617a55; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold;">助</div>
+    <span style="font-weight: bold; color: #2a2b26; font-size: 14px;">珞珈数智助教 (Socratic Agent)</span>
+  </div>
+
+  <!-- Assistant Response -->
+  <div style="color: #2a2b26; font-size: 14px; line-height: 1.6; margin-bottom: 15px;">
+    你的步骤中，对于特征多项式 \(\det(\lambda I - A) = 0\) 的展开有一点小偏差。我们可以一步步来核对。
+  </div>
+
+  <!-- Agent Trace Component -->
+  <div style="background: rgba(97, 122, 85, 0.05); border: 1px solid rgba(97, 122, 85, 0.2); border-radius: 8px; padding: 12px 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; cursor: pointer;">
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #617a55; font-weight: bold;">
+        <span>🧠 查看助教推理轨迹 (Trace)</span>
+      </div>
+      <span style="font-size: 10px; color: #888;">已展开 ▾</span>
+    </div>
+
+    <!-- Timeline Steps -->
+    <div style="position: relative; border-left: 2px solid #617a55; margin-left: 6px; padding-left: 15px; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Step 1 -->
+      <div style="position: relative;">
+        <!-- Timeline node dot -->
+        <div style="position: absolute; left: -20px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: #617a55; border: 2px solid #faf7f2;"></div>
+        <div style="font-size: 11px; color: #888;">Step 1. 意图分析</div>
+        <div style="font-size: 12px; color: #2a2b26; font-weight: 500;">
+          <span style="color: #617a55;">[Intent]</span> 识别为解题步骤检查，需验证矩阵行列式计算。
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="position: relative;">
+        <div style="position: absolute; left: -20px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: #617a55; border: 2px solid #faf7f2;"></div>
+        <div style="font-size: 11px; color: #888;">Step 2. 知识库查询 (RAG Tool)</div>
+        <div style="font-size: 12px; color: #2a2b26;">
+          <span style="color: #617a55;">[Call]</span> <code>search_knowledge(query="特征多项式 行列式")</code>
+        </div>
+        <!-- Collapsible Results Mock -->
+        <div style="margin-top: 4px; font-size: 11px; background: #fff; border: 1px solid #e8e4dc; border-radius: 4px; padding: 6px; color: #555;">
+          📖 找到概念：<b>特征值与特征向量</b> (相关度 0.92)<br/>
+          <span style="color: #888; font-size: 10px;">公式：\(\det(\lambda I - A) = 0\)，对应求行列式的根。</span>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="position: relative;">
+        <div style="position: absolute; left: -20px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: #c44a3d; border: 2px solid #faf7f2;"></div>
+        <div style="font-size: 11px; color: #888;">Step 3. 数学验算沙箱 (Sandbox Tool)</div>
+        <div style="font-size: 12px; color: #2a2b26;">
+          <span style="color: #c44a3d;">[Error]</span> 运行验证代码出错：求特征值与行列式计算结果不符。
+        </div>
+        <pre style="margin: 4px 0 0 0; background: #2a2b26; color: #a9ff99; padding: 6px; border-radius: 4px; font-size: 10px; font-family: monospace; overflow-x: auto;">
+>>> import sympy as sp
+>>> lam = sp.symbols('lambda')
+>>> A = sp.Matrix([[1, 2], [2, 1]])
+>>> sp.det(lam*sp.eye(2) - A)
+lambda**2 - 2*lambda - 3  # 用户展开为 lambda**2 - 2*lambda - 1</pre>
+      </div>
+
+      <!-- Step 4 -->
+      <div style="position: relative;">
+        <div style="position: absolute; left: -20px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: #617a55; border: 2px solid #faf7f2;"></div>
+        <div style="font-size: 11px; color: #888;">Step 4. 教学策略决策 (Pedagogy Node)</div>
+        <div style="font-size: 12px; color: #2a2b26; font-weight: 500;">
+          <span style="color: #617a55;">[Socratic]</span> 检测到用户在行列式展开时算错常数项，触发“引导常数项核对”策略。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 30px;">确认设计：</h3>
+
+<div class="options">
+  <div class="option" data-choice="accept" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>确认，这个时间轴设计非常清晰</h3>
+      <p>支持展开/折叠，包含状态码（运行成功/出错颜色）、调用代码和检索结果的展示。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">⚙</div>
+    <div class="content">
+      <h3>需要微调样式</h3>
+      <p>比如：颜色搭配、字体大小、或者折叠逻辑需要修改（请在终端补充说明）。</p>
+    </div>
+  </div>
+</div>

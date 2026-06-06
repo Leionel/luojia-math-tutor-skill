@@ -430,5 +430,6 @@ class Repository:
                 )
 
     def _default_title(self, subject: str) -> str:
-        return "新会话"
+        from datetime import datetime
+        return f"新会话 {datetime.now().strftime('%m-%d %H:%M')}"
 

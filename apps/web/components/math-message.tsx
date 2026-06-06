@@ -221,19 +221,26 @@ export function MathMessage({
         )}
         style={isUser ? { background: 'var(--bg-user-bubble)' } : undefined}
       >
-        {isThinking ? (
-          <ThinkingIndicator elapsed={thinkingElapsed} />
-        ) : (
-          <>
-            <div className={cn("prose-sm sm:prose max-w-none prose-neutral dark:prose-invert prose-p:leading-relaxed prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-primary)]", isUser ? "text-white prose-p:text-white" : "text-[var(--text-primary)]")}>
+        <>
+          {isThinking && (
+            <ThinkingIndicator elapsed={thinkingElapsed} />
+          )}
+          
+          {thinkingChain && (
+            <div className={cn(isThinking ? "mt-2 mb-2" : "mb-2")}>
+              <ThinkingChain
+                content={thinkingChain}
+                isExpanded={isThinking ? true : isChainExpanded}
+                onToggle={() => setIsChainExpanded(!isChainExpanded)}
+              />
+            </div>
+          )}
+
+          {content && (
+            <div className={cn("prose-sm sm:prose max-w-none prose-neutral dark:prose-invert prose-p:leading-relaxed prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-primary)]", isUser ? "text-white prose-p:text-white" : "text-[var(--text-primary)]", (isThinking || thinkingChain) ? "mt-3 pt-3 border-t border-[var(--border-subtle)]" : "")}>
               <LatexRenderer content={content} />
             </div>
-            
-            <ThinkingChain
-              content={thinkingChain}
-              isExpanded={isChainExpanded}
-              onToggle={() => setIsChainExpanded(!isChainExpanded)}
-            />
+          )}
             
             {status && !isUser ? (
               <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border-subtle)] pt-3 text-[11px] font-medium text-[var(--text-muted)]">
@@ -293,7 +300,6 @@ export function MathMessage({
               )}
             </div>
           </>
-        )}
       </div>
     </motion.div>
   );

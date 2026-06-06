@@ -54,8 +54,11 @@ class OpenAICompatibleClient:
                     chunk = json.loads(data)
                     delta = chunk["choices"][0].get("delta", {})
                     content = delta.get("content")
+                    reasoning_content = delta.get("reasoning_content")
+                    if reasoning_content:
+                        yield {"type": "reasoning", "content": reasoning_content}
                     if content:
-                        yield content
+                        yield {"type": "content", "content": content}
                 except Exception:
                     continue
 

@@ -190,7 +190,10 @@ export async function streamTutor(
       const data = JSON.parse(dataLine.replace("data: ", ""));
       if (event === "meta") onMeta(data as TutorMeta);
       if (event === "token") onToken(String(data.text || ""));
-      if (event === "thinking") thinkingChain += String(data.text || "");
+      if (event === "thinking") {
+        thinkingChain += String(data.text || "");
+        if (onThinkingChain) onThinkingChain(thinkingChain);
+      }
       if (event === "thinking_end" && onThinkingChain) onThinkingChain(thinkingChain);
     }
   }

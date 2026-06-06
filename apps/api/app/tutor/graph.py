@@ -303,13 +303,29 @@ class TutorWorkflow:
 
         current_response = ""
         buffer = ""
+        actual_reasoning_content = ""
         in_output = False
         final_output = ""
         thinking_chain = ""
 
         # Call streaming
-        async for token in self.llm.stream(state["messages"], api_key=state["user_api_key"], model=state["model"]):
+        async for token_obj in self.llm.stream(state["messages"], api_key=state["user_api_key"], model=state["model"]):
+            if isinstance(token_obj, dict):
+                t_type = token_obj.get("type", "content")
+                token = token_obj.get("content", "")
+            else:
+                t_type = "content"
+                token = token_obj
+
             current_response += token
+
+            if t_type == "reasoning":
+                actual_reasoning_content += token
+                if on_thinking:
+                    await on_thinking(sse("thinking", {"text": token}))
+                thinking_chain += token
+                continue
+
             buffer += token
 
             if not in_output:
@@ -353,9 +369,13 @@ class TutorWorkflow:
             code_match = re.search(r"```python(.*?)```", current_response, re.DOTALL)
             if code_match:
                 next_action = "execute_code"
+                
+        assistant_msg = {"role": "assistant", "content": current_response}
+        if actual_reasoning_content:
+            assistant_msg["reasoning_content"] = actual_reasoning_content
 
         return {
-            "messages": [{"role": "assistant", "content": current_response}],
+            "messages": [assistant_msg],
             "final_output": final_output,
             "thinking_chain": thinking_chain,
             "next_action": next_action,
