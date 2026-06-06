@@ -12,6 +12,8 @@ dependencies = [
   "pytest",
   "matplotlib>=3.10.9",
   "python-multipart>=0.0.32",
+  "langgraph>=1.2.4",
+  "langchain-core>=1.4.1",
 ]
 
 [tool.pytest.ini_options]
