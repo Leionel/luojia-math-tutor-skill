@@ -222,16 +222,32 @@ export function SettingsDrawer() {
                 <ModelSettings />
 
                 {/* Practical Feature Description */}
-                <div style={{ borderTop: "1px solid var(--border-primary)", paddingTop: "1.5rem", marginTop: "1.5rem" }}>
-                  <label className="mb-2 block text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                    {t("系统功能说明", "Feature Overview")}
+                <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1.5rem", marginTop: "1.5rem" }}>
+                  <label className="mb-3 block text-sm font-bold tracking-widest" style={{ color: "var(--text-primary)" }}>
+                    {t("系统功能与快捷键", "Feature & Shortcuts")}
                   </label>
-                  <div className="rounded-lg p-3 text-xs leading-relaxed" style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-primary)" }}>
-                    <ul className="space-y-2 list-disc pl-4">
-                      <li><strong>启发引导：</strong>系统采用苏格拉底式提问，不会直接给答案，而是通过多轮对话引导您自己推导。</li>
-                      <li><strong>自动错题本：</strong>对话中暴露的薄弱知识点会被自动捕捉并收录进错题本，支持一键 A4 排版打印。</li>
-                      <li><strong>多模态与画板：</strong>支持图片上传 OCR 提取，也可在输入框调出全屏草稿板手绘公式、打草稿。</li>
-                      <li><strong>动态交互几何：</strong>支持解析并渲染可拖拽的 JSXGraph 交互式数学函数与几何图形。</li>
+                  <div className="rounded-xl p-4 text-[13px] leading-relaxed bg-gradient-to-br from-[#617a55]/10 to-transparent border border-[#617a55]/20 shadow-sm" style={{ color: "var(--text-secondary)" }}>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#617a55] mt-0.5">🌿</span>
+                        <span><strong>智能笔记与出卷：</strong> 聊天界面点击右上角可一键提炼本节课精华笔记，并支持基于笔记自动出卷测验。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#617a55] mt-0.5">🧘</span>
+                        <span><strong>沉浸模式 (Zen Mode)：</strong> 点击顶栏靶心图标进入全屏无干扰模式，隐藏侧边栏与学习面板。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#617a55] mt-0.5">🎯</span>
+                        <span><strong>全局错题本：</strong> 对话中暴露的薄弱知识点会被自动捕捉，随时在顶栏进入错题本回顾复盘。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#617a55] mt-0.5">📸</span>
+                        <span><strong>多模态解析：</strong> 支持将试卷截图或 PDF 拖拽进输入框，系统会自动识别并解析内容。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#617a55] mt-0.5">⌨️</span>
+                        <span><strong>快捷操作：</strong> <kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded-md border border-[var(--border-subtle)] text-[11px] font-mono">Shift+Enter</kbd> 换行，<kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded-md border border-[var(--border-subtle)] text-[11px] font-mono">Enter</kbd> 发送。</span>
+                      </li>
                     </ul>
                   </div>
                 </div>

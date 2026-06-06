@@ -81,10 +81,39 @@ class Repository:
                   attempts_count integer not null default 0,
                   correct_count integer not null default 0,
                   updated_at text not null,
+                  last_pushed_at text,
                   unique(user_id, concept)
+                );
+
+                create table if not exists documents (
+                  id text primary key,
+                  filename text,
+                  user_id text not null,
+                  created_at text not null
+                );
+
+                create virtual table if not exists document_chunks using fts5(
+                  id unindexed,
+                  document_id unindexed,
+                  content
+                );
+
+                create table if not exists notes (
+                  id text primary key,
+                  user_id text not null,
+                  session_id text not null,
+                  subject text,
+                  content text not null,
+                  created_at text not null
                 );
                 """
             )
+            
+            # Add document_id to sessions dynamically
+            try:
+                conn.execute("ALTER TABLE sessions ADD COLUMN document_id text;")
+            except sqlite3.OperationalError:
+                pass
 
     def ensure_user(self, user_id: str, display_name: str | None = None) -> None:
         with self.connect() as conn:
@@ -93,7 +122,7 @@ class Repository:
                 (user_id, display_name or user_id, now_iso()),
             )
 
-    def create_session(self, user_id: str, subject: str, title: str | None = None) -> dict[str, Any]:
+    def create_session(self, user_id: str, subject: str, title: str | None = None, document_id: str | None = None) -> dict[str, Any]:
         self.ensure_user(user_id)
         session_id = new_id("sess")
         ts = now_iso()
@@ -101,12 +130,12 @@ class Repository:
         with self.connect() as conn:
             conn.execute(
                 """
-                insert into sessions(id, user_id, title, subject, created_at, updated_at)
-                values (?, ?, ?, ?, ?, ?)
+                insert into sessions(id, user_id, title, subject, created_at, updated_at, document_id)
+                values (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (session_id, user_id, title, subject, ts, ts),
+                (session_id, user_id, title, subject, ts, ts, document_id),
             )
-        return {"session_id": session_id, "title": title, "subject": subject}
+        return {"session_id": session_id, "title": title, "subject": subject, "document_id": document_id}
 
     def list_sessions(self, user_id: str, query: str | None = None) -> list[dict[str, Any]]:
         with self.connect() as conn:
@@ -213,6 +242,36 @@ class Repository:
                 ),
             )
         return attempt_id
+
+    def save_note(self, user_id: str, session_id: str, subject: str, content: str) -> str:
+        note_id = new_id("note")
+        ts = now_iso()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into notes(id, user_id, session_id, subject, content, created_at)
+                values (?, ?, ?, ?, ?, ?)
+                """,
+                (note_id, user_id, session_id, subject, content, ts),
+            )
+        return note_id
+
+    def list_notes(self, user_id: str) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select id, user_id, session_id, subject, content, created_at
+                from notes
+                where user_id = ?
+                order by created_at desc
+                """,
+                (user_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_note(self, note_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute("delete from notes where id = ?", (note_id,))
 
     def add_mistake_event(
         self,
@@ -356,15 +415,20 @@ class Repository:
             ).fetchall()
         return [dict(row) for row in rows]
 
-    def update_session_title(self, session_id: str, title: str) -> None:
+    def update_session_meta(self, session_id: str, title: str, subject: str = None) -> None:
         ts = now_iso()
         with self.connect() as conn:
-            conn.execute(
-                "update sessions set title = ?, updated_at = ? where id = ?",
-                (title, ts, session_id),
-            )
+            if subject:
+                conn.execute(
+                    "update sessions set title = ?, subject = ?, updated_at = ? where id = ?",
+                    (title, subject, ts, session_id),
+                )
+            else:
+                conn.execute(
+                    "update sessions set title = ?, updated_at = ? where id = ?",
+                    (title, ts, session_id),
+                )
 
     def _default_title(self, subject: str) -> str:
-        names = {"calculus": "\u9ad8\u6570\u7ec3\u4e60", "linear_algebra": "\u7ebf\u4ee3\u7ec3\u4e60", "probability": "\u6982\u7387\u8bba\u7ec3\u4e60"}
-        return names.get(subject, "\u6570\u5b66\u8f85\u5bfc")
+        return "新会话"
 

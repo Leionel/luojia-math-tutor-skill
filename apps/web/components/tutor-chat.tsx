@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { createSession, listMessages, listMistakes, listSessions, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, generateTitle } from "@/lib/api";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target } from "lucide-react";
+import { createSession, listMessages, listMistakes, listSessions, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
 import { LearningPanel } from "./learning-panel";
@@ -14,6 +14,7 @@ import { TutorInput } from "./tutor-input";
 import { LatexRenderer } from "./latex-renderer";
 import { ZenOverlay } from "./zen-overlay";
 import { Button } from "./ui/button";
+import Link from "next/link";
 
 type LocalMessage = {
   id: string;
@@ -44,7 +45,7 @@ export function TutorChat() {
   const [sessions, setSessions] = useState<Array<{ id: string; title: string; subject: string; user_id: string; created_at: string; updated_at: string }>>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<LocalMessage[]>([{ id: "welcome", role: "assistant", content: welcome }]);
-  const [subject, setSubject] = useState<Subject>("auto");
+
   const [mode, setMode] = useState<TutorMode>("socratic");
   const [meta, setMeta] = useState<TutorMeta | null>(null);
   const [mistakes, setMistakes] = useState<Array<{ mistake_code: string; concept: string; subject: string; created_at: string }>>([]);
@@ -53,9 +54,10 @@ export function TutorChat() {
   const [thinkingChains, setThinkingChains] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
   const [noteContent, setNoteContent] = useState("");
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const [showNoteToast, setShowNoteToast] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobileLearningOpen, setIsMobileLearningOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -170,7 +172,7 @@ export function TutorChat() {
   }
 
   async function newSession() {
-    const created = await createSession(subject === "auto" ? "foundations" : subject);
+    const created = await createSession("综合");
     const refreshed = await listSessions().catch(() => []);
     setSessions(refreshed);
     setSessionId(created.session_id);
@@ -212,7 +214,7 @@ export function TutorChat() {
   async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false) {
     let activeSession = sessionId;
     if (!activeSession) {
-      const created = await createSession(subject === "auto" ? "foundations" : subject);
+      const created = await createSession("综合");
       activeSession = created.session_id;
       setSessionId(activeSession);
     }
@@ -229,22 +231,23 @@ export function TutorChat() {
     try {
       const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 0;
       if (isFirstUserMessage) {
-        generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async (autoTitle) => {
-          await renameSession(activeSession, autoTitle).catch(() => {});
+        generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async ({ title: autoTitle, label: autoLabel }) => {
+          await renameSession(activeSession, autoTitle, autoLabel).catch(() => {});
           listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
         }).catch(() => {});
       }
 
       await streamTutor(
-        {
-          session_id: activeSession,
-          message: value,
-          subject,
-          mode: forcedMode || mode,
+        { 
+          session_id: activeSession, 
+          message: value, 
+          subject: "综合" as any, 
+          mode: forcedMode || mode, 
           user_api_key: getUserApiKey() || null,
           model: getPreferredModel(),
           requested_hint: requestedHint,
-          abortSignal: abortControllerRef.current.signal,
+          image_urls: attachments.length > 0 ? attachments : undefined,
+          abortSignal: abortControllerRef.current.signal
         },
         (nextMeta) => {
           setMeta(nextMeta);
@@ -287,11 +290,21 @@ export function TutorChat() {
   async function handleGenerateNote() {
     if (!sessionId) return;
     setIsGeneratingNote(true);
-    setShowNoteModal(true);
+    setRightPanelMode("note");
     setNoteContent("");
     try {
       const res = await generateNote(sessionId);
       setNoteContent(res.note);
+      
+      // Auto-save to notebook
+      await saveNote("demo-user", {
+        session_id: sessionId,
+        subject: subject,
+        content: res.note
+      });
+      
+      setShowNoteToast(true);
+      setTimeout(() => setShowNoteToast(false), 3000);
     } catch (e) {
       setNoteContent("生成笔记失败，请重试。");
     } finally {
@@ -347,9 +360,7 @@ export function TutorChat() {
 
       {!isZenMode && (
         <AppHeader
-          subject={subject}
           mode={mode}
-          onSubjectChange={setSubject}
           onModeChange={setMode}
           onNewSession={() => void newSession()}
           onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
@@ -389,12 +400,7 @@ export function TutorChat() {
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
           <div className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}>
             <div className="mx-auto max-w-3xl px-4 py-8 pb-32">
-              <div className="flex justify-end mb-2">
-                <button onClick={handleGenerateNote} disabled={isGeneratingNote || !sessionId} className="flex items-center gap-1.5 text-xs font-bold bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] px-4 py-2 rounded-full border border-[var(--border-subtle)] text-[var(--text-primary)] transition-colors shadow-sm">
-                  {isGeneratingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-indigo-500" />}
-                  生成随堂笔记
-                </button>
-              </div>
+
               {(() => {
                 const lastAssistantIdx = messages.reduce((acc, m, i) =>
                   m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
@@ -484,71 +490,112 @@ export function TutorChat() {
 
         {!isZenMode && <ResizeHandle target="learning" className="hidden xl:block" />}
         {!isZenMode && (
-          <div className="hidden shrink-0 flex-col xl:flex" style={{ width: learningWidth }}>
-            <LearningPanel meta={meta} mistakes={mistakes} />
+          <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
+            <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
+              <button 
+                onClick={() => setRightPanelMode("learning")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-emerald-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+              >
+                状态复盘
+              </button>
+              <button 
+                onClick={() => setRightPanelMode("note")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-indigo-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+              >
+                随堂笔记
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden relative">
+              {rightPanelMode === "learning" ? (
+                <LearningPanel meta={meta} mistakes={mistakes} />
+              ) : (
+                <div className="absolute inset-0 flex flex-col bg-[var(--bg-card)]">
+                  <div className="flex justify-between items-center p-3 border-b border-[var(--border-primary)] shrink-0">
+                    <div className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] text-sm">
+                      <FileText className="w-4 h-4 text-indigo-500" />
+                      随堂笔记
+                      {!isGeneratingNote && noteContent && (
+                        <Link href="/notebook" className="ml-1 text-[10px] font-normal text-[#617a55] bg-[#617a55]/10 hover:bg-[#617a55]/20 px-1.5 py-0.5 rounded-sm border border-[#617a55]/20 transition-colors">
+                          ✓ 已保存
+                        </Link>
+                      )}
+                    </div>
+                    {!isGeneratingNote && noteContent && (
+                      <button onClick={() => {
+                        void submit("我已经阅读完这份随堂笔记。请基于笔记中的核心考点与易错陷阱，为我出一份包含 3 道题的针对性小测验（先出第一题，不要直接给答案，让我一步步来练习）。", "practice");
+                      }} className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-[#617a55] text-white hover:bg-[#617a55]/90 rounded-md transition-colors">
+                        <PenTool className="w-3 h-3" /> 基于笔记测验
+                      </button>
+                    )}
+                  </div>
+                  <div id="note-print-area" className="flex-1 overflow-y-auto p-4 md:p-5">
+                    {isGeneratingNote ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-3 text-[var(--text-muted)]">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                        <p className="text-xs animate-pulse">正在提炼核心考点...</p>
+                      </div>
+                    ) : !noteContent ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)] text-center px-4">
+                        <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                          <FileText className="w-8 h-8 text-indigo-500/50" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
+                          <p className="text-xs">复习完当前内容后，点击下方按钮，AI将为你提炼核心考点与易错陷阱。</p>
+                        </div>
+                        <button 
+                          onClick={handleGenerateNote} 
+                          disabled={!sessionId}
+                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                        >
+                          <Sparkles className="w-4 h-4" /> 
+                          一键生成笔记
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-[13px] leading-relaxed">
+                        <LatexRenderer content={noteContent} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Sticky Generate Button for Learning Panel */}
+            {rightPanelMode === "learning" && !noteContent && !isGeneratingNote && (
+              <div className="p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-tertiary)] shrink-0">
+                <button 
+                  onClick={handleGenerateNote}
+                  disabled={!sessionId}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                >
+                  <FileText className="w-4 h-4" /> 
+                  生成本节课专属笔记
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {showNoteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl shadow-2xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] bg-[var(--bg-header)]">
-              <div className="flex items-center gap-2 font-bold text-[var(--text-primary)]">
-                <FileText className="w-5 h-5 text-indigo-500" />
-                智能随堂笔记
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => {
-                  const printContent = document.getElementById("note-print-area");
-                  if (printContent) {
-                    const originalBody = document.body.innerHTML;
-                    document.body.innerHTML = printContent.innerHTML;
-                    window.print();
-                    document.body.innerHTML = originalBody;
-                    window.location.reload(); // Quick restore hack
-                  }
-                }} disabled={isGeneratingNote} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] rounded-md transition-colors disabled:opacity-50">
-                  <Printer className="w-3.5 h-3.5" /> 打印 / 导出 PDF
-                </button>
-                <button onClick={() => setShowNoteModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] p-1.5 rounded-md transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div id="note-print-area" className="flex-1 overflow-y-auto p-6 md:p-8 bg-white dark:bg-[#1a1a18]">
-              {isGeneratingNote ? (
-                <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)]">
-                  <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-                  <p className="animate-pulse">正在为您提炼本节课核心考点与易错陷阱...</p>
-                </div>
-              ) : (
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-                  <LatexRenderer content={noteContent} />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Zen Mode Confirmation Modal */}
       {showZenConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setShowZenConfirm(false)}>
+          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4 text-indigo-500">
                 <Target className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入心流模式</h3>
-              <p className="text-[var(--text-secondary)] text-sm mb-4 leading-relaxed">
-                即将为您打造绝对专注的沉浸空间。这将会：
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+                沉浸模式将全屏并隐藏侧边栏与学习面板，带给你无干扰的极致心流体验。
+                <br/><br/>
+                ✨ 附带专注番茄钟（支持自定义时长）与白噪音（右上角）。
+                <br/>
+                <span className="text-[var(--text-muted)] italic">提示：随时可以按 ESC 键，或点击右上角的“退出”按钮恢复原状。</span>
               </p>
-              <ul className="space-y-2 text-sm text-[var(--text-secondary)] mb-6">
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> 将页面最大化全屏</li>
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> 隐藏侧边栏等所有干扰信息</li>
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> 开启 25 分钟番茄钟与粉红噪音</li>
-              </ul>
               <div className="flex items-center justify-end gap-3">
                 <Button 
                   variant="ghost" 
@@ -571,6 +618,14 @@ export function TutorChat() {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${showNoteToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"}`}>
+        <div className="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-500 font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
+          <FileText className="w-4 h-4" />
+          笔记已在右侧边栏生成！
+        </div>
+      </div>
     </div>
   );
 }

@@ -9,7 +9,9 @@ dependencies = [
   "pydantic",
   "sympy",
   "httpx",
-  "pytest"
+  "pytest",
+  "matplotlib>=3.10.9",
+  "python-multipart>=0.0.32",
 ]
 
 [tool.pytest.ini_options]

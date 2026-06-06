@@ -5,8 +5,7 @@ import type { TutorMode } from "@/lib/api";
 const modes: Array<{ value: TutorMode; label: string; desc: string }> = [
   { value: "socratic", label: "引导模式", desc: "采用苏格拉底式提问，绝不直接给答案，而是一步步引导你自行推导，培养数学直觉与底层思维。" },
   { value: "direct", label: "直接讲解", desc: "拒绝谜语人，直接给出详尽、严谨的数学推导过程和最终答案，适合快速查漏补缺。" },
-  { value: "practice", label: "练习模式", desc: "针对当前知识点，智能生成难度递进的相似练习题，辅助巩固所学概念。" },
-  { value: "notes", label: "整理笔记", desc: "化身知识萃取机，将你凌乱的草稿或聊天记录提炼为排版极致绝美的 Markdown/LaTeX 笔记。" }
+  { value: "practice", label: "练习模式", desc: "针对当前知识点，智能生成难度递进的相似练习题，辅助巩固所学概念。" }
 ];
 
 export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: (mode: TutorMode) => void }) {

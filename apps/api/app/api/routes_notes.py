@@ -4,12 +4,12 @@ from pydantic import BaseModel
 from app.main_deps import get_repository
 from app.memory.repository import Repository
 
-router = APIRouter(prefix="/api/tutor/notes", tags=["notes"])
+router = APIRouter(prefix="/api", tags=["notes"])
 
 class GenerateNoteRequest(BaseModel):
     session_id: str
 
-@router.post("")
+@router.post("/tutor/notes")
 def generate_note(payload: GenerateNoteRequest, repo: Repository = Depends(get_repository)):
     messages = repo.list_messages(payload.session_id)
     
@@ -32,3 +32,24 @@ $$ \\lim_{x \\to a} \\frac{f(x)}{g(x)} = \\lim_{x \\to a} \\frac{f'(x)}{g'(x)} $
 在处理复杂函数极限时，有时等价无穷小替换比洛必达法则更加高效，应结合使用。
 """
     return {"note": note_content}
+
+
+class NoteCreate(BaseModel):
+    session_id: str
+    subject: str
+    content: str
+
+@router.post("/users/{user_id}/notes")
+def save_note(user_id: str, body: NoteCreate, repo: Repository = Depends(get_repository)):
+    note_id = repo.save_note(user_id, body.session_id, body.subject, body.content)
+    return {"status": "ok", "note_id": note_id}
+
+@router.get("/users/{user_id}/notes")
+def list_notes(user_id: str, repo: Repository = Depends(get_repository)):
+    notes = repo.list_notes(user_id)
+    return {"notes": notes}
+
+@router.delete("/notes/{note_id}")
+def delete_note(note_id: str, repo: Repository = Depends(get_repository)):
+    repo.delete_note(note_id)
+    return {"status": "ok"}

@@ -176,16 +176,26 @@ export function TutorInput({
           </div>
         )}
         <Textarea
-          className="min-h-24 rounded-none rounded-t-xl border-0 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+          className="min-h-[6rem] resize-none overflow-y-auto rounded-none rounded-t-xl border-0 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
           placeholder="上传问题照片或试卷文档 (PDF/Word)，或直接输入...（Enter 发送，Shift+Enter 换行）"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            onChange(event.target.value);
+            const el = event.target;
+            el.style.height = 'auto';
+            el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               submit();
+              requestAnimationFrame(() => {
+                const el = event.target as HTMLTextAreaElement;
+                el.style.height = 'auto';
+              });
             }
           }}
+          style={{ height: 'auto' }}
         />
 
         {/* MATH KEYBOARD */}

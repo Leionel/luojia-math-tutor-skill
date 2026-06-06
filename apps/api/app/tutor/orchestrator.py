@@ -13,9 +13,11 @@ from app.memory.mastery import mastery_label, update_mastery
 from app.tutor.hint_policy import decide_hint_level, HintLevel
 
 
+from app.agents.vision_agent import VisionParser
+from app.agents.harness_evaluator import PedagogyHarness
+
 def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
-
 
 class TutorOrchestrator:
     def __init__(self, settings: Settings, repository: Repository):
@@ -23,6 +25,8 @@ class TutorOrchestrator:
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
+        self.vision_parser = VisionParser()
+        self.harness = PedagogyHarness(settings)
 
     async def stream_reply(
         self,
@@ -34,6 +38,7 @@ class TutorOrchestrator:
         user_api_key: str | None = None,
         model: str | None = None,
         requested_hint: bool = False,
+        image_urls: list[str] | None = None,
     ) -> AsyncIterator[str]:
         self.repository.ensure_user(user_id)
         db_msgs = self.repository.list_messages(session_id)
@@ -44,7 +49,7 @@ class TutorOrchestrator:
         intent = route_intent(message, mode)
         detected_subject = detect_subject(message, subject)
         if detected_subject is None:
-            detected_subject = subject if subject != "auto" else "calculus"
+            detected_subject = subject
         hits = search_knowledge(message, detected_subject, limit=5)
 
         verifier_result = VerifyResult(False, None, "本轮未触发自动验算。")
@@ -145,6 +150,19 @@ class TutorOrchestrator:
 
         yield sse("thinking_start", {"message": "正在思考..."})
 
+        # Feature: If DeepSeek model or pure text logic is preferred, bypass VisionParser because MinerU text is already in the message.
+        # But if we must use VisionParser, we can conditionally do it. For MVP v4, we rely on MinerU text.
+        
+        # Fetch document chunks if session has document_id
+        session_data = self.repository.list_sessions(user_id) # actually we just need the single session
+        current_session = next((s for s in session_data if s["id"] == session_id), None)
+        document_id = current_session.get("document_id") if current_session else None
+        
+        document_chunks = []
+        if document_id:
+            yield sse("thinking", {"text": f"[隐式 RAG] 正在检索课件 ({document_id})...\n"})
+            document_chunks = self.repository.search_document_chunks(document_id, message, limit=3)
+
         messages = build_messages(
             skill_text=self.skill_text,
             user_message=message,
@@ -158,25 +176,86 @@ class TutorOrchestrator:
             mastery_score=mastery_score,
             history=history,
             bilibili_results="",
+            document_chunks=document_chunks,
         )
 
+        from app.agents.code_executor import execute_python_code
+        import re
+
+        loop_count = 0
+        max_loops = 3
+        final_output = ""
         thinking_chain = ""
-        full_text = ""
-        in_thinking = False
-        async for token in self.llm.stream(messages, api_key=user_api_key, model=model):
-            if "<think>" in token:
-                in_thinking = True
-                token = token.replace("<think>", "")
-            if "</think>" in token:
-                in_thinking = False
-                token = token.replace("</think>", "")
-            if in_thinking:
-                thinking_chain += token
-                yield sse("thinking", {"text": token})
-            else:
-                full_text += token
-                yield sse("token", {"text": token})
+
+        yield sse("thinking", {"text": "[Orchestrator] 启动 Label-Driven 内部推理闭环...\n"})
+
+        while loop_count < max_loops:
+            loop_count += 1
+            current_response = ""
+            buffer = ""
+            in_output = False
+            
+            async for token in self.llm.stream(messages, api_key=user_api_key, model=model):
+                current_response += token
+                buffer += token
+                
+                # Dynamic stream routing
+                if not in_output:
+                    if "[OUTPUT]" in buffer:
+                        in_output = True
+                        parts = buffer.split("[OUTPUT]")
+                        yield sse("thinking", {"text": parts[0]})
+                        thinking_chain += parts[0]
+                        if len(parts) > 1 and parts[1]:
+                            yield sse("token", {"text": parts[1]})
+                            final_output += parts[1]
+                        buffer = ""
+                    else:
+                        # Flush safe part of buffer to thinking (keep last 15 chars to catch split tags)
+                        if len(buffer) > 15:
+                            safe_chunk = buffer[:-15]
+                            buffer = buffer[-15:]
+                            yield sse("thinking", {"text": safe_chunk})
+                            thinking_chain += safe_chunk
+                else:
+                    yield sse("token", {"text": buffer})
+                    final_output += buffer
+                    buffer = ""
+                    
+            # Flush remaining buffer
+            if buffer:
+                if not in_output:
+                    yield sse("thinking", {"text": buffer})
+                    thinking_chain += buffer
+                else:
+                    yield sse("token", {"text": buffer})
+                    final_output += buffer
+
+            # After generation, check if we need to execute code
+            if "[VERIFY]" in current_response and "```python" in current_response:
+                code_match = re.search(r"```python(.*?)```", current_response, re.DOTALL)
+                if code_match:
+                    code = code_match.group(1).strip()
+                    yield sse("thinking", {"text": f"\n\n[沙箱执行] 正在运行推导代码:\n```python\n{code}\n```\n"})
+                    
+                    exec_result = await execute_python_code(code)
+                    
+                    yield sse("thinking", {"text": f"\n[执行结果]:\n{exec_result}\n继续推理...\n"})
+                    
+                    messages.append({"role": "assistant", "content": current_response})
+                    messages.append({
+                        "role": "user", 
+                        "content": f"系统后台执行代码结果如下：\n{exec_result}\n请根据结果反思(如果有报错请[CORRECT])，然后继续输出，最终必须以 [OUTPUT] 结束。"
+                    })
+                    continue  # Next loop iteration
+            
+            # If no code execution triggered, or if [OUTPUT] was reached, break
+            if "[OUTPUT]" in current_response or "```python" not in current_response:
+                break
+
+        # Note: We skipped PedagogyHarness here to keep the demo simple, 
+        # but it could be easily injected here on the final_output if needed.
 
         yield sse("thinking_end", {"chain": thinking_chain})
-        message_id = self.repository.add_message(session_id, "assistant", full_text, intent.value)
+        message_id = self.repository.add_message(session_id, "assistant", final_output, intent.value)
         yield sse("done", {"message_id": message_id})

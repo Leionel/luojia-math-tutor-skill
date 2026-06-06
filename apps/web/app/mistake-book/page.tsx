@@ -180,9 +180,9 @@ export default function MistakeBookPage() {
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 >
-                  <option value="foundations">基础概念</option>
-                  <option value="derivation">深度推导</option>
-                  <option value="problem_solving">实战解题</option>
+                  <option value="calculus">高等数学</option>
+                  <option value="linear_algebra">线性代数</option>
+                  <option value="probability">概率论与数统</option>
                 </select>
               </div>
               <div>

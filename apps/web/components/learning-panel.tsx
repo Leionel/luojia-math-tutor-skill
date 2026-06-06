@@ -17,7 +17,7 @@ const intentMap: Record<string, string> = {
 
 export function LearningPanel({ meta, mistakes }: { meta: TutorMeta | null; mistakes: Array<{ mistake_code: string; concept: string }> }) {
   const [open, setOpen] = useState(false);
-  const [overallMastery, setOverallMastery] = useState<Array<{concept: string; score: number; label: string}>>([]);
+  const [overallMastery, setOverallMastery] = useState<Array<{subject: string; A: number; fullMark: number}>>([]);
   const concepts = meta?.concepts?.length ? meta.concepts : ["等待输入题目"];
 
   useEffect(() => {

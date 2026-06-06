@@ -1,5 +1,5 @@
-export type TutorMode = "socratic" | "direct" | "practice" | "notes";
-export type Subject = "auto" | "foundations" | "derivation" | "problem_solving";
+export type TutorMode = "socratic" | "direct" | "practice";
+export type Subject = string;
 
 export type Session = {
   id: string;
@@ -60,24 +60,27 @@ export async function deleteSession(sessionId: string) {
   return res.json();
 }
 
-export async function generateTitle(message: string, userApiKey?: string | null, model?: string | null): Promise<string> {
+export async function generateTitle(message: string, userApiKey?: string | null, model?: string | null): Promise<{ title: string; label: string }> {
   const res = await fetch(`${API_BASE}/api/tutor/generate_title`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, user_api_key: userApiKey, model })
+    body: JSON.stringify({ message, user_api_key: userApiKey || null, model: model || null })
   });
-  if (!res.ok) return message.length > 10 ? message.slice(0, 10) + "..." : message;
+  if (!res.ok) return { title: message.slice(0, 10) + "...", label: "综合" };
   const data = await res.json();
-  return data.title;
+  return { title: data.title, label: data.label || "综合" };
 }
 
-export async function renameSession(sessionId: string, title: string) {
+export async function renameSession(sessionId: string, title: string, subject?: string) {
+  const payload: any = { title };
+  if (subject) payload.subject = subject;
+  
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title })
+    body: JSON.stringify(payload)
   });
-  if (!res.ok) throw new Error("重命名会话失败");
+  if (!res.ok) throw new Error("重命名失败");
   return res.json();
 }
 
@@ -130,7 +133,7 @@ export async function fetchMastery(userId: string) {
   const res = await fetch(`${API_BASE}/api/users/${userId}/mastery`, { cache: "no-store" });
   if (!res.ok) throw new Error("获取掌握度失败");
   const data = await res.json();
-  return data.items as Array<{ concept: string; score: number; label: string }>;
+  return (Array.isArray(data) ? data : data.items) as Array<{ subject: string; A: number; fullMark: number }>;
 }
 
 export async function testModel(userApiKey: string | null, model?: string) {
@@ -153,6 +156,7 @@ export async function streamTutor(
     model?: string;
     requested_hint?: boolean;
     abortSignal?: AbortSignal;
+    image_urls?: string[];
   },
   onMeta: (meta: TutorMeta) => void,
   onToken: (token: string) => void,
@@ -212,4 +216,36 @@ export async function generateNote(sessionId: string) {
   if (!res.ok) throw new Error("生成笔记失败");
   const data = await res.json();
   return data as { note: string };
+}
+
+export interface NoteEntry {
+  id: string;
+  user_id: string;
+  session_id: string;
+  subject: string;
+  content: string;
+  created_at: string;
+}
+
+export async function saveNote(userId: string, data: { session_id: string; subject: string; content: string }) {
+  const res = await fetch(`${API_BASE}/api/users/${userId}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("保存笔记失败");
+  return res.json();
+}
+
+export async function listNotes(userId: string) {
+  const res = await fetch(`${API_BASE}/api/users/${userId}/notes`);
+  if (!res.ok) throw new Error("获取笔记失败");
+  const data = await res.json();
+  return data.notes as NoteEntry[];
+}
+
+export async function deleteNote(noteId: string) {
+  const res = await fetch(`${API_BASE}/api/notes/${noteId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("删除笔记失败");
+  return res.json();
 }

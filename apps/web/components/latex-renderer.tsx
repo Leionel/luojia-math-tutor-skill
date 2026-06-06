@@ -1,29 +1,54 @@
 "use client";
 
 import katex from "katex";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Eye, Code } from "lucide-react";
 import { useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
 
 function CodeBlock({ language, content }: { language: string; content: string }) {
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<"code" | "preview">("preview");
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  
+  const isHtml = language?.toLowerCase() === "html" || language?.toLowerCase() === "xml";
+
   return (
-    <div className="my-4 rounded-xl overflow-hidden bg-[#0d1117] border border-[var(--border-subtle)] shadow-md">
+    <div className="my-4 rounded-xl overflow-hidden bg-[#0d1117] border border-[#30363d] shadow-lg">
       <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
-        <span className="text-xs font-mono text-slate-400">{language || "text"}</span>
-        <button onClick={handleCopy} className="text-slate-400 hover:text-slate-200 transition-colors">
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{language || "text"}</span>
+          {isHtml && (
+            <div className="flex items-center bg-[#0d1117] rounded p-0.5 border border-[#30363d]">
+               <button onClick={() => setMode("preview")} className={`px-2 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${mode === "preview" ? "bg-[#21262d] text-cyan-400 font-medium" : "text-slate-500 hover:text-slate-300"}`}>
+                 <Eye className="w-3.5 h-3.5"/> Preview
+               </button>
+               <button onClick={() => setMode("code")} className={`px-2 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${mode === "code" ? "bg-[#21262d] text-cyan-400 font-medium" : "text-slate-500 hover:text-slate-300"}`}>
+                 <Code className="w-3.5 h-3.5"/> Source
+               </button>
+            </div>
+          )}
+        </div>
+        <button onClick={handleCopy} className="text-slate-400 hover:text-slate-200 transition-colors" title="Copy code">
           {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
         </button>
       </div>
-      <div className="p-4 overflow-x-auto text-sm font-mono text-slate-300">
-        <pre><code>{content}</code></pre>
-      </div>
+      {isHtml && mode === "preview" ? (
+        <iframe 
+          className="w-full bg-white border-none min-h-[300px]" 
+          sandbox="allow-scripts" 
+          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${content}</body></html>`} 
+          title="HTML Preview"
+        />
+      ) : (
+        <div className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed text-slate-300 selection:bg-cyan-500/30">
+          <pre><code>{content}</code></pre>
+        </div>
+      )}
     </div>
   );
 }
@@ -210,6 +235,7 @@ type Block =
   | { type: "code-block"; language: string; content: string }
   | { type: "plot"; function: string; domain?: string }
   | { type: "bilibili-search"; keyword: string }
+  | { type: "html"; content: string }
   | { type: "paragraph"; lines: string[] };
 
 function parseBlocks(lines: string[]): Block[] {
@@ -339,6 +365,13 @@ function parseBlocks(lines: string[]): Block[] {
         blocks.push({ type: "bilibili-search", keyword: matchKw[1] });
       }
       i++;
+    } else if (/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(line.trim())) {
+      const htmlLines: string[] = [];
+      while (i < lines.length && lines[i].trim() !== "") {
+        htmlLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: "html", content: htmlLines.join("\n") });
     } else {
       const paragraphLines: string[] = [];
       while (
@@ -355,6 +388,7 @@ function parseBlocks(lines: string[]): Block[] {
         !/^\\\[/.test(lines[i].trim()) &&
         !/^\$\$/.test(lines[i].trim()) &&
         !lines[i].startsWith("```") &&
+        !/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(lines[i].trim()) &&
         lines[i].trim() !== ""
       ) {
         paragraphLines.push(lines[i]);
@@ -433,6 +467,18 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
       return <MathPlot key={`plot-${blockIndex}`} function={block.function} domain={block.domain} />;
     case "bilibili-search":
       return <VideoRecommend key={`bili-${blockIndex}`} keyword={block.keyword} />;
+    case "html": {
+      const safeContent = block.content
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<script[\s\S]*?<\/script>/gi, "");
+      return (
+        <div 
+          key={`html-${blockIndex}`} 
+          className="my-3 overflow-x-auto html-container"
+          dangerouslySetInnerHTML={{ __html: safeContent }} 
+        />
+      );
+    }
     case "paragraph":
       return (
         <p key={`p-${blockIndex}`} className="my-1">

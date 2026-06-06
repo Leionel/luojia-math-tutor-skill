@@ -5,6 +5,7 @@ import { Play, Pause, RotateCcw, Target } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function ZenOverlay({ isZenMode }: { isZenMode: boolean }) {
+  const [duration, setDuration] = useState(25);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   
@@ -111,7 +112,7 @@ export function ZenOverlay({ isZenMode }: { isZenMode: boolean }) {
   };
 
   const resetTimer = () => {
-    setTimeLeft(25 * 60);
+    setTimeLeft(duration * 60);
     setIsRunning(false);
     if (noiseNodeRef.current) {
       try { noiseNodeRef.current.stop(); } catch(e) {}
@@ -126,22 +127,36 @@ export function ZenOverlay({ isZenMode }: { isZenMode: boolean }) {
 
   return (
     <div className="fixed top-6 right-6 z-50 flex flex-col items-end gap-2 animate-in fade-in slide-in-from-top-4 duration-500">
-      <div className="bg-white/10 dark:bg-black/40 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-2xl p-4 shadow-2xl flex flex-col items-center min-w-[140px] transition-all">
-        <div className="flex items-center gap-2 text-white/70 mb-2 text-xs font-medium tracking-widest uppercase">
+      <div className="bg-[var(--bg-tertiary)]/80 backdrop-blur-md border border-[var(--border-subtle)] rounded-2xl p-4 shadow-2xl flex flex-col items-center min-w-[140px] transition-all">
+        <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2 text-xs font-medium tracking-widest uppercase">
           <Target className="w-3.5 h-3.5" />
           <span>Flow State</span>
         </div>
         
-        <div className="text-4xl font-mono font-light text-white tracking-tight mb-4 select-none">
+        <div className="text-4xl font-mono font-light text-[var(--text-primary)] tracking-tight mb-4 select-none">
           {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
         
+        {!isRunning && (
+          <div className="flex gap-1.5 mb-4 text-xs font-mono">
+            {[15, 25, 45, 60].map(m => (
+              <button 
+                key={m} 
+                onClick={() => { setDuration(m); setTimeLeft(m * 60); }}
+                className={`w-8 h-6 rounded-md flex items-center justify-center transition-colors ${duration === m ? 'bg-[#617a55] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--text-primary)]/5 hover:text-[var(--text-primary)]'}`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handlePlayPause}
-            className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="h-10 w-10 rounded-full bg-[var(--text-primary)]/5 hover:bg-[var(--text-primary)]/10 text-[var(--text-primary)] transition-colors"
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
           </Button>
@@ -149,7 +164,7 @@ export function ZenOverlay({ isZenMode }: { isZenMode: boolean }) {
             variant="ghost" 
             size="icon" 
             onClick={resetTimer}
-            className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="h-10 w-10 rounded-full bg-[var(--text-primary)]/5 hover:bg-[var(--text-primary)]/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
           </Button>

@@ -10,13 +10,14 @@ router = APIRouter(prefix="/api", tags=["sessions"])
 
 class CreateSessionRequest(BaseModel):
     user_id: str = "demo-user"
-    subject: str = "calculus"
+    subject: str = "综合"
     title: str | None = None
+    document_id: str | None = None
 
 
 @router.post("/sessions")
 def create_session(payload: CreateSessionRequest, repo: Repository = Depends(get_repository)):
-    return repo.create_session(payload.user_id, payload.subject, payload.title)
+    return repo.create_session(payload.user_id, payload.subject, payload.title, payload.document_id)
 
 
 @router.get("/sessions")
@@ -42,10 +43,11 @@ def delete_session(session_id: str, repo: Repository = Depends(get_repository)):
 
 class RenameSessionRequest(BaseModel):
     title: str
+    subject: str | None = None
 
 @router.put("/sessions/{session_id}")
 def rename_session(session_id: str, payload: RenameSessionRequest, repo: Repository = Depends(get_repository)):
-    repo.update_session_title(session_id, payload.title)
+    repo.update_session_meta(session_id, payload.title, payload.subject)
     return {"status": "ok"}
 
 

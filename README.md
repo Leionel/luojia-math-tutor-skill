@@ -26,27 +26,35 @@
 
 ## 当前能力
 
+### 🚀 V4.0 核心突破：全场景学习工作流闭环
+
+- **一键智能笔记 (Smart Notes Workflow)**：打通了左侧对话、右侧总结的双栏交互流。随时一键让大模型从漫长的对话中萃取出核心考点与错题陷阱，并直达专属智能笔记本 (`/notebook`)。
+- **全局错题本与雷达图画像 (Mistake Book & Mastery Dashboard)**：引入了全新的 `/mistake-book` 和 `/dashboard`。不论是手动记录，还是 AI 抓取，每一次犯错都会成为底层 SQLite 的事件数据，最终在用户的“能力雷达图”上动态描绘出薄弱环节。
+- **无感化智能动态标签 (Dynamic AI Tagging System)**：彻底抛弃了反人性的“下拉框选科目”。现在大模型会根据首条消息自动推断专属领域标签（如微积分、物理、逻辑推理），并在侧边栏提供一键聚合筛选。
+- **会话高阶管控 (Advanced Session Management)**：完善了对话流的分支剪枝能力（消息编辑与重试自动截断历史），以及会话的无缝重命名与一键删除。
+
 ### 🖥️ Tutor 工作台 (App 端详细介绍)
 
 基于 Next.js App Router + TypeScript + TailwindCSS 构建，采用了**“几何静默 (Geometric Silence)”**的东方极简融合 Cyberpunk 专属设计美学（深色毛玻璃、青/墨绿/赤红强调色、呼吸动效）。
 
 1. **四大学习模式**
+
    - **引导模式 (Socratic)**：采用苏格拉底式提问，一步步引导自行推导，培养数学直觉。
    - **直接讲解 (Direct)**：直接给出详尽、严谨的数学推导过程和最终答案。
    - **练习模式 (Practice)**：智能生成难度递进的相似练习题，辅助巩固概念。
    - **整理笔记 (Notes)**：化身知识萃取机，将凌乱草稿提炼为极致排版的 Markdown/LaTeX 笔记。
-
 2. **三大场景分类**
+
    - **基础概念**：侧重于对定义、定理来源的通俗化解释，帮助扫盲并建立直觉基石。
    - **深度推导**：侧重于严谨的数学推演、证明步骤与逻辑链条，适合冲刺高分的拔高训练。
    - **实战解题**：侧重于解题技巧、套路总结和错题分析，直接面向应试拿分。
-
 3. **沉浸式画板与识图 (Whiteboard & OCR)**
+
    - 内置全屏级沉浸式草稿板，支持手写绘图推演。
    - 接入 **MinerU API** 进行多模态深度公式识别提取。
    - 配备了优雅的全局网络代理防呆拦截弹窗，防止上传超时。
-
 4. **全局错题本与 A4 打印导出**
+
    - SQLite 自动记忆错因与考点，生成专属错题本。
    - 专为线下复习优化的 **A4 纸打印排版格式**，自动留出笔记书写空间并隐藏非必要 UI。
 
@@ -76,6 +84,7 @@
 ### 🧠 最强多模型接入基座
 
 内置统一 OpenAI-compatible LLM Client，已配置 2026 年最新地表最强模型矩阵：
+
 - **海外旗舰**：OpenAI (GPT-5.5 / GPT-5.5 Pro / GPT-5.3 Codex / o1), Anthropic (Claude Opus 4.8 / Sonnet 4.6), Google (Gemini 3.5 Flash / 3.1 Pro)。
 - **国产巅峰**：DeepSeek (v4 Flash / v4 Pro), 通义千问 (Qwen3.7-Max), Kimi (K2.6 / K2.5), 智谱 (GLM-5 / GLM-5-Turbo)。
 - 支持平台统一 Key 或 用户自定义前端 Key，保障数据安全与灵活性。
@@ -286,33 +295,6 @@ npm.cmd run build
 - 右侧学习面板展示当前考点、错因、掌握度和下一步建议。
 - 错因进入本地记录，刷新后会话历史仍可恢复。
 
-## 参赛叙事与路线图
-
-本项目可包装为生成式 AI 智能体赛道作品：
-
-> 面向 STEM 教育的可验证学习智能体。
-
-阶段路线：
-
-```text
-Phase 1：数学 Tutor MVP
-对话、检索、验算、错因记录。
-
-Phase 2：课程学习闭环
-掌握度、提示层级、错题本、类似题、复盘卡片、可视化辅助。
-
-Phase 3：STEM 可验证学习智能体平台
-扩展到物理、统计、电路等强推理课程，并提供教师端分析和教育机构 API。
-```
-
-相关文档：
-
-- [MVP0_INIT_GUIDE.md](./MVP0_INIT_GUIDE.md)
-- [CRAIC_AGENT_TRACK_EXTENSION.md](./CRAIC_AGENT_TRACK_EXTENSION.md)
-- [PHASE2_PHASE3_BRIDGE.md](./PHASE2_PHASE3_BRIDGE.md)
-- [PHASE3_STEM_AGENT_PLATFORM.md](./PHASE3_STEM_AGENT_PLATFORM.md)
-- [WEB_APP_IMPLEMENTATION_PATH.md](./WEB_APP_IMPLEMENTATION_PATH.md)
-
 ## Skill 模式
 
 本仓库仍保留原始 Skill 使用方式。你可以通过 `npx` 或手动配置，让其他 AI 工具读取 `luojia-math-tutor/SKILL.md` 和本地知识库。
@@ -340,4 +322,3 @@ npx github:Leionel/luojia-math-tutor-skill
 欢迎提交 Issue 或 PR，一起完善可验证学习智能体、数学知识库、错因规则和 STEM 课程扩展能力。
 
 关联主项目：[Leionel/luojia-math-tutor](https://github.com/Leionel/luojia-math-tutor)
-
