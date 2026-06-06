@@ -260,6 +260,27 @@ class TutorWorkflow:
             document_chunks=document_chunks,
         )
 
+        # Emit meta and thinking_start SSE events
+        on_thinking = config.get("configurable", {}).get("on_thinking")
+        if on_thinking:
+            await on_thinking(sse(
+                "meta",
+                {
+                    "intent": intent.value,
+                    "subject": detected_subject,
+                    "concepts": concepts,
+                    "verified": verifier_result.verified if verifier_result else False,
+                    "is_correct": verifier_result.is_correct if verifier_result else False,
+                    "mistake": mistake.label if mistake else None,
+                    "verifier_summary": verifier_result.summary if verifier_result else "本轮未触发自动验算。",
+                    "hint_level": hint_level,
+                    "mastery_score": mastery_score,
+                    "mastery_label": mastery_label_str,
+                    "mastery_delta": mastery_delta,
+                },
+            ))
+            await on_thinking(sse("thinking_start", {"message": "正在思考..."}))
+
         return {
             "hits": hits,
             "document_chunks": document_chunks,
