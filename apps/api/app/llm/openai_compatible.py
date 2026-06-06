@@ -11,6 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAICompatibleClient:
+    _http_client: httpx.AsyncClient | None = None
+
+    @classmethod
+    def get_http_client(cls) -> httpx.AsyncClient:
+        if cls._http_client is None or cls._http_client.is_closed:
+            cls._http_client = httpx.AsyncClient(timeout=60.0)
+        return cls._http_client
+
     def __init__(self, settings: Settings):
         self.settings = settings
 
@@ -33,23 +41,23 @@ class OpenAICompatibleClient:
             "temperature": 0.3,
         }
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-        async with httpx.AsyncClient(timeout=60) as client:
-            async with client.stream("POST", url, json=payload, headers=headers) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line.removeprefix("data: ").strip()
-                    if data == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0].get("delta", {})
-                        content = delta.get("content")
-                        if content:
-                            yield content
-                    except Exception:
-                        continue
+        client = self.get_http_client()
+        async with client.stream("POST", url, json=payload, headers=headers, timeout=60.0) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data = line.removeprefix("data: ").strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                    delta = chunk["choices"][0].get("delta", {})
+                    content = delta.get("content")
+                    if content:
+                        yield content
+                except Exception:
+                    continue
 
     async def chat_completion(
         self, messages: list[dict[str, str]], api_key: str | None = None, model: str | None = None
@@ -68,11 +76,11 @@ class OpenAICompatibleClient:
         }
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.post(url, json=payload, headers=headers)
-                response.raise_for_status()
-                data = response.json()
-                return data["choices"][0]["message"]["content"].strip()
+            client = self.get_http_client()
+            response = await client.post(url, json=payload, headers=headers, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
         except Exception:
             return ""
 
@@ -91,9 +99,9 @@ class OpenAICompatibleClient:
         }
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
-            async with httpx.AsyncClient(timeout=20) as client:
-                response = await client.post(url, json=payload, headers=headers)
-                response.raise_for_status()
+            client = self.get_http_client()
+            response = await client.post(url, json=payload, headers=headers, timeout=20.0)
+            response.raise_for_status()
             return {"ok": True, "message": "模型连接成功。"}
         except Exception as exc:
             return {"ok": False, "message": f"模型连接失败：{exc}"}
@@ -167,11 +175,11 @@ class OpenAICompatibleClient:
         }
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.post(url, json=payload, headers=headers)
-                response.raise_for_status()
-                data = response.json()
-                return data["data"][0]["embedding"]
+            client = self.get_http_client()
+            response = await client.post(url, json=payload, headers=headers, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            return data["data"][0]["embedding"]
         except Exception as exc:
             logger.error(f"Embedding API call failed for model {resolved_model} (url: {url}): {exc}", exc_info=True)
             return []

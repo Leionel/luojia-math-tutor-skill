@@ -39,6 +39,7 @@ def _tokens(query: str) -> list[str]:
 
 
 _vector_store = None
+_vector_store_lock = asyncio.Lock()
 
 
 def is_cache_valid(store: LocalVectorStore, current_items: tuple[KnowledgeItem, ...]) -> bool:
@@ -47,6 +48,10 @@ def is_cache_valid(store: LocalVectorStore, current_items: tuple[KnowledgeItem, 
     支持修改、删除和新增的检测。
     """
     if not hasattr(store, "doc_id_to_metadata") or not store.doc_id_to_metadata:
+        return False
+
+    # 检查 embeddings and chunks 是否为空，以及数量是否匹配
+    if not store.chunks or not store.embeddings or len(store.embeddings) != len(store.chunks):
         return False
         
     current_docs = {}
@@ -73,16 +78,20 @@ async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
     if _vector_store is not None:
         return _vector_store
         
-    settings = get_settings()
-    cache_path = settings.knowledge_root / "embeddings.json"
-    
-    store = LocalVectorStore(cache_path=cache_path)
-    items = load_knowledge()
-    
-    # 校验缓存是否有效
-    if store.load() and is_cache_valid(store, items):
-        _vector_store = store
-        return _vector_store
+    async with _vector_store_lock:
+        if _vector_store is not None:
+            return _vector_store
+
+        settings = get_settings()
+        cache_path = settings.knowledge_root / "embeddings.json"
+        
+        store = LocalVectorStore(cache_path=cache_path)
+        items = load_knowledge()
+        
+        # 校验缓存是否有效
+        if store.load() and is_cache_valid(store, items):
+            _vector_store = store
+            return _vector_store
         
     docs = []
     for item in items:
