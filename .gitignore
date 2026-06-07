@@ -14,3 +14,4 @@ docs/
 deeptutor/
 outputs/
 apps/api/data/uploads/
+.worktrees/
