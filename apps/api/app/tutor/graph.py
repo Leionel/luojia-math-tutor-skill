@@ -17,6 +17,7 @@ from app.tutor.prompt_builder import build_messages, HintLevel
 from app.memory.mastery import mastery_label, update_mastery
 from app.tutor.hint_policy import decide_hint_level
 from app.agents.code_executor import execute_python_code
+from app.tutor.policy_router import PolicyRouter, PedagogicalAction
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,8 @@ class AgentState(TypedDict):
 
     # Intermediate Variables
     intent: Intent | None
+    pedagogical_action: str | None
+    verification_result: dict
     detected_subject: str | None
     hits: list[Any]
     document_chunks: list[str]
@@ -62,6 +65,7 @@ class TutorWorkflow:
         self.settings = settings
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
+        self.policy_router = PolicyRouter(self.llm)
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
         self.workflow = self._build_workflow()
 
@@ -71,13 +75,15 @@ class TutorWorkflow:
         # Register nodes
         builder.add_node("intent_node", self.intent_node)
         builder.add_node("retrieve_node", self.retrieve_node)
+        builder.add_node("policy_node", self.policy_node)
         builder.add_node("orchestrator_node", self.orchestrator_node)
         builder.add_node("sandbox_node", self.sandbox_node)
 
         # Define transitions
         builder.add_edge(START, "intent_node")
         builder.add_edge("intent_node", "retrieve_node")
-        builder.add_edge("retrieve_node", "orchestrator_node")
+        builder.add_edge("retrieve_node", "policy_node")
+        builder.add_edge("policy_node", "orchestrator_node")
 
         # Conditional path from Orchestrator
         builder.add_conditional_edges(
@@ -243,44 +249,7 @@ class TutorWorkflow:
         except Exception as e:
             logger.error(f"add_attempt failed: {e}", exc_info=True)
 
-        # Construct initial messages
-        initial_messages = build_messages(
-            skill_text=self.skill_text,
-            user_message=message,
-            intent=intent,
-            subject=detected_subject,
-            hits=hits,
-            verifier_result=verifier_result,
-            mistake=mistake,
-            mode=mode,
-            hint_level=HintLevel(hint_level),
-            mastery_score=mastery_score,
-            history=history,
-            bilibili_results="",
-            document_chunks=document_chunks,
-        )
-
-        # Emit meta and thinking_start SSE events
-        on_thinking = config.get("configurable", {}).get("on_thinking")
-        if on_thinking:
-            await on_thinking(sse(
-                "meta",
-                {
-                    "intent": intent.value,
-                    "subject": detected_subject,
-                    "concepts": concepts,
-                    "verified": verifier_result.verified if verifier_result else False,
-                    "is_correct": verifier_result.is_correct if verifier_result else False,
-                    "mistake": mistake.label if mistake else None,
-                    "verifier_summary": verifier_result.summary if verifier_result else "本轮未触发自动验算。",
-                    "hint_level": hint_level,
-                    "mastery_score": mastery_score,
-                    "mastery_label": mastery_label_str,
-                    "mastery_delta": mastery_delta,
-                },
-            ))
-            await on_thinking(sse("thinking_start", {"message": "正在思考..."}))
-
+        # Return data for next nodes
         return {
             "hits": hits,
             "document_chunks": document_chunks,
@@ -289,8 +258,73 @@ class TutorWorkflow:
             "mastery_delta": mastery_delta,
             "mastery_label_str": mastery_label_str,
             "hint_level": hint_level,
-            "messages": initial_messages,
             "loop_count": 0,
+        }
+
+    async def policy_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        """决定教学策略并生成初始消息"""
+        message = state["message"]
+        session_id = state["session_id"]
+        user_id = state["user_id"]
+        user_api_key = state.get("user_api_key")
+        model = state.get("model")
+        mode = state["mode"]
+        
+        on_thinking = config.get("configurable", {}).get("on_thinking")
+        if on_thinking:
+            await on_thinking(sse("thinking", {"text": f"[策略引擎] 正在分析最佳教学动作...\n"}))
+            
+        action = await self.policy_router.decide_action(message, user_api_key, model)
+        
+        if on_thinking:
+            await on_thinking(sse("thinking", {"text": f"[策略引擎] 决定采用动作: {action.value.upper()}\n"}))
+            await on_thinking(sse(
+                "meta",
+                {
+                    "intent": state["intent"].value,
+                    "subject": state["detected_subject"],
+                    "concepts": state["concepts"],
+                    "verified": state["verifier_result"].verified if state.get("verifier_result") else False,
+                    "is_correct": state["verifier_result"].is_correct if state.get("verifier_result") else False,
+                    "mistake": state["mistake"].label if state.get("mistake") else None,
+                    "verifier_summary": state["verifier_result"].summary if state.get("verifier_result") else "本轮未触发自动验算。",
+                    "hint_level": state["hint_level"],
+                    "mastery_score": state["mastery_score"],
+                    "mastery_label": state["mastery_label_str"],
+                    "mastery_delta": state["mastery_delta"],
+                    "pedagogical_action": action.value,
+                },
+            ))
+            await on_thinking(sse("thinking_start", {"message": "正在思考..."}))
+            
+        db_msgs = self.repository.list_messages(session_id)
+        # Exclude the very last message since it's the current user message, 
+        # but wait, the prompt builder appends user message at the end! 
+        # Actually repository.add_message was called in retrieve_node.
+        # But build_messages does `messages.extend(history); messages.append(user_message)`
+        # If we passed all db_msgs it would duplicate the last message.
+        # So we take all except the last one (which is the current user message).
+        history = [{"role": m["role"], "content": m["content"]} for m in db_msgs[:-1]]
+
+        initial_messages = build_messages(
+            skill_text=self.skill_text,
+            user_message=message,
+            intent=state["intent"],
+            subject=state["detected_subject"],
+            hits=state["hits"],
+            verifier_result=state["verifier_result"],
+            mistake=state["mistake"],
+            mode=mode,
+            hint_level=HintLevel(state["hint_level"]),
+            mastery_score=state["mastery_score"],
+            history=history,
+            bilibili_results="",
+            document_chunks=state["document_chunks"],
+            pedagogical_action=action.value,
+        )
+        return {
+            "pedagogical_action": action.value,
+            "messages": initial_messages,
         }
 
     async def orchestrator_node(self, state: AgentState, config: RunnableConfig) -> dict:
@@ -415,3 +449,24 @@ class TutorWorkflow:
         if state.get("loop_count", 0) >= 3:
             return "end"
         return state.get("next_action", "end")
+
+def verifier_node(state: AgentState):
+    print("---VERIFIER NODE---")
+    # Stub: Just pass through for now
+    state["verification_result"] = {"is_correct": True, "error_step": 0, "correct_logic": "Stub logic"}
+    return state
+
+def teacher_node(state: AgentState):
+    from langchain_core.messages import AIMessage
+    print("---TEACHER NODE---")
+    # Stub: Return a mock message
+    state["messages"].append(AIMessage(content="Stub teacher response"))
+    return state
+
+def examiner_node(state: AgentState):
+    from langchain_core.messages import AIMessage
+    print("---EXAMINER NODE---")
+    # Stub: Return a mock message
+    state["messages"].append(AIMessage(content="Stub examiner question"))
+    return state
+
