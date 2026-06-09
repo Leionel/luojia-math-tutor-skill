@@ -15,7 +15,7 @@ from app.math_tools.step_checker import check_step
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.intent_router import Intent, route_intent
-from app.tutor.prompt_builder import build_messages, HintLevel
+from app.tutor.prompt_builder import build_messages, HintLevel, build_verifier_prompt, build_teacher_prompt, build_examiner_prompt
 from app.memory.mastery import mastery_label, update_mastery
 from app.tutor.hint_policy import decide_hint_level
 from app.agents.code_executor import execute_python_code
@@ -99,10 +99,10 @@ class TutorWorkflow:
         workflow.add_node("intent", self.intent_node)
         workflow.add_node("retrieve", self.retrieve_node)
         workflow.add_node("policy", self.policy_node)
-        workflow.add_node("verifier", verifier_node)
+        workflow.add_node("verifier", self.verifier_node)
         workflow.add_node("sandbox", self.sandbox_node)
-        workflow.add_node("teacher", teacher_node)
-        workflow.add_node("examiner", examiner_node)
+        workflow.add_node("teacher", self.teacher_node)
+        workflow.add_node("examiner", self.examiner_node)
         
         # Add linear edges
         workflow.add_edge(START, "intent")
@@ -401,23 +401,77 @@ class TutorWorkflow:
 
 
 
-def verifier_node(state: AgentState):
-    print("---VERIFIER NODE---")
-    # Stub: Just pass through for now
-    state["verification_result"] = {"is_correct": True, "error_step": 0, "correct_logic": "Stub logic"}
-    return state
+    async def verifier_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        print("---VERIFIER NODE---")
+        messages = build_verifier_prompt(state)
+        
+        prompt = []
+        if isinstance(messages, list):
+            for msg in messages:
+                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                prompt.append({"role": role, "content": msg.content})
+        else:
+            prompt = [{"role": "user", "content": str(messages)}]
+            
+        try:
+            response_text = await self.llm.chat_completion(
+                prompt,
+                api_key=state.get("user_api_key"),
+                model=state.get("model")
+            )
+            match = re.search(r"\{.*\}", response_text, re.DOTALL)
+            if match:
+                state["verification_result"] = json.loads(match.group(0))
+            else:
+                state["verification_result"] = {"raw_output": response_text}
+        except Exception as e:
+            logger.error(f"Verifier node error: {e}", exc_info=True)
+            state["verification_result"] = {"error": str(e)}
+            
+        return {"verification_result": state["verification_result"]}
 
-def teacher_node(state: AgentState):
-    from langchain_core.messages import AIMessage
-    print("---TEACHER NODE---")
-    # Stub: Return a mock message
-    state["messages"].append(AIMessage(content="Stub teacher response"))
-    return state
+    async def teacher_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        print("---TEACHER NODE---")
+        messages = build_teacher_prompt(state)
+        
+        prompt = []
+        if isinstance(messages, list):
+            for msg in messages:
+                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                prompt.append({"role": role, "content": msg.content})
+        else:
+            prompt = [{"role": "system", "content": str(messages)}]
 
-def examiner_node(state: AgentState):
-    from langchain_core.messages import AIMessage
-    print("---EXAMINER NODE---")
-    # Stub: Return a mock message
-    state["messages"].append(AIMessage(content="Stub examiner question"))
-    return state
+        try:
+            response_text = await self.llm.chat_completion(
+                prompt,
+                api_key=state.get("user_api_key"),
+                model=state.get("model")
+            )
+            state["messages"].append({"role": "assistant", "content": response_text})
+        except Exception as e:
+            logger.error(f"Teacher node error: {e}", exc_info=True)
+        return {"messages": state["messages"]}
 
+    async def examiner_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        print("---EXAMINER NODE---")
+        messages = build_examiner_prompt(state)
+        
+        prompt = []
+        if isinstance(messages, list):
+            for msg in messages:
+                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                prompt.append({"role": role, "content": msg.content})
+        else:
+            prompt = [{"role": "system", "content": str(messages)}]
+
+        try:
+            response_text = await self.llm.chat_completion(
+                prompt,
+                api_key=state.get("user_api_key"),
+                model=state.get("model")
+            )
+            state["messages"].append({"role": "assistant", "content": response_text})
+        except Exception as e:
+            logger.error(f"Examiner node error: {e}", exc_info=True)
+        return {"messages": state["messages"]}
