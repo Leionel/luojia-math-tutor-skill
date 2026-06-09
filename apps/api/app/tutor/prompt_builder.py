@@ -138,3 +138,20 @@ def build_examiner_prompt(state: dict) -> list:
     sys_msg = """你是一个出题官。请基于学生的掌握度，给出一道新题目。"""
     messages = [SystemMessage(content=sys_msg)] + state["messages"]
     return messages
+
+def build_planner_prompt(state: dict) -> list:
+    from langchain_core.messages import SystemMessage
+    
+    concepts = state.get("concepts", [])
+    mastery_label_str = state.get("mastery_label_str", "未知")
+    
+    sys_msg = f"""你是一个宏观学习规划师 (Learning Planner)。
+当前涉及的知识点：{concepts}
+学生的当前总体掌握度评级：{mastery_label_str}
+
+请根据这些信息，为当前这次辅导设定一个精简的教学目标 (learning_objective)。
+要求：
+1. 只需要输出目标文本，最多 20 个字。
+2. 例如："掌握条件概率公式中分母的含义" 或 "复习不定积分的基础公式"。
+"""
+    return [SystemMessage(content=sys_msg)]

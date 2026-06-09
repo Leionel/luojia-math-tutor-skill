@@ -56,6 +56,7 @@ class AgentState(TypedDict):
     hint_level: int
     loop_count: int
     next_action: str
+    learning_objective: str | None
 
     # Reducer Lists
     messages: Annotated[list[dict[str, str]], operator.add]
@@ -98,6 +99,7 @@ class TutorWorkflow:
         # Add nodes
         workflow.add_node("intent", self.intent_node)
         workflow.add_node("retrieve", self.retrieve_node)
+        workflow.add_node("planner", self.planner_node)
         workflow.add_node("policy", self.policy_node)
         workflow.add_node("verifier", self.verifier_node)
         workflow.add_node("sandbox", self.sandbox_node)
@@ -107,7 +109,8 @@ class TutorWorkflow:
         # Add linear edges
         workflow.add_edge(START, "intent")
         workflow.add_edge("intent", "retrieve")
-        workflow.add_edge("retrieve", "policy")
+        workflow.add_edge("retrieve", "planner")
+        workflow.add_edge("planner", "policy")
         
         # Route after policy
         workflow.add_conditional_edges(
@@ -300,6 +303,26 @@ class TutorWorkflow:
             "hint_level": hint_level,
             "loop_count": 0,
         }
+
+    async def planner_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        print("---PLANNER NODE---")
+        from app.tutor.prompt_builder import build_planner_prompt
+        messages = build_planner_prompt(state)
+        
+        prompt = [{"role": "system", "content": messages[0].content}]
+        try:
+            response_text = await self.llm.chat_completion(
+                prompt,
+                api_key=state.get("user_api_key"),
+                model=state.get("model")
+            )
+            state["learning_objective"] = response_text.strip()
+        except Exception as e:
+            import logging
+            logging.error(f"Planner node error: {e}")
+            state["learning_objective"] = "顺利完成本题"
+            
+        return {"learning_objective": state.get("learning_objective")}
 
     async def policy_node(self, state: AgentState, config: RunnableConfig) -> dict:
         """决定教学策略并生成初始消息"""
