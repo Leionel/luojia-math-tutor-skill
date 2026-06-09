@@ -4,6 +4,8 @@ import logging
 import operator
 from typing import Annotated, TypedDict, Any, AsyncIterator
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph as CompiledGraph
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 
 from app.config import Settings
@@ -60,6 +62,27 @@ class AgentState(TypedDict):
     thinking_steps: Annotated[list[str], operator.add]
 
 
+def route_after_policy(state: AgentState):
+    action = state.get("pedagogical_action", "")
+    if action in ["hint", "explain", "ask_question"]:
+        return "verifier"
+    elif action == "generate_exercise":
+        return "examiner"
+    else:
+        # review_concept or unknown
+        return "teacher"
+
+def route_after_verifier(state: AgentState):
+    messages = state.get("messages", [])
+    if not messages:
+        return "teacher"
+    last_message = messages[-1]
+    # If verifier invoked SymPy sandbox
+    if hasattr(last_message, "tool_calls") and getattr(last_message, "tool_calls", None):
+        return "sandbox"
+    return "teacher"
+
+
 class TutorWorkflow:
     def __init__(self, settings: Settings, repository: Repository):
         self.settings = settings
@@ -67,37 +90,54 @@ class TutorWorkflow:
         self.llm = OpenAICompatibleClient(settings)
         self.policy_router = PolicyRouter(self.llm)
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
-        self.workflow = self._build_workflow()
+        self.workflow = self.build_tutor_graph()
 
-    def _build_workflow(self) -> StateGraph:
-        builder = StateGraph(AgentState)
-
-        # Register nodes
-        builder.add_node("intent_node", self.intent_node)
-        builder.add_node("retrieve_node", self.retrieve_node)
-        builder.add_node("policy_node", self.policy_node)
-        builder.add_node("orchestrator_node", self.orchestrator_node)
-        builder.add_node("sandbox_node", self.sandbox_node)
-
-        # Define transitions
-        builder.add_edge(START, "intent_node")
-        builder.add_edge("intent_node", "retrieve_node")
-        builder.add_edge("retrieve_node", "policy_node")
-        builder.add_edge("policy_node", "orchestrator_node")
-
-        # Conditional path from Orchestrator
-        builder.add_conditional_edges(
-            "orchestrator_node",
-            self.route_orchestrator,
+    def build_tutor_graph(self) -> CompiledGraph:
+        workflow = StateGraph(AgentState)
+        
+        # Add nodes
+        workflow.add_node("intent", self.intent_node)
+        workflow.add_node("retrieve", self.retrieve_node)
+        workflow.add_node("policy", self.policy_node)
+        workflow.add_node("verifier", verifier_node)
+        workflow.add_node("sandbox", self.sandbox_node)
+        workflow.add_node("teacher", teacher_node)
+        workflow.add_node("examiner", examiner_node)
+        
+        # Add linear edges
+        workflow.add_edge(START, "intent")
+        workflow.add_edge("intent", "retrieve")
+        workflow.add_edge("retrieve", "policy")
+        
+        # Route after policy
+        workflow.add_conditional_edges(
+            "policy",
+            route_after_policy,
             {
-                "execute_code": "sandbox_node",
-                "end": END
+                "verifier": "verifier",
+                "examiner": "examiner",
+                "teacher": "teacher"
             }
         )
-
-        builder.add_edge("sandbox_node", "orchestrator_node")
-
-        return builder.compile()
+        
+        # Route after verifier
+        workflow.add_conditional_edges(
+            "verifier",
+            route_after_verifier,
+            {
+                "sandbox": "sandbox",
+                "teacher": "teacher"
+            }
+        )
+        
+        # Sandbox returns to verifier
+        workflow.add_edge("sandbox", "verifier")
+        
+        # Exit nodes
+        workflow.add_edge("teacher", END)
+        workflow.add_edge("examiner", END)
+        
+        return workflow.compile(checkpointer=MemorySaver())
 
     async def intent_node(self, state: AgentState) -> dict:
         """识别意图及执行初步的步骤检查"""
@@ -327,93 +367,7 @@ class TutorWorkflow:
             "messages": initial_messages,
         }
 
-    async def orchestrator_node(self, state: AgentState, config: RunnableConfig) -> dict:
-        """调用 LLM 并按输出协议流式输出 Thinking 过程或 Final Answer"""
-        on_token = config.get("configurable", {}).get("on_token")
-        on_thinking = config.get("configurable", {}).get("on_thinking")
 
-        if on_thinking:
-            await on_thinking(sse("thinking", {"text": "[Orchestrator] 启动 Label-Driven 内部推理闭环...\n"}))
-
-        current_response = ""
-        buffer = ""
-        actual_reasoning_content = ""
-        in_output = False
-        final_output = ""
-        thinking_chain = ""
-
-        # Call streaming
-        async for token_obj in self.llm.stream(state["messages"], api_key=state["user_api_key"], model=state["model"]):
-            if isinstance(token_obj, dict):
-                t_type = token_obj.get("type", "content")
-                token = token_obj.get("content", "")
-            else:
-                t_type = "content"
-                token = token_obj
-
-            current_response += token
-
-            if t_type == "reasoning":
-                actual_reasoning_content += token
-                if on_thinking:
-                    await on_thinking(sse("thinking", {"text": token}))
-                thinking_chain += token
-                continue
-
-            buffer += token
-
-            if not in_output:
-                if "[OUTPUT]" in buffer:
-                    in_output = True
-                    parts = buffer.split("[OUTPUT]")
-                    if on_thinking and parts[0]:
-                        await on_thinking(sse("thinking", {"text": parts[0]}))
-                    thinking_chain += parts[0]
-                    if len(parts) > 1 and parts[1]:
-                        if on_token:
-                            await on_token(sse("token", {"text": parts[1]}))
-                        final_output += parts[1]
-                    buffer = ""
-                else:
-                    if len(buffer) > 15:
-                        safe_chunk = buffer[:-15]
-                        buffer = buffer[-15:]
-                        if on_thinking:
-                            await on_thinking(sse("thinking", {"text": safe_chunk}))
-                        thinking_chain += safe_chunk
-            else:
-                if on_token:
-                    await on_token(sse("token", {"text": buffer}))
-                final_output += buffer
-                buffer = ""
-
-        # Flush remaining buffer
-        if buffer:
-            if not in_output:
-                if on_thinking:
-                    await on_thinking(sse("thinking", {"text": buffer}))
-                thinking_chain += buffer
-            else:
-                if on_token:
-                    await on_token(sse("token", {"text": buffer}))
-                final_output += buffer
-
-        next_action = "end"
-        if "[VERIFY]" in current_response and "```python" in current_response:
-            code_match = re.search(r"```python(.*?)```", current_response, re.DOTALL)
-            if code_match:
-                next_action = "execute_code"
-                
-        assistant_msg = {"role": "assistant", "content": current_response}
-        if actual_reasoning_content:
-            assistant_msg["reasoning_content"] = actual_reasoning_content
-
-        return {
-            "messages": [assistant_msg],
-            "final_output": final_output,
-            "thinking_chain": thinking_chain,
-            "next_action": next_action,
-        }
 
     async def sandbox_node(self, state: AgentState, config: RunnableConfig) -> dict:
         """执行 Python 沙箱环境代码，并将执行结果反馈给 LLM"""
@@ -445,10 +399,7 @@ class TutorWorkflow:
             "loop_count": state.get("loop_count", 0) + 1,
         }
 
-    def route_orchestrator(self, state: AgentState) -> str:
-        if state.get("loop_count", 0) >= 3:
-            return "end"
-        return state.get("next_action", "end")
+
 
 def verifier_node(state: AgentState):
     print("---VERIFIER NODE---")
