@@ -431,10 +431,13 @@ class TutorWorkflow:
         prompt = []
         if isinstance(messages, list):
             for msg in messages:
-                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
-                prompt.append({"role": role, "content": msg.content})
+                if isinstance(msg, dict):
+                    prompt.append(msg)
+                else:
+                    role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                    prompt.append({"role": role, "content": msg.content})
         else:
-            prompt = [{"role": "user", "content": str(messages)}]
+            prompt = [{"role": "system", "content": str(messages)}]
             
         try:
             response_text = await self.llm.chat_completion(
@@ -444,7 +447,15 @@ class TutorWorkflow:
             )
             match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if match:
-                state["verification_result"] = json.loads(match.group(0))
+                dict_str = match.group(0)
+                try:
+                    state["verification_result"] = json.loads(dict_str)
+                except json.JSONDecodeError:
+                    import ast
+                    try:
+                        state["verification_result"] = ast.literal_eval(dict_str)
+                    except Exception:
+                        state["verification_result"] = {"raw_output": response_text}
             else:
                 state["verification_result"] = {"raw_output": response_text}
         except Exception as e:
@@ -460,18 +471,45 @@ class TutorWorkflow:
         prompt = []
         if isinstance(messages, list):
             for msg in messages:
-                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
-                prompt.append({"role": role, "content": msg.content})
+                if isinstance(msg, dict):
+                    prompt.append(msg)
+                else:
+                    role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                    prompt.append({"role": role, "content": msg.content})
         else:
             prompt = [{"role": "system", "content": str(messages)}]
 
         try:
-            response_text = await self.llm.chat_completion(
-                prompt,
-                api_key=state.get("user_api_key"),
-                model=state.get("model")
-            )
+            on_token = config["configurable"].get("on_token") if config and "configurable" in config else None
+            on_thinking = config["configurable"].get("on_thinking") if config and "configurable" in config else None
+            
+            response_text = ""
+            thinking_chain = ""
+            
+            async for token in self.llm.stream(prompt, api_key=state.get("user_api_key"), model=state.get("model")):
+                is_reasoning = False
+                content = ""
+                if isinstance(token, dict):
+                    is_reasoning = token.get("type") == "reasoning"
+                    content = token.get("content", "")
+                else:
+                    content = str(token)
+                    is_reasoning = content.startswith("<think>")
+                    if is_reasoning:
+                        content = content.replace("<think>", "").replace("</think>", "")
+
+                if is_reasoning:
+                    if on_thinking:
+                        await on_thinking(f"event: thinking\ndata: {json.dumps({'content': content}, ensure_ascii=False)}\n\n")
+                    thinking_chain += content
+                else:
+                    if on_token:
+                        await on_token(f"event: message\ndata: {json.dumps({'type': 'message', 'content': content}, ensure_ascii=False)}\n\n")
+                    response_text += content
+
             state["messages"].append({"role": "assistant", "content": response_text})
+            state["final_output"] = response_text
+            state["thinking_chain"] = thinking_chain
         except Exception as e:
             logger.error(f"Teacher node error: {e}", exc_info=True)
         return {"messages": state["messages"]}
@@ -483,18 +521,45 @@ class TutorWorkflow:
         prompt = []
         if isinstance(messages, list):
             for msg in messages:
-                role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
-                prompt.append({"role": role, "content": msg.content})
+                if isinstance(msg, dict):
+                    prompt.append(msg)
+                else:
+                    role = "system" if msg.type == "system" else "user" if msg.type == "human" else "assistant"
+                    prompt.append({"role": role, "content": msg.content})
         else:
             prompt = [{"role": "system", "content": str(messages)}]
 
         try:
-            response_text = await self.llm.chat_completion(
-                prompt,
-                api_key=state.get("user_api_key"),
-                model=state.get("model")
-            )
+            on_token = config["configurable"].get("on_token") if config and "configurable" in config else None
+            on_thinking = config["configurable"].get("on_thinking") if config and "configurable" in config else None
+            
+            response_text = ""
+            thinking_chain = ""
+            
+            async for token in self.llm.stream(prompt, api_key=state.get("user_api_key"), model=state.get("model")):
+                is_reasoning = False
+                content = ""
+                if isinstance(token, dict):
+                    is_reasoning = token.get("type") == "reasoning"
+                    content = token.get("content", "")
+                else:
+                    content = str(token)
+                    is_reasoning = content.startswith("<think>")
+                    if is_reasoning:
+                        content = content.replace("<think>", "").replace("</think>", "")
+
+                if is_reasoning:
+                    if on_thinking:
+                        await on_thinking(f"event: thinking\ndata: {json.dumps({'content': content}, ensure_ascii=False)}\n\n")
+                    thinking_chain += content
+                else:
+                    if on_token:
+                        await on_token(f"event: message\ndata: {json.dumps({'type': 'message', 'content': content}, ensure_ascii=False)}\n\n")
+                    response_text += content
+
             state["messages"].append({"role": "assistant", "content": response_text})
+            state["final_output"] = response_text
+            state["thinking_chain"] = thinking_chain
         except Exception as e:
             logger.error(f"Examiner node error: {e}", exc_info=True)
         return {"messages": state["messages"]}

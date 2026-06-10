@@ -80,12 +80,13 @@ class OpenAICompatibleClient:
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()
-            response = await client.post(url, json=payload, headers=headers, timeout=10.0)
+            response = await client.post(url, json=payload, headers=headers, timeout=60.0)
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"].strip()
-        except Exception:
-            return ""
+        except Exception as e:
+            logger.error(f"chat_completion failed: {e}")
+            raise
 
     async def test(self, api_key: str | None = None, model: str | None = None) -> dict[str, str | bool]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key

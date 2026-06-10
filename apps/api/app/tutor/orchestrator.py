@@ -76,6 +76,7 @@ class TutorOrchestrator:
 
         config = {
             "configurable": {
+                "thread_id": session_id,
                 "on_token": on_token,
                 "on_thinking": on_thinking
             }

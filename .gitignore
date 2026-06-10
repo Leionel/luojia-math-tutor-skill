@@ -4,13 +4,20 @@ dist/
 build/
 __pycache__/
 .pytest_cache/
+.mypy_cache/
 *.pyc
 *.db
 .env
 .env.local
+venv/
+.venv/
+.idea/
+.vscode/
+.DS_Store
 
 *.tsbuildinfo
-docs/
+# We want to track some docs now, maybe remove docs/ or keep it?
+# Let's remove docs/ from gitignore so we can push our project stories and plans
 deeptutor/
 outputs/
 apps/api/data/uploads/
