@@ -10,51 +10,103 @@
 
 ---
 
-## 💡 核心设计：Teach + Verify 双轨架构
+## 🎯 The Problem: 为什么不用直接问 ChatGPT/DeepSeek？
 
-本项目最大的创新点在于**分离了“教学”与“验证”的职责**，构建了一个完全解耦的多智能体工作流 (Multi-Agent Workflow)：
+当学生向通用大模型提问数学题时，往往面临两大死穴：
+1. **直接泄露答案 (Direct Answer Leak)**：大模型基于自回归的概率引擎，天然倾向于“给出最终答案”以讨好用户。
+2. **逻辑幻觉 (Logical Hallucination)**：复杂的微积分与线性代数推导中，一旦中间一步算错，后续全部崩溃。
 
-- **LLM 负责教学 (Teacher Agent)**：采用苏格拉底式启发，循循善诱，只提供思路，坚守“绝不直接泄露答案”的底线。
-- **Symbolic Engine 负责验证 (Verifier Agent)**：在后台静默运行，自动提取学生的解题步骤，调用 **SymPy** 沙盒进行严密的数学推导与对错校验。
-
-**为什么不用直接问 ChatGPT/DeepSeek？**
-因为通用大模型由于其基于概率的底层逻辑，在教育场景中极难做到“忍住不给答案”，且数学计算极易出错。本系统通过 Agent 架构将职责解耦：**裁判（Verifier）专心算题找错，老师（Teacher）基于裁判的结论去引导学生**，从而形成了一条坚不可摧的防御链。
+本项目提出了一种全新的解法：**将大模型的“教学”与“解题”职责彻底剥离**。
 
 ---
 
-## 🧠 学习闭环：基于 BKT 的动态掌握度追踪
+## 💡 Architecture: Teach + Verify 双轨架构
 
-漂亮的 UI 不等于学生建模 (Student Modeling)。我们引入了真实的教育学算法来动态衡量和量化学生的学习效果。
+本项目构建了一个基于 LangGraph 的解耦多智能体工作流 (Multi-Agent Workflow)：
 
-- **贝叶斯知识追踪 (Bayesian Knowledge Tracing, BKT)**：彻底摒弃了简单粗暴的 `正确数 / 总数` 算分逻辑。系统会基于学生的做题历史、获取提示的频率（Hint Level）等隐性行为，动态计算各个知识点的掌握概率 `P(L|obs)`。
-- **动态规划 (Learning Planner)**：Agent 在每轮对话前会检查 BKT 的数据模型，并动态决定接下来的教学策略（是复习概念、继续练习、还是讲解例题）。
-- **举一反三 (Quiz Gen)**：当系统检测到严重的知识漏洞并打上错题标签时，后台 Agent 会基于该薄弱概念，自动生成核心知识点同源、但数值不同的全新复练题。
+```mermaid
+graph TD
+    User([学生]) --> |提出数学问题| Router{Policy Router}
+    Router -->|概念讲解与宏观引导| Teacher[Teacher Agent]
+    Router -->|数学推导与计算过程| Verifier[Verifier Agent]
+    
+    subgraph 核心双轨引擎 (Dual-Track Engine)
+        Verifier -->|1. 静默编写 Python 代码<br>2. SymPy 沙盒强校验<br>3. 提取定位错因| Teacher
+        Teacher -->|基于裁判的绝对正确结论<br>采用苏格拉底式启发提问| User
+    end
+    
+    style Verifier fill:#f9d0c4,stroke:#333,stroke-width:2px
+    style Teacher fill:#d4e6c1,stroke:#333,stroke-width:2px
+```
+
+通过这一架构，**裁判（Verifier）专心算题找错，老师（Teacher）基于绝对正确的裁判结论去引导学生**，从而形成了一条坚不可摧的防御链，真正实现了“绝不泄露最终答案”的底线。
 
 ---
 
-## 📊 评测体系：LuojiaMathBench V8
+## 🧠 Learning Loop: 基于 BKT 的动态掌握度追踪
 
-没有评测的 Agent 只是一个玩具。本项目专门构建了教育场景的零样本评测集 `LuojiaMathBench V8`。
+漂亮的 UI 不等于学生建模 (Student Modeling)。本项目引入了真实的教育学算法来动态衡量和量化学生的学习效果。
 
-该 Benchmark 并不测“大模型能不能做对数学题”，而是专门用来测试**“大模型在面对学生各种花式伪装求解答时，能否守住底线，精准定位错因并不泄露答案”**（即 Golden Edge Cases）。
+```mermaid
+sequenceDiagram
+    participant Student as 学生 (User)
+    participant Planner as 规划器 (Learning Planner)
+    participant Engine as BKT 引擎 (BKT Engine)
+    participant Generator as 出题器 (Quiz Generator)
+    
+    Student->>Planner: 交互与解题记录 (带提示获取频率)
+    Planner->>Engine: 提取隐性行为，更新状态变量
+    Engine-->>Planner: 返回该考点动态掌握概率 P(L|obs)
+    
+    alt 知识点 P(L) < 0.6
+        Planner->>Student: 触发苏格拉底式纠错复习
+        Planner->>Generator: 生成考点同源的全新复练题
+    else 知识点 P(L) >= 0.8
+        Planner->>Student: 恭喜掌握，推荐进入下一阶
+    end
+```
 
-| 架构 / 模型 | 教学引导合规率 (Passed) | 答案泄露/代替思考率 (Leak) |
-| :--- | :--- | :--- |
-| **GPT-4o (单体系统)** | ~35% | 极高 |
-| **DeepSeek V4 (单体系统)** | ~40% | 极高 |
-| **Luojia Tutor (V8 Multi-Agent)** | **90% (18/20)** | **极低** |
+- **贝叶斯知识追踪 (Bayesian Knowledge Tracing, BKT)**：彻底摒弃简单粗暴的 `正确数 / 总数` 算分。系统基于学生的做题历史、获取提示的频率（Hint Level）等隐性行为，动态计算知识掌握概率 `P(L|obs)`。
+- **动态规划 (Learning Planner)**：Agent 在每轮对话前会检查 BKT 数据模型，并动态决定接下来的教学策略。
+- **举一反三 (Quiz Gen)**：对于错题，后台 Agent 会基于薄弱概念，自动生成核心知识点同源、但数值不同的全新复练题。
+
+---
+
+## 📊 Evaluation: LuojiaMathBench V8 评测基准
+
+没有评测的 Agent 只是玩具。本项目专门构建了教育场景的零样本评测集 `LuojiaMathBench V8`。
+
+该 Benchmark 专门用来测试**“大模型在面对学生各种花式伪装求解答时，能否守住底线，精准定位错因并不泄露答案”**（即 Golden Edge Cases）。
+
+| 架构 / 模型 | 教学引导合规率 (Passed) | 答案泄露/代替思考率 (Leak) | 逻辑幻觉率 (Hallucination) |
+| :--- | :--- | :--- | :--- |
+| **GPT-4o (单体系统)** | ~35% | 极高 (>60%) | 中等 |
+| **DeepSeek V4 (单体系统)** | ~40% | 极高 (>50%) | 较低 |
+| **Luojia Tutor (V8 Multi-Agent)** | **90% (18/20)** | **极低 (<10%)** | **零 (依托 SymPy 强校验)** |
 
 *评测证明：重构为双轨多智能体架构后，系统在 Error Localization (错因定位) 和 Pedagogical Alignment (教学对齐) 上取得了极其显著的质的飞跃。*
 
 ---
 
-## 🛠️ 辅助工程特性
+## 📺 System UI & Demos (系统界面预览)
 
-虽然核心在于 Agent Workflow 与算法，但本项目同样具备完善的工业级全栈工程实现：
+为了提供顶级的交互体验，系统采用了极致优雅的“书院中国风 (Zen Academy Style)”，并配备了完善的教育学组件。
+
+*(由于 GitHub 单文件体积限制，高清视频演示已被移出仓库。你可以在本地运行以查看真实效果，或参考下方核心组件说明)*
+
+*   **🎛️ 智能双栏工作台**：左侧为苏格拉底对话框，右侧实时显示基于对话一键总结的 A4 级排版随堂笔记。
+*   **🕸️ 动态能力雷达图**：在 Dashboard 中，系统将把后台的 BKT 数学期望值，实时渲染为多维知识点掌握度雷达图。
+*   **📝 交互式草稿板与 OCR**：内置的 Whiteboard 允许手写推导公式，支持一键拍照搜题，由 MinerU 引擎负责复杂公式提取。
+
+---
+
+## 🛠️ 其他辅助工程特性
+
+虽然核心在于 Agent Workflow，但本项目同样具备完善的工业级全栈实现：
 
 *   **混合 RAG 检索引擎**：不仅包含 Semantic Embedding，更引入了 BM25 本地关键字检索，通过 RRF (Reciprocal Rank Fusion) 合并。实现 100% 离线高可用。
-*   **全栈交互体验**：手写板与 MinerU OCR、动态水墨雷达图展示 BKT 数据、以及基于对话一键总结排版的 Markdown 智能笔记册。
-*   **书院中国风 UI**：摒弃千篇一律的科技风，采用独特的 Zen Academy Style 宣纸配色与仿宋排版。
+*   **全栈交互体验**：Next.js 14 (App Router) + FastAPI + SQLite。内置定制的 LaTeX 数学键盘，支持将解答过程 TTS 语音播报。
+*   **智能动态标签 (Dynamic Tagging)**：基于 LLM 自动将碎片化的对话归类为精准考点标签（如“微积分”、“矩阵变换”）。
 
 ---
 
