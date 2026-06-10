@@ -30,7 +30,7 @@ graph TD
     Router -->|概念讲解与宏观引导| Teacher[Teacher Agent]
     Router -->|数学推导与计算过程| Verifier[Verifier Agent]
     
-    subgraph 核心双轨引擎 (Dual-Track Engine)
+    subgraph DualTrackEngine ["核心双轨引擎 (Dual-Track Engine)"]
         Verifier -->|1. 静默编写 Python 代码<br>2. SymPy 沙盒强校验<br>3. 提取定位错因| Teacher
         Teacher -->|基于裁判的绝对正确结论<br>采用苏格拉底式启发提问| User
     end
