@@ -20,26 +20,45 @@
 
 ---
 
-## 💡 Architecture: Teach + Verify 双轨可验证工作流
+## 💡 Architecture: 快速主路径 + 按需验证
 
-本项目构建了一个基于 LangGraph 的解耦双轨智能体工作流 (Dual-Agent Verifiable Workflow)：
+本项目保留 Planner、Policy、Verifier、Teacher、Examiner、RAG、BKT 与 Memory 的角色边界，但不再让所有 Agent 成为每轮请求的固定串行步骤。LangGraph 根据风险和置信度按需调度：
 
 ```mermaid
-graph TD
-    User([学生]) --> |提出数学问题| Router{Policy Router}
-    Router -->|概念讲解与宏观引导| Teacher[Teacher Agent]
-    Router -->|数学推导与计算过程| Verifier[Verifier Agent]
-    
-    subgraph DualTrackEngine ["核心双轨引擎 (Dual-Track Engine)"]
-        Verifier -->|1. 静默编写 Python 代码<br>2. SymPy 沙盒强校验<br>3. 提取定位错因| Teacher
-        Teacher -->|基于裁判的绝对正确结论<br>采用苏格拉底式启发提问| User
+flowchart TD
+    User(["学生请求"]) --> Opening["安全且相关的 opening<br/>目标：本地小于 150ms"]
+    Opening --> Router{"本地 Fast Path Router"}
+
+    subgraph Context ["350ms Fast Context 截止时间"]
+        History["SQLite 会话与 Memory"]
+        BKT["BKT 掌握度"]
+        BM25["本地 BM25"]
+        SymPy["按需 SymPy 校验"]
     end
-    
-    style Verifier fill:#f9d0c4,stroke:#333,stroke-width:2px
-    style Teacher fill:#d4e6c1,stroke:#333,stroke-width:2px
+
+    Router --> Context
+    Context --> Gate{"Verification Gate"}
+    Gate -->|"普通请求"| Teacher["Teacher 流式生成<br/>1 次 LLM"]
+    Gate -->|"出题"| Examiner["Examiner 流式生成<br/>1 次 LLM"]
+    Gate -->|"复杂证明或本地无法判定"| Verifier["Verifier LLM"]
+    Verifier --> Teacher
+    Router -. "低置信度" .-> Policy["Policy LLM fallback"]
+    Policy --> Gate
+    Teacher --> User
+    Examiner --> User
 ```
 
-通过这一架构，**裁判（Verifier）专心算题找错，老师（Teacher）基于绝对正确的裁判结论去引导学生**，从而形成了一条坚不可摧的防御链，真正实现了“绝不泄露最终答案”的底线。
+普通概念讲解和明确教学请求只需要一次 Teacher 流式调用；可由 SymPy 判定的学生步骤也直接进入 Teacher。只有复杂证明、开放推导或本地校验不确定时才调用 Verifier LLM。这样既保留“教学与验证分工”，又消除了无意义的多模型排队。
+
+可编辑架构图：[FigJam - 珞珈数智助教低延迟解答链路](https://www.figma.com/board/xVpZVU6mWcDQbjwVHi2RBU)
+
+### 延迟预算与调用上限
+
+- `opening_ms`：本地目标小于 150ms；集成环境 P95 首段有意义内容小于 1 秒。
+- `fast_context_ms`：本地历史、BKT、BM25、文档检索和 SymPy 使用 350ms 可选任务截止时间。
+- 普通请求与 SymPy 已确认请求：`llm_call_count == 1`。
+- 高风险验证请求：`llm_call_count <= 2`。
+- SQLite 同步访问通过 `asyncio.to_thread` 移出事件循环；客户端取消 SSE 时，未完成的图任务会同步取消。
 
 ---
 
@@ -70,7 +89,7 @@ sequenceDiagram
   - **$P(L_0)$ 初始掌握率**: 设定为 0.5 作为中立基准。
   - **$P(S)$ 粗心失误率**: 设定为 0.1（即便真正掌握，也有小概率算错）。
   - **$P(G)$ 猜测猜中率 / $P(T)$ 知识转移率**: 我们将其设计为 **自适应动态变量**。当系统检测到学生是“独立正确解答”时，$P(G)=0.1, P(T)=0.15$；若是“借助大量提示（Hint Level=2+）才解答”，则强行提高猜测率 $P(G)=0.8$ 且降低转移率 $P(T)=0.0$，从而严格防止“被动喂饭”导致的分数虚高。
-- **动态教学规划 (Learning Planner)**：Agent 会在对话前检查上述 BKT 数学期望，决定是进入“鼓励晋级”、“苏格拉底提问”还是“降维打击补基础”。
+- **动态教学规划 (Learning Planner)**：常见请求由本地确定性规则结合 BKT 状态生成目标；只有低置信度请求才升级为远程 Policy/Planner 判断。
 - **举一反三 (Quiz Gen)**：对于错题，后台 Agent 会基于薄弱概念，自动生成核心知识点同源、但数值不同的全新复练题。
 
 ---
@@ -115,9 +134,10 @@ Input Profile:
   - Conversation History
 
 Workflow:
-  1. Policy Routing: 判定该请求是需要知识查询、做题引导还是生成测验。
-  2. Verify Execution: 沙盒静默验证正确性。
-  3. Socratic Prompting: 基于验证结果，生成非泄露式的引导问题。
+  1. Fast Routing: 本地判定请求模式、教学动作和验证风险。
+  2. Fast Context: 并行读取 BKT/Memory、本地 BM25，并按需执行 SymPy。
+  3. Verification Gate: 仅在本地无法确定时调用 Verifier LLM。
+  4. Socratic Streaming: Teacher 或 Examiner 流式生成非泄露式引导。
 
 Tool Binding:
   - SymPy Sandbox (代数验证器)
@@ -147,7 +167,7 @@ Iron Constraints (不可突破的底线):
 
 虽然核心在于 Agent Workflow，但本项目同样具备完善的工业级全栈实现：
 
-*   **混合 RAG 检索引擎**：不仅包含 Semantic Embedding，更引入了 BM25 本地关键字检索，通过 RRF (Reciprocal Rank Fusion) 合并。实现 100% 离线高可用。
+*   **分层 RAG 检索引擎**：本地 BM25 位于首字热路径，不依赖网络；Semantic Embedding 在当前回答结束后异步增强并缓存，失败不会影响本轮输出。
 *   **全栈交互体验**：Next.js 14 (App Router) + FastAPI + SQLite。内置定制的 LaTeX 数学键盘，支持将解答过程 TTS 语音播报。
 *   **智能动态标签 (Dynamic Tagging)**：基于 LLM 自动将碎片化的对话归类为精准考点标签（如“微积分”、“矩阵变换”）。
 
@@ -165,7 +185,7 @@ Iron Constraints (不可突破的底线):
 │   │   ├── api/                 # API 路由接口 (会话, 错题, 掌握度, RAG, Bilibili)
 │   │   ├── agents/              # 智能体组件 (Harness 质量评估器, Vision 识图)
 │   │   ├── memory/              # SQLite 数据库模型与仓储 (repository.py, mastery.py BKT引擎)
-│   │   └── tutor/               # 多智能体调度中枢 (graph.py, policy_router.py, prompt_builder.py)
+│   │   └── tutor/               # 条件调度中枢 (fast_path.py, fast_context.py, graph.py)
 │   └── pyproject.toml           # 依赖与打包配置
 └── luojia-math-tutor/           # 珞珈数智助教核心 Skill 定义文件夹
     ├── SKILL.md                 # 助教的核心工作流提示词与平台联动指令

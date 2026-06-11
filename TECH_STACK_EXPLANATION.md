@@ -34,12 +34,14 @@
 *   **技术选型原因**：抛弃了 Django 和 Flask。FastAPI 基于 Starlette 和 Pydantic，不仅原生支持 `async/await`，还能自动生成 OpenAPI Swagger 接口文档，配合 Pydantic 极其严格的数据校验（Type Hints），规避了大量类型错误。
 *   **工程细节 (SSE 流的本质)**：
     *   市面上常见的 WebSocket 太重，且需要处理心跳。我们选用了 **SSE (Server-Sent Events)** 技术。
-    *   在 FastAPI 中，使用 `StreamingResponse` 配合 Python 异步生成器 (`AsyncGenerator`)，这是一种基于 HTTP/1.1 `Transfer-Encoding: chunked` 的协议。我们将大模型吐出的内容、推导的状态（`thinking`, `token`, `meta`）封装成自定义字典，实现了后端与前端长连接的数据单向穿透。
+    *   在 FastAPI 中，使用 `StreamingResponse` 配合 Python 异步生成器 (`AsyncGenerator`)。首个 `opening` 事件由本地规则立即生成，随后再发送 `meta`、`thinking`、`message` 与 `done`，因此数据库、RAG 或模型变慢时，学生仍能先看到与问题相关的有效回应。
+    *   事件转发使用 `asyncio.wait(..., FIRST_COMPLETED)`，不再通过固定间隔轮询队列。客户端断开后会取消 LangGraph 任务，避免无用户消费的模型调用继续运行。
 
 ### 2. SQLite 3 FTS5 本地化轻量存储
 *   **技术选型原因**：教育类单用户或局域网场景，若引入 MySQL 会让部署变得极其麻烦（需要 Docker 甚至集群环境）。SQLite 轻如鸿毛，且拥有极强性能。
 *   **工程细节**：
     *   没有使用重型 ORM（如 SQLAlchemy），而是用 Python 官方自带的 `sqlite3` 以及 `row_factory` 实现轻量级查询。
+    *   `sqlite3` 是同步接口，Tutor 热路径统一通过 `asyncio.to_thread` 读取历史、写入消息和更新 BKT，避免阻塞 FastAPI 事件循环。
     *   **FTS5 虚拟表检索**：我们利用 SQLite 的 FTS5 引擎，直接在关系型库内部挂载了倒排索引（Inverted Index）。这使得即使不接大模型，我们依然能实现类似 Elasticsearch 的高性能本地知识文本搜索，兼顾了存储和轻量搜索需求。
 
 ---
@@ -50,26 +52,47 @@
 普通的 LLM 在进行数学计算（特别是矩阵或积分）时常常一本正经地胡说八道。
 *   **技术选型原因**：LangChain 原生 Agent 比较黑盒，调试困难；而 **LangGraph** 允许我们将工作流定义为一个有向循环图 (Directed Cyclic Graph)，让系统化身为一个“具备纠错能力的有限状态机 (FSM)”。
 
-### 2. “Label-Driven” 状态机与 SymPy 物理外脑验证
-*   **工程细节 (防数学幻觉)**：
-    1.  强制大模型按照 `[PLAN]` -> `[VERIFY]` -> `[CORRECT]` -> `[OUTPUT]` 标签流程作答。
-    2.  当嗅探到 `[VERIFY]` 附带的 ````python ```` 代码块时，LangGraph 路由拦截大模型。
-    3.  系统自动调起 `sandbox_node`（后端的受限执行域），利用 `exec()` 运行大模型生成的 **SymPy (符号计算引擎)** 验证代码（如求导、解方程）。
-    4.  系统捕捉 `stdout` 验证结果，将报错或得数以 `System/User` 的名义重新甩回给大模型。
-    5.  大模型看到“真实执行结果”后，进入 `[CORRECT]` 反思，再生成最终给用户的 `[OUTPUT]`。这种**“逻辑推演与机器物理运算双结合”**的设计，从根本上降维打击了数学幻觉。
+### 2. 条件状态机与确定性 SymPy 验证
+*   **工程细节 (防数学幻觉与控制延迟)**：
+    1.  `Fast Path Router` 使用本地规则生成 `intent`、`pedagogical_action`、`learning_objective`、`verification_mode` 与置信度，不访问网络。
+    2.  `Fast Context Collector` 并行执行历史/BKT、本地 BM25、课件检索和按需 SymPy 检查；可选任务超过 350ms 即降级为空结果。
+    3.  明确积分、求导等可解析步骤直接调用受控的 `check_step`/SymPy 函数，不执行模型生成的任意 Python 代码。
+    4.  普通路径为 `Fast Context -> Teacher`；出题路径进入 Examiner；复杂证明或本地无法判定时才进入 `Verifier LLM -> Teacher`。
+    5.  Policy LLM 仅作为低置信度 fallback。角色职责仍然存在，但不再要求所有 Agent 每轮串行运行。
 
 ---
 
 ## 🔍 四、检索增强与通道控制 (RAG & Stream Optimization)
 
-### 1. Hybrid RAG (双路召回 + RRF)
+### 1. Layered RAG (本地热路径 + 后台语义增强)
 面对数学概念的模糊问题和精准名词，单一的检索经常会漏查。
 *   **工程细节**：
-    *   **第一路：稠密向量检索 (Semantic Embedding)**：将用户 Query 和课件利用模型接口变为高维浮点数组，用纯 Python 实现了余弦相似度。
-    *   **第二路：BM25 本地检索**：为了实现高容灾，手写了 BM25 算法公式。如果 Embedding 接口挂掉，代码自动 catch 异常，无缝降级为纯本地 BM25。
-    *   **RRF 倒排融合 (Reciprocal Rank Fusion)**：因为向量得分和 TF-IDF 得分量纲不一致，采用搜索工业界的 RRF 算法将两者排名平滑叠加（$Score = \frac{1}{60 + Rank_{A}} + \frac{1}{60 + Rank_{B}}$），实现精准与宽泛召回的融合。
+    *   **热路径：BM25 本地检索**。首次请求只构建本地倒排索引，不批量请求整库 Embedding；即使模型服务完全不可用，也能召回知识条目。
+    *   **后台路径：Semantic Embedding**。当前回答完成后异步计算语义召回并放入有界缓存，供后续相同问题使用；异常只写日志，不改变已展示内容。
+    *   **混合排序：RRF**。缓存中已有语义向量时，仍可使用 Reciprocal Rank Fusion 合并 BM25 与语义排名，避免比较不同量纲的原始分数。
 
-### 2. DeepSeek V4 多轮对话隔离机制与防泄漏
+### 2. 延迟预算与可观测性
+
+每个 Tutor 请求在 `done` SSE 事件中返回无敏感内容的阶段指标：
+
+| 指标 | 含义 |
+| --- | --- |
+| `opening_ms` | 本地安全开场生成耗时，开发环境目标 `< 150ms` |
+| `fast_context_ms` | 历史、BKT、BM25、文档与符号检查聚合耗时 |
+| `local_rag_ms` | 本地 BM25 检索耗时 |
+| `symbolic_verify_ms` | SymPy 确定性检查耗时 |
+| `policy_fallback_ms` | 低置信度 Policy LLM 耗时 |
+| `verifier_ms` | 高风险 Verifier LLM 耗时 |
+| `teacher_first_token_ms` | Teacher/Examiner 开始生成后的首 token 耗时 |
+| `total_ms` | 请求从进入后端到 `done` 的总耗时 |
+| `llm_call_count` | 本轮真实模型调用数 |
+| `route` | `teacher`、`examiner`、`verifier_teacher` 等实际路径 |
+
+验收目标是集成环境 P95 首段有意义内容小于 1 秒；普通请求和 SymPy 已确认请求只调用一次生成模型，高风险请求不超过两次。
+
+可编辑架构图：[FigJam - 低延迟解答链路](https://www.figma.com/board/xVpZVU6mWcDQbjwVHi2RBU)
+
+### 3. DeepSeek V4 多轮对话隔离机制与防泄漏
 *   **工程细节 (防正文污染)**：
     DeepSeek 等深度推理模型会同时返回 `reasoning_content`（碎碎念过程）和 `content`（正式结果）。为了避免模型在推理时提及 `[OUTPUT]` 导致误截断：
     *   我们在流式适配层打上了**强类型 Dict 标签** (`{"type": "reasoning", ...}`)。
