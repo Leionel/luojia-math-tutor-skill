@@ -10,6 +10,7 @@ from app.tutor.graph import (
     TutorWorkflow,
     route_after_context,
 )
+from app.tutor.policy_router import PedagogicalAction
 
 
 def make_repository() -> MagicMock:
@@ -172,3 +173,32 @@ async def test_complex_proof_uses_verifier_then_teacher():
     assert final_state["metrics"]["llm_call_count"] == 2
     assert final_state["metrics"]["route"] == "verifier_teacher"
     workflow.llm.chat_completion.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_policy_fallback_does_not_duplicate_user_prompt():
+    workflow = TutorWorkflow(get_settings(), make_repository())
+    workflow.policy_router.decide_action = AsyncMock(
+        return_value=PedagogicalAction.EXPLAIN
+    )
+    captured_prompt = []
+
+    async def fake_stream(messages, api_key=None, model=None):
+        captured_prompt.extend(messages)
+        yield {"type": "content", "content": "请先补充题目条件。"}
+
+    workflow.llm.stream = fake_stream
+    state = make_state("？")
+
+    final_state = await workflow.workflow.ainvoke(
+        state,
+        config=make_config(state["session_id"]),
+    )
+
+    repeated = [
+        item
+        for item in captured_prompt
+        if item["role"] == "user" and item["content"] == "？"
+    ]
+    assert len(repeated) == 1
+    assert final_state["metrics"]["llm_call_count"] == 2

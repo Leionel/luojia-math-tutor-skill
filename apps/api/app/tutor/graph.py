@@ -1,9 +1,8 @@
 import json
 import logging
-import operator
 import asyncio
 import time
-from typing import Annotated, Any, TypedDict
+from typing import Any, TypedDict
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
@@ -66,8 +65,8 @@ class AgentState(TypedDict, total=False):
     hint_level: int
     learning_objective: str
 
-    messages: Annotated[list[dict[str, str]], operator.add]
-    thinking_steps: Annotated[list[str], operator.add]
+    messages: list[dict[str, str]]
+    thinking_steps: list[str]
     final_output: str
     thinking_chain: str
     metrics: dict[str, float | int | str | bool]
@@ -297,7 +296,10 @@ class TutorWorkflow:
         metrics["route"] = f"policy_{action.value}"
         messages = self._build_base_messages(
             state,
-            self._history_from_messages(state.get("messages", [])),
+            self._history_from_messages(
+                state.get("messages", []),
+                state["message"],
+            ),
             state.get("hits", []),
             state.get("document_chunks", []),
             state["verifier_result"],
@@ -489,12 +491,20 @@ class TutorWorkflow:
     @staticmethod
     def _history_from_messages(
         messages: list[dict[str, str]],
+        current_message: str,
     ) -> list[dict[str, str]]:
-        return [
+        history = [
             message
             for message in messages
             if message.get("role") in {"user", "assistant"}
         ]
+        if (
+            history
+            and history[-1].get("role") == "user"
+            and history[-1].get("content") == current_message
+        ):
+            history.pop()
+        return history
 
     @staticmethod
     def _merge_hits(
