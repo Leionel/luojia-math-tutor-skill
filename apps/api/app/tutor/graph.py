@@ -1,6 +1,7 @@
 import json
 import logging
 import operator
+import asyncio
 import time
 from typing import Annotated, Any, TypedDict
 
@@ -10,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph as CompiledGraph
 
 from app.config import Settings
+from app.knowledge.search import search_knowledge_semantic
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
@@ -106,6 +108,11 @@ class TutorWorkflow:
         self.llm = OpenAICompatibleClient(settings)
         self.policy_router = PolicyRouter(self.llm)
         self.context_collector = FastContextCollector(repository)
+        self._semantic_cache: dict[
+            tuple[str, str],
+            list[Any],
+        ] = {}
+        self._background_tasks: set[asyncio.Task] = set()
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
         self.workflow = self.build_tutor_graph()
 
@@ -148,10 +155,17 @@ class TutorWorkflow:
         config: RunnableConfig,
     ) -> dict:
         context = await self.context_collector.collect(state)
+        hits = self._merge_hits(
+            context.hits,
+            self._semantic_cache.get(
+                (state["detected_subject"], state["message"]),
+                [],
+            ),
+        )
         messages = self._build_base_messages(
             state,
             context.history,
-            context.hits,
+            hits,
             context.document_chunks,
             context.verifier_result,
             context.mistake,
@@ -209,7 +223,7 @@ class TutorWorkflow:
         return {
             "pedagogical_action": state["pedagogical_action"],
             "learning_objective": state["learning_objective"],
-            "hits": context.hits,
+            "hits": hits,
             "document_chunks": context.document_chunks,
             "concepts": context.concepts,
             "verifier_result": context.verifier_result,
@@ -221,6 +235,45 @@ class TutorWorkflow:
             "messages": messages,
             "metrics": metrics,
         }
+
+    def schedule_semantic_enrichment(
+        self,
+        message: str,
+        subject: str,
+        api_key: str | None,
+    ) -> None:
+        if not api_key and not self.settings.llm_api_key:
+            return
+        task = asyncio.create_task(
+            self._run_semantic_enrichment(
+                message,
+                subject,
+                api_key,
+            )
+        )
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+
+    async def _run_semantic_enrichment(
+        self,
+        message: str,
+        subject: str,
+        api_key: str | None,
+    ) -> None:
+        try:
+            hits = await search_knowledge_semantic(
+                message,
+                subject,
+                limit=5,
+                api_key=api_key,
+            )
+        except Exception:
+            logger.exception("Background semantic enrichment failed")
+            return
+        if len(self._semantic_cache) >= 128:
+            oldest_key = next(iter(self._semantic_cache))
+            self._semantic_cache.pop(oldest_key, None)
+        self._semantic_cache[(subject, message)] = hits
 
     async def policy_fallback_node(
         self,
@@ -442,6 +495,22 @@ class TutorWorkflow:
             for message in messages
             if message.get("role") in {"user", "assistant"}
         ]
+
+    @staticmethod
+    def _merge_hits(
+        local_hits: list[Any],
+        semantic_hits: list[Any],
+    ) -> list[Any]:
+        merged: list[Any] = []
+        seen: set[str] = set()
+        for hit in [*local_hits, *semantic_hits]:
+            item_id = getattr(getattr(hit, "item", None), "id", None)
+            key = item_id or repr(hit)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(hit)
+        return merged[:5]
 
     @staticmethod
     def _normalize_prompt(messages: list | Any) -> list[dict[str, str]]:

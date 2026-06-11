@@ -205,6 +205,13 @@ class TutorOrchestrator:
             (time.perf_counter() - request_started) * 1000,
             2,
         )
+        workflow_owner = getattr(self, "workflow_owner", None)
+        if workflow_owner is not None:
+            workflow_owner.schedule_semantic_enrichment(
+                message,
+                route.subject,
+                user_api_key,
+            )
         yield sse(
             "done",
             {
