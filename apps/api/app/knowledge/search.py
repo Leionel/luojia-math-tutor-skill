@@ -74,6 +74,10 @@ def is_cache_valid(store: LocalVectorStore, current_items: tuple[KnowledgeItem, 
 
 
 async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
+    return await get_local_store()
+
+
+async def get_local_store() -> LocalVectorStore:
     global _vector_store
     if _vector_store is not None:
         return _vector_store
@@ -92,49 +96,14 @@ async def get_vector_store(api_key: str | None = None) -> LocalVectorStore:
         if store.load() and is_cache_valid(store, items):
             _vector_store = store
             return _vector_store
-        
-    docs = []
-    for item in items:
-        full_text = _get_item_full_text(item)
-        docs.append({
-            "id": item.id,
-            "text": full_text
-        })
-        
-    store.build_bm25_index(docs)
-    
-    # 使用 asyncio.gather 和 asyncio.Semaphore(5) 并发获取 embeddings
-    client = OpenAICompatibleClient(settings)
-    sem = asyncio.Semaphore(5)
-    
-    async def fetch_with_semaphore(chunk_text: str):
-        async with sem:
-            return await client.create_embedding(chunk_text, api_key=api_key)
-            
-    tasks = []
-    chunk_ids = []
-    for chunk in store.chunks:
-        chunk_ids.append(chunk["id"])
-        tasks.append(fetch_with_semaphore(chunk["text"]))
-        
-    results = await asyncio.gather(*tasks)
-    
-    chunk_embeddings = {}
-    all_success = True
-    for chunk_id, emb in zip(chunk_ids, results):
-        if emb and len(emb) > 0:
-            chunk_embeddings[chunk_id] = emb
-        else:
-            all_success = False
-            
-    store.add_embeddings(chunk_embeddings)
-    
-    # 只有当所有的 chunk 都成功生成了有效向量时才写盘
-    if all_success and len(store.chunks) > 0:
-        store.save()
-        
-    _vector_store = store
-    return _vector_store
+
+        docs = [
+            {"id": item.id, "text": _get_item_full_text(item)}
+            for item in items
+        ]
+        store.build_bm25_index(docs)
+        _vector_store = store
+        return _vector_store
 
 
 
@@ -153,43 +122,65 @@ def _get_item_full_text(item: KnowledgeItem) -> str:
     return "\n".join(parts)
 
 
-async def search_knowledge(
-    query: str, subject: str | None = None, limit: int = 5, api_key: str | None = None
+def _results_to_hits(
+    results: list[dict],
+    query: str,
+    subject: str | None,
+    limit: int,
 ) -> list[KnowledgeHit]:
     detected_subject = detect_subject(query, subject)
-    
-    store = await get_vector_store(api_key=api_key)
-    
-    settings = get_settings()
-    client = OpenAICompatibleClient(settings)
-    
-    try:
-        query_vector = await client.create_embedding(query)
-        # 混合检索
-        results = store.search_hybrid(query, query_vector=query_vector, top_n=limit * 2)
-    except Exception as e:
-        # Fallback if embedding fails
-        results = store.search_hybrid(query, query_vector=[], top_n=limit * 2)
-    
     items = {item.id: item for item in load_knowledge()}
-    
     hits: list[KnowledgeHit] = []
+
     for res in results:
         doc_id = res["doc_id"]
         if doc_id not in items:
             continue
         orig_item = items[doc_id]
-        
         item = copy.copy(orig_item)
         item.description = res["text"]
         item.intuitive_explanation = ""
-        
         score = int(res["rrf_score"] * 100000)
         if detected_subject and item.subject == detected_subject:
             score += 20000
-            
         hits.append(KnowledgeHit(item=item, score=score))
-        
+
     hits.sort(key=lambda hit: (hit.score, hit.item.concept_zh), reverse=True)
     return hits[:limit]
 
+
+async def search_knowledge_local(
+    query: str,
+    subject: str | None = None,
+    limit: int = 5,
+) -> list[KnowledgeHit]:
+    store = await get_local_store()
+    results = store.search_hybrid(
+        query,
+        query_vector=[],
+        top_n=limit * 2,
+    )
+    return _results_to_hits(results, query, subject, limit)
+
+
+async def search_knowledge_semantic(
+    query: str,
+    subject: str | None = None,
+    limit: int = 5,
+    api_key: str | None = None,
+) -> list[KnowledgeHit]:
+    store = await get_local_store()
+    client = OpenAICompatibleClient(get_settings())
+    try:
+        query_vector = await client.create_embedding(query, api_key=api_key)
+    except Exception:
+        query_vector = []
+    results = store.search_hybrid(
+        query,
+        query_vector=query_vector,
+        top_n=limit * 2,
+    )
+    return _results_to_hits(results, query, subject, limit)
+
+
+search_knowledge = search_knowledge_semantic

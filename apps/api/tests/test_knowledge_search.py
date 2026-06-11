@@ -1,6 +1,6 @@
 import pytest
 from app.knowledge.loader import load_knowledge
-from app.knowledge.search import search_knowledge
+from app.knowledge.search import search_knowledge, search_knowledge_local
 
 
 def test_loads_all_json_knowledge_files():
@@ -29,4 +29,18 @@ async def test_search_conditional_probability():
     assert hits
     assert any("条件概率" in hit.item.concept_zh or "条件概率" in hit.item.description for hit in hits)
 
+
+@pytest.mark.asyncio
+async def test_local_search_never_creates_embedding(monkeypatch):
+    async def fail_embedding(*args, **kwargs):
+        raise AssertionError("local search must not call embeddings")
+
+    monkeypatch.setattr(
+        "app.llm.openai_compatible.OpenAICompatibleClient.create_embedding",
+        fail_embedding,
+    )
+
+    hits = await search_knowledge_local("条件概率", "probability")
+
+    assert hits
 
