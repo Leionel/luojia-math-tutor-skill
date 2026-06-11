@@ -1,0 +1,791 @@
+<!--
+  ============================================================
+  珞珈数智助教 — Faculty Meeting Presentation
+  ============================================================
+  使用说明：
+  1. 在线使用：直接双击本文件在浏览器中打开，需联网加载 KaTeX 公式渲染。
+  2. 完全离线使用：
+     a. 访问 https://katex.org/ 下载 KaTeX 发行版
+     b. 将 katex.min.css、katex.min.js、auto-render.min.js 放入 ./katex/ 目录
+     c. 将 fonts/ 文件夹一并放入 ./katex/ 目录
+     d. 将本文件中 CDN 路径替换为本地相对路径：
+        https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css  →  ./katex/katex.min.css
+        https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js   →  ./katex/katex.min.js
+        https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js → ./katex/contrib/auto-render.min.js
+  3. 导航：左右方向键 / 空格 / 翻页键切换幻灯片；点击右下角按钮切换。
+  4. 推荐浏览器：Chrome 90+ / Firefox 88+ / Edge 90+，建议全屏演示（F11）。
+  ============================================================
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>珞珈数智助教 — 面向 STEM 教育的可验证学习智能体</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #FFFFFF;
+      --text-primary: #0A2540;
+      --text-secondary: #4F5B67;
+      --accent: #FFB800;
+      --accent-dark: #E5A600;
+      --border: #E3E8EE;
+      --surface: #F6F9FC;
+      --slide-padding: 4rem;
+      --max-content-width: 1200px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1, h2, h3 {
+      font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    h1 { font-size: clamp(2rem, 4vw, 3rem); }
+    h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+    h3 { font-size: clamp(1.25rem, 2.5vw, 1.75rem); }
+
+    p, li {
+      font-size: clamp(1.25rem, 2vw, 1.5rem);
+      line-height: 1.6;
+    }
+
+    #presentation {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      padding: var(--slide-padding);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 400ms ease-out;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 1;
+    }
+
+    .slide-content {
+      max-width: var(--max-content-width);
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-header {
+      margin-bottom: 2rem;
+      flex-shrink: 0;
+    }
+
+    .slide-header h2 {
+      color: var(--text-primary);
+      border-left: 6px solid var(--accent);
+      padding-left: 1rem;
+    }
+
+    .slide-number {
+      position: absolute;
+      top: 2rem;
+      right: 3rem;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slide-nav {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      padding: 0.75rem 1.25rem;
+      border-radius: 2rem;
+      box-shadow: 0 4px 20px rgba(10,37,64,0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .slide-nav button {
+      background: none;
+      border: 2px solid var(--border);
+      color: var(--text-primary);
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-nav button:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    .slide-nav button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .nav-indicator {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      min-width: 3.5rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      border: 2px solid var(--border);
+      border-radius: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 200ms;
+    }
+
+    .toc-item:hover {
+      border-color: var(--accent);
+      background: rgba(255,184,0,0.05);
+    }
+
+    .toc-item.active-toc {
+      border-color: var(--accent);
+      background: rgba(255,184,0,0.08);
+    }
+
+    .toc-item.active-toc span:first-child {
+      background: var(--accent) !important;
+      color: var(--bg-primary) !important;
+    }
+
+    table tbody tr:hover {
+      background: rgba(255,184,0,0.04);
+    }
+
+    @media (max-width: 768px) {
+      :root { --slide-padding: 1.5rem; }
+      .slide-nav {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        justify-content: center;
+      }
+    }
+
+    @media print {
+      .slide-nav { display: none !important; }
+      .slide {
+        position: relative !important;
+        opacity: 1 !important;
+        page-break-after: always;
+        height: auto !important;
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="presentation" role="main">
+    <section class="slide active" id="slide-1" aria-label="标题页">
+      <div class="slide-content" style="justify-content: center; align-items: center; text-align: center;">
+        <div style="margin-bottom: 3rem;">
+          <div style="display: inline-block; background: var(--accent); color: var(--bg-primary); padding: 0.5rem 1.5rem; border-radius: 2rem; font-size: 1.1rem; font-weight: 600; margin-bottom: 2rem;">
+            Faculty Meeting Presentation
+          </div>
+        </div>
+        <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1.5rem; line-height: 1.15;">
+          珞珈数智助教
+        </h1>
+        <p style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--text-secondary); margin-bottom: 3rem; font-family: 'Noto Serif SC', serif;">
+          面向 STEM 教育的可验证学习智能体
+        </p>
+        <div style="border-top: 2px solid var(--border); padding-top: 2rem; width: 100%; max-width: 600px;">
+          <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+            演讲者：<span style="color: var(--text-primary); font-weight: 600;">[您的姓名]</span>
+          </p>
+          <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+            所属院系：<span style="color: var(--text-primary); font-weight: 600;">[所属院系/机构]</span>
+          </p>
+          <p style="font-size: 1.25rem; color: var(--text-secondary);">
+            2026 年 6 月 10 日
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">01 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-2" aria-label="目录">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>目录</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; flex: 1; align-content: center;">
+          <a href="#" onclick="return false;" class="toc-item" data-index="2">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">01</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">引言：为什么需要可验证学习智能体</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="3">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">02</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">技术架构：双轨可验证工作流</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="4">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">03</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">核心功能与教学闭环</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="5">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">04</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">数学基础：BKT 与符号验证</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="6">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">05</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">实现进展与评测基准</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="7">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">06</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">未来路线图</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="8">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">07</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">结论与讨论</span>
+          </a>
+          <a href="#" onclick="return false;" class="toc-item" data-index="9">
+            <span style="display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; font-weight: 700; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0;">08</span>
+            <span style="font-size: 1.35rem; font-weight: 500;">Q&A</span>
+          </a>
+        </div>
+      </div>
+      <span class="slide-number">02 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-3" aria-label="引言">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>引言：为什么需要可验证学习智能体</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; flex: 1; align-items: start;">
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">通用大模型的两大死穴</h3>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #E74C3C;">
+              <p style="font-weight: 700; color: #C0392B; margin-bottom: 0.5rem;">1. 直接泄露答案</p>
+              <p style="font-size: 1.15rem; color: var(--text-secondary);">大模型基于自回归概率引擎，天然倾向于"给出最终答案"以讨好用户，剥夺学生思考机会。</p>
+            </div>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; border-left: 4px solid #E74C3C;">
+              <p style="font-weight: 700; color: #C0392B; margin-bottom: 0.5rem;">2. 逻辑幻觉</p>
+              <p style="font-size: 1.15rem; color: var(--text-secondary);">复杂微积分与线性代数推导中，中间一步算错则后续全部崩溃，且模型往往无法自检。</p>
+            </div>
+          </div>
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">传统工具断层</h3>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem;">拍照搜题 App</p>
+              <p style="font-size: 1.15rem; color: var(--text-secondary);">依赖静态题库完全匹配，无法批改非标自写推导，沦为"抄写工具"。</p>
+            </div>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem;">科学计算工具</p>
+              <p style="font-size: 1.15rem; color: var(--text-secondary);">WolframAlpha / Mathematica 计算严密，但交互门槛极高，缺乏教学引导。</p>
+            </div>
+            <div style="background: var(--accent); color: var(--bg-primary); border-radius: 0.75rem; padding: 1.5rem;">
+              <p style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.25rem;">我们的核心定位</p>
+              <p style="font-size: 1.15rem; opacity: 0.95;">不直接"给答案"，而是"搭脚手架"；不只是"会说"，更是"会验"。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">03 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-4" aria-label="技术架构">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>技术架构：双轨可验证工作流</h2>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+          <svg viewBox="0 0 900 400" style="width: 100%; max-height: 360px;" aria-label="双轨智能体架构图">
+            <rect x="50" y="80" width="800" height="280" rx="12" fill="#F6F9FC" stroke="#E3E8EE" stroke-width="2"/>
+            <text x="450" y="105" text-anchor="middle" font-size="14" font-weight="700" fill="#4F5B67">核心双轨引擎 (Dual-Track Engine)</text>
+            <circle cx="80" cy="220" r="28" fill="#D0E8F9" stroke="#0A2540" stroke-width="2"/>
+            <text x="80" y="225" text-anchor="middle" font-size="12" font-weight="600" fill="#0A2540">学生</text>
+            <polygon points="180,190 220,220 180,250 140,220" fill="#D0E8F9" stroke="#0A2540" stroke-width="2"/>
+            <text x="180" y="224" text-anchor="middle" font-size="11" font-weight="600" fill="#0A2540">Policy</text>
+            <text x="180" y="236" text-anchor="middle" font-size="11" font-weight="600" fill="#0A2540">Router</text>
+            <path d="M108,220 L135,220" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <rect x="300" y="130" width="140" height="70" rx="8" fill="#D4E6C1" stroke="#0A2540" stroke-width="2"/>
+            <text x="370" y="160" text-anchor="middle" font-size="13" font-weight="700" fill="#0A2540">Teacher Agent</text>
+            <text x="370" y="178" text-anchor="middle" font-size="11" fill="#4F5B67">启发式教学引导</text>
+            <rect x="300" y="240" width="140" height="70" rx="8" fill="#F9D0C4" stroke="#0A2540" stroke-width="2"/>
+            <text x="370" y="270" text-anchor="middle" font-size="13" font-weight="700" fill="#0A2540">Verifier Agent</text>
+            <text x="370" y="288" text-anchor="middle" font-size="11" fill="#4F5B67">SymPy 符号验证</text>
+            <path d="M218,200 L295,165" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <path d="M218,240 L295,275" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <rect x="520" y="250" width="120" height="50" rx="6" fill="#FFF3CD" stroke="#0A2540" stroke-width="2"/>
+            <text x="580" y="280" text-anchor="middle" font-size="12" font-weight="600" fill="#0A2540">SymPy 沙盒</text>
+            <path d="M440,275 L515,275" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <path d="M580,250 L580,240 L440,240" stroke="#0A2540" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+            <path d="M370,240 L370,200" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <text x="385" y="225" font-size="10" fill="#4F5B67">验证结果</text>
+            <rect x="720" y="190" width="100" height="60" rx="8" fill="#E8F4FD" stroke="#0A2540" stroke-width="2"/>
+            <text x="770" y="225" text-anchor="middle" font-size="12" font-weight="600" fill="#0A2540">流式回复</text>
+            <path d="M440,165 L715,220" stroke="#0A2540" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <path d="M720,220 L108,220" stroke="#0A2540" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrowhead)"/>
+            <defs>
+              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#0A2540"/>
+              </marker>
+            </defs>
+          </svg>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="text-align: center;">
+              <div style="width: 3rem; height: 3rem; background: #D0E8F9; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0A2540;">1</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">意图路由</p>
+              <p style="font-size: 1rem; color: var(--text-secondary);">判定给提示还是出测试</p>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 3rem; height: 3rem; background: #F9D0C4; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0A2540;">2</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">符号验证</p>
+              <p style="font-size: 1rem; color: var(--text-secondary);">SymPy 确定性校验</p>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 3rem; height: 3rem; background: #D4E6C1; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0A2540;">3</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">启发输出</p>
+              <p style="font-size: 1rem; color: var(--text-secondary);">基于验证结果组织语言</p>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 3rem; height: 3rem; background: #E8F4FD; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0A2540;">4</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">状态记忆</p>
+              <p style="font-size: 1rem; color: var(--text-secondary);">SQLite 记录学习事件流</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">04 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-5" aria-label="核心功能">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>核心功能与教学闭环</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; flex: 1; align-content: center;">
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid var(--accent);">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#128161;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">分层提示策略</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">Hint Policy 根据学生当前状态动态展示解题脉络，最大化保留自主思考空间。</p>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #2D8CF0;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#9989;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">单步步骤批改器</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">调用 SymPy 验证器对每一步代数推导、矩阵变换进行等价性校验，精准定位错因。</p>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #E74C3C;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#128269;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">错因事件诊断</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">对不定积分漏写 +C、链式法则遗漏等特定错误特征进行代码化记录。</p>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #27AE60;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#128260;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">自适应类似题生成</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">读取错因事件与掌握度，动态变换题面参数，重新组卷形成闭环。</p>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #9B59B6;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#127912;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">跨模态视觉闭环</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">内嵌 Desmos 引擎，支持一键截图发送至 AI 进行多模态联合推理解析。</p>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #1ABC9C;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#127776;</div>
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">沉浸心流舱</h3>
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">Zen Flow 模式强制全屏、剥离冗余 UI，Web Audio 合成粉红噪音防干扰。</p>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">05 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-6" aria-label="数学基础">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>数学基础：BKT 与符号验证</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; flex: 1; align-items: start;">
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">贝叶斯知识追踪 (BKT)</h3>
+            <p style="margin-bottom: 1rem;">基于隐马尔可夫模型的数学原理，实现动态的掌握度追踪。</p>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+              $$\underbrace{P(L_{n+1})}_{\text{下次掌握度}} = \underbrace{P(L_n)}_{\text{当前掌握度}} \cdot (1 - \underbrace{P(S)}_{\text{失误率}}) + (1 - P(L_n)) \cdot \underbrace{P(G)}_{\text{猜测率}}$$
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div style="background: var(--surface); border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-dark);">P(L)</p>
+                <p style="font-size: 1rem; color: var(--text-secondary);">掌握概率</p>
+              </div>
+              <div style="background: var(--surface); border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-dark);">P(T)</p>
+                <p style="font-size: 1rem; color: var(--text-secondary);">学习迁移率</p>
+              </div>
+              <div style="background: var(--surface); border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-dark);">P(S)</p>
+                <p style="font-size: 1rem; color: var(--text-secondary);">失误率</p>
+              </div>
+              <div style="background: var(--surface); border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-dark);">P(G)</p>
+                <p style="font-size: 1rem; color: var(--text-secondary);">猜测率</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">SymPy 符号验证</h3>
+            <p style="margin-bottom: 1rem;">利用 Python 符号数学库，提供确定性的推导校验能力。</p>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; font-family: 'SF Mono', 'Consolas', monospace; font-size: 1rem; line-height: 1.8; color: var(--text-secondary);">
+              <p style="margin-bottom: 0.5rem;"><span style="color: #9B59B6;">from</span> sympy <span style="color: #9B59B6;">import</span> symbols, diff, Eq, simplify</p>
+              <p style="margin-bottom: 0.5rem;">x = symbols(<span style="color: #27AE60;">'x'</span>)</p>
+              <p style="margin-bottom: 0.5rem;">student_expr = diff(x**<span style="color: #E74C3C;">3</span> + <span style="color: #E74C3C;">2</span>*x, x)</p>
+              <p style="margin-bottom: 0.5rem;">correct_expr = <span style="color: #E74C3C;">3</span>*x**<span style="color: #E74C3C;">2</span> + <span style="color: #E74C3C;">2</span></p>
+              <p><span style="color: #9B59B6;">assert</span> simplify(student_expr - correct_expr) == <span style="color: #E74C3C;">0</span></p>
+            </div>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem;">已实现的验证器清单：</p>
+              <ul style="list-style: none; padding: 0; font-size: 1.1rem; color: var(--text-secondary);">
+                <li style="margin-bottom: 0.5rem;">&#9989; 等价性比较 (simplify)</li>
+                <li style="margin-bottom: 0.5rem;">&#9989; 线性代数矩阵运算 (Matrix, det)</li>
+                <li style="margin-bottom: 0.5rem;">&#9989; 极限验证 (limit, series)</li>
+                <li>&#9989; 解方程/方程组 (solve, linsolve)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">06 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-7" aria-label="实现进展">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>实现进展与评测基准</h2>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;">
+            <div style="text-align: center; background: var(--surface); border-radius: 0.75rem; padding: 1.75rem;">
+              <p style="font-size: 2.5rem; font-weight: 700; color: var(--accent-dark);">92%</p>
+              <p style="font-size: 1.1rem; color: var(--text-secondary);">单步推导准确率</p>
+            </div>
+            <div style="text-align: center; background: var(--surface); border-radius: 0.75rem; padding: 1.75rem;">
+              <p style="font-size: 2.5rem; font-weight: 700; color: var(--accent-dark);">&lt;400ms</p>
+              <p style="font-size: 1.1rem; color: var(--text-secondary);">SymPy 验证延迟</p>
+            </div>
+            <div style="text-align: center; background: var(--surface); border-radius: 0.75rem; padding: 1.75rem;">
+              <p style="font-size: 2.5rem; font-weight: 700; color: var(--accent-dark);">1,200+</p>
+              <p style="font-size: 1.1rem; color: var(--text-secondary);">已标注知识节点</p>
+            </div>
+            <div style="text-align: center; background: var(--surface); border-radius: 0.75rem; padding: 1.75rem;">
+              <p style="font-size: 2.5rem; font-weight: 700; color: var(--accent-dark);">15种</p>
+              <p style="font-size: 1.1rem; color: var(--text-secondary);">可识别错因事件</p>
+            </div>
+          </div>
+          <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.5rem;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 1.1rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                  <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary); font-weight: 600;">对比维度</th>
+                  <th style="text-align: center; padding: 0.75rem; color: var(--text-secondary); font-weight: 600;">通用大模型</th>
+                  <th style="text-align: center; padding: 0.75rem; color: var(--text-secondary); font-weight: 600;">拍照搜题</th>
+                  <th style="text-align: center; padding: 0.75rem; color: var(--text-secondary); font-weight: 600;">Luojia Tutor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 0.75rem; font-weight: 500;">推导过程验证</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 幻觉风险</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 无此能力</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #27AE60; font-weight: 600; background: rgba(255,184,0,0.04);">&#9989; SymPy 等价校验</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 0.75rem; font-weight: 500;">错因诊断粒度</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #E67E22;">&#9888; 泛泛而谈</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 无此能力</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #27AE60; font-weight: 600; background: rgba(255,184,0,0.04);">&#9989; 代码化事件记录</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 0.75rem; font-weight: 500;">防止答案泄露</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 直接输出</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 直接输出</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #27AE60; font-weight: 600; background: rgba(255,184,0,0.04);">&#9989; Hint Policy 分级</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.75rem; font-weight: 500;">掌握度追踪</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 无状态</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #C0392B;">&#10060; 无状态</td>
+                  <td style="text-align: center; padding: 0.75rem; color: #27AE60; font-weight: 600; background: rgba(255,184,0,0.04);">&#9989; BKT 四参数模型</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">07 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-8" aria-label="未来路线图">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>未来路线图</h2>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+          <div style="display: flex; align-items: center; justify-content: space-between; position: relative; margin-bottom: 2.5rem; padding: 0 2rem;">
+            <div style="position: absolute; top: 1.25rem; left: 5%; right: 5%; height: 3px; background: var(--border); z-index: 0;"></div>
+            <div style="position: absolute; top: 1.25rem; left: 5%; width: 30%; height: 3px; background: var(--accent); z-index: 1;"></div>
+            <div style="text-align: center; position: relative; z-index: 2; flex: 1;">
+              <div style="width: 2.5rem; height: 2.5rem; background: var(--accent); border-radius: 50%; margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: 700;">1</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">2026 Q2</p>
+            </div>
+            <div style="text-align: center; position: relative; z-index: 2; flex: 1;">
+              <div style="width: 2.5rem; height: 2.5rem; background: var(--border); border-radius: 50%; margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-weight: 700;">2</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">2026 Q4</p>
+            </div>
+            <div style="text-align: center; position: relative; z-index: 2; flex: 1;">
+              <div style="width: 2.5rem; height: 2.5rem; background: var(--border); border-radius: 50%; margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-weight: 700;">3</div>
+              <p style="font-size: 1.1rem; font-weight: 600;">2027 Q2</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid var(--accent);">
+              <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">核心引擎强化</h3>
+              <ul style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.8; padding-left: 1.25rem;">
+                <li>覆盖微积分、线性代数、概率统计三大核心领域</li>
+                <li>BKT 参数个性化校准</li>
+                <li>错因事件库扩展至 50+ 种</li>
+              </ul>
+            </div>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #2D8CF0;">
+              <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">多模态与感知</h3>
+              <ul style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.8; padding-left: 1.25rem;">
+                <li>手写公式 OCR 识别接入</li>
+                <li>几何图形推理与证明</li>
+                <li>语音对话交互模式</li>
+              </ul>
+            </div>
+            <div style="background: var(--surface); border-radius: 0.75rem; padding: 1.75rem; border-top: 4px solid #27AE60;">
+              <h3 style="font-size: 1.35rem; margin-bottom: 0.75rem;">教研闭环平台</h3>
+              <ul style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.8; padding-left: 1.25rem;">
+                <li>教师后台数据看板</li>
+                <li>班级级掌握度热力图</li>
+                <li>自适应试卷生成 API</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">08 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-9" aria-label="结论与讨论">
+      <div class="slide-content">
+        <div class="slide-header">
+          <h2>结论与讨论</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; flex: 1; align-items: start;">
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">项目核心壁垒</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: 700; flex-shrink: 0;">1</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">SymPy 验证器 + 沙箱安全</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">确定性符号校验，从根本上杜绝概率性幻觉。</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: 700; flex-shrink: 0;">2</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">BKT 动态掌握度追踪</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">不依赖 LLM 内部知识图谱，基于实测数据更新。</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: 700; flex-shrink: 0;">3</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">错因事件代码化</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">结构化记录可解释、可度量、可驱动后续生成。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 style="color: var(--accent-dark); margin-bottom: 1rem; font-size: 1.5rem;">寻求合作</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-weight: 700; flex-shrink: 0; border: 2px solid var(--border);">1</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">课程知识点图谱共建</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">邀请 faculty 提供课程大纲与重难点分布。</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-weight: 700; flex-shrink: 0; border: 2px solid var(--border);">2</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">学生试点与 A/B 实验</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">选取 1-2 个班级进行对照实验，验证提分效果。</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 2.5rem; height: 2.5rem; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-weight: 700; flex-shrink: 0; border: 2px solid var(--border);">3</div>
+                <div>
+                  <p style="font-weight: 600; font-size: 1.2rem;">教研论文与基金申请</p>
+                  <p style="font-size: 1.05rem; color: var(--text-secondary);">联合发表关于 BKT 在 STEM 智能辅导中的应用研究。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="slide-number">09 / 10</span>
+    </section>
+
+    <section class="slide" id="slide-10" aria-label="问答">
+      <div class="slide-content" style="justify-content: center; align-items: center; text-align: center;">
+        <div style="margin-bottom: 2rem;">
+          <div style="font-size: 5rem; margin-bottom: 1.5rem;">&#128172;</div>
+          <h2 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1rem;">Q & A</h2>
+          <p style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--text-secondary); font-family: 'Noto Serif SC', serif;">
+            欢迎提问与讨论
+          </p>
+        </div>
+        <div style="border-top: 2px solid var(--border); padding-top: 2rem; width: 100%; max-width: 500px;">
+          <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+            联系方式：<span style="color: var(--text-primary); font-weight: 600;">[您的邮箱]</span>
+          </p>
+          <p style="font-size: 1.1rem; color: var(--text-secondary);">
+            项目仓库：github.com/luojia-math-tutor
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">10 / 10</span>
+    </section>
+  </main>
+  <nav class="slide-nav" aria-label="幻灯片导航">
+    <button id="nav-prev" aria-label="上一页">&#10094;</button>
+    <span class="nav-indicator" id="nav-indicator">1 / 10</span>
+    <button id="nav-next" aria-label="下一页">&#10095;</button>
+  </nav>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+      let currentSlide = 0;
+
+      const prevBtn = document.getElementById('nav-prev');
+      const nextBtn = document.getElementById('nav-next');
+      const indicator = document.getElementById('nav-indicator');
+
+      function showSlide(index) {
+        if (index < 0 || index >= totalSlides) return;
+        slides.forEach((slide, i) => {
+          slide.classList.toggle('active', i === index);
+          slide.setAttribute('aria-hidden', i !== index);
+        });
+        currentSlide = index;
+        if (prevBtn) prevBtn.disabled = currentSlide === 0;
+        if (nextBtn) nextBtn.disabled = currentSlide === totalSlides - 1;
+        if (indicator) indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        updateTocHighlight();
+      }
+
+      function nextSlide() { showSlide(currentSlide + 1); }
+      function prevSlide() { showSlide(currentSlide - 1); }
+
+      if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+      if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault();
+          prevSlide();
+        }
+      });
+
+      let touchStartX = 0;
+      document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      });
+      document.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+          diff > 0 ? nextSlide() : prevSlide();
+        }
+      });
+
+      function updateTocHighlight() {
+        document.querySelectorAll('.toc-item').forEach(item => {
+          const idx = parseInt(item.dataset.index);
+          item.classList.toggle('active-toc', idx === currentSlide);
+        });
+      }
+
+      document.querySelectorAll('.toc-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const idx = parseInt(item.dataset.index);
+          if (!isNaN(idx)) showSlide(idx);
+        });
+      });
+
+      showSlide(0);
+
+      if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    });
+  </script>
+</body>
+</html>

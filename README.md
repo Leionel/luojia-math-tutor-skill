@@ -1,6 +1,14 @@
 # 珞珈数智助教 (Luojia Math Tutor)
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-v0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg?logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Agent](https://img.shields.io/badge/Agent-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
+[![Pedagogy](https://img.shields.io/badge/Pedagogy-Socratic-blueviolet.svg)](#🧠-learning-loop-基于-bkt-的动态掌握度追踪)
+
+![Luojia Math Tutor Poster](LJ_Tutor_Poster.png)
 
 **面向 STEM 教育的可验证学习智能体 (Verifiable Learning Agent)**
 
@@ -59,6 +67,12 @@ flowchart TD
 - 普通请求与 SymPy 已确认请求：`llm_call_count == 1`。
 - 高风险验证请求：`llm_call_count <= 2`。
 - SQLite 同步访问通过 `asyncio.to_thread` 移出事件循环；客户端取消 SSE 时，未完成的图任务会同步取消。
+
+### 公开思考状态与刷新恢复
+
+Tutor SSE 依次使用 `opening -> thinking -> meta/message -> thinking_end -> done`。`opening` 只负责快速给出有意义的开场，不会结束思考计时；首个正式 `message` token 到达后，界面从“思考中”切换为流式回答。
+
+`thinking` 事件仅包含 `[PLAN]`、`[隐式 RAG]`、`[VERIFY]`、`[OUTPUT]` 四类公开过程摘要，不发送或保存模型原始 `reasoning_content`。最终摘要和首个正式 token 前的耗时写入消息记录，因此刷新或重新进入会话后仍可展开查看。
 
 ---
 
