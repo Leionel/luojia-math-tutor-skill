@@ -34,6 +34,109 @@ class TutorOrchestrator:
         self.workflow_owner = TutorWorkflow(settings, repository)
         self.workflow = self.workflow_owner.workflow
 
+    @staticmethod
+    def _build_plan_progress(state: dict) -> str:
+        learning_objective = state.get("learning_objective") or ""
+        pedagogical_action = state.get("pedagogical_action") or ""
+        action_descriptions = {
+            "explain": "苏格拉底式引导讲解",
+            "tutor": "苏格拉底式引导讲解",
+            "check_step": "检查解题步骤",
+            "generate_exercise": "生成练习题进行训练",
+            "provide_hint": "给予提示性引导",
+        }
+        items = []
+        if learning_objective:
+            items.append(f"已识别学习目标：{learning_objective}")
+        items.append(
+            "采用教学策略："
+            f"{action_descriptions.get(pedagogical_action, pedagogical_action or '分步引导')}"
+        )
+        return f"[PLAN]\n{'；'.join(items)}。"
+
+    @staticmethod
+    def _build_thinking_summary(state: dict) -> str:
+        """Build a public-facing thinking summary from final state.
+
+        Only uses deterministic fields — no LLM calls.
+        Output format uses stage tags for the frontend to parse.
+        """
+        parts = []
+
+        # ── PLAN ──
+        pedagogical_action = state.get("pedagogical_action") or ""
+
+        parts.append(TutorOrchestrator._build_plan_progress(state))
+
+        # ── 隐式 RAG ──
+        hits = state.get("hits", [])
+        document_chunks = state.get("document_chunks", [])
+        concepts = state.get("concepts", [])
+
+        rag_items = []
+        if hits:
+            rag_items.append(f"已检索本地知识库（{len(hits)} 条相关知识点）")
+        if concepts:
+            rag_items.append(
+                f"涉及概念：{'、'.join(concepts[:3])}{'等' if len(concepts) > 3 else ''}"
+            )
+        rag_items.append("已载入会话历史与当前掌握度评估")
+        if document_chunks:
+            rag_items.append(f"已参考用户绑定文档（{len(document_chunks)} 个片段）")
+
+        parts.append(f"[隐式 RAG]\n{'；'.join(rag_items)}。")
+
+        # ── VERIFY ──
+        verify_items = []
+        verifier_result = state.get("verifier_result")
+        verification_result = state.get("verification_result", {})
+
+        if isinstance(verifier_result, VerifyResult):
+            if verifier_result.verified:
+                if verifier_result.is_correct is True:
+                    verify_items.append("SymPy 符号验证已通过")
+                elif verifier_result.is_correct is False:
+                    verify_items.append(
+                        verifier_result.summary
+                        or "SymPy 符号验证发现当前步骤与标准结果不一致"
+                    )
+                else:
+                    verify_items.append(
+                        verifier_result.summary or "SymPy 已完成符号验证"
+                    )
+            elif verifier_result.summary and "未触发" not in verifier_result.summary:
+                if "无法判断" in verifier_result.summary:
+                    verify_items.append("SymPy 无法直接判断，已升级至 Verifier LLM 验证")
+                else:
+                    verify_items.append(verifier_result.summary)
+            else:
+                verify_items.append("本轮未触发符号校验")
+
+        if verification_result:
+            if verification_result.get("verified"):
+                verify_items.append("Verifier LLM 验证通过")
+            else:
+                verify_items.append("Verifier LLM 未能确认当前推导")
+
+        if not verify_items:
+            verify_items.append("本轮未触发符号校验")
+
+        parts.append(f"[VERIFY]\n{'；'.join(verify_items)}。")
+
+        # ── OUTPUT ──
+        output_items = []
+        route = state.get("metrics", {}).get("route", "")
+        if pedagogical_action == "generate_exercise" or route == "examiner":
+            output_items.append("已进入 Examiner 出题/测验阶段")
+        elif route and "teacher" in str(route):
+            output_items.append("已进入 Teacher 启发式讲解阶段")
+        else:
+            output_items.append("已开始组织回答")
+
+        parts.append(f"[OUTPUT]\n{'；'.join(output_items)}。")
+
+        return "\n\n".join(parts)
+
     async def stream_reply(
         self,
         session_id: str,
@@ -112,24 +215,39 @@ class TutorOrchestrator:
         }
 
         queue: asyncio.Queue[str] = asyncio.Queue()
+        first_token_time: float | None = None
+        plan_progress = self._build_plan_progress(initial_state)
 
         async def on_token(event_str: str) -> None:
+            nonlocal first_token_time
+            if first_token_time is None:
+                first_token_time = time.perf_counter()
             await queue.put(event_str)
 
         async def on_thinking(event_str: str) -> None:
             await queue.put(event_str)
+
+        async def on_progress(content: str) -> None:
+            normalized = content.strip()
+            if normalized:
+                await queue.put(
+                    sse("thinking", {"content": f"{normalized}\n\n"})
+                )
 
         config = {
             "configurable": {
                 "thread_id": session_id,
                 "on_token": on_token,
                 "on_thinking": on_thinking,
+                "on_progress": on_progress,
             }
         }
         task = asyncio.create_task(
             self.workflow.ainvoke(initial_state, config=config)
         )
         queue_get: asyncio.Task[str] | None = None
+
+        yield sse("thinking", {"content": f"{plan_progress}\n\n"})
 
         try:
             while True:
@@ -182,9 +300,20 @@ class TutorOrchestrator:
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
 
+        # Build thinking summary and calculate elapsed_ms
+        thinking_summary = self._build_thinking_summary(final_state)
+        if first_token_time is not None:
+            thinking_elapsed_ms = round((first_token_time - request_started) * 1000)
+        else:
+            thinking_elapsed_ms = round((time.perf_counter() - request_started) * 1000)
+
         yield sse(
             "thinking_end",
-            {"chain": final_state.get("thinking_chain", "")},
+            {
+                "chain": final_state.get("thinking_chain", ""),
+                "summary": thinking_summary,
+                "elapsed_ms": thinking_elapsed_ms,
+            },
         )
 
         intent_value = final_state.get("intent")
@@ -202,6 +331,8 @@ class TutorOrchestrator:
             "assistant",
             visible_output,
             intent,
+            thinking_summary,
+            thinking_elapsed_ms,
         )
         metrics = dict(final_state.get("metrics", {}))
         metrics["total_ms"] = round(

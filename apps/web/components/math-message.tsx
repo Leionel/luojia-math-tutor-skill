@@ -21,7 +21,7 @@ function cleanMathForSpeech(text: string) {
 
 interface ThinkingStep {
   title: string;
-  type: 'rag' | 'orchestrator' | 'sandbox' | 'result' | 'plan' | 'verify' | 'correct' | 'generic';
+  type: 'rag' | 'orchestrator' | 'sandbox' | 'result' | 'plan' | 'verify' | 'output' | 'correct' | 'generic';
   content: string;
 }
 
@@ -29,7 +29,8 @@ function parseThinkingChain(text: string): ThinkingStep[] {
   const steps: ThinkingStep[] = [];
   if (!text) return steps;
 
-  const pattern = /(\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|CORRECT)\])/g;
+  const pattern = /(\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|CORRECT)\])/g;
+  const stagePattern = /^\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|CORRECT)\]$/;
   const parts = text.split(pattern);
 
   let currentTitle = "内部思考";
@@ -40,7 +41,7 @@ function parseThinkingChain(text: string): ThinkingStep[] {
     const part = parts[i];
     if (!part) continue;
 
-    if (pattern.test(part)) {
+    if (stagePattern.test(part)) {
       if (currentContent.trim()) {
         steps.push({
           title: currentTitle,
@@ -57,6 +58,7 @@ function parseThinkingChain(text: string): ThinkingStep[] {
       else if (part.includes("执行结果")) currentType = "result";
       else if (part.includes("PLAN")) currentType = "plan";
       else if (part.includes("VERIFY")) currentType = "verify";
+      else if (part.includes("OUTPUT")) currentType = "output";
       else if (part.includes("CORRECT")) currentType = "correct";
       else currentType = "generic";
     } else {
@@ -89,6 +91,8 @@ function getStepIcon(type: ThinkingStep['type']) {
       return <ListChecks className="w-3.5 h-3.5 text-cyan-500" />;
     case 'verify':
       return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+    case 'output':
+      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
     case 'correct':
       return <RefreshCcw className="w-3.5 h-3.5 text-red-500 animate-spin" style={{ animationDuration: '3s' }} />;
     default:
@@ -155,6 +159,62 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
   );
 }
 
+function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { summary: string; elapsedMs?: number; isExpanded: boolean; onToggle: () => void }) {
+  const steps = parseThinkingChain(summary);
+
+  return (
+    <div className="mt-3 border-t border-[var(--border-subtle)] pt-2">
+      <button
+        className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+        onClick={onToggle}
+      >
+        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
+        <span className="font-medium">
+          查看思考过程
+          {elapsedMs ? `（本轮思考约 ${elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)} 秒` : `${elapsedMs} 毫秒`}）` : ''}
+          {steps.length > 0 && ` · ${steps.length} 步`}
+        </span>
+      </button>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden mt-2"
+          >
+            <div className="rounded-md bg-[var(--bg-tertiary)] backdrop-blur-sm p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] flex flex-col gap-4">
+              <div className="relative pl-6 border-l border-slate-200 dark:border-slate-800 ml-2.5 flex flex-col gap-5 py-1">
+                {steps.length > 0 ? (
+                  steps.map((step, idx) => (
+                    <div key={idx} className="relative">
+                      <div className="absolute -left-[31px] top-0.5 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm z-10">
+                        {getStepIcon(step.type)}
+                      </div>
+                      <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
+                        <span>{step.title}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
+                          步骤 {idx + 1}
+                        </span>
+                      </div>
+                      <div className="prose-xs text-[var(--text-secondary)] bg-white/40 dark:bg-black/10 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800/50 mt-1 select-text">
+                        <LatexRenderer content={step.content} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[var(--text-muted)] italic">{summary}</div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function MathMessage({
   role,
   content,
@@ -162,6 +222,8 @@ export function MathMessage({
   isThinking = false,
   thinkingElapsed = 0,
   thinkingChain = "",
+  thinkingSummary,
+  thinkingElapsedMs,
   reviewData,
   onSimilar,
   onEdit,
@@ -173,6 +235,8 @@ export function MathMessage({
   isThinking?: boolean;
   thinkingElapsed?: number;
   thinkingChain?: string;
+  thinkingSummary?: string;
+  thinkingElapsedMs?: number;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
@@ -231,6 +295,17 @@ export function MathMessage({
               <ThinkingChain
                 content={thinkingChain}
                 isExpanded={isThinking ? true : isChainExpanded}
+                onToggle={() => setIsChainExpanded(!isChainExpanded)}
+              />
+            </div>
+          )}
+
+          {!isThinking && thinkingSummary && (
+            <div className="mb-2">
+              <ThinkingSummaryView
+                summary={thinkingSummary}
+                elapsedMs={thinkingElapsedMs}
+                isExpanded={isChainExpanded}
                 onToggle={() => setIsChainExpanded(!isChainExpanded)}
               />
             </div>

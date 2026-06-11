@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.orchestrator import TutorOrchestrator, sse
 
@@ -20,6 +21,9 @@ def make_orchestrator(workflow) -> TutorOrchestrator:
 
 class QuickWorkflow:
     async def ainvoke(self, state, config):
+        await config["configurable"]["on_progress"](
+            "[隐式 RAG]\n已检索相关知识并载入会话上下文。"
+        )
         await config["configurable"]["on_thinking"](
             sse("meta", {"route": "teacher"})
         )
@@ -130,6 +134,8 @@ async def test_cancelling_stream_cancels_graph_task():
         subject="calculus",
     )
     await anext(stream)
+    progress_event = await anext(stream)
+    assert progress_event.startswith("event: thinking")
     pending_event = asyncio.create_task(anext(stream))
     await asyncio.wait_for(started.wait(), timeout=0.2)
 
@@ -161,3 +167,67 @@ async def test_semantic_enrichment_is_scheduled_after_current_turn():
         "calculus",
         "user-key",
     )
+
+
+@pytest.mark.asyncio
+async def test_public_progress_is_streamed_without_waiting_for_answer():
+    orchestrator = make_orchestrator(QuickWorkflow())
+
+    events = [
+        parse_event(event)
+        async for event in orchestrator.stream_reply(
+            session_id="session-1",
+            user_id="user-1",
+            message="解释导数",
+            subject="calculus",
+        )
+    ]
+    names = [name for name, _ in events]
+    first_message = names.index("message")
+
+    assert names[0] == "opening"
+    assert names[1] == "thinking"
+    assert any(
+        name == "thinking" and "[隐式 RAG]" in data["content"]
+        for name, data in events[:first_message]
+    )
+
+
+def test_incorrect_symbolic_result_is_not_described_as_passed():
+    state = {
+        "pedagogical_action": "check_step",
+        "verifier_result": VerifyResult(
+            verified=True,
+            is_correct=False,
+            summary="积分结果与标准答案不一致",
+        ),
+        "verification_result": {},
+        "metrics": {"route": "teacher"},
+    }
+
+    summary = TutorOrchestrator._build_thinking_summary(state)
+
+    assert "积分结果与标准答案不一致" in summary
+    assert "SymPy 符号验证已通过" not in summary
+
+
+@pytest.mark.asyncio
+async def test_thinking_summary_and_elapsed_are_persisted():
+    orchestrator = make_orchestrator(QuickWorkflow())
+
+    events = [
+        parse_event(event)
+        async for event in orchestrator.stream_reply(
+            session_id="session-1",
+            user_id="user-1",
+            message="解释导数",
+            subject="calculus",
+        )
+    ]
+
+    thinking_end = next(data for name, data in events if name == "thinking_end")
+    persisted = orchestrator.repository.add_message.call_args
+    assert persisted.args[4] == thinking_end["summary"]
+    assert persisted.args[5] == thinking_end["elapsed_ms"]
+    assert "[PLAN]" in thinking_end["summary"]
+    assert "[OUTPUT]" in thinking_end["summary"]

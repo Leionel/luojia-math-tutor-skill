@@ -73,6 +73,7 @@ def make_config(session_id: str = "session-1") -> dict:
             "thread_id": session_id,
             "on_token": AsyncMock(),
             "on_thinking": AsyncMock(),
+            "on_progress": AsyncMock(),
         }
     }
 
@@ -202,3 +203,26 @@ async def test_policy_fallback_does_not_duplicate_user_prompt():
     ]
     assert len(repeated) == 1
     assert final_state["metrics"]["llm_call_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_model_reasoning_is_not_forwarded_or_persisted():
+    workflow = TutorWorkflow(get_settings(), make_repository())
+
+    async def fake_stream(messages, api_key=None, model=None):
+        yield {"type": "reasoning", "content": "private chain of thought"}
+        yield {"type": "content", "content": "公开回答"}
+
+    workflow.llm.stream = fake_stream
+    state = make_state("什么是导数？")
+    config = make_config(state["session_id"])
+
+    final_state = await workflow.workflow.ainvoke(state, config=config)
+
+    assert final_state["final_output"] == "公开回答"
+    assert final_state["thinking_chain"] == ""
+    thinking_events = [
+        call.args[0]
+        for call in config["configurable"]["on_thinking"].await_args_list
+    ]
+    assert all("private chain of thought" not in event for event in thinking_events)

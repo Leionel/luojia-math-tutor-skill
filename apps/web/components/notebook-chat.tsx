@@ -57,7 +57,25 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
               : m
           ));
         },
-        () => {} // ignore thinking chain
+        () => {},
+        (text) => {
+          setMessages(current => current.map(m =>
+            m.id === assistantId
+              ? { ...m, content: m.content + text, status: "thinking" }
+              : m
+          ));
+        },
+        ({ summary, elapsedMs }) => {
+          setMessages(current => current.map(m =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  thinking_summary: summary,
+                  thinking_elapsed_ms: elapsedMs,
+                }
+              : m
+          ));
+        }
       );
       
       setMessages(current => current.map(m => 
@@ -87,7 +105,14 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
           </div>
         ) : (
           messages.map(m => (
-            <MathMessage key={m.id} content={m.content} role={m.role} isThinking={m.status === "thinking"} />
+            <MathMessage
+              key={m.id}
+              content={m.content}
+              role={m.role}
+              isThinking={m.status === "thinking"}
+              thinkingSummary={m.thinking_summary}
+              thinkingElapsedMs={m.thinking_elapsed_ms}
+            />
           ))
         )}
         <div ref={messagesEndRef} />

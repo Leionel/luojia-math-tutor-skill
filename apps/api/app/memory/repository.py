@@ -115,6 +115,16 @@ class Repository:
             except sqlite3.OperationalError:
                 pass
 
+            # Add thinking_summary and thinking_elapsed_ms to messages dynamically
+            try:
+                conn.execute("ALTER TABLE messages ADD COLUMN thinking_summary text;")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE messages ADD COLUMN thinking_elapsed_ms integer;")
+            except sqlite3.OperationalError:
+                pass
+
     def ensure_user(self, user_id: str, display_name: str | None = None) -> None:
         with self.connect() as conn:
             conn.execute(
@@ -172,16 +182,24 @@ class Repository:
             conn.execute("delete from attempts where session_id = ?", (session_id,))
             conn.execute("delete from sessions where id = ?", (session_id,))
 
-    def add_message(self, session_id: str, role: str, content: str, intent: str | None = None) -> str:
+    def add_message(
+        self,
+        session_id: str,
+        role: str,
+        content: str,
+        intent: str | None = None,
+        thinking_summary: str | None = None,
+        thinking_elapsed_ms: int | None = None,
+    ) -> str:
         message_id = new_id("msg")
         ts = now_iso()
         with self.connect() as conn:
             conn.execute(
                 """
-                insert into messages(id, session_id, role, content, intent, created_at)
-                values (?, ?, ?, ?, ?, ?)
+                insert into messages(id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (message_id, session_id, role, content, intent, ts),
+                (message_id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, ts),
             )
             conn.execute("update sessions set updated_at = ? where id = ?", (ts, session_id))
         return message_id
@@ -190,7 +208,7 @@ class Repository:
         with self.connect() as conn:
             rows = conn.execute(
                 """
-                select id, session_id, role, content, intent, created_at
+                select id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, created_at
                 from messages
                 where session_id = ?
                 order by created_at asc

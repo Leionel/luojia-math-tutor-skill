@@ -219,6 +219,36 @@ class TutorWorkflow:
                 )
             )
 
+        on_progress = self._callback(config, "on_progress")
+        if on_progress:
+            rag_items = []
+            if context.hits:
+                rag_items.append(
+                    f"已检索本地知识库（{len(context.hits)} 条相关知识点）"
+                )
+            if context.concepts:
+                rag_items.append(
+                    f"已定位相关概念：{'、'.join(context.concepts[:3])}"
+                )
+            rag_items.append("已载入会话历史与当前掌握度评估")
+            if context.document_chunks:
+                rag_items.append(
+                    f"已参考用户绑定文档（{len(context.document_chunks)} 个片段）"
+                )
+            await on_progress(f"[隐式 RAG]\n{'；'.join(rag_items)}。")
+
+            verifier_result = context.verifier_result
+            if verifier_result.verified and verifier_result.is_correct is True:
+                verify_text = "SymPy 符号验证已通过。"
+            elif verifier_result.verified and verifier_result.is_correct is False:
+                verify_text = (
+                    verifier_result.summary
+                    or "SymPy 符号验证发现当前步骤与标准结果不一致。"
+                )
+            else:
+                verify_text = "本轮未触发符号校验。"
+            await on_progress(f"[VERIFY]\n{verify_text}")
+
         return {
             "pedagogical_action": state["pedagogical_action"],
             "learning_objective": state["learning_objective"],
@@ -392,11 +422,18 @@ class TutorWorkflow:
             metrics["route"] = default_route
 
         on_token = self._callback(config, "on_token")
-        on_thinking = self._callback(config, "on_thinking")
+        on_progress = self._callback(config, "on_progress")
         started = time.perf_counter()
         saw_content = False
         response_text = ""
-        thinking_chain = ""
+
+        if on_progress:
+            output_text = (
+                "已进入 Examiner 出题/测验阶段。"
+                if default_route == "examiner"
+                else "已进入 Teacher 启发式讲解阶段。"
+            )
+            await on_progress(f"[OUTPUT]\n{output_text}")
 
         try:
             async for token in self.llm.stream(
@@ -418,11 +455,6 @@ class TutorWorkflow:
                         ).replace("</think>", "")
 
                 if is_reasoning:
-                    thinking_chain += content
-                    if on_thinking:
-                        await on_thinking(
-                            sse("thinking", {"content": content})
-                        )
                     continue
 
                 if not saw_content:
@@ -455,7 +487,7 @@ class TutorWorkflow:
                 {"role": "assistant", "content": response_text}
             ],
             "final_output": response_text,
-            "thinking_chain": thinking_chain,
+            "thinking_chain": "",
             "metrics": metrics,
         }
 

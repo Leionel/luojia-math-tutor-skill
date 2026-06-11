@@ -21,6 +21,8 @@ type LocalMessage = {
   role: "user" | "assistant";
   content: string;
   status?: string;
+  thinkingSummary?: string;
+  thinkingElapsedMs?: number;
 };
 
 const welcome = `### 欢迎来到珞珈数智助教
@@ -117,8 +119,12 @@ export function TutorChat() {
     void bootstrap();
   }, []);
 
+  const isThinkingActive = messages.some(
+    (message) => message.status === "thinking"
+  );
+
   useEffect(() => {
-    if (!isStreaming) {
+    if (!isThinkingActive) {
       setThinkingElapsed(0);
       return;
     }
@@ -126,7 +132,7 @@ export function TutorChat() {
       setThinkingElapsed((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isStreaming]);
+  }, [isThinkingActive]);
 
   const sidebarWidthRef = useRef(sidebarWidth);
   const learningWidthRef = useRef(learningWidth);
@@ -210,11 +216,17 @@ export function TutorChat() {
       listMistakes(nextSessionId).catch(() => [])
     ]);
     
-    let currentMessages = serverMessages.map((item) => ({ id: item.id, role: item.role, content: item.content }));
+    let currentMessages: LocalMessage[] = serverMessages.map((item) => ({
+      id: item.id,
+      role: item.role,
+      content: item.content,
+      thinkingSummary: item.thinking_summary,
+      thinkingElapsedMs: item.thinking_elapsed_ms,
+    }));
     if (!currentMessages.length) {
       currentMessages = [{ id: "welcome", role: "assistant", content: welcome }];
     }
-    
+
     const pendingQuiz = sessionStorage.getItem("pendingQuiz");
     if (pendingQuiz) {
       currentMessages.push({ id: crypto.randomUUID(), role: "assistant", content: pendingQuiz });
@@ -252,11 +264,11 @@ export function TutorChat() {
       }
 
       await streamTutor(
-        { 
-          session_id: activeSession, 
-          message: value, 
-          subject: "综合" as any, 
-          mode: forcedMode || mode, 
+        {
+          session_id: activeSession,
+          message: value,
+          subject: "综合" as any,
+          mode: forcedMode || mode,
           user_api_key: getUserApiKey() || null,
           model: getPreferredModel(),
           requested_hint: requestedHint,
@@ -269,12 +281,44 @@ export function TutorChat() {
         (token) => {
           setMessages((current) =>
             current.map((message) =>
-              message.id === assistantId ? { ...message, content: `${message.content}${token}` } : message
+              message.id === assistantId ? {
+                ...message,
+                content: `${message.content}${token}`,
+                status: message.status === "thinking" ? "typing" : message.status
+              } : message
             )
           );
         },
         (chain) => {
           setThinkingChains((prev) => ({ ...prev, [assistantId]: chain }));
+        },
+        (content) => {
+          // onOpening: append content but keep thinking status
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId ? {
+                ...message,
+                content: `${message.content}${content}`,
+                status: message.status || "thinking"
+              } : message
+            )
+          );
+        },
+        ({ summary, elapsedMs }) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId ? {
+                ...message,
+                thinkingSummary: summary,
+                thinkingElapsedMs: elapsedMs,
+              } : message
+            )
+          );
+          setThinkingChains((current) => {
+            const next = { ...current };
+            delete next[assistantId];
+            return next;
+          });
         }
       );
       const [refreshedSessions, refreshedMistakes] = await Promise.all([
@@ -452,14 +496,16 @@ export function TutorChat() {
                     status={message.role === "assistant" && message.status !== "thinking" ? status : undefined}
                     isThinking={message.status === "thinking" && isStreaming}
                     thinkingElapsed={thinkingElapsed}
-                    thinkingChain={message.role === "assistant" && !isStreaming ? (thinkingChains[message.id] || "") : ""}
+                    thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
+                    thinkingSummary={message.thinkingSummary}
+                    thinkingElapsedMs={message.thinkingElapsedMs}
                     reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
                     onEdit={message.role === "user" ? async () => {
                       if (!sessionId) return;
                       await truncateSession(sessionId, message.id);
                       setInputValue(message.content);
                       const msgs = await listMessages(sessionId);
-                      setMessages(msgs.map((item) => ({ id: item.id, role: item.role, content: item.content })));
+                      setMessages(msgs.map((item) => ({ id: item.id, role: item.role, content: item.content, thinkingSummary: item.thinking_summary, thinkingElapsedMs: item.thinking_elapsed_ms })));
                     } : undefined}
                     onRetry={message.role === "assistant" ? async () => {
                       if (!sessionId) return;

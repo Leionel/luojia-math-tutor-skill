@@ -17,6 +17,8 @@ export type Message = {
   content: string;
   intent?: string;
   created_at: string;
+  thinking_summary?: string;
+  thinking_elapsed_ms?: number;
 };
 
 export type TutorMeta = {
@@ -160,7 +162,9 @@ export async function streamTutor(
   },
   onMeta: (meta: TutorMeta) => void,
   onToken: (token: string) => void,
-  onThinkingChain?: (chain: string) => void
+  onThinkingChain?: (chain: string) => void,
+  onOpening?: (content: string) => void,
+  onThinkingEnd?: (data: { summary: string; elapsedMs: number }) => void
 ) {
   const { abortSignal, ...restPayload } = payload;
   const res = await fetch(`${API_BASE}/api/tutor/stream`, {
@@ -189,14 +193,24 @@ export async function streamTutor(
       const event = eventLine.replace("event: ", "");
       const data = JSON.parse(dataLine.replace("data: ", ""));
       if (event === "meta") onMeta(data as TutorMeta);
-      if (event === "opening" || event === "token" || event === "message") {
+      if (event === "opening") {
+        if (onOpening) onOpening(String(data.content || ""));
+        else onToken(String(data.content || ""));
+      }
+      if (event === "token" || event === "message") {
         onToken(String(data.content || data.text || ""));
       }
       if (event === "thinking") {
         thinkingChain += String(data.content || data.text || "");
         if (onThinkingChain) onThinkingChain(thinkingChain);
       }
-      if (event === "thinking_end" && onThinkingChain) onThinkingChain(thinkingChain);
+      if (event === "thinking_end") {
+        if (onThinkingChain) onThinkingChain(thinkingChain);
+        if (onThinkingEnd) onThinkingEnd({
+          summary: data.summary || "",
+          elapsedMs: data.elapsed_ms || 0
+        });
+      }
     }
   }
 }
