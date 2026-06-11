@@ -1,168 +1,361 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import type { TutorMeta } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import type { MasteryItem, TutorMeta } from "@/lib/api";
 import { fetchMastery } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Brain, Target, CheckCircle2, XCircle, ChevronUp, ChevronDown, Lightbulb, AlertCircle, History, Sparkles, BarChart2 } from "lucide-react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import { RadarChart } from "./radar-chart";
+import {
+  AlertCircle,
+  BarChart2,
+  Brain,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  History,
+  Lightbulb,
+  Sparkles,
+  Target,
+  XCircle,
+} from "lucide-react";
 
 const intentMap: Record<string, string> = {
-  "concept": "概念讲解",
-  "solve_step_by_step": "分步引导",
-  "check_student_step": "步骤检查",
-  "full_solution": "完整解答",
-  "generate_exercise": "生成练习",
+  concept: "概念讲解",
+  solve_step_by_step: "分步引导",
+  check_student_step: "步骤检查",
+  full_solution: "完整解答",
+  generate_exercise: "生成练习",
 };
 
-export function LearningPanel({ meta, mistakes }: { meta: TutorMeta | null; mistakes: Array<{ mistake_code: string; concept: string }> }) {
+const subjectMap: Record<string, string> = {
+  calculus: "微积分",
+  linear_algebra: "线性代数",
+  probability: "概率统计",
+  foundations: "数学基础",
+};
+
+/**
+ * Fixed competency axes for the radar chart.
+ * Stable across sessions so the user can compare progress over time.
+ * Each axis maps to a list of concept keywords matched against mastery records.
+ */
+const COMPETENCY_AXES: { axis: string; keywords: string[] }[] = [
+  { axis: "微积分", keywords: ["积分", "导数", "极限", "洛必达", "泰勒", "微分", "Fubini"] },
+  { axis: "线性代数", keywords: ["矩阵", "特征值", "QR", "正交", "Givens", "高斯消元", "向量", "行列式"] },
+  { axis: "概率统计", keywords: ["概率", "正态", "分布", "期望", "方差", "贝叶斯"] },
+  { axis: "符号运算", keywords: ["代数", "化简", "因式分解", "方程", "不等式"] },
+  { axis: "应用建模", keywords: ["应用", "建模", "几何", "图像"] },
+];
+
+function aggregateCompetencyScores(items: MasteryItem[]): { label: string; value: number; assessed: boolean }[] {
+  return COMPETENCY_AXES.map(({ axis, keywords }) => {
+    const matched = items.filter((it) =>
+      keywords.some((kw) => it.concept.includes(kw)),
+    );
+    if (matched.length === 0) {
+      return { label: axis, value: 0.15, assessed: false }; // baseline ghost value
+    }
+    const totalWeight = matched.reduce((sum, m) => sum + Math.max(1, m.attempts_count), 0);
+    const weighted =
+      matched.reduce(
+        (sum, m) => sum + m.score * Math.max(1, m.attempts_count),
+        0,
+      ) / totalWeight;
+    return { label: axis, value: weighted, assessed: true };
+  });
+}
+
+type Mistake = {
+  mistake_code: string;
+  concept: string;
+};
+
+function verificationLabel(meta: TutorMeta | null) {
+  if (!meta) return "尚未开始";
+  if (!meta.verified) return "本轮无需验算";
+  return meta.is_correct ? "验算正确" : "发现偏差";
+}
+
+function nextStepAdvice(
+  meta: TutorMeta | null,
+  mastery: MasteryItem[],
+) {
+  if (!meta) {
+    return "输入一道题或写下你的推导步骤，面板会随本轮学习自动更新。";
+  }
+  const concept = meta.concepts?.[0]
+    || meta.learning_objective
+    || subjectMap[meta.subject]
+    || "当前知识点";
+  if (meta.verified && meta.is_correct === false) {
+    return `先根据对话中的提示修正“${concept}”这一步，再独立重做一道同类题。`;
+  }
+  if (meta.verified && meta.is_correct === true) {
+    return `本轮验算已通过。建议继续完成一道稍高难度的“${concept}”题，检验能否迁移。`;
+  }
+  if ((meta.hint_level ?? 0) > 0) {
+    return `沿着当前提示继续写出“${concept}”的下一步，并把你的推导发回来检查。`;
+  }
+  if (meta.pedagogical_action === "generate_exercise") {
+    return `先独立完成当前练习，提交关键步骤后再查看验算与掌握度变化。`;
+  }
+  const currentMastery = mastery.find(
+    (item) => meta.concepts?.includes(item.concept),
+  );
+  if (currentMastery && currentMastery.score < 0.6) {
+    return `“${currentMastery.concept}”目前较薄弱，建议先复述条件，再做一个最小例题。`;
+  }
+  return `用自己的话总结“${concept}”的关键条件，然后尝试完成下一步推导。`;
+}
+
+export function LearningPanel({
+  meta,
+  mistakes,
+}: {
+  meta: TutorMeta | null;
+  mistakes: Mistake[];
+}) {
   const [open, setOpen] = useState(false);
-  const [overallMastery, setOverallMastery] = useState<Array<{subject: string; A: number; fullMark: number}>>([]);
-  const concepts = meta?.concepts?.length ? meta.concepts : ["等待输入题目"];
+  const [overallMastery, setOverallMastery] = useState<MasteryItem[]>([]);
+  const [previousAverage, setPreviousAverage] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchMastery("demo-user").then(setOverallMastery).catch(console.error);
+    let active = true;
+    fetchMastery("demo-user")
+      .then((items) => {
+        if (active) setOverallMastery(items);
+      })
+      .catch(() => {
+        if (active) setOverallMastery([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [meta]);
 
+  const concepts = useMemo(() => {
+    if (meta?.concepts?.length) return meta.concepts;
+    if (meta?.learning_objective) return [meta.learning_objective];
+    if (meta?.subject) return [subjectMap[meta.subject] || meta.subject];
+    return ["等待输入题目"];
+  }, [meta]);
+
+  const competencyScores = useMemo(
+    () => aggregateCompetencyScores(overallMastery),
+    [overallMastery],
+  );
+
+  // Average over assessed competency axes only — falls back to all axes if nothing assessed.
+  const averageMastery = useMemo(() => {
+    const assessed = competencyScores.filter((c) => c.assessed);
+    if (assessed.length === 0) return null;
+    return Math.round(
+      (assessed.reduce((sum, c) => sum + c.value, 0) / assessed.length) * 100,
+    );
+  }, [competencyScores]);
+
+  // Compare with previously cached average to drive the arrow direction.
+  useEffect(() => {
+    if (averageMastery === null) return;
+    const prev = Number(localStorage.getItem("luojia_prev_avg_mastery"));
+    if (!Number.isNaN(prev) && prev > 0) setPreviousAverage(prev);
+    // Update cache *after* reading, so the next render compares against this run's value.
+    localStorage.setItem("luojia_prev_avg_mastery", String(averageMastery));
+  }, [averageMastery]);
+
+  const masteryTrend: "up" | "down" | "flat" | null = useMemo(() => {
+    if (averageMastery === null || previousAverage === null) return null;
+    const diff = averageMastery - previousAverage;
+    if (Math.abs(diff) < 2) return "flat";
+    return diff > 0 ? "up" : "down";
+  }, [averageMastery, previousAverage]);
+
+  const advice = nextStepAdvice(meta, overallMastery);
+
   const content = (
-    <div className="flex flex-col gap-6 w-full max-w-full">
+    <div className="flex w-full max-w-full flex-col gap-6">
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-[var(--text-muted)]">
-          <Target className="w-3.5 h-3.5 text-[var(--accent)]" /> 当前考点 (Concepts)
+        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <Target className="h-3.5 w-3.5 text-[var(--accent)]" />
+          当前考点
         </h2>
         <div className="flex flex-wrap gap-2">
           {concepts.slice(0, 5).map((concept) => (
-            <div key={concept} className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] shadow-sm">
+            <span
+              key={concept}
+              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] shadow-sm"
+            >
               {concept}
-            </div>
+            </span>
           ))}
         </div>
       </section>
-      
+
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-[var(--text-muted)]">
-          <Brain className="w-3.5 h-3.5 text-emerald-500" /> 状态与复盘 (Status)
+        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <Brain className="h-3.5 w-3.5 text-emerald-500" />
+          状态与复盘
         </h2>
-        <div className={cn(
-          "space-y-3 rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-all duration-500 relative overflow-hidden",
-          meta?.is_correct 
-            ? "border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.1)]" 
-            : "border-[var(--border-primary)] bg-[var(--bg-card)]"
-        )}>
-          {meta?.is_correct && <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400" />}
-          
-          <div className="flex justify-between items-center text-[13px]">
-            <span className="text-[var(--text-muted)]">意图识别</span>
-            <span className="font-semibold text-[var(--text-primary)]">
-              {meta ? (intentMap[meta.intent] || meta.intent) : "尚未开始"}
+        <div
+          className={cn(
+            "space-y-3 rounded-lg border bg-[var(--bg-card)] p-4 shadow-sm",
+            meta?.verified && meta.is_correct
+              ? "border-emerald-500/30"
+              : "border-[var(--border-primary)]",
+          )}
+        >
+          <div className="flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-[var(--text-muted)]">教学方式</span>
+            <span className="text-right font-semibold text-[var(--text-primary)]">
+              {meta ? intentMap[meta.intent] || meta.intent : "尚未开始"}
             </span>
           </div>
-          
-          <div className="flex justify-between items-center text-[13px]">
+          <div className="flex items-center justify-between gap-3 text-[13px]">
             <span className="text-[var(--text-muted)]">后台验算</span>
-            <div className="flex items-center gap-1.5 font-semibold">
-              {meta?.verified ? (
-                meta.is_correct ? (
-                  <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /> 正确</span>
-                ) : (
-                  <span className="flex items-center gap-1 text-rose-500"><XCircle className="w-4 h-4" /> 发现偏差</span>
-                )
-              ) : (
-                <span className="text-[var(--text-muted)]">等待输入</span>
+            <span
+              className={cn(
+                "flex items-center gap-1 font-semibold",
+                meta?.verified && meta.is_correct
+                  ? "text-emerald-500"
+                  : meta?.verified
+                    ? "text-rose-500"
+                    : "text-[var(--text-secondary)]",
               )}
-            </div>
+            >
+              {meta?.verified && meta.is_correct ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : meta?.verified ? (
+                <XCircle className="h-4 w-4" />
+              ) : null}
+              {verificationLabel(meta)}
+            </span>
           </div>
-          
+
           {meta?.mistake && (
-            <div className="mt-2 rounded-lg bg-rose-500/10 p-3 text-xs text-rose-500 border border-rose-500/20 flex items-start gap-2 backdrop-blur-md">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-500">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span className="font-medium">{meta.mistake}</span>
             </div>
           )}
-          
+
           {meta?.mastery_score !== undefined && (
-            <div className="mt-3 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">掌握度 (Mastery)</span>
-                <span className="font-bold text-[var(--text-primary)] text-sm">
-                  {Math.round(meta.mastery_score * 100)}% <span className="text-[11px] font-medium opacity-60">({meta.mastery_label})</span>
-                </span>
+            <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                  当前考点掌握度
+                </div>
+                <div className="text-sm font-bold text-[var(--text-primary)]">
+                  {Math.round(meta.mastery_score * 100)}%
+                  <span className="ml-1 text-[11px] font-medium opacity-60">
+                    {meta.mastery_label || "待评估"}
+                  </span>
+                </div>
               </div>
-              
-              {meta.mastery_delta !== undefined && meta.mastery_delta !== 0 && (
-                <div className={cn(
-                  "flex items-center gap-0.5 px-2 py-1 rounded-md text-xs font-bold border",
-                  meta.mastery_delta > 0 
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                    : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                )}>
-                  {meta.mastery_delta > 0 ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {!!meta.mastery_delta && (
+                <div
+                  className={cn(
+                    "flex items-center gap-0.5 rounded-md border px-2 py-1 text-xs font-bold",
+                    meta.mastery_delta > 0
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                      : "border-rose-500/20 bg-rose-500/10 text-rose-500",
+                  )}
+                >
+                  {meta.mastery_delta > 0 ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
                   {Math.abs(Math.round(meta.mastery_delta * 100))}%
                 </div>
               )}
             </div>
           )}
-          
-          {meta?.hint_level !== undefined && meta.hint_level > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-amber-500 border border-amber-500/20 px-2.5 py-1.5 w-fit backdrop-blur-md">
-              <Lightbulb className="w-3.5 h-3.5" />
-              系统已介入提示 (Level {meta.hint_level})
+
+          {!!meta?.hint_level && (
+            <div className="flex w-fit items-center gap-1.5 rounded-md border border-amber-500/20 px-2.5 py-1.5 text-[11px] font-medium text-amber-500">
+              <Lightbulb className="h-3.5 w-3.5" />
+              已使用第 {meta.hint_level} 级提示
             </div>
           )}
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-[var(--text-muted)]">
-          <BarChart2 className="w-3.5 h-3.5 text-[var(--accent)]" /> 全局掌握度 (Overall Mastery)
-        </h2>
-        <div className="flex flex-col gap-3 border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 rounded-xl min-h-[250px] items-center justify-center relative overflow-hidden">
-          {overallMastery.length === 0 ? (
-            <div className="text-[12px] text-[var(--text-muted)] italic">暂无记录</div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            <BarChart2 className="h-3.5 w-3.5 text-[var(--accent)]" />
+            能力雷达图
+          </h2>
+        </div>
+        <div className="flex flex-col items-center gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
+          <RadarChart
+            data={competencyScores.map((c) => ({ label: c.label, value: c.value }))}
+            size={220}
+          />
+          {averageMastery !== null ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              综合掌握度 {averageMastery}%
+              {masteryTrend === "up" && (
+                <span title={previousAverage !== null ? `较上次 ${previousAverage}% 提升` : ""}>↑</span>
+              )}
+              {masteryTrend === "down" && (
+                <span title={previousAverage !== null ? `较上次 ${previousAverage}% 下降` : ""}>↓</span>
+              )}
+              {masteryTrend === "flat" && <span title="与上次基本一致">→</span>}
+            </div>
           ) : (
-            <div className="w-full h-full min-h-[220px] -m-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="65%" data={overallMastery}>
-                  <PolarGrid stroke="var(--border-subtle)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-body)' }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Mastery" dataKey="A" stroke="#617a55" fill="#617a55" fillOpacity={0.6} />
-                </RadarChart>
-              </ResponsiveContainer>
+            <div className="text-[11px] italic text-[var(--text-muted)]">
+              完成一次可验算的解题后，雷达图各能力轴将逐步填充。
+            </div>
+          )}
+          {/* Per-axis breakdown */}
+          <div className="grid w-full grid-cols-1 gap-1.5 pt-2 border-t border-[var(--border-subtle)]">
+            {competencyScores.map((c) => (
+              <div key={c.label} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className={c.assessed ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]/70 italic"}>
+                  {c.label}
+                </span>
+                <span className={c.assessed ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-muted)]/70"}>
+                  {c.assessed ? `${Math.round(c.value * 100)}%` : "待评估"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <History className="h-3.5 w-3.5" />
+          最近错因
+        </h2>
+        <div className="space-y-2">
+          {mistakes.length ? (
+            mistakes.slice(0, 5).map((mistake, index) => (
+              <div
+                key={`${mistake.mistake_code}-${index}`}
+                className="flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-[12px] font-medium text-amber-600 dark:text-amber-500"
+              >
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                {mistake.concept || mistake.mistake_code}
+              </div>
+            ))
+          ) : (
+            <div className="px-2 text-[12px] italic text-[var(--text-muted)]">
+              暂无错因记录。
             </div>
           )}
         </div>
       </section>
-      
+
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-[var(--text-muted)]">
-          <History className="w-3.5 h-3.5 text-[var(--text-muted)]" /> 最近错因 (Mistakes)
+        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
+          下一步建议
         </h2>
-        <div className="space-y-2">
-          {mistakes.length ? mistakes.slice(0, 5).map((mistake, index) => (
-            <div key={`${mistake.mistake_code}-${index}`} className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-[12px] font-medium text-amber-600 dark:text-amber-500 backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-              {mistake.concept || mistake.mistake_code}
-            </div>
-          )) : <div className="text-[12px] text-[var(--text-muted)] italic px-2">暂无错因记录，继续保持！</div>}
-        </div>
-      </section>
-      
-      <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-[var(--text-muted)]">
-          <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" /> 下一步建议 (Next Steps)
-        </h2>
-        <div className={cn(
-          "rounded-xl p-4 text-[13px] leading-relaxed shadow-sm border backdrop-blur-xl",
-          meta?.verified && meta.is_correct 
-            ? "bg-[var(--accent-light)] border-[var(--accent)] text-[var(--accent)] font-medium"
-            : "bg-[var(--bg-card)] border-[var(--border-primary)] text-[var(--text-secondary)]"
-        )}>
-          {meta?.verified 
-            ? (meta.is_correct 
-                ? "回答正确！您的掌握度正在提升。建议您点击底部「生成类似题」趁热打铁，或直接输入新题目开启新一轮练习。" 
-                : "发现了一些逻辑上的漏洞，不要气馁。请根据对话框里的提示先修正这一处错误；如果卡壳了，可随时点击底部「请求提示」。") 
-            : "您可以输入一道需要解答的题目，或者写下您目前的思考与推导步骤，系统将实时进行演算。"}
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 text-[13px] leading-relaxed text-[var(--text-secondary)] shadow-sm">
+          {advice}
         </div>
       </section>
     </div>
@@ -171,22 +364,22 @@ export function LearningPanel({ meta, mistakes }: { meta: TutorMeta | null; mist
   return (
     <>
       <button
-        className="fixed right-4 bottom-24 z-40 flex items-center justify-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] backdrop-blur-md px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-lg xl:hidden transition-colors"
-        onClick={() => setOpen((v) => !v)}
+        className="fixed bottom-24 right-4 z-40 flex items-center justify-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-lg transition-colors xl:hidden"
+        onClick={() => setOpen((value) => !value)}
       >
-        <Brain className="w-4 h-4 text-brand" />
+        <Brain className="h-4 w-4 text-brand" />
         学习面板
       </button>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm xl:hidden transition-opacity"
+          className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm xl:hidden"
           onClick={() => setOpen(false)}
         />
       )}
       <aside
         className={cn(
-          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 sm:w-80 shrink-0 border-l border-[var(--border-primary)] bg-gray-50 dark:bg-[var(--bg-sidebar)] dark:backdrop-blur-3xl p-6 overflow-y-auto transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] xl:static xl:w-full xl:translate-x-0",
-          open ? "translate-x-0 shadow-2xl" : "translate-x-full"
+          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-l border-[var(--border-primary)] bg-gray-50 p-6 transition-transform duration-300 dark:bg-[var(--bg-sidebar)] xl:static xl:w-full xl:translate-x-0",
+          open ? "translate-x-0 shadow-2xl" : "translate-x-full",
         )}
       >
         {content}
@@ -194,4 +387,3 @@ export function LearningPanel({ meta, mistakes }: { meta: TutorMeta | null; mist
     </>
   );
 }
-

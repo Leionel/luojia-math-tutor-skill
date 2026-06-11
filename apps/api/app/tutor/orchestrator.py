@@ -8,6 +8,7 @@ from app.agents.harness_evaluator import PedagogyHarness
 from app.agents.vision_agent import VisionParser
 from app.config import Settings
 from app.llm.openai_compatible import OpenAICompatibleClient
+from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.fast_path import generate_opening, route_fast_path
@@ -136,6 +137,50 @@ class TutorOrchestrator:
         parts.append(f"[OUTPUT]\n{'；'.join(output_items)}。")
 
         return "\n\n".join(parts)
+
+    @staticmethod
+    def _build_learning_meta(state: dict) -> dict:
+        intent_value = state.get("intent")
+        intent = (
+            intent_value.value
+            if hasattr(intent_value, "value")
+            else intent_value or "solve_step_by_step"
+        )
+        verifier_result = state.get("verifier_result")
+        verification_result = state.get("verification_result") or {}
+        verified = bool(
+            verification_result.get(
+                "verified",
+                getattr(verifier_result, "verified", False),
+            )
+        )
+        is_correct = verification_result.get(
+            "is_correct",
+            getattr(verifier_result, "is_correct", None),
+        )
+        verifier_summary = verification_result.get(
+            "summary",
+            getattr(verifier_result, "summary", ""),
+        )
+        mistake = state.get("mistake")
+        return {
+            "intent": intent,
+            "subject": state.get("detected_subject")
+            or state.get("subject")
+            or "auto",
+            "concepts": state.get("concepts", []),
+            "verified": verified,
+            "is_correct": is_correct,
+            "mistake": getattr(mistake, "label", mistake),
+            "verifier_summary": verifier_summary or "",
+            "hint_level": state.get("hint_level", 0),
+            "mastery_score": state.get("mastery_score", 0.5),
+            "mastery_label": state.get("mastery_label_str", "一般"),
+            "mastery_delta": state.get("mastery_delta", 0.0),
+            "pedagogical_action": state.get("pedagogical_action", ""),
+            "learning_objective": state.get("learning_objective", ""),
+            "route": state.get("metrics", {}).get("route", ""),
+        }
 
     async def stream_reply(
         self,
@@ -316,15 +361,19 @@ class TutorOrchestrator:
             },
         )
 
-        intent_value = final_state.get("intent")
-        intent = (
-            intent_value.value
-            if intent_value
-            else "solve_step_by_step"
-        )
         visible_output = (
             f"{opening}\n\n{final_state.get('final_output', '')}"
         ).strip()
+        explicit_concepts = extract_explicit_concepts(
+            f"{message}\n{visible_output}"
+        )
+        if explicit_concepts:
+            final_state = {
+                **final_state,
+                "concepts": explicit_concepts,
+            }
+        learning_meta = self._build_learning_meta(final_state)
+        intent = learning_meta["intent"]
         message_id = await asyncio.to_thread(
             self.repository.add_message,
             session_id,
@@ -333,6 +382,7 @@ class TutorOrchestrator:
             intent,
             thinking_summary,
             thinking_elapsed_ms,
+            learning_meta,
         )
         metrics = dict(final_state.get("metrics", {}))
         metrics["total_ms"] = round(

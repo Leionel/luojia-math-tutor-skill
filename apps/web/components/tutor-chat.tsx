@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { createSession, listMessages, listMistakes, listSessions, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
+import { ConfirmDialog } from "./confirm-dialog";
 import { LearningPanel } from "./learning-panel";
 import { MathMessage } from "./math-message";
 import { Sidebar } from "./sidebar";
@@ -23,7 +24,28 @@ type LocalMessage = {
   status?: string;
   thinkingSummary?: string;
   thinkingElapsedMs?: number;
+  learningMeta?: TutorMeta | null;
 };
+
+function mapServerMessages(items: Message[]): LocalMessage[] {
+  return items.map((item) => ({
+    id: item.id,
+    role: item.role,
+    content: item.content,
+    thinkingSummary: item.thinking_summary,
+    thinkingElapsedMs: item.thinking_elapsed_ms,
+    learningMeta: item.learning_meta,
+  }));
+}
+
+function latestLearningMeta(items: Message[]): TutorMeta | null {
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (items[index].role === "assistant" && items[index].learning_meta) {
+      return items[index].learning_meta ?? null;
+    }
+  }
+  return null;
+}
 
 const welcome = `### 欢迎来到珞珈数智助教
 你好！我是一款专为东方美学与深层逻辑打造的数学助教。
@@ -64,6 +86,8 @@ export function TutorChat() {
   const [isMobileLearningOpen, setIsMobileLearningOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [showZenConfirm, setShowZenConfirm] = useState(false);
+  const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
+  const [newSessionBlocked, setNewSessionBlocked] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -187,42 +211,40 @@ export function TutorChat() {
     if (existing[0]) {
       await selectSession(existing[0].id);
     } else {
-      await newSession();
+      resetToDraftSession();
     }
   }
 
-  async function newSession() {
-    const created = await createSession("综合");
-    const refreshed = await listSessions().catch(() => []);
-    setSessions(refreshed);
-    setSessionId(created.session_id);
-    
+  function resetToDraftSession() {
+    setSessionId(null);
     let initialMessages: LocalMessage[] = [{ id: "welcome", role: "assistant", content: welcome }];
     const pendingQuiz = sessionStorage.getItem("pendingQuiz");
     if (pendingQuiz) {
       initialMessages.push({ id: crypto.randomUUID(), role: "assistant", content: pendingQuiz });
       sessionStorage.removeItem("pendingQuiz");
     }
-    
     setMessages(initialMessages);
     setMeta(null);
     setMistakes([]);
+    setNoteContent("");
+    setRightPanelMode("learning");
+  }
+
+  async function newSession() {
+    // No DB call here — show local "draft" session. The real session row
+    // will be created lazily by submit() when the user sends a message.
+    resetToDraftSession();
   }
 
   async function selectSession(nextSessionId: string) {
     setSessionId(nextSessionId);
-    const [serverMessages, serverMistakes] = await Promise.all([
+    const [serverMessages, serverMistakes, savedNotes] = await Promise.all([
       listMessages(nextSessionId).catch(() => [] as Message[]),
-      listMistakes(nextSessionId).catch(() => [])
+      listMistakes(nextSessionId).catch(() => []),
+      listNotes("demo-user").catch(() => []),
     ]);
     
-    let currentMessages: LocalMessage[] = serverMessages.map((item) => ({
-      id: item.id,
-      role: item.role,
-      content: item.content,
-      thinkingSummary: item.thinking_summary,
-      thinkingElapsedMs: item.thinking_elapsed_ms,
-    }));
+    let currentMessages: LocalMessage[] = mapServerMessages(serverMessages);
     if (!currentMessages.length) {
       currentMessages = [{ id: "welcome", role: "assistant", content: welcome }];
     }
@@ -235,6 +257,11 @@ export function TutorChat() {
     
     setMessages(currentMessages);
     setMistakes(serverMistakes);
+    setMeta(latestLearningMeta(serverMessages));
+    setNoteContent(
+      savedNotes.find((note) => note.session_id === nextSessionId)?.content
+      || ""
+    );
   }
 
   async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false) {
@@ -378,19 +405,34 @@ export function TutorChat() {
       if (!isZenMode) {
         if (document.documentElement.requestFullscreen) {
           await document.documentElement.requestFullscreen();
+          setIsZenMode(true);
+        } else {
+          // Fallback: browser doesn't support fullscreen API
+          setIsZenMode(true);
         }
-        setIsZenMode(true);
       } else {
+        setIsZenMode(false);
         if (document.exitFullscreen && document.fullscreenElement) {
           await document.exitFullscreen();
         }
-        setIsZenMode(false);
       }
     } catch (err) {
       console.error("Fullscreen API error", err);
-      setIsZenMode(!isZenMode);
+      // On error, revert to safe state
+      setIsZenMode(false);
     }
   };
+
+  // Sync isZenMode when browser exits fullscreen via ESC / F11
+  useEffect(() => {
+    const handleFSChange = () => {
+      if (!document.fullscreenElement) {
+        setIsZenMode(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFSChange);
+    return () => document.removeEventListener("fullscreenchange", handleFSChange);
+  }, []);
 
   const ResizeHandle = ({ target, className = "" }: { target: string; className?: string }) => (
     <div
@@ -423,7 +465,14 @@ export function TutorChat() {
         <AppHeader
           mode={mode}
           onModeChange={setMode}
-          onNewSession={() => void newSession()}
+          onNewSession={() => {
+            // If already on an empty draft (no real session yet), nothing to do.
+            if (!sessionId && !messages.some((m) => m.role === "user")) {
+              setNewSessionBlocked(true);
+            } else {
+              setShowNewSessionConfirm(true);
+            }
+          }}
           onToggleSidebar={() => {
             if (window.innerWidth >= 1024) {
               handleToggleSidebar(!isSidebarCollapsed);
@@ -505,7 +554,8 @@ export function TutorChat() {
                       await truncateSession(sessionId, message.id);
                       setInputValue(message.content);
                       const msgs = await listMessages(sessionId);
-                      setMessages(msgs.map((item) => ({ id: item.id, role: item.role, content: item.content, thinkingSummary: item.thinking_summary, thinkingElapsedMs: item.thinking_elapsed_ms })));
+                      setMessages(mapServerMessages(msgs));
+                      setMeta(latestLearningMeta(msgs));
                     } : undefined}
                     onRetry={message.role === "assistant" ? async () => {
                       if (!sessionId) return;
@@ -516,7 +566,8 @@ export function TutorChat() {
                       if(prevUserMsg) {
                         await truncateSession(sessionId, prevUserMsg.id);
                         const msgs = await listMessages(sessionId);
-                        setMessages(msgs.map((item) => ({ id: item.id, role: item.role, content: item.content })));
+                        setMessages(mapServerMessages(msgs));
+                        setMeta(latestLearningMeta(msgs));
                         void submit(prevUserMsg.content);
                       }
                     } : undefined}
@@ -665,6 +716,31 @@ export function TutorChat() {
           </div>
         )}
       </div>
+
+      {/* New Session Confirmation Dialog */}
+      <ConfirmDialog
+        open={showNewSessionConfirm}
+        onConfirm={() => {
+          setShowNewSessionConfirm(false);
+          void newSession();
+        }}
+        onCancel={() => setShowNewSessionConfirm(false)}
+        title="开启新会话？"
+        description="开启新会话后，当前会话仍会在侧边栏中保留，你可以随时切换回来继续学习。"
+        confirmText="确认开启"
+        cancelText="取消"
+      />
+
+      {/* Blocked: no conversation yet */}
+      <ConfirmDialog
+        open={newSessionBlocked}
+        onConfirm={() => setNewSessionBlocked(false)}
+        onCancel={() => setNewSessionBlocked(false)}
+        title="已经在新会话中"
+        description="当前已经是一个未开始的新会话，请先发送一条消息开始学习，再创建另一个新会话。"
+        confirmText="知道了"
+        cancelText=""
+      />
 
       {/* Zen Mode Confirmation Modal */}
       {showZenConfirm && (

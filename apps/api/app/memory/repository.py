@@ -1,8 +1,11 @@
+import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 from app.config import Settings
+from app.knowledge.concepts import extract_explicit_concepts
 from app.memory.models import new_id, now_iso
 
 
@@ -124,6 +127,10 @@ class Repository:
                 conn.execute("ALTER TABLE messages ADD COLUMN thinking_elapsed_ms integer;")
             except sqlite3.OperationalError:
                 pass
+            try:
+                conn.execute("ALTER TABLE messages ADD COLUMN learning_meta text;")
+            except sqlite3.OperationalError:
+                pass
 
     def ensure_user(self, user_id: str, display_name: str | None = None) -> None:
         with self.connect() as conn:
@@ -180,6 +187,8 @@ class Repository:
         with self.connect() as conn:
             conn.execute("delete from messages where session_id = ?", (session_id,))
             conn.execute("delete from attempts where session_id = ?", (session_id,))
+            conn.execute("delete from mistake_events where session_id = ?", (session_id,))
+            conn.execute("delete from notes where session_id = ?", (session_id,))
             conn.execute("delete from sessions where id = ?", (session_id,))
 
     def add_message(
@@ -190,16 +199,34 @@ class Repository:
         intent: str | None = None,
         thinking_summary: str | None = None,
         thinking_elapsed_ms: int | None = None,
+        learning_meta: dict[str, Any] | None = None,
     ) -> str:
         message_id = new_id("msg")
         ts = now_iso()
         with self.connect() as conn:
             conn.execute(
                 """
-                insert into messages(id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, created_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?)
+                insert into messages(
+                  id, session_id, role, content, intent, thinking_summary,
+                  thinking_elapsed_ms, learning_meta, created_at
+                )
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (message_id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, ts),
+                (
+                    message_id,
+                    session_id,
+                    role,
+                    content,
+                    intent,
+                    thinking_summary,
+                    thinking_elapsed_ms,
+                    (
+                        json.dumps(learning_meta, ensure_ascii=False)
+                        if learning_meta is not None
+                        else None
+                    ),
+                    ts,
+                ),
             )
             conn.execute("update sessions set updated_at = ? where id = ?", (ts, session_id))
         return message_id
@@ -208,14 +235,120 @@ class Repository:
         with self.connect() as conn:
             rows = conn.execute(
                 """
-                select id, session_id, role, content, intent, thinking_summary, thinking_elapsed_ms, created_at
-                from messages
-                where session_id = ?
-                order by created_at asc
+                select m.id, m.session_id, m.role, m.content, m.intent,
+                       m.thinking_summary, m.thinking_elapsed_ms,
+                       m.learning_meta, m.created_at,
+                       s.subject as session_subject
+                from messages m
+                join sessions s on s.id = m.session_id
+                where m.session_id = ?
+                order by m.created_at asc
                 """,
                 (session_id,),
             ).fetchall()
-        return [dict(row) for row in rows]
+        messages = [dict(row) for row in rows]
+        for message in messages:
+            raw_meta = message.get("learning_meta")
+            if not raw_meta:
+                message["learning_meta"] = self._legacy_learning_meta(
+                    message
+                )
+                message.pop("session_subject", None)
+                continue
+            try:
+                message["learning_meta"] = json.loads(raw_meta)
+            except (TypeError, json.JSONDecodeError):
+                message["learning_meta"] = None
+            explicit_concepts = extract_explicit_concepts(
+                message.get("content") or ""
+            )
+            if explicit_concepts and isinstance(
+                message["learning_meta"],
+                dict,
+            ):
+                message["learning_meta"]["concepts"] = explicit_concepts
+            message.pop("session_subject", None)
+        return messages
+
+    @staticmethod
+    def _legacy_learning_meta(message: dict[str, Any]) -> dict | None:
+        if message.get("role") != "assistant":
+            return None
+        summary = message.get("thinking_summary") or ""
+        intent = message.get("intent")
+        if not summary and not intent:
+            return None
+
+        concepts_match = re.search(
+            r"(?:涉及概念|已定位相关概念)：([^；。\n]+)",
+            summary,
+        )
+        summary_concepts = (
+            [
+                concept.strip()
+                for concept in concepts_match.group(1).split("、")
+                if concept.strip()
+            ]
+            if concepts_match
+            else []
+        )
+        explicit_concepts = extract_explicit_concepts(
+            message.get("content") or ""
+        )
+        concepts = explicit_concepts or summary_concepts
+        objective_match = re.search(
+            r"已识别学习目标：([^；。\n]+)",
+            summary,
+        )
+        strategy_match = re.search(
+            r"采用教学策略：([^；。\n]+)",
+            summary,
+        )
+        verify_match = re.search(
+            r"\[VERIFY\]\s*([^\n]+)",
+            summary,
+        )
+        verifier_summary = (
+            verify_match.group(1).strip()
+            if verify_match
+            else ""
+        )
+        verified = any(
+            marker in verifier_summary
+            for marker in ("验证已通过", "验算正确", "符号验证已通过")
+        )
+        is_correct = True if verified else None
+        if any(
+            marker in verifier_summary
+            for marker in ("不一致", "发现偏差", "验算错误")
+        ):
+            verified = True
+            is_correct = False
+
+        return {
+            "intent": intent or "solve_step_by_step",
+            "subject": message.get("session_subject") or "auto",
+            "concepts": concepts,
+            "verified": verified,
+            "is_correct": is_correct,
+            "mistake": None,
+            "verifier_summary": verifier_summary,
+            "hint_level": 0,
+            "mastery_score": 0.5,
+            "mastery_label": "待评估",
+            "mastery_delta": 0.0,
+            "pedagogical_action": (
+                strategy_match.group(1).strip()
+                if strategy_match
+                else ""
+            ),
+            "learning_objective": (
+                objective_match.group(1).strip()
+                if objective_match
+                else ""
+            ),
+            "route": "legacy",
+        }
 
     def truncate_messages_after(self, session_id: str, message_id: str) -> None:
         with self.connect() as conn:

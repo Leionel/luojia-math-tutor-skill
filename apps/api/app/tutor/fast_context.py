@@ -6,6 +6,7 @@ from typing import Any, Awaitable, Callable
 
 from app.knowledge.schema import KnowledgeHit
 from app.knowledge.search import search_knowledge_local
+from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.step_checker import check_step
 from app.math_tools.verifier import VerifyResult
 from app.memory.mastery import mastery_label, update_mastery
@@ -51,7 +52,7 @@ class FastContextCollector:
 
     async def collect(self, state: dict[str, Any]) -> FastContext:
         started = time.perf_counter()
-        history, document_id = await asyncio.to_thread(
+        history, document_id, previous_concepts = await asyncio.to_thread(
             self._prepare_session,
             state["user_id"],
             state["session_id"],
@@ -99,7 +100,12 @@ class FastContextCollector:
                 None,
             ),
         )
-        concepts = self._derive_concepts(state["message"], hits, mistake)
+        concepts = self._derive_concepts(
+            state["message"],
+            hits,
+            mistake,
+            previous_concepts,
+        )
         mastery = await asyncio.to_thread(
             self._finalize_learning_state,
             state,
@@ -136,13 +142,20 @@ class FastContextCollector:
         user_id: str,
         session_id: str,
         message: str,
-    ) -> tuple[list[dict[str, str]], str | None]:
+    ) -> tuple[list[dict[str, str]], str | None, list[str]]:
         self.repository.ensure_user(user_id)
         db_messages = self.repository.list_messages(session_id)
         history = [
             {"role": item["role"], "content": item["content"]}
             for item in db_messages
         ]
+        previous_concepts: list[str] = []
+        for item in reversed(db_messages):
+            learning_meta = item.get("learning_meta") or {}
+            concepts = learning_meta.get("concepts") or []
+            if item.get("role") == "assistant" and concepts:
+                previous_concepts = concepts
+                break
         self.repository.add_message(session_id, "user", message)
         sessions = self.repository.list_sessions(user_id)
         current_session = next(
@@ -154,7 +167,7 @@ class FastContextCollector:
             if current_session
             else None
         )
-        return history, document_id
+        return history, document_id, previous_concepts
 
     async def _collect_local_hits(
         self,
@@ -221,12 +234,27 @@ class FastContextCollector:
         message: str,
         hits: list[KnowledgeHit],
         mistake: Mistake | None,
+        previous_concepts: list[str] | None = None,
     ) -> list[str]:
-        concepts = [
-            hit.item.concept_zh
-            for hit in hits[:3]
-            if hit.item.concept_zh
-        ]
+        previous_concepts = previous_concepts or []
+        explicit_concepts = extract_explicit_concepts(message)
+        is_short_follow_up = (
+            len(message.strip()) <= 18
+            or any(
+                marker in message
+                for marker in ("继续", "然后呢", "好的", "明白", "下一步")
+            )
+        )
+        if explicit_concepts:
+            concepts = [*explicit_concepts, *previous_concepts]
+        elif previous_concepts and is_short_follow_up:
+            concepts = list(previous_concepts)
+        else:
+            concepts = [
+                hit.item.concept_zh
+                for hit in hits[:3]
+                if hit.item.concept_zh
+            ]
         if ("∫" in message or "\\int" in message) and "幂函数积分" not in concepts:
             concepts.insert(0, "幂函数积分")
         if mistake and mistake.concept not in concepts:

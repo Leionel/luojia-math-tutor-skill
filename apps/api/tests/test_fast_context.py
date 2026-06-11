@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.memory.repository import Repository
+from app.knowledge.schema import KnowledgeHit, KnowledgeItem
 from app.tutor.fast_context import FastContextCollector
 from app.tutor.fast_path import VerificationMode, route_fast_path
 
@@ -114,3 +115,41 @@ async def test_symbolic_route_runs_step_checker():
     assert context.verifier_result.verified is True
     assert context.verifier_result.is_correct is True
     assert context.metrics["symbolic_verify_ms"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_short_follow_up_keeps_previous_concepts():
+    repository = make_repository()
+    repository.list_messages.return_value = [
+        {
+            "role": "assistant",
+            "content": "上一轮讲解",
+            "learning_meta": {
+                "concepts": ["QR 算法", "正交相似变换"],
+            },
+        },
+    ]
+    noisy_hit = KnowledgeHit(
+        item=KnowledgeItem(
+            id="noise",
+            subject="probability",
+            source_file="test",
+            concept_zh="原假设与备择假设",
+            prerequisite=[],
+            description="",
+            intuitive_explanation="",
+            solution="",
+        ),
+        score=100,
+    )
+
+    async def noisy_search(*args, **kwargs):
+        return [noisy_hit]
+
+    collector = FastContextCollector(
+        repository=repository,
+        local_search=noisy_search,
+    )
+    context = await collector.collect(make_state("好的，继续"))
+
+    assert context.concepts == ["QR 算法", "正交相似变换"]

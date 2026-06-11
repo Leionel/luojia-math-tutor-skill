@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Session } from "@/lib/api";
 import { Edit2, Trash2, Check, X, User, Search } from "lucide-react";
 import { deleteSession, renameSession } from "@/lib/api";
+import { ConfirmDialog } from "./confirm-dialog";
 
 export function Sidebar({
   sessions,
@@ -26,6 +27,7 @@ export function Sidebar({
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const SUBJECT_MAP: Record<string, string> = {
     calculus: "高等数学",
@@ -44,11 +46,15 @@ export function Sidebar({
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("确定要删除这个会话吗？")) return;
-    try {
-      await deleteSession(id);
-      if (onRefresh) onRefresh();
-    } catch(e) { console.error(e); }
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    // Let errors propagate to ConfirmDialog — it will keep the dialog open and show the error.
+    await deleteSession(deleteTarget);
+    if (onRefresh) onRefresh();
+    setDeleteTarget(null);
   };
 
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -153,12 +159,20 @@ export function Sidebar({
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <div className="truncate pr-4 font-title text-[14px]">{session.title}</div>
-                  <div className="hidden group-hover:flex items-center gap-1 shrink-0 bg-gradient-to-l from-[var(--bg-secondary)] pl-4">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingId(session.id); setEditTitle(session.title); }} className="text-[var(--text-muted)] hover:text-[#617a55] p-1.5 rounded-md hover:bg-[#617a55]/10 transition-colors">
+                  <div className="truncate pr-2 font-title text-[14px]">{session.title}</div>
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-60 lg:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingId(session.id); setEditTitle(session.title); }}
+                      aria-label="重命名会话"
+                      className="text-[var(--text-muted)] hover:text-[#617a55] p-2 rounded-md hover:bg-[#617a55]/10 transition-colors touch-manipulation"
+                    >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={(e) => handleDelete(session.id, e)} className="text-[var(--text-muted)] hover:text-[#c44a3d] p-1.5 rounded-md hover:bg-[#c44a3d]/10 transition-colors">
+                    <button
+                      onClick={(e) => handleDelete(session.id, e)}
+                      aria-label="删除会话"
+                      className="text-[var(--text-muted)] hover:text-[#c44a3d] p-2 rounded-md hover:bg-[#c44a3d]/10 transition-colors touch-manipulation"
+                    >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -197,6 +211,17 @@ export function Sidebar({
       >
         {content}
       </aside>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+        title="删除会话"
+        description="删除后会话中的所有消息和验算记录将被永久移除，此操作不可恢复。"
+        confirmText="确认删除"
+        cancelText="取消"
+        variant="destructive"
+      />
     </>
   );
 }

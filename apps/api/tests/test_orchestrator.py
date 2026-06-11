@@ -231,3 +231,23 @@ async def test_thinking_summary_and_elapsed_are_persisted():
     assert persisted.args[5] == thinking_end["elapsed_ms"]
     assert "[PLAN]" in thinking_end["summary"]
     assert "[OUTPUT]" in thinking_end["summary"]
+
+
+@pytest.mark.asyncio
+async def test_sidebar_learning_meta_is_persisted_with_assistant_message():
+    orchestrator = make_orchestrator(QuickWorkflow())
+
+    async for _ in orchestrator.stream_reply(
+        session_id="session-1",
+        user_id="user-1",
+        message="怎么用 QR 算法求特征值？",
+        subject="linear_algebra",
+    ):
+        pass
+
+    learning_meta = orchestrator.repository.add_message.call_args.args[6]
+    assert learning_meta["intent"] == "solve_step_by_step"
+    assert learning_meta["subject"] == "linear_algebra"
+    assert learning_meta["learning_objective"]
+    assert "verified" in learning_meta
+    assert "mastery_score" in learning_meta

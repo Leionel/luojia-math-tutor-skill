@@ -152,7 +152,7 @@ function renderMarkdownInline(text: string): React.ReactNode {
       const before = remaining.slice(0, codeIndex);
       if (before) parts.push(<span key={key++}>{before}</span>);
       parts.push(
-        <code key={key++} className="rounded bg-slate-100 px-1.5 py-0.5 text-sm font-mono text-slate-800">
+        <code key={key++} className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 text-sm font-mono text-[var(--text-primary)]">
           {codeMatch[1]}
         </code>
       );
@@ -407,19 +407,19 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
   switch (block.type) {
     case "h1":
       return (
-        <h1 key={`h1-${blockIndex}`} className="mt-6 mb-3 text-xl font-bold text-slate-900">
+        <h1 key={`h1-${blockIndex}`} className="mt-6 mb-3 text-xl font-bold text-[var(--text-primary)]">
           <InlineLatex content={block.content} />
         </h1>
       );
     case "h2":
       return (
-        <h2 key={`h2-${blockIndex}`} className="mt-5 mb-2 text-lg font-bold text-slate-900">
+        <h2 key={`h2-${blockIndex}`} className="mt-5 mb-2 text-lg font-bold text-[var(--text-primary)]">
           <InlineLatex content={block.content} />
         </h2>
       );
     case "h3":
       return (
-        <h3 key={`h3-${blockIndex}`} className="mt-4 mb-2 text-base font-bold text-slate-900">
+        <h3 key={`h3-${blockIndex}`} className="mt-4 mb-2 text-base font-bold text-[var(--text-primary)]">
           <InlineLatex content={block.content} />
         </h3>
       );
@@ -445,12 +445,12 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
       );
     case "blockquote":
       return (
-        <blockquote key={`bq-${blockIndex}`} className="border-l-4 border-slate-300 pl-4 text-slate-600">
+        <blockquote key={`bq-${blockIndex}`} className="border-l-4 border-[var(--border-primary)] pl-4 text-[var(--text-secondary)]">
           <InlineLatex content={block.content} />
         </blockquote>
       );
     case "hr":
-      return <hr key={`hr-${blockIndex}`} className="my-4 border-slate-200" />;
+      return <hr key={`hr-${blockIndex}`} className="my-4 border-[var(--border-primary)]" />;
     case "br":
       return <br key={`br-${blockIndex}`} />;
     case "display-math":

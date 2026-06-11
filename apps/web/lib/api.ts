@@ -19,6 +19,7 @@ export type Message = {
   created_at: string;
   thinking_summary?: string;
   thinking_elapsed_ms?: number;
+  learning_meta?: TutorMeta | null;
 };
 
 export type TutorMeta = {
@@ -33,6 +34,17 @@ export type TutorMeta = {
   mastery_score?: number;
   mastery_label?: string;
   mastery_delta?: number;
+  pedagogical_action?: string;
+  learning_objective?: string;
+  route?: string;
+};
+
+export type MasteryItem = {
+  concept: string;
+  score: number;
+  attempts_count: number;
+  correct_count: number;
+  updated_at: string;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
@@ -131,11 +143,11 @@ export async function generateQuiz(userId: string, mistakeId: string) {
   return res.json() as Promise<{ status: string; quiz_content: string; concept: string }>;
 }
 
-export async function fetchMastery(userId: string) {
+export async function fetchMastery(userId: string): Promise<MasteryItem[]> {
   const res = await fetch(`${API_BASE}/api/users/${userId}/mastery`, { cache: "no-store" });
   if (!res.ok) throw new Error("获取掌握度失败");
   const data = await res.json();
-  return (Array.isArray(data) ? data : data.items) as Array<{ subject: string; A: number; fullMark: number }>;
+  return (Array.isArray(data) ? data : data.items) as MasteryItem[];
 }
 
 export async function testModel(userApiKey: string | null, model?: string) {

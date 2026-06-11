@@ -210,6 +210,9 @@ class TutorWorkflow:
                         "mastery_score": context.mastery_score,
                         "mastery_label": context.mastery_label_str,
                         "mastery_delta": context.mastery_delta,
+                        "learning_objective": state[
+                            "learning_objective"
+                        ],
                         "pedagogical_action": state[
                             "pedagogical_action"
                         ],
