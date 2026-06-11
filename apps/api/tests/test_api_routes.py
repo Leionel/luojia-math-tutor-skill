@@ -1,8 +1,13 @@
+import asyncio
 import json
+from unittest.mock import MagicMock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.memory.repository import Repository
+from app.tutor.orchestrator import TutorOrchestrator
 
 
 def test_health_route():
@@ -113,6 +118,59 @@ def parse_sse_events(streaming_body: bytes) -> list[dict]:
         if event and data is not None:
             events.append({"event": event, "data": data})
     return events
+
+
+def test_tutor_sse_opening_precedes_meta_and_message():
+    client = TestClient(app)
+    session = client.post(
+        "/api/sessions",
+        json={"user_id": "opening-user", "subject": "calculus"},
+    )
+    session_id = session.json()["session_id"]
+
+    response = client.post(
+        "/api/tutor/stream",
+        json={
+            "session_id": session_id,
+            "user_id": "opening-user",
+            "message": "什么是导数？",
+            "mode": "socratic",
+        },
+    )
+
+    events = parse_sse_events(response.read())
+    names = [event["event"] for event in events]
+    assert names[0] == "opening"
+    assert names.index("opening") < names.index("meta")
+    assert names.index("opening") < names.index("message")
+
+
+@pytest.mark.asyncio
+async def test_opening_does_not_wait_for_graph():
+    class SlowWorkflow:
+        async def ainvoke(self, state, config):
+            await asyncio.sleep(1)
+            return {
+                **state,
+                "final_output": "",
+                "thinking_chain": "",
+            }
+
+    orchestrator = TutorOrchestrator.__new__(TutorOrchestrator)
+    orchestrator.workflow = SlowWorkflow()
+    orchestrator.repository = MagicMock(spec=Repository)
+    stream = orchestrator.stream_reply(
+        session_id="session-1",
+        user_id="user-1",
+        message="什么是导数？",
+        subject="calculus",
+        mode="socratic",
+    )
+
+    first_event = await asyncio.wait_for(anext(stream), timeout=0.15)
+    await stream.aclose()
+
+    assert first_event.startswith("event: opening")
 
 
 def test_tutor_sse_meta_contains_mastery_fields():
@@ -256,4 +314,3 @@ def test_tutor_sse_mastery_summary():
     assert data["total_concepts"] >= 1
     assert "average_score" in data
     assert "weak_concepts" in data
-

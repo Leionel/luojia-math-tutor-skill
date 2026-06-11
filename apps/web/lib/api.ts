@@ -189,9 +189,11 @@ export async function streamTutor(
       const event = eventLine.replace("event: ", "");
       const data = JSON.parse(dataLine.replace("data: ", ""));
       if (event === "meta") onMeta(data as TutorMeta);
-      if (event === "token") onToken(String(data.text || ""));
+      if (event === "opening" || event === "token" || event === "message") {
+        onToken(String(data.content || data.text || ""));
+      }
       if (event === "thinking") {
-        thinkingChain += String(data.text || "");
+        thinkingChain += String(data.content || data.text || "");
         if (onThinkingChain) onThinkingChain(thinkingChain);
       }
       if (event === "thinking_end" && onThinkingChain) onThinkingChain(thinkingChain);

@@ -1,17 +1,26 @@
-import json
 import asyncio
-from typing import AsyncIterator
+import json
+import logging
+import time
+from collections.abc import AsyncIterator
 
+from app.agents.harness_evaluator import PedagogyHarness
+from app.agents.vision_agent import VisionParser
 from app.config import Settings
 from app.llm.openai_compatible import OpenAICompatibleClient
+from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
-from app.agents.vision_agent import VisionParser
-from app.agents.harness_evaluator import PedagogyHarness
+from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
+
+logger = logging.getLogger(__name__)
 
 
 def sse(event: str, data: dict) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+    return (
+        f"event: {event}\n"
+        f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+    )
 
 
 class TutorOrchestrator:
@@ -22,7 +31,8 @@ class TutorOrchestrator:
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
         self.vision_parser = VisionParser()
         self.harness = PedagogyHarness(settings)
-        self.workflow = TutorWorkflow(settings, repository).workflow
+        self.workflow_owner = TutorWorkflow(settings, repository)
+        self.workflow = self.workflow_owner.workflow
 
     async def stream_reply(
         self,
@@ -36,7 +46,22 @@ class TutorOrchestrator:
         requested_hint: bool = False,
         image_urls: list[str] | None = None,
     ) -> AsyncIterator[str]:
-        # Initialize LangGraph AgentState
+        request_started = time.perf_counter()
+        route = route_fast_path(message, mode, subject)
+        opening = generate_opening(route)
+        opening_ms = round(
+            (time.perf_counter() - request_started) * 1000,
+            2,
+        )
+
+        yield sse(
+            "opening",
+            {
+                "content": opening,
+                "opening_ms": opening_ms,
+            },
+        )
+
         initial_state = {
             "message": message,
             "session_id": session_id,
@@ -47,11 +72,21 @@ class TutorOrchestrator:
             "model": model,
             "requested_hint": requested_hint,
             "image_urls": image_urls,
-            "intent": None,
-            "detected_subject": None,
+            "intent": route.intent,
+            "detected_subject": route.subject,
+            "pedagogical_action": route.pedagogical_action,
+            "learning_objective": route.learning_objective,
+            "verification_mode": route.verification_mode.value,
+            "confidence": route.confidence,
+            "requires_policy_fallback": route.requires_policy_fallback,
             "hits": [],
             "document_chunks": [],
-            "verifier_result": None,
+            "verifier_result": VerifyResult(
+                False,
+                None,
+                "本轮未触发自动验证。",
+            ),
+            "verification_result": {},
             "mistake": None,
             "concepts": [],
             "mastery_score": 0.5,
@@ -62,57 +97,118 @@ class TutorOrchestrator:
             "thinking_steps": [],
             "final_output": "",
             "thinking_chain": "",
-            "loop_count": 0,
-            "next_action": "",
+            "metrics": {
+                "opening_ms": opening_ms,
+                "fast_context_ms": 0.0,
+                "local_rag_ms": 0.0,
+                "symbolic_verify_ms": 0.0,
+                "policy_fallback_ms": 0.0,
+                "verifier_ms": 0.0,
+                "teacher_first_token_ms": 0.0,
+                "total_ms": 0.0,
+                "llm_call_count": 0,
+                "route": "",
+            },
         }
 
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[str] = asyncio.Queue()
 
-        async def on_token(event_str: str):
+        async def on_token(event_str: str) -> None:
             await queue.put(event_str)
 
-        async def on_thinking(event_str: str):
+        async def on_thinking(event_str: str) -> None:
             await queue.put(event_str)
 
         config = {
             "configurable": {
                 "thread_id": session_id,
                 "on_token": on_token,
-                "on_thinking": on_thinking
+                "on_thinking": on_thinking,
             }
         }
-
-        # Run the workflow in a background task to stream events as they happen
         task = asyncio.create_task(
             self.workflow.ainvoke(initial_state, config=config)
         )
+        queue_get: asyncio.Task[str] | None = None
 
-        while not task.done() or not queue.empty():
+        try:
+            while True:
+                if not queue.empty():
+                    yield queue.get_nowait()
+                    continue
+                if task.done():
+                    break
+
+                queue_get = asyncio.create_task(queue.get())
+                done, _ = await asyncio.wait(
+                    {task, queue_get},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if queue_get in done:
+                    yield queue_get.result()
+                    queue_get = None
+                elif task in done:
+                    queue_get.cancel()
+                    await asyncio.gather(
+                        queue_get,
+                        return_exceptions=True,
+                    )
+                    queue_get = None
+
+            final_state = await task
             while not queue.empty():
                 yield queue.get_nowait()
-            if task.done():
-                break
-            await asyncio.sleep(0.01)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.error(
+                "Tutor workflow failed: %s",
+                exc,
+                exc_info=True,
+            )
+            yield sse(
+                "error",
+                {
+                    "message": "本轮生成暂时失败，请稍后重试。",
+                    "recoverable": True,
+                },
+            )
+            return
+        finally:
+            if queue_get and not queue_get.done():
+                queue_get.cancel()
+                await asyncio.gather(queue_get, return_exceptions=True)
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
 
-        # Retrieve final state and raise any graph exceptions
-        final_state = await task
+        yield sse(
+            "thinking_end",
+            {"chain": final_state.get("thinking_chain", "")},
+        )
 
-        # Stream leftover events
-        while not queue.empty():
-            yield queue.get_nowait()
-
-        # Emit thinking_end event
-        yield sse("thinking_end", {"chain": final_state.get("thinking_chain", "")})
-
-        # Save assistant's final response to DB
-        intent_val = final_state.get("intent")
-        intent_str = intent_val.value if intent_val else "solve_step_by_step"
-        message_id = self.repository.add_message(
+        intent_value = final_state.get("intent")
+        intent = (
+            intent_value.value
+            if intent_value
+            else "solve_step_by_step"
+        )
+        message_id = await asyncio.to_thread(
+            self.repository.add_message,
             session_id,
             "assistant",
             final_state.get("final_output", ""),
-            intent_str
+            intent,
         )
-
-        # Emit done event
-        yield sse("done", {"message_id": message_id})
+        metrics = dict(final_state.get("metrics", {}))
+        metrics["total_ms"] = round(
+            (time.perf_counter() - request_started) * 1000,
+            2,
+        )
+        yield sse(
+            "done",
+            {
+                "message_id": message_id,
+                "metrics": metrics,
+            },
+        )
