@@ -67,6 +67,23 @@ async def test_done_event_contains_latency_and_call_metrics():
 
 
 @pytest.mark.asyncio
+async def test_persisted_assistant_message_includes_visible_opening():
+    orchestrator = make_orchestrator(QuickWorkflow())
+
+    async for _ in orchestrator.stream_reply(
+        session_id="session-1",
+        user_id="user-1",
+        message="什么是导数？",
+        subject="calculus",
+    ):
+        pass
+
+    persisted_content = orchestrator.repository.add_message.call_args.args[2]
+    assert persisted_content.startswith("我们先抓住这个概念")
+    assert persisted_content.endswith("回答")
+
+
+@pytest.mark.asyncio
 async def test_twenty_concurrent_openings_arrive_without_graph_delay():
     class SlowWorkflow:
         async def ainvoke(self, state, config):

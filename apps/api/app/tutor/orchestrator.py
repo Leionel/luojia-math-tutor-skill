@@ -57,7 +57,7 @@ class TutorOrchestrator:
         yield sse(
             "opening",
             {
-                "content": opening,
+                "content": f"{opening}\n\n",
                 "opening_ms": opening_ms,
             },
         )
@@ -193,11 +193,14 @@ class TutorOrchestrator:
             if intent_value
             else "solve_step_by_step"
         )
+        visible_output = (
+            f"{opening}\n\n{final_state.get('final_output', '')}"
+        ).strip()
         message_id = await asyncio.to_thread(
             self.repository.add_message,
             session_id,
             "assistant",
-            final_state.get("final_output", ""),
+            visible_output,
             intent,
         )
         metrics = dict(final_state.get("metrics", {}))

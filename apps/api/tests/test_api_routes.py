@@ -28,6 +28,31 @@ def test_create_session_and_list_messages():
     assert messages.json()["items"] == []
 
 
+def test_list_sessions_preserves_document_binding():
+    client = TestClient(app)
+    created = client.post(
+        "/api/sessions",
+        json={
+            "user_id": "document-user",
+            "subject": "calculus",
+            "document_id": "document-1",
+        },
+    )
+    session_id = created.json()["session_id"]
+
+    response = client.get(
+        "/api/sessions",
+        params={"user_id": "document-user"},
+    )
+    session = next(
+        item
+        for item in response.json()["items"]
+        if item["id"] == session_id
+    )
+
+    assert session["document_id"] == "document-1"
+
+
 # ── mastery routes ──
 
 def test_mastery_list_empty():

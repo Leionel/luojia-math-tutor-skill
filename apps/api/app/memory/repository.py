@@ -142,7 +142,8 @@ class Repository:
             if query:
                 rows = conn.execute(
                     """
-                    SELECT DISTINCT s.id, s.user_id, s.title, s.subject, s.created_at, s.updated_at
+                    SELECT DISTINCT s.id, s.user_id, s.title, s.subject,
+                           s.created_at, s.updated_at, s.document_id
                     FROM sessions s
                     LEFT JOIN messages m ON s.id = m.session_id
                     WHERE s.user_id = ? AND (
@@ -155,7 +156,8 @@ class Repository:
             else:
                 rows = conn.execute(
                     """
-                    select id, user_id, title, subject, created_at, updated_at
+                    select id, user_id, title, subject, created_at,
+                           updated_at, document_id
                     from sessions
                     where user_id = ?
                     order by updated_at desc
@@ -432,4 +434,3 @@ class Repository:
     def _default_title(self, subject: str) -> str:
         from datetime import datetime
         return f"新会话 {datetime.now().strftime('%m-%d %H:%M')}"
-
