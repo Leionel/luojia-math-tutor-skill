@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Session } from "@/lib/api";
 import { Edit2, Trash2, Check, X, User, Search } from "lucide-react";
 import { deleteSession, renameSession } from "@/lib/api";
+import {
+  nextVisibleSessionCount,
+  SESSION_BATCH_SIZE,
+} from "@/lib/ui-runtime";
 import { ConfirmDialog } from "./confirm-dialog";
 
 export function Sidebar({
@@ -12,6 +16,7 @@ export function Sidebar({
   activeSessionId,
   onSelect,
   onRefresh,
+  onDeleted,
   searchQuery,
   onSearchChange,
   onModeSelect,
@@ -20,6 +25,7 @@ export function Sidebar({
   activeSessionId: string | null;
   onSelect: (sessionId: string) => void;
   onRefresh?: () => void;
+  onDeleted?: (deletedId: string) => void;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
   onModeSelect?: (modeId: string) => void;
@@ -28,6 +34,7 @@ export function Sidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(SESSION_BATCH_SIZE);
 
   const SUBJECT_MAP: Record<string, string> = {
     calculus: "高等数学",
@@ -50,9 +57,11 @@ export function Sidebar({
   };
 
   const confirmDelete = async () => {
-    if (!deleteTarget) return;
+    const id = deleteTarget;
+    if (!id) return;
     // Let errors propagate to ConfirmDialog — it will keep the dialog open and show the error.
-    await deleteSession(deleteTarget);
+    await deleteSession(id);
+    if (onDeleted) onDeleted(id);
     if (onRefresh) onRefresh();
     setDeleteTarget(null);
   };
@@ -68,6 +77,12 @@ export function Sidebar({
     }
     return true;
   });
+  const visibleSessions = filteredSessions.slice(0, visibleCount);
+  const remainingSessions = Math.max(0, filteredSessions.length - visibleCount);
+
+  useEffect(() => {
+    setVisibleCount(SESSION_BATCH_SIZE);
+  }, [searchQuery, selectedTag]);
 
   const content = (
     <div className="flex flex-col h-full relative">
@@ -127,7 +142,7 @@ export function Sidebar({
       )}
 
       <div className="space-y-2 font-body flex-1 overflow-y-auto pr-1">
-        {filteredSessions.map((session) => (
+        {visibleSessions.map((session) => (
           <div
             key={session.id}
             className={`group relative flex w-full flex-col rounded-xl px-4 py-3 text-left text-[13px] transition-all duration-300 cursor-pointer ${
@@ -186,6 +201,17 @@ export function Sidebar({
             )}
           </div>
         ))}
+        {remainingSessions > 0 && (
+          <button
+            type="button"
+            onClick={() => setVisibleCount((current) =>
+              nextVisibleSessionCount(current, filteredSessions.length)
+            )}
+            className="w-full rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-[#617a55]/40 hover:bg-[#617a55]/5 hover:text-[#617a55]"
+          >
+            加载更多（剩余 {remainingSessions} 条）
+          </button>
+        )}
       </div>
     </div>
   );
@@ -225,4 +251,3 @@ export function Sidebar({
     </>
   );
 }
-

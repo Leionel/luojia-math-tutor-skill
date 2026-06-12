@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { MasteryItem, TutorMeta } from "@/lib/api";
 import { fetchMastery } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import {
+  advanceMasteryTrend,
+  parseMasteryTrendSnapshot,
+  type MasteryTrend,
+} from "@/lib/ui-runtime";
 import { RadarChart } from "./radar-chart";
 import {
   AlertCircle,
@@ -38,22 +43,43 @@ const subjectMap: Record<string, string> = {
  * Fixed competency axes for the radar chart.
  * Stable across sessions so the user can compare progress over time.
  * Each axis maps to a list of concept keywords matched against mastery records.
+ * The last axis ("其他") is a catch-all so every mastery record contributes
+ * to the overall score, even when the concept doesn't fit a named axis.
  */
 const COMPETENCY_AXES: { axis: string; keywords: string[] }[] = [
-  { axis: "微积分", keywords: ["积分", "导数", "极限", "洛必达", "泰勒", "微分", "Fubini"] },
-  { axis: "线性代数", keywords: ["矩阵", "特征值", "QR", "正交", "Givens", "高斯消元", "向量", "行列式"] },
-  { axis: "概率统计", keywords: ["概率", "正态", "分布", "期望", "方差", "贝叶斯"] },
-  { axis: "符号运算", keywords: ["代数", "化简", "因式分解", "方程", "不等式"] },
-  { axis: "应用建模", keywords: ["应用", "建模", "几何", "图像"] },
+  { axis: "微积分", keywords: ["积分", "导数", "极限", "洛必达", "泰勒", "微分", "连续", "数列", "级数", "中值", "Fubini"] },
+  { axis: "线性代数", keywords: ["矩阵", "特征值", "QR", "正交", "Givens", "高斯消元", "向量", "行列式", "线性", "秩"] },
+  { axis: "概率统计", keywords: ["概率", "正态", "分布", "期望", "方差", "贝叶斯", "样本", "假设检验", "随机"] },
+  { axis: "符号运算", keywords: ["代数", "化简", "因式分解", "方程", "不等式", "多项式"] },
 ];
 
+function categorizeConcept(concept: string): number {
+  for (let i = 0; i < COMPETENCY_AXES.length; i++) {
+    if (COMPETENCY_AXES[i].keywords.some((kw) => concept.includes(kw))) {
+      return i;
+    }
+  }
+  return COMPETENCY_AXES.length; // → catch-all "其他" axis
+}
+
 function aggregateCompetencyScores(items: MasteryItem[]): { label: string; value: number; assessed: boolean }[] {
-  return COMPETENCY_AXES.map(({ axis, keywords }) => {
-    const matched = items.filter((it) =>
-      keywords.some((kw) => it.concept.includes(kw)),
-    );
+  const buckets: MasteryItem[][] = [
+    ...COMPETENCY_AXES.map(() => [] as MasteryItem[]),
+    [] as MasteryItem[], // catch-all bucket
+  ];
+  for (const item of items) {
+    buckets[categorizeConcept(item.concept)].push(item);
+  }
+
+  const allAxes = [
+    ...COMPETENCY_AXES.map((a) => a.axis),
+    "其他", // catch-all label
+  ];
+
+  return allAxes.map((label, i) => {
+    const matched = buckets[i];
     if (matched.length === 0) {
-      return { label: axis, value: 0.15, assessed: false }; // baseline ghost value
+      return { label, value: 0, assessed: false };
     }
     const totalWeight = matched.reduce((sum, m) => sum + Math.max(1, m.attempts_count), 0);
     const weighted =
@@ -61,7 +87,7 @@ function aggregateCompetencyScores(items: MasteryItem[]): { label: string; value
         (sum, m) => sum + m.score * Math.max(1, m.attempts_count),
         0,
       ) / totalWeight;
-    return { label: axis, value: weighted, assessed: true };
+    return { label, value: weighted, assessed: true };
   });
 }
 
@@ -118,6 +144,7 @@ export function LearningPanel({
   const [open, setOpen] = useState(false);
   const [overallMastery, setOverallMastery] = useState<MasteryItem[]>([]);
   const [previousAverage, setPreviousAverage] = useState<number | null>(null);
+  const [masteryTrend, setMasteryTrend] = useState<MasteryTrend | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -154,21 +181,34 @@ export function LearningPanel({
     );
   }, [competencyScores]);
 
-  // Compare with previously cached average to drive the arrow direction.
   useEffect(() => {
-    if (averageMastery === null) return;
-    const prev = Number(localStorage.getItem("luojia_prev_avg_mastery"));
-    if (!Number.isNaN(prev) && prev > 0) setPreviousAverage(prev);
-    // Update cache *after* reading, so the next render compares against this run's value.
-    localStorage.setItem("luojia_prev_avg_mastery", String(averageMastery));
-  }, [averageMastery]);
+    if (averageMastery === null) {
+      setPreviousAverage(null);
+      setMasteryTrend(null);
+      return;
+    }
 
-  const masteryTrend: "up" | "down" | "flat" | null = useMemo(() => {
-    if (averageMastery === null || previousAverage === null) return null;
-    const diff = averageMastery - previousAverage;
-    if (Math.abs(diff) < 2) return "flat";
-    return diff > 0 ? "up" : "down";
-  }, [averageMastery, previousAverage]);
+    const userId = "demo-user";
+    const storageKey = `luojia_mastery_trend_${userId}`;
+    const fingerprint = JSON.stringify(
+      [...overallMastery]
+        .sort((a, b) => a.concept.localeCompare(b.concept))
+        .map((item) => [
+          item.concept,
+          item.attempts_count,
+          Math.round(item.score * 1000),
+        ]),
+    );
+    const next = advanceMasteryTrend(
+      parseMasteryTrendSnapshot(localStorage.getItem(storageKey)),
+      fingerprint,
+      averageMastery,
+    );
+
+    setPreviousAverage(next.previousAverage);
+    setMasteryTrend(next.trend);
+    localStorage.setItem(storageKey, JSON.stringify(next.snapshot));
+  }, [averageMastery, overallMastery]);
 
   const advice = nextStepAdvice(meta, overallMastery);
 
@@ -289,7 +329,11 @@ export function LearningPanel({
         </div>
         <div className="flex flex-col items-center gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
           <RadarChart
-            data={competencyScores.map((c) => ({ label: c.label, value: c.value }))}
+            data={competencyScores.map((c) => ({
+              label: c.label,
+              value: c.value,
+              assessed: c.assessed,
+            }))}
             size={220}
           />
           {averageMastery !== null ? (
@@ -378,7 +422,7 @@ export function LearningPanel({
       )}
       <aside
         className={cn(
-          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-l border-[var(--border-primary)] bg-gray-50 p-6 transition-transform duration-300 dark:bg-[var(--bg-sidebar)] xl:static xl:w-full xl:translate-x-0",
+          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-l border-[var(--border-primary)] bg-gray-50 p-6 transition-transform duration-300 dark:bg-[var(--bg-sidebar)] xl:static xl:h-full xl:w-full xl:translate-x-0",
           open ? "translate-x-0 shadow-2xl" : "translate-x-full",
         )}
       >

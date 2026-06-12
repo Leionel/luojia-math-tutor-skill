@@ -25,7 +25,7 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
           </button>
           
           {/* HOVER TOOLTIP */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[100] translate-y-1 group-hover:translate-y-0">
+          <div className="absolute left-1/2 top-full z-[100] mt-3 hidden w-56 -translate-x-1/2 translate-y-1 opacity-0 pointer-events-none transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 lg:block">
             <div className="bg-white dark:bg-[#1e1e1b] border border-[#d6d0ba] dark:border-[#3e3f36] shadow-xl rounded-xl p-3 text-left">
               <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-[#1e1e1b] border-l border-t border-[#d6d0ba] dark:border-[#3e3f36] rotate-45"></div>
               <p className="font-bold text-[var(--text-primary)] text-xs mb-1 relative z-10">{mode.label}</p>
@@ -37,4 +37,3 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
     </div>
   );
 }
-

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { motion } from "framer-motion";
+import { projectRadarValues } from "@/lib/ui-runtime";
 
 export interface RadarDataPoint {
   label: string;
   value: number; // 0–1
+  assessed?: boolean;
 }
 
 interface RadarChartProps {
@@ -34,11 +36,13 @@ function pointsString(pts: { x: number; y: number }[]) {
 }
 
 export function RadarChart({ data, size = 220, className }: RadarChartProps) {
+  const filterId = useId().replace(/:/g, "");
   const n = Math.max(3, data.length);
   const cx = size / 2;
   const cy = size / 2;
   const radius = size * 0.38;
   const labelRadius = radius * 1.22;
+  const assessedCount = data.filter((point) => point.assessed !== false).length;
 
   // Grid rings (20%, 40%, 60%, 80%, 100%)
   const rings = useMemo(
@@ -55,15 +59,21 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
     [cx, cy, radius, n],
   );
 
-  // Data polygon (value-scaled vertices)
+  // Missing axes project to the center rather than inventing a score.
   const dataPts = useMemo(
-    () =>
-      data.length >= 3
-        ? polygonVertices(cx, cy, radius, data.length).map((pt, i) => ({
-            x: cx + (pt.x - cx) * data[i].value,
-            y: cy + (pt.y - cy) * data[i].value,
-          }))
-        : [],
+    () => {
+      const projected = projectRadarValues(
+        data.map((point) => ({
+          value: point.value,
+          assessed: point.assessed !== false,
+        })),
+      );
+      return polygonVertices(cx, cy, radius, data.length).map((pt, i) => ({
+        x: cx + (pt.x - cx) * projected[i],
+        y: cy + (pt.y - cy) * projected[i],
+        assessed: data[i].assessed !== false,
+      }));
+    },
     [cx, cy, radius, data],
   );
 
@@ -98,6 +108,8 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
       viewBox={`0 0 ${size} ${size}`}
       className={className}
       style={{ overflow: "visible" }}
+      role="img"
+      aria-label={`能力雷达图，${assessedCount} 个维度已评估`}
     >
       {/* Background grid rings */}
       {rings.map((pts, ri) => (
@@ -125,8 +137,7 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
         />
       ))}
 
-      {/* Data area fill */}
-      {dataPts.length >= 3 && (
+      {assessedCount >= 3 && (
         <motion.polygon
           points={pointsString(dataPts)}
           fill={accentColor}
@@ -140,8 +151,24 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
         />
       )}
 
-      {/* Data vertex dots with glow */}
-      {dataPts.map((pt, i) => (
+      {assessedCount > 0 && assessedCount < 3 && dataPts.map((pt, i) => (
+        pt.assessed ? (
+          <motion.line
+            key={`value-line-${i}`}
+            x1={cx}
+            y1={cy}
+            x2={pt.x}
+            y2={pt.y}
+            stroke={accentColor}
+            strokeWidth={2}
+            strokeLinecap="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 0.85 }}
+          />
+        ) : null
+      ))}
+
+      {dataPts.map((pt, i) => pt.assessed ? (
         <g key={`dot-${i}`}>
           <motion.circle
             cx={pt.x}
@@ -161,14 +188,14 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
             stroke={accentColor}
             strokeWidth={1.5}
             strokeOpacity={0.35}
-            filter="url(#radar-glow)"
+            filter={`url(#${filterId})`}
           />
         </g>
-      ))}
+      ) : null)}
 
       {/* Glow filter */}
       <defs>
-        <filter id="radar-glow">
+        <filter id={filterId}>
           <feGaussianBlur stdDeviation="2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />

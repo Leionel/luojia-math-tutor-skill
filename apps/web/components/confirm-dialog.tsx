@@ -34,14 +34,19 @@ export function ConfirmDialog({
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+
   // Reset transient state every time the dialog opens.
   useEffect(() => {
     if (open) {
       setBusy(false);
       setError(null);
       previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
-      // Autofocus the confirm button after mount.
-      requestAnimationFrame(() => confirmBtnRef.current?.focus());
+      // Destructive → autofocus cancel to prevent accidental deletion.
+      // Default → autofocus confirm.
+      requestAnimationFrame(() => {
+        (variant === "destructive" ? cancelBtnRef.current : confirmBtnRef.current)?.focus();
+      });
     } else if (previouslyFocusedRef.current) {
       previouslyFocusedRef.current.focus();
     }
@@ -163,6 +168,7 @@ export function ConfirmDialog({
             <div className="flex items-center justify-end gap-3">
               {cancelText && (
                 <button
+                  ref={cancelBtnRef}
                   onClick={onCancel}
                   disabled={busy}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"

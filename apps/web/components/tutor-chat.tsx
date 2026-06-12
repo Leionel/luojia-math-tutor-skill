@@ -264,12 +264,32 @@ export function TutorChat() {
     );
   }
 
+  async function handleSessionDeleted(deletedId: string) {
+    // Re-fetch the session list, then decide whether to keep the current view.
+    const refreshed = await listSessions("demo-user", searchQuery).catch(() => sessions);
+    setSessions(refreshed);
+    if (deletedId !== sessionId) {
+      // Deleted a session that wasn't being viewed — nothing else to do.
+      return;
+    }
+    // The active session was deleted: pick another, or fall back to a draft.
+    const next = refreshed.find((s) => s.id !== deletedId);
+    if (next) {
+      await selectSession(next.id);
+    } else {
+      resetToDraftSession();
+    }
+  }
+
   async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false) {
     let activeSession = sessionId;
     if (!activeSession) {
       const created = await createSession("综合");
       activeSession = created.session_id;
       setSessionId(activeSession);
+      // Immediately refresh sidebar so the new session shows up even
+      // before async title generation finishes (or if it fails).
+      listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
     }
 
     const userMessage: LocalMessage = { id: crypto.randomUUID(), role: "user", content: value };
@@ -493,7 +513,7 @@ export function TutorChat() {
         {isMobileSidebarOpen && (
           <div className="fixed inset-0 z-40 lg:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)}>
             <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-[var(--bg-card)] shadow-xl" onClick={e => e.stopPropagation()}>
-              <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => void bootstrap()} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+              <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
             </div>
           </div>
         )}
@@ -509,7 +529,7 @@ export function TutorChat() {
 
         {!isZenMode && !isSidebarCollapsed && (
           <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
-            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => void bootstrap()} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
             <button
               onClick={() => handleToggleSidebar(true)}
               className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
