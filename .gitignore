@@ -9,6 +9,7 @@ __pycache__/
 *.db
 .env
 .env.local
+.codex-web.log
 venv/
 .venv/
 .idea/
@@ -21,3 +22,4 @@ deeptutor/
 outputs/
 apps/api/data/uploads/
 .worktrees/
+data/snapshots/

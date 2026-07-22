@@ -29,8 +29,8 @@ function parseThinkingChain(text: string): ThinkingStep[] {
   const steps: ThinkingStep[] = [];
   if (!text) return steps;
 
-  const pattern = /(\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|CORRECT)\])/g;
-  const stagePattern = /^\[(?:隐式 RAG|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|CORRECT)\]$/;
+  const pattern = /(\[(?:🎯 解题策略分析|📚 知识点关联|🔍 步骤检查|💬 组织回答|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|隐式 RAG|CORRECT)\])/g;
+  const stagePattern = /^\[(?:🎯 解题策略分析|📚 知识点关联|🔍 步骤检查|💬 组织回答|Orchestrator|沙箱执行|执行结果|PLAN|VERIFY|OUTPUT|隐式 RAG|CORRECT)\]$/;
   const parts = text.split(pattern);
 
   let currentTitle = "内部思考";
@@ -52,13 +52,13 @@ function parseThinkingChain(text: string): ThinkingStep[] {
       currentTitle = part.replace(/[\[\]]/g, "");
       currentContent = "";
 
-      if (part.includes("RAG")) currentType = "rag";
+      if (part.includes("RAG") || part.includes("知识点关联")) currentType = "rag";
       else if (part.includes("Orchestrator")) currentType = "orchestrator";
       else if (part.includes("沙箱执行")) currentType = "sandbox";
       else if (part.includes("执行结果")) currentType = "result";
-      else if (part.includes("PLAN")) currentType = "plan";
-      else if (part.includes("VERIFY")) currentType = "verify";
-      else if (part.includes("OUTPUT")) currentType = "output";
+      else if (part.includes("PLAN") || part.includes("解题策略分析")) currentType = "plan";
+      else if (part.includes("VERIFY") || part.includes("步骤检查")) currentType = "verify";
+      else if (part.includes("OUTPUT") || part.includes("组织回答")) currentType = "output";
       else if (part.includes("CORRECT")) currentType = "correct";
       else currentType = "generic";
     } else {
@@ -77,26 +77,36 @@ function parseThinkingChain(text: string): ThinkingStep[] {
   return steps;
 }
 
+function displayThinkingTitle(title: string) {
+  const labels: Record<string, string> = {
+    PLAN: "解题策略分析",
+    "隐式 RAG": "知识点关联",
+    VERIFY: "步骤检查",
+    OUTPUT: "组织回答",
+  };
+  return labels[title] || title;
+}
+
 function getStepIcon(type: ThinkingStep['type']) {
   switch (type) {
     case 'rag':
-      return <Search className="w-3.5 h-3.5 text-blue-500" />;
+      return <Search className="w-3.5 h-3.5 text-[#4b5cc4]" />;
     case 'orchestrator':
-      return <BrainCircuit className="w-3.5 h-3.5 text-purple-500" />;
+      return <BrainCircuit className="w-3.5 h-3.5 text-[#7e4b52]" />;
     case 'sandbox':
-      return <Terminal className="w-3.5 h-3.5 text-amber-500" />;
+      return <Terminal className="w-3.5 h-3.5 text-[#845a33]" />;
     case 'result':
-      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
+      return <Cpu className="w-3.5 h-3.5 text-[#789262]" />;
     case 'plan':
-      return <ListChecks className="w-3.5 h-3.5 text-cyan-500" />;
+      return <ListChecks className="w-3.5 h-3.5 text-[#5cb3cc]" />;
     case 'verify':
-      return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+      return <CheckCircle2 className="w-3.5 h-3.5 text-[#728956]" />;
     case 'output':
-      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
+      return <Cpu className="w-3.5 h-3.5 text-[#789262]" />;
     case 'correct':
-      return <RefreshCcw className="w-3.5 h-3.5 text-red-500 animate-spin" style={{ animationDuration: '3s' }} />;
+      return <RefreshCcw className="w-3.5 h-3.5 text-[#c44a3d] animate-spin" style={{ animationDuration: '3s' }} />;
     default:
-      return <ChevronRight className="w-3.5 h-3.5 text-slate-500" />;
+      return <ChevronRight className="w-3.5 h-3.5 text-[#757a6b]" />;
   }
 }
 
@@ -140,7 +150,7 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
                       {getStepIcon(step.type)}
                     </div>
                     <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                      <span>{step.title}</span>
+                      <span>{displayThinkingTitle(step.title)}</span>
                       <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
                         步骤 {idx + 1}
                       </span>
@@ -193,7 +203,7 @@ function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { sum
                         {getStepIcon(step.type)}
                       </div>
                       <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                        <span>{step.title}</span>
+                        <span>{displayThinkingTitle(step.title)}</span>
                         <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
                           步骤 {idx + 1}
                         </span>
@@ -281,7 +291,7 @@ export function MathMessage({
           "max-w-[85%] sm:max-w-[75%] rounded-3xl px-6 py-5 shadow-bubble transition-all duration-300 border",
           isUser
             ? "rounded-tr-sm border-[var(--border-accent)] text-white shadow-[0_4px_20px_var(--accent-light)]"
-            : "rounded-tl-sm border-[var(--border-primary)] bg-white dark:bg-[var(--bg-assistant-bubble)] text-[var(--text-primary)] shadow-sm"
+            : "rounded-tl-sm border-[var(--border-subtle)] bg-[var(--bg-assistant-bubble)] text-[var(--text-primary)] shadow-sm"
         )}
         style={isUser ? { background: 'var(--bg-user-bubble)' } : undefined}
       >

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { buildPlotPoints } from "@/lib/math-expression";
 
 interface MathPlotProps {
   function: string;
@@ -16,47 +17,7 @@ export function MathPlot({ function: fn, domain = "-10,10" }: MathPlotProps) {
   
   // Calculate points
   const points = useMemo(() => {
-    try {
-      const step = (maxX - minX) / 100;
-      const pts: { x: number; y: number }[] = [];
-      
-      // Simple sanitize and map math functions
-      const safeFn = fn
-        .replace(/sin/g, 'Math.sin')
-        .replace(/cos/g, 'Math.cos')
-        .replace(/tan/g, 'Math.tan')
-        .replace(/exp/g, 'Math.exp')
-        .replace(/log/g, 'Math.log')
-        .replace(/sqrt/g, 'Math.sqrt')
-        .replace(/abs/g, 'Math.abs')
-        .replace(/pi/g, 'Math.PI')
-        .replace(/\^/g, '**');
-
-      // Evaluator
-      const evaluator = new Function("x", `return ${safeFn};`);
-      
-      let minY = Infinity;
-      let maxY = -Infinity;
-
-      for (let x = minX; x <= maxX; x += step) {
-        const y = evaluator(x);
-        if (Number.isFinite(y)) {
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-          pts.push({ x, y });
-        }
-      }
-
-      // Add padding to Y range to avoid clipping
-      const yRange = maxY === minY ? 1 : maxY - minY;
-      minY -= yRange * 0.1;
-      maxY += yRange * 0.1;
-
-      return { pts, minY, maxY };
-    } catch (e) {
-      console.error("Failed to parse plot function:", fn, e);
-      return null;
-    }
+    return buildPlotPoints(fn, minX, maxX);
   }, [fn, minX, maxX]);
 
   if (!points) return <div className="p-4 bg-red-50 text-red-500 rounded border border-red-200">无法渲染函数图像: {fn}</div>;

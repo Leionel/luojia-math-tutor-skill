@@ -6,6 +6,9 @@ import { ArrowRight, BookOpen, PenTool, Lightbulb, Target, Quote, FileText, Prin
 import { motion } from "framer-motion";
 import { ParticleField } from "@/components/particle-field";
 import { LiveSandbox } from "@/components/live-sandbox";
+import { AgentArchitectureDiagram } from "@/components/agent-architecture-diagram";
+import { grantDemoAccess, hasDemoAccess } from "@/lib/demo-auth";
+import { InkBackground } from "@/components/ink-background";
 
 const MARQUEE_CONCEPTS = [
   "洛必达法则", "泰勒公式", "特征值与特征向量", "正态分布", "全概率公式与贝叶斯公式",
@@ -47,17 +50,7 @@ export default function SplashPage() {
   return (
     <div className="relative flex flex-col w-full min-h-screen bg-[#faf7f2] dark:bg-[#1e1e1b] text-[#2a2b26] dark:text-[#e6e4dc] selection:bg-[#617a55]/30">
       {/* FIXED INK WASH BACKGROUND ELEMENTS */}
-      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#617a55] rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[150px] opacity-20" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#c44a3d] rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[150px] opacity-10" />
-        <div className="absolute top-1/2 left-1/2 w-[1000px] h-[1000px] bg-[#d6d0ba] dark:bg-[#3e3f36] rounded-full filter blur-[120px] opacity-20 transform -translate-x-1/2 -translate-y-1/2" />
-        
-        {/* Subtle bamboo/rice paper texture */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.05%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22 opacity=%220.05%22/%3E%3C/svg%3E')] opacity-30" />
-        
-        {/* Interactive 3D Math Particle Field */}
-        <ParticleField />
-      </div>
+      <InkBackground withParticles={true} />
 
       {/* TOP NAVIGATION */}
       <motion.nav 
@@ -72,9 +65,14 @@ export default function SplashPage() {
         </div>
         <div className="flex items-center gap-6">
           {isLoggedIn ? (
-            <Link href="/chat" className="px-6 py-2 text-sm font-title tracking-widest bg-[#617a55] text-[#faf7f2] hover:bg-transparent hover:text-[#617a55] dark:hover:text-[#879f7a] border border-[#617a55] rounded-full transition-all shadow-sm">
-              进入学习系统 (Enter)
-            </Link>
+            <>
+              <Link href="/admin/knowledge" className="px-6 py-2 text-sm font-title tracking-widest text-[#4a4d44] dark:text-[#c5c2b6] hover:text-[#c44a3d] transition-colors border border-transparent hover:border-[#c44a3d] rounded-full">
+                审核中心 (Admin)
+              </Link>
+              <Link href="/chat" className="px-6 py-2 text-sm font-title tracking-widest bg-[#617a55] text-[#faf7f2] hover:bg-transparent hover:text-[#617a55] dark:hover:text-[#879f7a] border border-[#617a55] rounded-full transition-all shadow-sm">
+                进入学习系统 (Enter)
+              </Link>
+            </>
           ) : (
             <>
               <button 

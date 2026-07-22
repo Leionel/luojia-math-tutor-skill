@@ -3,6 +3,7 @@ import asyncio
 import json
 import time
 import os
+from common import get_bilibili_headers
 
 # 教科书章节级关键词
 TEXTBOOK_CHAPTERS = [
@@ -41,10 +42,7 @@ TEXTBOOK_CHAPTERS = [
     "生成对抗网络GAN", "强化学习数学基础", "最优化算法理论", "图论初步", "离散数学集合与图"
 ]
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
-}
+HEADERS = get_bilibili_headers()
 
 async def fetch_keyword(client, original_kw):
     search_kw = f"{original_kw} 教学 讲解"

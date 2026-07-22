@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.math_tools.visualizer import VizType, generate_plot
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api", tags=["viz"])
 
 class PlotRequest(BaseModel):
     viz_type: VizType
-    params: dict = {}
+    params: dict = Field(default_factory=dict)
 
 
 from fastapi.responses import Response

@@ -18,7 +18,7 @@
   --bg-chat: transparent;
   
   --bg-user-bubble: #617a55;
-  --bg-assistant-bubble: #ffffff;
+  --bg-assistant-bubble: #fdfaf6;
   
   --bg-header: rgba(250, 247, 242, 0.95);
   --bg-sidebar: #f2efe9;
@@ -70,7 +70,7 @@ html.dark {
   --bg-chat: transparent;
   
   --bg-user-bubble: #4e6344;
-  --bg-assistant-bubble: #2a2b26;
+  --bg-assistant-bubble: #33342d;
   
   --bg-header: rgba(30, 30, 27, 0.95);
   --bg-sidebar: #242421;
@@ -116,6 +116,15 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+code, pre {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-ligatures: contextual;
+}
+
+.katex {
+  vertical-align: -0.05em;
 }
 
 body::before, body::after {

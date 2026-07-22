@@ -1,7 +1,8 @@
 """Matplotlib 可视化服务。"""
 
-import io
 import base64
+import ast
+import io
 from enum import Enum
 
 import matplotlib
@@ -20,6 +21,93 @@ class VizType(str, Enum):
     FUNCTION_CURVE = "function_curve"
     INTEGRAL_AREA = "integral_area"
     PROBABILITY_DENSITY = "pdf"
+
+
+ALLOWED_FUNCTIONS = {
+    "sin": np.sin,
+    "cos": np.cos,
+    "tan": np.tan,
+    "exp": np.exp,
+    "log": np.log,
+    "sqrt": np.sqrt,
+    "abs": np.abs,
+}
+
+ALLOWED_CONSTANTS = {
+    "pi": np.pi,
+    "e": np.e,
+}
+
+
+class UnsafeExpressionError(ValueError):
+    pass
+
+
+def _safe_eval_expr(expr: str, x: np.ndarray) -> np.ndarray:
+    if not isinstance(expr, str) or len(expr) > 200:
+        raise UnsafeExpressionError("Expression is too long or invalid")
+
+    parsed = ast.parse(expr.replace("^", "**"), mode="eval")
+
+    def evaluate(node):
+        if isinstance(node, ast.Expression):
+            return evaluate(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.Name):
+            if node.id == "x":
+                return x
+            if node.id in ALLOWED_CONSTANTS:
+                return ALLOWED_CONSTANTS[node.id]
+            raise UnsafeExpressionError(f"Unsupported name: {node.id}")
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+            value = evaluate(node.operand)
+            return value if isinstance(node.op, ast.UAdd) else -value
+        if isinstance(node, ast.BinOp):
+            left = evaluate(node.left)
+            right = evaluate(node.right)
+            if isinstance(node.op, ast.Add):
+                return left + right
+            if isinstance(node.op, ast.Sub):
+                return left - right
+            if isinstance(node.op, ast.Mult):
+                return left * right
+            if isinstance(node.op, ast.Div):
+                return left / right
+            if isinstance(node.op, ast.Pow):
+                return left ** right
+            raise UnsafeExpressionError("Unsupported operator")
+        if isinstance(node, ast.Call):
+            func_name = None
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+            elif (
+                isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "np"
+            ):
+                func_name = node.func.attr
+            if func_name not in ALLOWED_FUNCTIONS:
+                raise UnsafeExpressionError("Unsupported function")
+            if node.keywords:
+                raise UnsafeExpressionError("Keyword arguments are not supported")
+            return ALLOWED_FUNCTIONS[func_name](*[evaluate(arg) for arg in node.args])
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "np"
+            and node.attr in ALLOWED_CONSTANTS
+        ):
+            return ALLOWED_CONSTANTS[node.attr]
+        raise UnsafeExpressionError("Unsupported expression")
+
+    value = evaluate(parsed)
+    y = np.asarray(value)
+    if y.shape == ():
+        y = np.full_like(x, float(y), dtype=float)
+    if y.shape != x.shape:
+        raise UnsafeExpressionError("Expression shape does not match x")
+    return y.astype(float)
 
 
 def generate_plot(viz_type: VizType, params: dict) -> str:
@@ -52,9 +140,7 @@ def _plot_function_curve(ax, params: dict):
 
     x = np.linspace(x_min, x_max, 400)
     try:
-        y = eval(expr_str, {"x": x, "np": np, "sin": np.sin, "cos": np.cos,
-                            "exp": np.exp, "log": np.log, "sqrt": np.sqrt,
-                            "pi": np.pi, "abs": np.abs, "tan": np.tan})
+        y = _safe_eval_expr(expr_str, x)
     except Exception:
         y = x ** 2
 
@@ -73,16 +159,14 @@ def _plot_integral_area(ax, params: dict):
 
     x = np.linspace(a - 1, b + 1, 400)
     try:
-        y = eval(expr_str, {"x": x, "np": np, "sin": np.sin, "cos": np.cos,
-                            "exp": np.exp, "log": np.log, "sqrt": np.sqrt})
+        y = _safe_eval_expr(expr_str, x)
     except Exception:
         y = x ** 2
 
     ax.plot(x, y, "b-", linewidth=2, label=f"y = {expr_str}")
     x_fill = np.linspace(a, b, 200)
     try:
-        y_fill = eval(expr_str, {"x": x_fill, "np": np, "sin": np.sin, "cos": np.cos,
-                                  "exp": np.exp, "log": np.log, "sqrt": np.sqrt})
+        y_fill = _safe_eval_expr(expr_str, x_fill)
     except Exception:
         y_fill = x_fill ** 2
     ax.fill_between(x_fill, y_fill, alpha=0.3, color="blue", label=f"Area [{a}, {b}]")

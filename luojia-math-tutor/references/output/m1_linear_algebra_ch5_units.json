@@ -1,0 +1,254 @@
+{
+  "document": {
+    "id": "doc_sample_linear_algebra_ch5_fa809110",
+    "course_id": "linear_algebra_101",
+    "filename": "sample_linear_algebra_ch5.md",
+    "checksum": "ba6c17f9336c509c2a5024c3c18b500bd53f3e5e5ed552bc825b72d4fe22637f",
+    "parser": "miner_u",
+    "parser_version": "1.0",
+    "page_count": 4,
+    "language": "zh",
+    "owner_id": "system",
+    "access_scope": "course",
+    "status": "active",
+    "created_at": ""
+  },
+  "units": [
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0001",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "定义",
+      "title": "定义 5.1",
+      "content": "### 定义 5.1\n设 $A$ 是 $n$ 阶方阵，若存在数 $\\lambda$ 和非零向量 $x$，使得 $Ax = \\lambda x$，则称 $\\lambda$ 为方阵 $A$ 的特征值，非零向量 $x$ 称为 $A$ 的对应于特征值 $\\lambda$ 的特征向量。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 1,
+      "page_end": 2,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 1,
+        "page_end": 2,
+        "quote": "### 定义 5.1\n设 $A$ 是 $n$ 阶方阵，若存在数 $\\lambda$ 和非零向量 $x$，使得 $Ax = \\lambda x$，则称 $\\lambda$ 为方阵 $A$ 的特征值，非零向量 $x$ 称为 $A$ 的对应于特征..."
+      },
+      "keywords": [
+        "定义 5.1"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第一节 特征值与特征向量的概念"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    },
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0002",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "定理",
+      "title": "定理 5.1",
+      "content": "### 定理 5.1\n根据定义 5.1，数 $\\lambda$ 是 $n$ 阶方阵 $A$ 的特征值的充要条件是 $\\lambda$ 满足特征方程 $|\\lambda E - A| = 0$。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 2,
+      "page_end": 3,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 2,
+        "page_end": 3,
+        "quote": "### 定理 5.1\n根据定义 5.1，数 $\\lambda$ 是 $n$ 阶方阵 $A$ 的特征值的充要条件是 $\\lambda$ 满足特征方程 $|\\lambda E - A| = 0$。"
+      },
+      "keywords": [
+        "定理 5.1"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第一节 特征值与特征向量的概念"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    },
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0003",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "证明",
+      "title": "证明 5.1",
+      "content": "### 证明 5.1\n由 $Ax = \\lambda x$ 可变形为 $(\\lambda E - A)x = 0$。由于特征向量 $x$ 是非零向量，故齐次线性方程组 $(\\lambda E - A)x = 0$ 有非零解，因此系数行列式 $|\\lambda E - A| = 0$。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 3,
+      "page_end": 4,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 3,
+        "page_end": 4,
+        "quote": "### 证明 5.1\n由 $Ax = \\lambda x$ 可变形为 $(\\lambda E - A)x = 0$。由于特征向量 $x$ 是非零向量，故齐次线性方程组 $(\\lambda E - A)x = 0$ 有非零解，因此系数行列式 ..."
+      },
+      "keywords": [
+        "证明 5.1"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第二节 相似矩阵与矩阵可对角化"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    },
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0004",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "定义",
+      "title": "定义 5.2",
+      "content": "### 定义 5.2\n设 $A, B$ 均为 $n$ 阶矩阵，若存在可逆矩阵 $P$，使得 $P^{-1}AP = B$，则称矩阵 $A$ 与 $B$ 相似，记作 $A \\sim B$。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 4,
+      "page_end": 4,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 4,
+        "page_end": 4,
+        "quote": "### 定义 5.2\n设 $A, B$ 均为 $n$ 阶矩阵，若存在可逆矩阵 $P$，使得 $P^{-1}AP = B$，则称矩阵 $A$ 与 $B$ 相似，记作 $A \\sim B$。"
+      },
+      "keywords": [
+        "定义 5.2"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第二节 相似矩阵与矩阵可对角化"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    },
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0005",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "定理",
+      "title": "定理 5.2",
+      "content": "### 定理 5.2\n根据定义 5.2 与定理 5.1，$n$ 阶矩阵 $A$ 可对角化的充要条件是 $A$ 拥有 $n$ 个线性无关的特征向量。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 4,
+      "page_end": 4,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 4,
+        "page_end": 4,
+        "quote": "### 定理 5.2\n根据定义 5.2 与定理 5.1，$n$ 阶矩阵 $A$ 可对角化的充要条件是 $A$ 拥有 $n$ 个线性无关的特征向量。"
+      },
+      "keywords": [
+        "定理 5.2"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第二节 相似矩阵与矩阵可对角化"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    },
+    {
+      "id": "ku_doc_sample_linear_algebra_ch5_fa809110_0006",
+      "course_id": "linear_algebra_101",
+      "schema_version": "v1",
+      "type": "例题",
+      "title": "例题 5.1",
+      "content": "### 例题 5.1\n求矩阵 $A = \\begin{pmatrix} 3 & -1 \\\\ -1 & 3 \\end{pmatrix}$ 的特征值与特征向量，并判断其是否可对角化。",
+      "latex": "",
+      "intuitive_explanation": "",
+      "solution": "",
+      "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+      "page_start": 4,
+      "page_end": 4,
+      "source_span": {
+        "source_document_id": "doc_sample_linear_algebra_ch5_fa809110",
+        "page_start": 4,
+        "page_end": 4,
+        "quote": "### 例题 5.1\n求矩阵 $A = \\begin{pmatrix} 3 & -1 \\\\ -1 & 3 \\end{pmatrix}$ 的特征值与特征向量，并判断其是否可对角化。"
+      },
+      "keywords": [
+        "例题 5.1"
+      ],
+      "aliases": [],
+      "chapter_path": [
+        "第五章 特征值与特征向量",
+        "第二节 相似矩阵与矩阵可对角化"
+      ],
+      "difficulty": 3,
+      "teaching_role": "core",
+      "expected_prerequisites": [],
+      "provenance": "rule",
+      "confidence": 1.0,
+      "review_status": "draft",
+      "reviewer_id": null
+    }
+  ],
+  "relations": [
+    {
+      "source_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0001",
+      "target_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0002",
+      "relation_type": "prerequisite",
+      "confidence": 0.85,
+      "provenance": "rule",
+      "review_status": "draft"
+    },
+    {
+      "source_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0002",
+      "target_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0005",
+      "relation_type": "prerequisite",
+      "confidence": 0.85,
+      "provenance": "rule",
+      "review_status": "draft"
+    },
+    {
+      "source_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0004",
+      "target_unit_id": "ku_doc_sample_linear_algebra_ch5_fa809110_0005",
+      "relation_type": "prerequisite",
+      "confidence": 0.85,
+      "provenance": "rule",
+      "review_status": "draft"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import asyncio
 import json
 import time
 import os
+from common import get_bilibili_headers
 
 GRANULAR_KEYWORDS = [
     # 小学微观概念
@@ -38,10 +39,7 @@ GRANULAR_KEYWORDS = [
     "极大似然估计步骤", "无偏估计证明"
 ]
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
-}
+HEADERS = get_bilibili_headers()
 
 async def fetch_keyword(client, kw):
     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"

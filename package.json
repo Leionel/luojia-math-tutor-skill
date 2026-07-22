@@ -1,7 +1,7 @@
 {
   "name": "luojia-math-tutor-init",
   "version": "1.0.0",
-  "description": "珞珈数智助教 - 全平台数学 AI 助教初始化工具",
+  "description": "Luojia Math Tutor - full-stack AI math tutoring toolkit",
   "main": "bin/init.js",
   "bin": {
     "luojia-math-init": "bin/init.js"
@@ -20,11 +20,12 @@
     "test": "node scripts/validate-json.js && node scripts/run-api-tests.js && npm.cmd run test:web:ui",
     "test:knowledge": "node scripts/validate-json.js",
     "test:api": "node scripts/run-api-tests.js",
-    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts",
+    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts",
     "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
     "dev:web": "cd apps/web && npm.cmd run dev",
     "build:web": "cd apps/web && npm.cmd run build",
-    "test:web": "cd apps/web && npm.cmd run build"
+    "test:web": "cd apps/web && npm.cmd run build",
+    "rollback": "python scripts/rollback_knowledge.py"
   },
   "keywords": [
     "math",

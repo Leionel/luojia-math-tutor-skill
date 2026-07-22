@@ -5,6 +5,7 @@ import { Copy, Check, Eye, Code } from "lucide-react";
 import { useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
+import { sanitizeHtmlBlock } from "@/lib/html-sanitize";
 
 function CodeBlock({ language, content }: { language: string; content: string }) {
   const [copied, setCopied] = useState(false);
@@ -468,9 +469,7 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
     case "bilibili-search":
       return <VideoRecommend key={`bili-${blockIndex}`} keyword={block.keyword} />;
     case "html": {
-      const safeContent = block.content
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/<script[\s\S]*?<\/script>/gi, "");
+      const safeContent = sanitizeHtmlBlock(block.content);
       return (
         <div 
           key={`html-${blockIndex}`} 

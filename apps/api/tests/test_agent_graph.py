@@ -114,10 +114,10 @@ def test_symbolic_success_routes_directly_to_teacher():
     assert route_after_context(state) == "teacher"
 
 
-def test_complex_proof_routes_through_verifier():
+def test_complex_proof_routes_through_proof_tutor():
     state = make_state("证明拉格朗日中值定理")
 
-    assert route_after_context(state) == "verifier"
+    assert route_after_context(state) == "proof_tutor"
 
 
 @pytest.mark.asyncio
@@ -158,11 +158,8 @@ async def test_symbolic_success_skips_verifier_llm():
 
 
 @pytest.mark.asyncio
-async def test_complex_proof_uses_verifier_then_teacher():
+async def test_complex_proof_uses_proof_tutor_directly():
     workflow = TutorWorkflow(get_settings(), make_repository())
-    workflow.llm.chat_completion = AsyncMock(
-        return_value='{"verified": true, "summary": "论证结构可用"}'
-    )
     install_fake_stream(workflow, "先明确定理中的条件分别起什么作用。")
     state = make_state("证明拉格朗日中值定理")
 
@@ -171,9 +168,8 @@ async def test_complex_proof_uses_verifier_then_teacher():
         config=make_config(state["session_id"]),
     )
 
-    assert final_state["metrics"]["llm_call_count"] == 2
-    assert final_state["metrics"]["route"] == "verifier_teacher"
-    workflow.llm.chat_completion.assert_awaited_once()
+    assert final_state["metrics"]["llm_call_count"] == 1
+    assert final_state["metrics"]["route"] == "proof_tutor"
 
 
 @pytest.mark.asyncio

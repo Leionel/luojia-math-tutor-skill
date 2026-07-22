@@ -280,3 +280,21 @@ export async function deleteNote(noteId: string) {
   if (!res.ok) throw new Error("删除笔记失败");
   return res.json();
 }
+
+export type ModelInfo = {
+  id: string;
+  name: string;
+  provider: string;
+};
+
+export type ModelCatalogResponse = {
+  default_model: string;
+  allowed_models: string[];
+  models: ModelInfo[];
+};
+
+export async function fetchModels(): Promise<ModelCatalogResponse> {
+  const res = await fetch(`${API_BASE}/api/models`, { cache: "no-store" });
+  if (!res.ok) throw new Error("获取模型列表失败");
+  return res.json();
+}

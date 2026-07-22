@@ -1,0 +1,43 @@
+[
+  {
+    "id": "test_001",
+    "query": "为什么可数集的测度为 0？",
+    "expected_knowledge_ids": [
+      "measure_countable_additivity",
+      "measure_zero_set"
+    ]
+  },
+  {
+    "id": "test_002",
+    "query": "行列式求导的公式是什么？",
+    "expected_knowledge_ids": [
+      "determinant_derivative",
+      "jacobi_formula"
+    ]
+  },
+  {
+    "id": "test_003",
+    "query": "微积分基本定理的直观含义是什么？",
+    "expected_knowledge_ids": [
+      "fundamental_theorem_of_calculus",
+      "newton_leibniz_formula"
+    ]
+  },
+  {
+    "id": "test_004",
+    "query": "特征值和特征向量有什么几何意义？",
+    "expected_knowledge_ids": [
+      "eigenvalue_eigenvector_geometric",
+      "linear_transformation_invariant_subspace"
+    ]
+  },
+  {
+    "id": "test_005",
+    "query": "大数定律和中心极限定理有什么区别？",
+    "expected_knowledge_ids": [
+      "law_of_large_numbers",
+      "central_limit_theorem",
+      "probability_convergence"
+    ]
+  }
+]

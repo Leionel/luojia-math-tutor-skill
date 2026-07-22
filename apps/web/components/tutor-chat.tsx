@@ -108,12 +108,22 @@ export function TutorChat() {
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (autoScroll && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isStreaming, thinkingElapsed]);
+  }, [messages, isStreaming, thinkingElapsed, autoScroll]);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setAutoScroll(isAtBottom);
+    }
+  };
 
   const status = useMemo(() => {
     if (!meta) return undefined;
@@ -551,7 +561,11 @@ export function TutorChat() {
           </button>
         )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
-          <div className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}>
+          <div 
+            className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+          >
             <div className="mx-auto max-w-3xl px-4 py-8 pb-32">
 
               {(() => {

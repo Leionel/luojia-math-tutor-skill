@@ -81,7 +81,7 @@ export function VideoRecommend({ keyword }: { keyword: string }) {
                 </div>
               </div>
               <div className="p-3">
-                <div className="text-xs font-bold line-clamp-2 leading-tight text-[var(--text-primary)] mb-1" dangerouslySetInnerHTML={{ __html: v.title }} />
+                <div className="text-xs font-bold line-clamp-2 leading-tight text-[var(--text-primary)] mb-1">{v.title}</div>
                 <div className="text-[10px] text-[var(--text-muted)] truncate">{v.author}</div>
               </div>
             </div>

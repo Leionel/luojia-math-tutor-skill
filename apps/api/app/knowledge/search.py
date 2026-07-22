@@ -26,6 +26,39 @@ def detect_subject(query: str, explicit_subject: str | None = None) -> str | Non
     return None
 
 
+def get_knowledge_by_ids(ids: list[str]) -> list[KnowledgeItem]:
+    """Retrieve KnowledgeItems exactly matching the given IDs."""
+    if not ids:
+        return []
+    items = load_knowledge()
+    id_set = set(ids)
+    return [item for item in items if item.id in id_set]
+
+
+def get_knowledge_by_refs(
+    refs: list[str],
+    subject: str | None = None,
+) -> list[KnowledgeItem]:
+    """Resolve prerequisite references stored as IDs or display names."""
+    if not refs:
+        return []
+
+    def normalize(value: str) -> str:
+        return " ".join(str(value).split()).strip()
+
+    ref_set = {normalize(ref) for ref in refs}
+    items = load_knowledge()
+    return [
+        item
+        for item in items
+        if (not subject or item.subject == subject)
+        and (
+            normalize(item.id) in ref_set
+            or normalize(item.concept_zh) in ref_set
+        )
+    ]
+
+
 def _tokens(query: str) -> list[str]:
     parts = re.findall(r"[\w\u4e00-\u9fff]+", query.lower())
     tokens = [part for part in parts if len(part) > 1]
@@ -184,3 +217,7 @@ async def search_knowledge_semantic(
 
 
 search_knowledge = search_knowledge_semantic
+
+def clear_vector_store_cache():
+    global _vector_store
+    _vector_store = None

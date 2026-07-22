@@ -153,3 +153,35 @@ async def test_short_follow_up_keeps_previous_concepts():
     context = await collector.collect(make_state("好的，继续"))
 
     assert context.concepts == ["QR 算法", "正交相似变换"]
+
+
+@pytest.mark.asyncio
+async def test_low_mastery_resolves_prerequisite_hints_from_display_names():
+    repository = make_repository()
+    repository.get_consecutive_errors.return_value = 2
+    target = KnowledgeHit(
+        item=KnowledgeItem(
+            id="target",
+            subject="calculus",
+            source_file="test",
+            concept_zh="函数极限（定义法）",
+            prerequisite=["数列极限（定义法证明）"],
+            description="目标知识点",
+            intuitive_explanation="",
+            solution="",
+        ),
+        score=100,
+    )
+
+    async def target_search(*args, **kwargs):
+        return [target]
+
+    collector = FastContextCollector(
+        repository=repository,
+        local_search=target_search,
+    )
+
+    context = await collector.collect(make_state("函数极限定义"))
+
+    assert context.prerequisite_hints
+    assert context.prerequisite_hints[0]["name"] == "数列极限（定义法证明）"

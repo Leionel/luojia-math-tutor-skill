@@ -183,7 +183,7 @@ Iron Constraints (不可突破的底线):
 虽然核心在于 Agent Workflow，但本项目同样具备完善的工业级全栈实现：
 
 *   **分层 RAG 检索引擎**：本地 BM25 位于首字热路径，不依赖网络；Semantic Embedding 在当前回答结束后异步增强并缓存，失败不会影响本轮输出。
-*   **全栈交互体验**：Next.js 14 (App Router) + FastAPI + SQLite。内置定制的 LaTeX 数学键盘，支持将解答过程 TTS 语音播报。
+*   **全栈交互体验**：Next.js 14 (App Router) + FastAPI + SQLite。支持上传解析、公式渲染、掌握度雷达、随堂笔记和用户自带模型配置。
 *   **智能动态标签 (Dynamic Tagging)**：显式数学术语、上一轮会话状态与本地知识检索共同确定考点；短跟进会优先继承上下文，避免“好的，继续”触发无关知识点漂移。
 
 ---
@@ -222,7 +222,7 @@ Iron Constraints (不可突破的底线):
 APP_ENV=local
 DATABASE_URL=sqlite:///./luojia_tutor.db
 LLM_PROVIDER=deepseek
-LLM_BASE_URL=https://api.deepseek.com
+LLM_BASE_URL=https://api.deepseek.com/v1
 LLM_API_KEY=your_deepseek_api_key
 LLM_MODEL=deepseek-chat
 ALLOW_USER_API_KEY=true
@@ -270,6 +270,12 @@ npm run test:knowledge
 
 # 仅运行后端 API 测试
 npm run test:api
+
+# Run frontend helper/security tests
+npm run test:web:ui
+
+# Build and type-check the frontend
+npm run build:web
 ```
 
 ---

@@ -12,6 +12,7 @@ from app.api.routes_notes import router as notes_router
 from app.api.routes_uploads import router as uploads_router
 from app.api.routes_resources import router as resources_router
 from app.api.routes_cron import router as cron_router
+from app.api.routes_admin_knowledge import router as admin_knowledge_router
 
 app = FastAPI(title="Luojia Math Tutor API", version="0.1.0")
 
@@ -40,3 +41,4 @@ app.include_router(mastery_router)
 app.include_router(resources_router)
 app.include_router(notes_router)
 app.include_router(cron_router)
+app.include_router(admin_knowledge_router)

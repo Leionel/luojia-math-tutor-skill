@@ -85,6 +85,8 @@ def _needs_llm_verifier(state: AgentState) -> bool:
 def route_after_context(state: AgentState) -> str:
     if state.get("requires_policy_fallback"):
         return "policy_fallback"
+    if state.get("intent") == Intent.PROOF_HINT:
+        return "proof_tutor"
     if state.get("pedagogical_action") == "generate_exercise":
         return "examiner"
     if _needs_llm_verifier(state):
@@ -93,6 +95,8 @@ def route_after_context(state: AgentState) -> str:
 
 
 def route_after_policy(state: AgentState) -> str:
+    if state.get("intent") == Intent.PROOF_HINT:
+        return "proof_tutor"
     if state.get("pedagogical_action") == "generate_exercise":
         return "examiner"
     if _needs_llm_verifier(state):
@@ -122,6 +126,7 @@ class TutorWorkflow:
         workflow.add_node("verifier", self.verifier_node)
         workflow.add_node("teacher", self.teacher_node)
         workflow.add_node("examiner", self.examiner_node)
+        workflow.add_node("proof_tutor", self.proof_tutor_node)
 
         workflow.add_edge(START, "fast_context")
         workflow.add_conditional_edges(
@@ -132,6 +137,7 @@ class TutorWorkflow:
                 "verifier": "verifier",
                 "teacher": "teacher",
                 "examiner": "examiner",
+                "proof_tutor": "proof_tutor",
             },
         )
         workflow.add_conditional_edges(
@@ -141,11 +147,13 @@ class TutorWorkflow:
                 "verifier": "verifier",
                 "teacher": "teacher",
                 "examiner": "examiner",
+                "proof_tutor": "proof_tutor",
             },
         )
         workflow.add_edge("verifier", "teacher")
         workflow.add_edge("teacher", END)
         workflow.add_edge("examiner", END)
+        workflow.add_edge("proof_tutor", END)
         return workflow.compile(checkpointer=MemorySaver())
 
     async def fast_context_node(
@@ -161,8 +169,12 @@ class TutorWorkflow:
                 [],
             ),
         )
+        state_with_context = {
+            **state,
+            "prerequisite_hints": context.prerequisite_hints,
+        }
         messages = self._build_base_messages(
-            state,
+            state_with_context,
             context.history,
             hits,
             context.document_chunks,
@@ -177,7 +189,7 @@ class TutorWorkflow:
             **context.metrics,
         }
         branch_state: AgentState = {
-            **state,
+            **state_with_context,
             "verifier_result": context.verifier_result,
             "pedagogical_action": state["pedagogical_action"],
         }
@@ -186,6 +198,7 @@ class TutorWorkflow:
             "teacher": "teacher",
             "examiner": "examiner",
             "verifier": "verifier_teacher",
+            "proof_tutor": "proof_tutor",
             "policy_fallback": "policy_fallback",
         }[branch]
 
@@ -409,6 +422,19 @@ class TutorWorkflow:
             default_route="examiner",
         )
 
+    async def proof_tutor_node(
+        self,
+        state: AgentState,
+        config: RunnableConfig,
+    ) -> dict:
+        from app.tutor.proof_tutor import build_proof_tutor_prompt
+        return await self._stream_generation(
+            state,
+            config,
+            build_proof_tutor_prompt(state),
+            default_route="proof_tutor",
+        )
+
     async def _stream_generation(
         self,
         state: AgentState,
@@ -431,11 +457,11 @@ class TutorWorkflow:
         response_text = ""
 
         if on_progress:
-            output_text = (
-                "已进入 Examiner 出题/测验阶段。"
-                if default_route == "examiner"
-                else "已进入 Teacher 启发式讲解阶段。"
-            )
+            output_text = {
+                "examiner": "已进入 Examiner 出题/测验阶段。",
+                "proof_tutor": "已进入证明结构辅导阶段。",
+                "teacher": "已进入 Teacher 启发式讲解阶段。",
+            }.get(default_route, "已进入教学回答阶段。")
             await on_progress(f"[OUTPUT]\n{output_text}")
 
         try:
@@ -521,6 +547,7 @@ class TutorWorkflow:
             bilibili_results="",
             document_chunks=document_chunks,
             pedagogical_action=pedagogical_action,
+            prerequisite_hints=state.get("prerequisite_hints"),
         )
 
     @staticmethod

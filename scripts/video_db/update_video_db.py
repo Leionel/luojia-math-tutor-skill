@@ -3,6 +3,7 @@ import asyncio
 import json
 import time
 import os
+from common import get_bilibili_headers
 
 NEW_KEYWORDS = [
     # 小学 K1-K6
@@ -25,10 +26,7 @@ NEW_KEYWORDS = [
     "线性规划", "非线性规划", "数值分析", "偏微分方程数值解", "随机过程"
 ]
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
-}
+HEADERS = get_bilibili_headers()
 
 async def fetch_keyword(client, kw):
     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"

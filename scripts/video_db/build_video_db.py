@@ -3,6 +3,7 @@ import asyncio
 import json
 import time
 import os
+from common import get_bilibili_headers
 
 KEYWORDS = [
     "高等数学", "微积分", "导数", "定积分", "不定积分", "偏导数", "多重积分", "级数", "泰勒展开", "微分方程",
@@ -14,10 +15,7 @@ KEYWORDS = [
     "时间序列", "傅里叶变换", "拉普拉斯变换", "复变函数", "离散数学", "图论", "数学建模"
 ]
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
-}
+HEADERS = get_bilibili_headers()
 
 async def fetch_keyword(client, kw):
     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"

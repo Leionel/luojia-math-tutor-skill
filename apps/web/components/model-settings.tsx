@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { testModel } from "@/lib/api";
+import { fetchModels, testModel, type ModelInfo } from "@/lib/api";
 import {
   getPreferredModel,
   getUserApiKey,
   setPreferredModel,
   setUserApiKey,
+  DEFAULT_MODEL,
   type SupportModel
 } from "@/lib/local-settings";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,28 @@ import { Card, CardTitle } from "@/components/ui/card";
 
 export function ModelSettings() {
   const [key, setKey] = useState("");
-  const [model, setModel] = useState<SupportModel>("deepseek-v4-flash");
+  const [model, setModel] = useState<SupportModel>(DEFAULT_MODEL);
   const [status, setStatus] = useState("");
+  const [modelCatalog, setModelCatalog] = useState<Record<string, ModelInfo[]>>({});
 
   useEffect(() => {
     setKey(getUserApiKey());
     setModel(getPreferredModel());
+
+    fetchModels()
+      .then((data) => {
+        const groups: Record<string, ModelInfo[]> = {};
+        for (const item of data.models) {
+          if (!groups[item.provider]) {
+            groups[item.provider] = [];
+          }
+          groups[item.provider].push(item);
+        }
+        setModelCatalog(groups);
+      })
+      .catch(() => {
+        // Fallback to empty catalog (will use static markup below)
+      });
   }, []);
 
   async function saveAndTest() {
@@ -32,6 +49,8 @@ export function ModelSettings() {
     setStatus(result.message);
   }
 
+  const hasDynamicModels = Object.keys(modelCatalog).length > 0;
+
   return (
     <Card>
       <CardTitle>模型设置</CardTitle>
@@ -41,40 +60,41 @@ export function ModelSettings() {
         value={model}
         onChange={(event) => setModel(event.target.value)}
       >
-        <optgroup label="DeepSeek">
-          <option value="deepseek-v4-flash">DeepSeek v4 Flash</option>
-          <option value="deepseek-v4-pro">DeepSeek v4 Pro</option>
-        </optgroup>
-        <optgroup label="通义千问 (Qwen)">
-          <option value="qwen-max-latest">Qwen Max Latest</option>
-          <option value="qwen3.7-max">Qwen3.7-Max</option>
-          <option value="qwen-plus-latest">Qwen Plus Latest</option>
-        </optgroup>
-        <optgroup label="Kimi (Moonshot)">
-          <option value="kimi-k2.6">Kimi K2.6</option>
-          <option value="kimi-k2.5">Kimi K2.5</option>
-          <option value="moonshot-v1-auto">Moonshot v1 Auto</option>
-        </optgroup>
-        <optgroup label="智谱 (ZhipuAI)">
-          <option value="glm-5">GLM-5</option>
-          <option value="glm-5-turbo">GLM-5-Turbo</option>
-          <option value="glm-4.7-flash">GLM-4.7-Flash</option>
-        </optgroup>
-        <optgroup label="OpenAI">
-          <option value="gpt-5.5-instant">GPT-5.5 Instant</option>
-          <option value="gpt-5.5">GPT-5.5</option>
-          <option value="gpt-5.5-pro">GPT-5.5 Pro</option>
-          <option value="gpt-5.3-codex">GPT-5.3 Codex</option>
-        </optgroup>
-        <optgroup label="Anthropic">
-          <option value="claude-opus-4-8">Claude Opus 4.8</option>
-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
-          <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
-        </optgroup>
-        <optgroup label="Google">
-          <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-          <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
-        </optgroup>
+        {hasDynamicModels ? (
+          Object.entries(modelCatalog).map(([provider, items]) => (
+            <optgroup key={provider} label={provider}>
+              {items.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </optgroup>
+          ))
+        ) : (
+          <>
+            <optgroup label="DeepSeek">
+              <option value="deepseek-chat">DeepSeek Chat</option>
+              <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+              <option value="deepseek-v4-flash">DeepSeek v4 Flash</option>
+              <option value="deepseek-v4-pro">DeepSeek v4 Pro</option>
+            </optgroup>
+            <optgroup label="通义千问 (Qwen)">
+              <option value="qwen-max">Qwen Max</option>
+              <option value="qwen-plus">Qwen Plus</option>
+              <option value="qwen-turbo">Qwen Turbo</option>
+              <option value="qwen-math-plus">Qwen Math Plus</option>
+            </optgroup>
+            <optgroup label="Kimi (Moonshot)">
+              <option value="moonshot-v1-8k">Moonshot v1 8K</option>
+              <option value="moonshot-v1-32k">Moonshot v1 32K</option>
+            </optgroup>
+            <optgroup label="智谱 (ZhipuAI)">
+              <option value="glm-4">GLM-4</option>
+              <option value="glm-4-flash">GLM-4 Flash</option>
+              <option value="glm-4v">GLM-4V</option>
+            </optgroup>
+          </>
+        )}
       </Select>
       <Input
         className="mb-2"
@@ -90,4 +110,3 @@ export function ModelSettings() {
     </Card>
   );
 }
-

@@ -5,13 +5,30 @@ export function getUserApiKey() {
 
 export type SupportModel = string;
 
+export const DEFAULT_MODEL = "deepseek-chat";
+const SUPPORTED_MODELS = new Set([
+  "deepseek-chat",
+  "deepseek-reasoner",
+  "deepseek-v4-flash",
+  "deepseek-v4-pro",
+  "qwen-max",
+  "qwen-plus",
+  "qwen-turbo",
+  "qwen-math-plus",
+  "moonshot-v1-8k",
+  "moonshot-v1-32k",
+  "glm-4",
+  "glm-4-flash",
+  "glm-4v",
+]);
+
 export function getPreferredModel(): SupportModel {
-  if (typeof window === "undefined") return "deepseek-v4-flash";
+  if (typeof window === "undefined") return DEFAULT_MODEL;
   const value = window.localStorage.getItem("luojia_model");
-  if (value) {
+  if (value && SUPPORTED_MODELS.has(value)) {
     return value;
   }
-  return "deepseek-v4-flash";
+  return DEFAULT_MODEL;
 }
 
 export function setPreferredModel(model: SupportModel) {

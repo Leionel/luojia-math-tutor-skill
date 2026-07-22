@@ -32,6 +32,7 @@ def build_messages(
     bilibili_results: str = "",
     document_chunks: list[str] = [],
     pedagogical_action: str | None = None,
+    prerequisite_hints: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     hint_instruction = hint_level_instruction(hint_level)
     
@@ -56,11 +57,20 @@ def build_messages(
         elif pedagogical_action == "generate_exercise":
             action_constraint += "-> 出题(Generate Exercise)规则：出一道和当前题目类似的新练习题。\n"
 
+    prereq_instruction = ""
+    if prerequisite_hints:
+        prereq_text = "The student is struggling. Recommend they review these prerequisite concepts:\n"
+        for p in prerequisite_hints:
+            prereq_text += f"- {p['name']}: {p['desc']}\n"
+        prereq_text += "\nGently suggest they might have forgotten these basics, rather than just giving them the answer."
+        prereq_instruction = f"\n=== 前置知识推荐 ===\n{prereq_text}\n=====================\n"
+
     system = f"""
 你是珞珈数智助教 Web App 的 Tutor Agent。请用中文回答。
 
 === 助教核心技能设定 (Skill Rules) ===
 {skill_text}
+{prereq_instruction}
 ================================
 
 核心规则摘要：

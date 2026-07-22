@@ -7,6 +7,7 @@ class Intent(str, Enum):
     CHECK_STUDENT_STEP = "check_student_step"
     FULL_SOLUTION = "full_solution"
     GENERATE_EXERCISE = "generate_exercise"
+    PROOF_HINT = "proof_hint"
 
 
 def route_intent(message: str, mode: str = "socratic") -> Intent:
@@ -15,6 +16,8 @@ def route_intent(message: str, mode: str = "socratic") -> Intent:
         return Intent.FULL_SOLUTION
     if any(key in message for key in ["类似题", "再出", "练习题", "生成题"]):
         return Intent.GENERATE_EXERCISE
+    if any(key in message for key in ["证明", "怎么证", "证法", "推导"]):
+        return Intent.PROOF_HINT
     if any(key in message for key in ["对吗", "这一步", "哪里错", "为什么错", "我算", "我觉得"]):
         return Intent.CHECK_STUDENT_STEP
     if any(key in message for key in ["什么是", "怎么理解", "定义", "直观", "概念"]) or lowered.startswith("what is"):

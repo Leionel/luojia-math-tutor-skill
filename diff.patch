@@ -1,0 +1,2397 @@
+﻿diff --git a/.gitignore b/.gitignore
+index d36b617..656c920 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -9,6 +9,7 @@ __pycache__/
+ *.db
+ .env
+ .env.local
++.codex-web.log
+ venv/
+ .venv/
+ .idea/
+diff --git a/README.md b/README.md
+index 474bf80..3fe9c54 100644
+--- a/README.md
++++ b/README.md
+@@ -183,7 +183,7 @@ Iron Constraints (涓嶅彲绐佺牬鐨勫簳绾?:
+ 铏界劧鏍稿績鍦ㄤ簬 Agent Workflow锛屼絾鏈」鐩悓鏍峰叿澶囧畬鍠勭殑宸ヤ笟绾у叏鏍堝疄鐜帮細
+ 
+ *   **鍒嗗眰 RAG 妫€绱㈠紩鎿?*锛氭湰鍦?BM25 浣嶄簬棣栧瓧鐑矾寰勶紝涓嶄緷璧栫綉缁滐紱Semantic Embedding 鍦ㄥ綋鍓嶅洖绛旂粨鏉熷悗寮傛澧炲己骞剁紦瀛橈紝澶辫触涓嶄細褰卞搷鏈疆杈撳嚭銆?-*   **鍏ㄦ爤浜や簰浣撻獙**锛歂ext.js 14 (App Router) + FastAPI + SQLite銆傚唴缃畾鍒剁殑 LaTeX 鏁板閿洏锛屾敮鎸佸皢瑙ｇ瓟杩囩▼ TTS 璇煶鎾姤銆?+*   **鍏ㄦ爤浜や簰浣撻獙**锛歂ext.js 14 (App Router) + FastAPI + SQLite銆傛敮鎸佷笂浼犺В鏋愩€佸叕寮忔覆鏌撱€佹帉鎻″害闆疯揪銆侀殢鍫傜瑪璁板拰鐢ㄦ埛鑷甫妯″瀷閰嶇疆銆? *   **鏅鸿兘鍔ㄦ€佹爣绛?(Dynamic Tagging)**锛氭樉寮忔暟瀛︽湳璇€佷笂涓€杞細璇濈姸鎬佷笌鏈湴鐭ヨ瘑妫€绱㈠叡鍚岀‘瀹氳€冪偣锛涚煭璺熻繘浼氫紭鍏堢户鎵夸笂涓嬫枃锛岄伩鍏嶁€滃ソ鐨勶紝缁х画鈥濊Е鍙戞棤鍏崇煡璇嗙偣婕傜Щ銆? 
+ ---
+@@ -222,7 +222,7 @@ Iron Constraints (涓嶅彲绐佺牬鐨勫簳绾?:
+ APP_ENV=local
+ DATABASE_URL=sqlite:///./luojia_tutor.db
+ LLM_PROVIDER=deepseek
+-LLM_BASE_URL=https://api.deepseek.com
++LLM_BASE_URL=https://api.deepseek.com/v1
+ LLM_API_KEY=your_deepseek_api_key
+ LLM_MODEL=deepseek-chat
+ ALLOW_USER_API_KEY=true
+@@ -270,6 +270,12 @@ npm run test:knowledge
+ 
+ # 浠呰繍琛屽悗绔?API 娴嬭瘯
+ npm run test:api
++
++# Run frontend helper/security tests
++npm run test:web:ui
++
++# Build and type-check the frontend
++npm run build:web
+ ```
+ 
+ ---
+diff --git a/apps/api/app/agents/code_executor.py b/apps/api/app/agents/code_executor.py
+index 30e3661..f00a4f5 100644
+--- a/apps/api/app/agents/code_executor.py
++++ b/apps/api/app/agents/code_executor.py
+@@ -1,27 +1,154 @@
++import ast
+ import asyncio
++import os
+ import sys
++import tempfile
++
++_ALLOWED_IMPORT_ROOTS = {"math", "sympy"}
++_ALLOWED_CALL_NAMES = {
++    "Abs",
++    "Eq",
++    "Function",
++    "Integral",
++    "Limit",
++    "Matrix",
++    "Rational",
++    "S",
++    "Symbol",
++    "acos",
++    "asin",
++    "atan",
++    "cos",
++    "diff",
++    "expand",
++    "exp",
++    "factor",
++    "integrate",
++    "limit",
++    "log",
++    "nsimplify",
++    "pi",
++    "print",
++    "simplify",
++    "sin",
++    "solve",
++    "sqrt",
++    "symbols",
++    "tan",
++}
++_DENIED_NAMES = {
++    "__builtins__",
++    "__import__",
++    "breakpoint",
++    "compile",
++    "delattr",
++    "dir",
++    "eval",
++    "exec",
++    "exit",
++    "getattr",
++    "globals",
++    "help",
++    "input",
++    "locals",
++    "memoryview",
++    "object",
++    "open",
++    "quit",
++    "setattr",
++    "type",
++    "vars",
++}
++_DENIED_NODES = (
++    ast.AsyncFor,
++    ast.AsyncFunctionDef,
++    ast.AsyncWith,
++    ast.ClassDef,
++    ast.Delete,
++    ast.For,
++    ast.FunctionDef,
++    ast.Global,
++    ast.Lambda,
++    ast.Nonlocal,
++    ast.Raise,
++    ast.Try,
++    ast.While,
++    ast.With,
++)
++
++
++def _import_root(name: str) -> str:
++    return name.split(".", 1)[0]
++
++
++def _validate_math_code(code: str) -> str | None:
++    try:
++        tree = ast.parse(code)
++    except SyntaxError as exc:
++        return f"Error: invalid Python syntax ({exc.msg})."
++
++    imported_modules: set[str] = set()
++
++    for node in ast.walk(tree):
++        if isinstance(node, _DENIED_NODES):
++            return f"Error: unsupported statement type ({type(node).__name__})."
++
++        if isinstance(node, ast.Import):
++            for alias in node.names:
++                root = _import_root(alias.name)
++                if root not in _ALLOWED_IMPORT_ROOTS:
++                    return "Error: only math and sympy imports are allowed."
++                imported_modules.add(alias.asname or root)
++
++        if isinstance(node, ast.ImportFrom):
++            root = _import_root(node.module or "")
++            if root not in _ALLOWED_IMPORT_ROOTS:
++                return "Error: only math and sympy imports are allowed."
++            if any(alias.name == "*" for alias in node.names):
++                return "Error: wildcard imports are not allowed."
++
++        if isinstance(node, ast.Name):
++            if node.id in _DENIED_NAMES or node.id.startswith("__"):
++                return f"Error: unsafe name is not allowed ({node.id})."
++
++        if isinstance(node, ast.Attribute):
++            if node.attr.startswith("_"):
++                return f"Error: private attributes are not allowed ({node.attr})."
++
++        if isinstance(node, ast.Call):
++            func = node.func
++            if isinstance(func, ast.Name):
++                if func.id not in _ALLOWED_CALL_NAMES:
++                    return f"Error: function call is not allowed ({func.id})."
++            elif isinstance(func, ast.Attribute):
++                root = func.value
++                while isinstance(root, ast.Attribute):
++                    root = root.value
++                if isinstance(root, ast.Name) and root.id in _DENIED_NAMES:
++                    return f"Error: unsafe call target is not allowed ({root.id})."
++            else:
++                return "Error: dynamic call targets are not allowed."
++
++    return None
+ 
+ async def execute_python_code(code: str, timeout: int = 10) -> str:
+     """
+     Executes Python code in a separate subprocess and captures stdout/stderr.
+     Useful for SymPy math verification.
+     """
+-    # Simple safety: don't allow os/subprocess imports
+-    if "import os" in code or "import subprocess" in code or "__import__('os')" in code:
+-        return "Error: unsafe imports detected (os/subprocess)."
++    validation_error = _validate_math_code(code)
++    if validation_error:
++        return validation_error
+ 
+     # Write code to a temporary file
+-    import tempfile
+-    import os
+-    
+-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
++    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
+         f.write(code)
+         temp_file_path = f.name
+ 
+     try:
+-        # Run the temporary file
++        # Isolated mode ignores user site packages and environment variables.
+         process = await asyncio.create_subprocess_exec(
+-            sys.executable, temp_file_path,
++            sys.executable, "-I", temp_file_path,
+             stdout=asyncio.subprocess.PIPE,
+             stderr=asyncio.subprocess.PIPE
+         )
+diff --git a/apps/api/app/api/routes_models.py b/apps/api/app/api/routes_models.py
+index bc59a4c..0563159 100644
+--- a/apps/api/app/api/routes_models.py
++++ b/apps/api/app/api/routes_models.py
+@@ -1,7 +1,7 @@
+ from fastapi import APIRouter, Depends
+ from pydantic import BaseModel
+ 
+-from app.config import Settings
++from app.config import ALLOWED_MODELS, Settings
+ from app.llm.openai_compatible import OpenAICompatibleClient
+ from app.main_deps import get_app_settings
+ 
+@@ -14,6 +14,49 @@ class TestModelRequest(BaseModel):
+     model: str | None = None
+ 
+ 
++class ModelItem(BaseModel):
++    id: str
++    name: str
++    provider: str
++
++
++class ModelListResponse(BaseModel):
++    default_model: str
++    allowed_models: list[str]
++    models: list[ModelItem]
++
++
++MODEL_CATALOG: list[ModelItem] = [
++    # DeepSeek
++    ModelItem(id="deepseek-chat", name="DeepSeek Chat", provider="DeepSeek"),
++    ModelItem(id="deepseek-reasoner", name="DeepSeek Reasoner", provider="DeepSeek"),
++    ModelItem(id="deepseek-v4-flash", name="DeepSeek v4 Flash", provider="DeepSeek"),
++    ModelItem(id="deepseek-v4-pro", name="DeepSeek v4 Pro", provider="DeepSeek"),
++    # Qwen
++    ModelItem(id="qwen-max", name="Qwen Max", provider="閫氫箟鍗冮棶 (Qwen)"),
++    ModelItem(id="qwen-plus", name="Qwen Plus", provider="閫氫箟鍗冮棶 (Qwen)"),
++    ModelItem(id="qwen-turbo", name="Qwen Turbo", provider="閫氫箟鍗冮棶 (Qwen)"),
++    ModelItem(id="qwen-math-plus", name="Qwen Math Plus", provider="閫氫箟鍗冮棶 (Qwen)"),
++    # Moonshot
++    ModelItem(id="moonshot-v1-8k", name="Moonshot v1 8K", provider="Kimi (Moonshot)"),
++    ModelItem(id="moonshot-v1-32k", name="Moonshot v1 32K", provider="Kimi (Moonshot)"),
++    # Zhipu
++    ModelItem(id="glm-4", name="GLM-4", provider="鏅鸿氨 (ZhipuAI)"),
++    ModelItem(id="glm-4-flash", name="GLM-4 Flash", provider="鏅鸿氨 (ZhipuAI)"),
++    ModelItem(id="glm-4v", name="GLM-4V", provider="鏅鸿氨 (ZhipuAI)"),
++]
++
++
++@router.get("", response_model=ModelListResponse)
++async def list_models(settings: Settings = Depends(get_app_settings)):
++    return ModelListResponse(
++        default_model=settings.llm_model,
++        allowed_models=sorted(list(ALLOWED_MODELS)),
++        models=MODEL_CATALOG,
++    )
++
++
+ @router.post("/test")
+ async def test_model(payload: TestModelRequest, settings: Settings = Depends(get_app_settings)):
+     return await OpenAICompatibleClient(settings).test(payload.user_api_key, payload.model)
++
+diff --git a/apps/api/app/api/routes_resources.py b/apps/api/app/api/routes_resources.py
+index b6f65f1..7efb17e 100644
+--- a/apps/api/app/api/routes_resources.py
++++ b/apps/api/app/api/routes_resources.py
+@@ -1,75 +1,88 @@
+-from fastapi import APIRouter
++import html
++import json
++import re
++from pathlib import Path
++
+ import httpx
++from fastapi import APIRouter
+ 
+ router = APIRouter(prefix="/api", tags=["Resources"])
+ 
++FALLBACK_VIDEO_DB = Path(__file__).resolve().parents[2] / "data" / "fallback_videos.json"
++
++
++def _plain_text(value: object) -> str:
++    text = html.unescape(str(value or ""))
++    return re.sub(r"<[^>]+>", "", text).strip()
++
++
++def _normalize_video(raw: dict) -> dict:
++    pic = str(raw.get("pic") or "")
++    return {
++        "bvid": _plain_text(raw.get("bvid")),
++        "title": _plain_text(raw.get("title")),
++        "pic": f"https:{pic}" if pic.startswith("//") else pic,
++        "author": _plain_text(raw.get("author")),
++    }
++
++
++def _fallback_videos(keyword: str) -> list[dict]:
++    kw_lower = keyword.lower()
++
++    if FALLBACK_VIDEO_DB.exists():
++        try:
++            with open(FALLBACK_VIDEO_DB, "r", encoding="utf-8") as f:
++                db = json.load(f)
++
++            for key, videos in db.items():
++                if key.lower() == kw_lower and videos:
++                    return [_normalize_video(video) for video in videos[:3]]
++
++            for key, videos in db.items():
++                if videos and (key.lower() in kw_lower or kw_lower in key.lower()):
++                    return [_normalize_video(video) for video in videos[:3]]
++        except Exception as exc:
++            print(f"Error loading fallback db: {exc}")
++
++    if "transformer" in kw_lower:
++        return [
++            _normalize_video(
++                {
++                    "bvid": "BV1fj6vBfEnu",
++                    "title": "Transformer introduction",
++                    "pic": "https://i2.hdslb.com/bfs/archive/ab93cffa150accdb552487147bfe563d99e9130a.jpg",
++                    "author": "AI course",
++                }
++            )
++        ]
++    return []
++
++
+ @router.get("/resources/bilibili/search")
+ async def search_bilibili(keyword: str):
+-    url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={keyword}"
+-    
+-    # We use a mocked hardcoded list for demonstration if Bilibili blocks us
+-    # but let's try the real API first with a spoofed user-agent
++    url = "https://api.bilibili.com/x/web-interface/search/all/v2"
+     headers = {
+-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-        "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
++        "User-Agent": (
++            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
++            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
++        ),
+     }
+-    
++
+     try:
+         async with httpx.AsyncClient(timeout=5.0) as client:
+-            resp = await client.get(url, headers=headers)
++            resp = await client.get(url, params={"keyword": keyword}, headers=headers)
+             data = resp.json()
+-            
++
+             if data.get("code") == 0:
+-                results = []
+                 for item in data.get("data", {}).get("result", []):
+-                    if item.get("result_type") == "video":
+-                        videos = item.get("data", [])
+-                        for v in videos[:3]:
+-                            results.append({
+-                                "bvid": v.get("bvid"),
+-                                "title": v.get("title", "").replace("<em class=\"keyword\">", "").replace("</em>", ""),
+-                                "pic": "http:" + v.get("pic", "") if v.get("pic", "").startswith("//") else v.get("pic", ""),
+-                                "author": v.get("author")
+-                            })
+-                        break
+-                if results:
+-                    return results
+-    except Exception as e:
+-        print(f"Bilibili search failed: {e}")
+-        
+-    # Fallback mock data
+-    kw_lower = keyword.lower()
+-    
+-    # Try to load the big fallback DB
+-    fallback_db_path = Path("app/data/fallback_videos.json")
+-    if not fallback_db_path.exists():
+-        fallback_db_path = Path("data/fallback_videos.json")
+-    
+-    if fallback_db_path.exists():
+-        try:
+-            with open(fallback_db_path, "r", encoding="utf-8") as f:
+-                db = json.load(f)
+-            
+-            # Direct match
+-            for k in db:
+-                if k.lower() == kw_lower:
+-                    if db[k]: return db[k]
+-                    
+-            # Substring match (e.g. user asks "璁蹭竴涓婽ransformer" -> matches "Transformer")
+-            for k in db:
+-                if k.lower() in kw_lower or kw_lower in k.lower():
+-                    if db[k]: return db[k]
+-        except Exception as fallback_e:
+-            print(f"Error loading fallback db: {fallback_e}")
+-
+-    # Ultimate fallback if everything fails
+-    if "transformer" in kw_lower:
+-        return [
+-            {
+-                "bvid": "BV1fj6vBfEnu",
+-                "title": "銆怲ransformer銆戞渶寮哄姩鐢昏瑙ｏ紒浠庣悊璁哄埌瀹炴垬锛岄€氫織鏄撴噦瑙ｉ噴鍘熺悊",
+-                "pic": "http://i2.hdslb.com/bfs/archive/ab93cffa150accdb552487147bfe563d99e9130a.jpg",
+-                "author": "鍝斿摡浜哄伐鏅鸿兘瀛﹂櫌"
+-            }
+-        ]
+-    return []
++                    if item.get("result_type") != "video":
++                        continue
++                    videos = item.get("data", [])
++                    results = [_normalize_video(video) for video in videos[:3]]
++                    if results:
++                        return results
++                    break
++    except Exception as exc:
++        print(f"Bilibili search failed: {exc}")
++
++    return _fallback_videos(keyword)
+diff --git a/apps/api/app/api/routes_uploads.py b/apps/api/app/api/routes_uploads.py
+index 4309689..fa9ab82 100644
+--- a/apps/api/app/api/routes_uploads.py
++++ b/apps/api/app/api/routes_uploads.py
+@@ -1,6 +1,8 @@
+-import os
++import re
+ import uuid
+-from fastapi import APIRouter, UploadFile, File, Depends
++from pathlib import Path
++
++from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+ from fastapi.responses import FileResponse
+ 
+ from app.services.mineru_client import extract_markdown_agent_api
+@@ -9,8 +11,55 @@ from app.memory.repository import Repository
+ 
+ router = APIRouter(prefix="/api/uploads", tags=["uploads"])
+ 
+-UPLOAD_DIR = "data/uploads"
+-os.makedirs(UPLOAD_DIR, exist_ok=True)
++UPLOAD_DIR = Path("data/uploads")
++UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
++MAX_UPLOAD_BYTES = 10 * 1024 * 1024
++ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "pdf", "pptx", "docx", "doc"}
++SAFE_UPLOAD_NAME = re.compile(
++    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\."
++    r"(?:png|jpg|jpeg|webp|gif|pdf|pptx|docx|doc)$",
++    re.IGNORECASE,
++)
++
++
++def _upload_dir() -> Path:
++    path = Path(UPLOAD_DIR)
++    path.mkdir(parents=True, exist_ok=True)
++    return path
++
++
++def _safe_extension(filename: str) -> str:
++    suffix = Path(filename or "upload.png").name.rsplit(".", 1)
++    ext = suffix[-1].lower() if len(suffix) == 2 else "png"
++    if ext not in ALLOWED_EXTENSIONS:
++        raise HTTPException(status_code=400, detail="Unsupported upload file type")
++    return ext
++
++
++async def _read_limited_upload(file: UploadFile) -> bytes:
++    chunks: list[bytes] = []
++    total = 0
++    while True:
++        chunk = await file.read(1024 * 1024)
++        if not chunk:
++            break
++        total += len(chunk)
++        if total > MAX_UPLOAD_BYTES:
++            raise HTTPException(status_code=413, detail="Upload exceeds 10MB limit")
++        chunks.append(chunk)
++    return b"".join(chunks)
++
++
++def _resolve_uploaded_file(filename: str) -> Path | None:
++    if not SAFE_UPLOAD_NAME.fullmatch(filename):
++        return None
++    base = _upload_dir().resolve()
++    path = (base / filename).resolve()
++    try:
++        path.relative_to(base)
++    except ValueError:
++        return None
++    return path
+ 
+ def chunk_markdown(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+     chunks = []
+@@ -27,18 +76,17 @@ async def upload_image(
+     repo: Repository = Depends(get_repository)
+ ):
+     filename_attr = getattr(file, "filename", "") or ""
+-    ext = filename_attr.split('.')[-1] if '.' in filename_attr else 'png'
++    ext = _safe_extension(filename_attr)
++    data = await _read_limited_upload(file)
+     file_id = str(uuid.uuid4())
+     filename = f"{file_id}.{ext}"
+-    filepath = os.path.join(UPLOAD_DIR, filename)
++    filepath = _upload_dir() / filename
+     
+-    with open(filepath, "wb") as f:
+-        f.write(await file.read())
++    filepath.write_bytes(data)
+         
+     document_id = None
+     try:
+-        abs_filepath = os.path.abspath(filepath)
+-        extracted_md = await extract_markdown_agent_api(abs_filepath)
++        extracted_md = await extract_markdown_agent_api(str(filepath.resolve()))
+         
+         # If the file is a document (pdf, pptx, docx), store it for Implicit RAG
+         if ext.lower() in ['pdf', 'pptx', 'docx', 'doc']:
+@@ -58,7 +106,7 @@ async def upload_image(
+ 
+ @router.get("/{filename}")
+ async def get_uploaded_image(filename: str):
+-    filepath = os.path.join(UPLOAD_DIR, filename)
+-    if os.path.exists(filepath):
++    filepath = _resolve_uploaded_file(filename)
++    if filepath and filepath.exists():
+         return FileResponse(filepath)
+-    return {"error": "Not found"}
++    raise HTTPException(status_code=404, detail="Upload not found")
+diff --git a/apps/api/app/api/routes_viz.py b/apps/api/app/api/routes_viz.py
+index c73cc17..959374a 100644
+--- a/apps/api/app/api/routes_viz.py
++++ b/apps/api/app/api/routes_viz.py
+@@ -1,5 +1,5 @@
+ from fastapi import APIRouter
+-from pydantic import BaseModel
++from pydantic import BaseModel, Field
+ 
+ from app.math_tools.visualizer import VizType, generate_plot
+ 
+@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api", tags=["viz"])
+ 
+ class PlotRequest(BaseModel):
+     viz_type: VizType
+-    params: dict = {}
++    params: dict = Field(default_factory=dict)
+ 
+ 
+ from fastapi.responses import Response
+diff --git a/apps/api/app/knowledge/loader.py b/apps/api/app/knowledge/loader.py
+index a5030ab..6683f2d 100644
+--- a/apps/api/app/knowledge/loader.py
++++ b/apps/api/app/knowledge/loader.py
+@@ -11,6 +11,7 @@ SUBJECT_BY_FILE = {
+     "concept_gs.json": "calculus",
+     "ex.json": "calculus",
+     "la.json": "linear_algebra",
++    "m1_linear_algebra_ch5_units.json": "linear_algebra",
+     "proba.json": "probability",
+     "Proba_example.json": "probability",
+ }
+@@ -38,8 +39,16 @@ def load_knowledge() -> tuple[KnowledgeItem, ...]:
+     items: list[KnowledgeItem] = []
+     for path in sorted(output_dir.glob("*.json")):
+         subject = SUBJECT_BY_FILE.get(path.name, "general")
+-        raw_items = json.loads(path.read_text(encoding="utf-8"))
++        parsed_data = json.loads(path.read_text(encoding="utf-8"))
++        if isinstance(parsed_data, dict) and "units" in parsed_data:
++            raw_items = parsed_data["units"]
++        elif isinstance(parsed_data, list):
++            raw_items = parsed_data
++        else:
++            continue
+         for index, raw in enumerate(raw_items):
++            if not isinstance(raw, dict):
++                continue
+             item_id = _text(raw.get("id")) or f"{path.stem}_{index}"
+             description = _text(raw.get("description") or raw.get("core_content_latex"))
+             items.append(
+@@ -52,7 +61,27 @@ def load_knowledge() -> tuple[KnowledgeItem, ...]:
+                     description=description,
+                     intuitive_explanation=_text(raw.get("intuitive_explanation")),
+                     solution=_text(raw.get("solution")),
++                    type=_text(raw.get("type")) or "concept",
++                    chapter=_text(raw.get("chapter")),
++                    section=_text(raw.get("section")),
++                    related_exercises=_list(raw.get("related_exercises")),
++                    difficulty=int(raw.get("difficulty", 3)) if str(raw.get("difficulty", 3)).isdigit() else 3,
++                    source=raw.get("source") if isinstance(raw.get("source"), dict) else {},
+                 )
+             )
+     return tuple(items)
+ 
++
++@lru_cache
++def load_knowledge_units(course_id: str = "default_course"):
++    """Load all knowledge items and convert them into Schema v1 KnowledgeUnit objects with stable prerequisite IDs."""
++    items = load_knowledge()
++    name_to_id_map: dict[str, str] = {}
++    for item in items:
++        if item.concept_zh:
++            name_to_id_map[item.concept_zh] = item.id
++
++    units = [item.to_unit(course_id=course_id, prereq_id_map=name_to_id_map) for item in items]
++    return tuple(units)
++
++
+diff --git a/apps/api/app/knowledge/schema.py b/apps/api/app/knowledge/schema.py
+index 14e942e..1610a07 100644
+--- a/apps/api/app/knowledge/schema.py
++++ b/apps/api/app/knowledge/schema.py
+@@ -1,4 +1,5 @@
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
++from typing import Any
+ 
+ 
+ @dataclass
+@@ -11,6 +12,45 @@ class KnowledgeItem:
+     description: str
+     intuitive_explanation: str
+     solution: str
++    type: str = "concept"
++    chapter: str = ""
++    section: str = ""
++    related_exercises: list[str] = field(default_factory=list)
++    difficulty: int = 3
++    source: dict[str, Any] = field(default_factory=dict)
++
++    def to_unit(
++        self,
++        course_id: str = "default_course",
++        prereq_id_map: dict[str, str] | None = None,
++    ) -> "KnowledgeUnit":
++        """Convert legacy KnowledgeItem to Schema v1 KnowledgeUnit."""
++        prereq_id_map = prereq_id_map or {}
++        prereq_refs = []
++        for p in self.prerequisite:
++            pid = prereq_id_map.get(p)
++            prereq_refs.append({
++                "unit_id": pid or "",
++                "display_name": p
++            })
++
++        return KnowledgeUnit(
++            id=self.id,
++            course_id=course_id,
++            schema_version="v1",
++            type=self.type or "concept",
++            title=self.concept_zh,
++            content=self.description,
++            intuitive_explanation=self.intuitive_explanation,
++            solution=self.solution,
++            source_document_id=self.source_file,
++            keywords=[self.concept_zh],
++            chapter_path=[self.chapter, self.section] if self.chapter or self.section else [],
++            difficulty=self.difficulty,
++            expected_prerequisites=prereq_refs,
++            provenance="manual",
++            review_status="verified",
++        )
+ 
+ 
+ @dataclass
+@@ -18,3 +58,61 @@ class KnowledgeHit:
+     item: KnowledgeItem
+     score: int
+ 
++
++# ==========================================
++# Schema v1 Data Contracts (璇剧▼鐭ヨ瘑鏁版嵁濂戠害)
++# ==========================================
++
++@dataclass
++class SourceDocument:
++    id: str
++    course_id: str
++    filename: str
++    checksum: str = ""
++    parser: str = "miner_u"
++    parser_version: str = "1.0"
++    page_count: int = 0
++    language: str = "zh"
++    owner_id: str = "system"
++    access_scope: str = "course"  # public | course | private
++    status: str = "active"  # uploaded | parsed | reviewed | active | deprecated
++    created_at: str = ""
++
++
++@dataclass
++class KnowledgeUnit:
++    id: str
++    course_id: str
++    schema_version: str = "v1"
++    type: str = "concept"  # 瀹氫箟 | 瀹氱悊 | 璇佹槑 | 渚嬮 | 涔犻 | 绠楁硶 | 鏄撻敊鐐?+    title: str = ""
++    content: str = ""
++    latex: str = ""
++    intuitive_explanation: str = ""
++    solution: str = ""
++    source_document_id: str | None = None
++    page_start: int | None = None
++    page_end: int | None = None
++    source_span: dict[str, Any] = field(default_factory=dict)
++    keywords: list[str] = field(default_factory=list)
++    aliases: list[str] = field(default_factory=list)
++    chapter_path: list[str] = field(default_factory=list)
++    difficulty: int = 3
++    teaching_role: str = "core"  # core | auxiliary | practice
++    expected_prerequisites: list[dict[str, str]] = field(default_factory=list)
++    provenance: str = "manual"  # rule | llm | teacher | manual
++    confidence: float = 1.0
++    review_status: str = "verified"  # draft | verified | rejected | deprecated
++    reviewer_id: str | None = None
++
++
++@dataclass
++class KnowledgeRelation:
++    source_unit_id: str
++    target_unit_id: str
++    relation_type: str  # prerequisite | supports_proof | derives | applies_to | example_of | exercise_of | common_mistake_of | similar_to | contrast_with | algorithm_of | code_task_of
++    confidence: float = 1.0
++    provenance: str = "rule"  # rule | llm | teacher
++    review_status: str = "verified"  # draft | verified | rejected | deprecated
++
++
+diff --git a/apps/api/app/knowledge/search.py b/apps/api/app/knowledge/search.py
+index 30987a1..938e018 100644
+--- a/apps/api/app/knowledge/search.py
++++ b/apps/api/app/knowledge/search.py
+@@ -26,6 +26,39 @@ def detect_subject(query: str, explicit_subject: str | None = None) -> str | Non
+     return None
+ 
+ 
++def get_knowledge_by_ids(ids: list[str]) -> list[KnowledgeItem]:
++    """Retrieve KnowledgeItems exactly matching the given IDs."""
++    if not ids:
++        return []
++    items = load_knowledge()
++    id_set = set(ids)
++    return [item for item in items if item.id in id_set]
++
++
++def get_knowledge_by_refs(
++    refs: list[str],
++    subject: str | None = None,
++) -> list[KnowledgeItem]:
++    """Resolve prerequisite references stored as IDs or display names."""
++    if not refs:
++        return []
++
++    def normalize(value: str) -> str:
++        return " ".join(str(value).split()).strip()
++
++    ref_set = {normalize(ref) for ref in refs}
++    items = load_knowledge()
++    return [
++        item
++        for item in items
++        if (not subject or item.subject == subject)
++        and (
++            normalize(item.id) in ref_set
++            or normalize(item.concept_zh) in ref_set
++        )
++    ]
++
++
+ def _tokens(query: str) -> list[str]:
+     parts = re.findall(r"[\w\u4e00-\u9fff]+", query.lower())
+     tokens = [part for part in parts if len(part) > 1]
+diff --git a/apps/api/app/main.py b/apps/api/app/main.py
+index 5d5aac6..0c3de7e 100644
+--- a/apps/api/app/main.py
++++ b/apps/api/app/main.py
+@@ -12,6 +12,7 @@ from app.api.routes_notes import router as notes_router
+ from app.api.routes_uploads import router as uploads_router
+ from app.api.routes_resources import router as resources_router
+ from app.api.routes_cron import router as cron_router
++from app.api.routes_admin_knowledge import router as admin_knowledge_router
+ 
+ app = FastAPI(title="Luojia Math Tutor API", version="0.1.0")
+ 
+@@ -40,3 +41,4 @@ app.include_router(mastery_router)
+ app.include_router(resources_router)
+ app.include_router(notes_router)
+ app.include_router(cron_router)
++app.include_router(admin_knowledge_router)
+diff --git a/apps/api/app/math_tools/visualizer.py b/apps/api/app/math_tools/visualizer.py
+index 54aecbc..ee3bf41 100644
+--- a/apps/api/app/math_tools/visualizer.py
++++ b/apps/api/app/math_tools/visualizer.py
+@@ -1,7 +1,8 @@
+ """Matplotlib 鍙鍖栨湇鍔°€?""
+ 
+-import io
+ import base64
++import ast
++import io
+ from enum import Enum
+ 
+ import matplotlib
+@@ -22,6 +23,93 @@ class VizType(str, Enum):
+     PROBABILITY_DENSITY = "pdf"
+ 
+ 
++ALLOWED_FUNCTIONS = {
++    "sin": np.sin,
++    "cos": np.cos,
++    "tan": np.tan,
++    "exp": np.exp,
++    "log": np.log,
++    "sqrt": np.sqrt,
++    "abs": np.abs,
++}
++
++ALLOWED_CONSTANTS = {
++    "pi": np.pi,
++    "e": np.e,
++}
++
++
++class UnsafeExpressionError(ValueError):
++    pass
++
++
++def _safe_eval_expr(expr: str, x: np.ndarray) -> np.ndarray:
++    if not isinstance(expr, str) or len(expr) > 200:
++        raise UnsafeExpressionError("Expression is too long or invalid")
++
++    parsed = ast.parse(expr.replace("^", "**"), mode="eval")
++
++    def evaluate(node):
++        if isinstance(node, ast.Expression):
++            return evaluate(node.body)
++        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
++            return node.value
++        if isinstance(node, ast.Name):
++            if node.id == "x":
++                return x
++            if node.id in ALLOWED_CONSTANTS:
++                return ALLOWED_CONSTANTS[node.id]
++            raise UnsafeExpressionError(f"Unsupported name: {node.id}")
++        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
++            value = evaluate(node.operand)
++            return value if isinstance(node.op, ast.UAdd) else -value
++        if isinstance(node, ast.BinOp):
++            left = evaluate(node.left)
++            right = evaluate(node.right)
++            if isinstance(node.op, ast.Add):
++                return left + right
++            if isinstance(node.op, ast.Sub):
++                return left - right
++            if isinstance(node.op, ast.Mult):
++                return left * right
++            if isinstance(node.op, ast.Div):
++                return left / right
++            if isinstance(node.op, ast.Pow):
++                return left ** right
++            raise UnsafeExpressionError("Unsupported operator")
++        if isinstance(node, ast.Call):
++            func_name = None
++            if isinstance(node.func, ast.Name):
++                func_name = node.func.id
++            elif (
++                isinstance(node.func, ast.Attribute)
++                and isinstance(node.func.value, ast.Name)
++                and node.func.value.id == "np"
++            ):
++                func_name = node.func.attr
++            if func_name not in ALLOWED_FUNCTIONS:
++                raise UnsafeExpressionError("Unsupported function")
++            if node.keywords:
++                raise UnsafeExpressionError("Keyword arguments are not supported")
++            return ALLOWED_FUNCTIONS[func_name](*[evaluate(arg) for arg in node.args])
++        if (
++            isinstance(node, ast.Attribute)
++            and isinstance(node.value, ast.Name)
++            and node.value.id == "np"
++            and node.attr in ALLOWED_CONSTANTS
++        ):
++            return ALLOWED_CONSTANTS[node.attr]
++        raise UnsafeExpressionError("Unsupported expression")
++
++    value = evaluate(parsed)
++    y = np.asarray(value)
++    if y.shape == ():
++        y = np.full_like(x, float(y), dtype=float)
++    if y.shape != x.shape:
++        raise UnsafeExpressionError("Expression shape does not match x")
++    return y.astype(float)
++
++
+ def generate_plot(viz_type: VizType, params: dict) -> str:
+     """Generate a plot and return base64 PNG string."""
+     fig, ax = plt.subplots(1, 1, figsize=(6, 4), dpi=100)
+@@ -52,9 +140,7 @@ def _plot_function_curve(ax, params: dict):
+ 
+     x = np.linspace(x_min, x_max, 400)
+     try:
+-        y = eval(expr_str, {"x": x, "np": np, "sin": np.sin, "cos": np.cos,
+-                            "exp": np.exp, "log": np.log, "sqrt": np.sqrt,
+-                            "pi": np.pi, "abs": np.abs, "tan": np.tan})
++        y = _safe_eval_expr(expr_str, x)
+     except Exception:
+         y = x ** 2
+ 
+@@ -73,16 +159,14 @@ def _plot_integral_area(ax, params: dict):
+ 
+     x = np.linspace(a - 1, b + 1, 400)
+     try:
+-        y = eval(expr_str, {"x": x, "np": np, "sin": np.sin, "cos": np.cos,
+-                            "exp": np.exp, "log": np.log, "sqrt": np.sqrt})
++        y = _safe_eval_expr(expr_str, x)
+     except Exception:
+         y = x ** 2
+ 
+     ax.plot(x, y, "b-", linewidth=2, label=f"y = {expr_str}")
+     x_fill = np.linspace(a, b, 200)
+     try:
+-        y_fill = eval(expr_str, {"x": x_fill, "np": np, "sin": np.sin, "cos": np.cos,
+-                                  "exp": np.exp, "log": np.log, "sqrt": np.sqrt})
++        y_fill = _safe_eval_expr(expr_str, x_fill)
+     except Exception:
+         y_fill = x_fill ** 2
+     ax.fill_between(x_fill, y_fill, alpha=0.3, color="blue", label=f"Area [{a}, {b}]")
+diff --git a/apps/api/app/memory/mastery.py b/apps/api/app/memory/mastery.py
+index 6331500..586e76b 100644
+--- a/apps/api/app/memory/mastery.py
++++ b/apps/api/app/memory/mastery.py
+@@ -6,8 +6,18 @@
+ """
+ 
+ from dataclasses import dataclass
++from typing import Optional
+ 
+ 
++@dataclass
++class LearningEvent:
++    event_type: str  # e.g. "check_step", "explain"
++    correct: bool
++    hint_level: int
++    difficulty: int = 3
++    error_type: Optional[str] = None  # "concept_confusion", "calculation_error", "logic_gap", etc.
++    time_spent: Optional[int] = None
++
+ @dataclass
+ class MasteryUpdate:
+     old_score: float
+@@ -16,41 +26,95 @@ class MasteryUpdate:
+     reason: str
+ 
+ 
+-def update_mastery(old_score: float, is_correct: bool, hint_level: int = 0) -> MasteryUpdate:
++def update_mastery(
++    old_score: float,
++    event: LearningEvent | bool | None = None,
++    hint_level: int = 0,
++    *,
++    is_correct: bool | None = None,
++    difficulty: int = 3,
++    error_type: Optional[str] = None,
++    time_spent: Optional[int] = None,
++) -> MasteryUpdate:
+     """璁＄畻鎺屾彙搴︽洿鏂?(Bayesian Knowledge Tracing).
+-    
++
++    ``LearningEvent`` 鏄綋鍓嶆帴鍙ｃ€備负浜嗗吋瀹规棫鐨勮皟鐢ㄦ柟锛屼篃鎺ュ彈
++    ``update_mastery(score, is_correct=True, hint_level=0)`` 鍜屼綅缃弬鏁板舰寮忋€?+
+     Args:
+         old_score: 褰撳墠鎺屾彙搴?P(L) [0.0, 1.0]
+-        is_correct: 鏈鏄惁姝ｇ‘
+-        hint_level: 鎻愮ず绛夌骇 0-3
++        event: 瀛︿範浜嬩欢锛屾垨鏃ф帴鍙ｄ腑鐨?is_correct 甯冨皵鍊?+        hint_level: 鏃ф帴鍙ｄ腑鐨勬彁绀虹瓑绾?+        is_correct: 鏃ф帴鍙ｄ腑鐨勬纭€у弬鏁?     """
++    if isinstance(event, LearningEvent):
++        if is_correct is not None:
++            raise TypeError("event and is_correct cannot be used together")
++        learning_event = event
++    elif isinstance(event, bool):
++        if is_correct is not None:
++            raise TypeError("event and is_correct cannot be used together")
++        learning_event = LearningEvent(
++            event_type="check_step",
++            correct=event,
++            hint_level=hint_level,
++            difficulty=difficulty,
++            error_type=error_type,
++            time_spent=time_spent,
++        )
++    elif event is None and is_correct is not None:
++        learning_event = LearningEvent(
++            event_type="check_step",
++            correct=is_correct,
++            hint_level=hint_level,
++            difficulty=difficulty,
++            error_type=error_type,
++            time_spent=time_spent,
++        )
++    else:
++        raise TypeError(
++            "update_mastery expects a LearningEvent or the legacy is_correct argument"
++        )
++
++    event = learning_event
+     p_l = max(0.001, min(0.999, old_score)) # Avoid absolute 0 or 1
+     p_s = 0.10
+-    
+-    # Dynamic parameters based on hint
+-    if hint_level == 0:
+-        p_g = 0.10
++
++    # Difficulty adjustment (1-5, higher is harder). Normalizes base probabilities.
++    difficulty_factor = max(1, min(5, event.difficulty)) / 3.0
++
++    # Dynamic parameters based on hint and difficulty
++    if event.hint_level == 0:
++        base_p_g = 0.10
+         p_t = 0.15
+-        if is_correct:
++        if event.correct:
+             reason = "鐙珛姝ｇ‘瑙ｇ瓟锛屾帉鎻″害鏄捐憲涓婂崌"
+         else:
+             reason = "鍥炵瓟閿欒锛屾帉鎻″害涓嬮檷"
+-    elif hint_level == 1:
+-        p_g = 0.40
++            if event.error_type:
++                reason = f"鍥炵瓟閿欒({event.error_type})锛屾帉鎻″害涓嬮檷"
++    elif event.hint_level == 1:
++        base_p_g = 0.40
+         p_t = 0.05
+-        if is_correct:
++        if event.correct:
+             reason = "鍊熷姪灏戣鎻愮ず瑙ｇ瓟锛屾帉鎻″害灏忓箙涓婂崌"
+         else:
+             reason = "鍥炵瓟閿欒锛屾帉鎻″害涓嬮檷"
++            if event.error_type:
++                reason = f"鍥炵瓟閿欒({event.error_type})锛屾帉鎻″害涓嬮檷"
+     else:
+-        p_g = 0.80
++        base_p_g = 0.80
+         p_t = 0.00
+-        if is_correct:
++        if event.correct:
+             reason = "鍦ㄥぇ閲忔彁绀轰笅瑙ｇ瓟锛屾帉鎻″害鍑犱箮涓嶅彉"
+         else:
+             reason = "鍥炵瓟閿欒锛屾帉鎻″害涓嬮檷"
+-            
+-    if is_correct:
++            if event.error_type:
++                reason = f"鍥炵瓟閿欒({event.error_type})锛屾帉鎻″害涓嬮檷"
++
++    p_g = min(0.95, base_p_g / difficulty_factor)
++
++    if event.correct:
+         # P(L|obs) = P(L)(1-S) / [P(L)(1-S) + (1-L)G]
+         numerator = p_l * (1 - p_s)
+         denominator = numerator + (1 - p_l) * p_g
+diff --git a/apps/api/app/tutor/fast_context.py b/apps/api/app/tutor/fast_context.py
+index b13a6aa..670d90a 100644
+--- a/apps/api/app/tutor/fast_context.py
++++ b/apps/api/app/tutor/fast_context.py
+@@ -1,7 +1,7 @@
+ import asyncio
+ import logging
+ import time
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from typing import Any, Awaitable, Callable
+ 
+ from app.knowledge.schema import KnowledgeHit
+@@ -37,6 +37,7 @@ class FastContext:
+     mastery_label_str: str
+     hint_level: int
+     metrics: dict[str, float | int | str | bool]
++    prerequisite_hints: list[dict[str, str]] = field(default_factory=list)
+ 
+ 
+ class FastContextCollector:
+@@ -106,9 +107,13 @@ class FastContextCollector:
+             mistake,
+             previous_concepts,
+         )
++        learning_state = {
++            **state,
++            "hits": hits,
++        }
+         mastery = await asyncio.to_thread(
+             self._finalize_learning_state,
+-            state,
++            learning_state,
+             concepts,
+             verifier_result,
+             mistake,
+@@ -135,6 +140,7 @@ class FastContextCollector:
+             mastery_label_str=mastery["mastery_label_str"],
+             hint_level=mastery["hint_level"],
+             metrics=metrics,
++            prerequisite_hints=mastery.get("prerequisite_hints", []),
+         )
+ 
+     def _prepare_session(
+@@ -297,10 +303,17 @@ class FastContextCollector:
+                 and verifier_result.is_correct is not None
+                 and state.get("intent") is Intent.CHECK_STUDENT_STEP
+             ):
++                from app.memory.mastery import LearningEvent
++                event = LearningEvent(
++                    event_type="check_step",
++                    correct=verifier_result.is_correct,
++                    hint_level=1 if state.get("requested_hint") else 0,
++                    difficulty=3,  # default difficulty
++                    error_type=mistake.code if mistake else None
++                )
+                 update = update_mastery(
+                     mastery_score,
+-                    verifier_result.is_correct,
+-                    1 if state.get("requested_hint") else 0,
++                    event
+                 )
+                 mastery_delta = update.delta
+                 mastery_score = update.new_score
+@@ -322,6 +335,33 @@ class FastContextCollector:
+                 state.get("mode", "socratic"),
+             ).value
+ 
++            # --- KNOWLEDGE GRAPH LINKAGE ---
++            if consecutive_errors >= 2 or mastery_score < 0.3:
++                primary_item = next(
++                    (
++                        hit.item
++                        for hit in state.get("hits", [])
++                        if hit.item.id == primary_concept
++                        or hit.item.concept_zh == primary_concept
++                    ),
++                    state.get("hits", [None])[0].item
++                    if state.get("hits")
++                    else None,
++                )
++                if primary_item and primary_item.prerequisite:
++                    from app.knowledge.search import get_knowledge_by_refs
++
++                    prereq_items = get_knowledge_by_refs(
++                        primary_item.prerequisite,
++                        subject=primary_item.subject,
++                    )
++                    if prereq_items:
++                        state["prerequisite_hints"] = [
++                            {"id": p.id, "name": p.concept_zh, "desc": p.description}
++                            for p in prereq_items
++                        ]
++            # -------------------------------
++
+         try:
+             self.repository.add_attempt(
+                 session_id=state["session_id"],
+@@ -348,4 +388,5 @@ class FastContextCollector:
+             "mastery_delta": mastery_delta,
+             "mastery_label_str": mastery_label(mastery_score),
+             "hint_level": hint_level,
++            "prerequisite_hints": state.get("prerequisite_hints", []),
+         }
+diff --git a/apps/api/app/tutor/fast_path.py b/apps/api/app/tutor/fast_path.py
+index 3ca198e..4b774d8 100644
+--- a/apps/api/app/tutor/fast_path.py
++++ b/apps/api/app/tutor/fast_path.py
+@@ -28,6 +28,7 @@ _ACTION_BY_INTENT = {
+     Intent.CHECK_STUDENT_STEP: "ask_question",
+     Intent.FULL_SOLUTION: "explain",
+     Intent.GENERATE_EXERCISE: "generate_exercise",
++    Intent.PROOF_HINT: "provide_hint",
+ }
+ 
+ _OBJECTIVE_BY_INTENT = {
+@@ -36,6 +37,7 @@ _OBJECTIVE_BY_INTENT = {
+     Intent.CHECK_STUDENT_STEP: "鏍稿褰撳墠姝ラ骞跺畾浣嶉渶瑕佽皟鏁翠箣澶?,
+     Intent.FULL_SOLUTION: "姊崇悊瑙ｉ鏉′欢骞跺畬鎴愬叧閿帹瀵?,
+     Intent.GENERATE_EXERCISE: "閫氳繃鍚岀被缁冧範宸╁浐褰撳墠鑰冪偣",
++    Intent.PROOF_HINT: "瀹氫綅璇佹槑涓殑閫昏緫缂哄彛骞剁粰鍑轰笅涓€姝ユ彁绀?,
+ }
+ 
+ _PROOF_MARKERS = (
+@@ -95,5 +97,6 @@ def generate_opening(route: FastRoute) -> str:
+         Intent.CHECK_STUDENT_STEP: "鎴戝厛妫€鏌ヤ綘杩欎竴姝ヤ娇鐢ㄧ殑瑙勫垯锛屽啀涓€璧峰畾浣嶉渶瑕佽皟鏁寸殑浣嶇疆銆?,
+         Intent.FULL_SOLUTION: "鎴戝厛鏁寸悊棰樼洰鐨勫凡鐭ユ潯浠跺拰鐩爣锛屽啀鎸夊叧閿楠ゅ睍寮€銆?,
+         Intent.GENERATE_EXERCISE: "鎴戜細鍥寸粫褰撳墠鑰冪偣缁欎綘涓€閬撳悓闅惧害缁冧範锛屽苟淇濈暀鐙珛浣滅瓟绌洪棿銆?,
++        Intent.PROOF_HINT: "鎴戝厛妫€鏌ヨ瘉鏄庣殑缁撴瀯鍜屽凡鐢ㄥ畾鐞嗭紝鍐嶇粰浣犱竴涓笉鍓ч€忕粨璁虹殑涓嬩竴姝ユ彁绀恒€?,
+     }
+     return openings[route.intent]
+diff --git a/apps/api/app/tutor/graph.py b/apps/api/app/tutor/graph.py
+index 5e1805e..397d535 100644
+--- a/apps/api/app/tutor/graph.py
++++ b/apps/api/app/tutor/graph.py
+@@ -85,6 +85,8 @@ def _needs_llm_verifier(state: AgentState) -> bool:
+ def route_after_context(state: AgentState) -> str:
+     if state.get("requires_policy_fallback"):
+         return "policy_fallback"
++    if state.get("intent") == Intent.PROOF_HINT:
++        return "proof_tutor"
+     if state.get("pedagogical_action") == "generate_exercise":
+         return "examiner"
+     if _needs_llm_verifier(state):
+@@ -93,6 +95,8 @@ def route_after_context(state: AgentState) -> str:
+ 
+ 
+ def route_after_policy(state: AgentState) -> str:
++    if state.get("intent") == Intent.PROOF_HINT:
++        return "proof_tutor"
+     if state.get("pedagogical_action") == "generate_exercise":
+         return "examiner"
+     if _needs_llm_verifier(state):
+@@ -122,6 +126,7 @@ class TutorWorkflow:
+         workflow.add_node("verifier", self.verifier_node)
+         workflow.add_node("teacher", self.teacher_node)
+         workflow.add_node("examiner", self.examiner_node)
++        workflow.add_node("proof_tutor", self.proof_tutor_node)
+ 
+         workflow.add_edge(START, "fast_context")
+         workflow.add_conditional_edges(
+@@ -132,6 +137,7 @@ class TutorWorkflow:
+                 "verifier": "verifier",
+                 "teacher": "teacher",
+                 "examiner": "examiner",
++                "proof_tutor": "proof_tutor",
+             },
+         )
+         workflow.add_conditional_edges(
+@@ -141,11 +147,13 @@ class TutorWorkflow:
+                 "verifier": "verifier",
+                 "teacher": "teacher",
+                 "examiner": "examiner",
++                "proof_tutor": "proof_tutor",
+             },
+         )
+         workflow.add_edge("verifier", "teacher")
+         workflow.add_edge("teacher", END)
+         workflow.add_edge("examiner", END)
++        workflow.add_edge("proof_tutor", END)
+         return workflow.compile(checkpointer=MemorySaver())
+ 
+     async def fast_context_node(
+@@ -161,8 +169,12 @@ class TutorWorkflow:
+                 [],
+             ),
+         )
++        state_with_context = {
++            **state,
++            "prerequisite_hints": context.prerequisite_hints,
++        }
+         messages = self._build_base_messages(
+-            state,
++            state_with_context,
+             context.history,
+             hits,
+             context.document_chunks,
+@@ -177,7 +189,7 @@ class TutorWorkflow:
+             **context.metrics,
+         }
+         branch_state: AgentState = {
+-            **state,
++            **state_with_context,
+             "verifier_result": context.verifier_result,
+             "pedagogical_action": state["pedagogical_action"],
+         }
+@@ -186,6 +198,7 @@ class TutorWorkflow:
+             "teacher": "teacher",
+             "examiner": "examiner",
+             "verifier": "verifier_teacher",
++            "proof_tutor": "proof_tutor",
+             "policy_fallback": "policy_fallback",
+         }[branch]
+ 
+@@ -409,6 +422,19 @@ class TutorWorkflow:
+             default_route="examiner",
+         )
+ 
++    async def proof_tutor_node(
++        self,
++        state: AgentState,
++        config: RunnableConfig,
++    ) -> dict:
++        from app.tutor.proof_tutor import build_proof_tutor_prompt
++        return await self._stream_generation(
++            state,
++            config,
++            build_proof_tutor_prompt(state),
++            default_route="proof_tutor",
++        )
++
+     async def _stream_generation(
+         self,
+         state: AgentState,
+@@ -431,11 +457,11 @@ class TutorWorkflow:
+         response_text = ""
+ 
+         if on_progress:
+-            output_text = (
+-                "宸茶繘鍏?Examiner 鍑洪/娴嬮獙闃舵銆?
+-                if default_route == "examiner"
+-                else "宸茶繘鍏?Teacher 鍚彂寮忚瑙ｉ樁娈点€?
+-            )
++            output_text = {
++                "examiner": "宸茶繘鍏?Examiner 鍑洪/娴嬮獙闃舵銆?,
++                "proof_tutor": "宸茶繘鍏ヨ瘉鏄庣粨鏋勮緟瀵奸樁娈点€?,
++                "teacher": "宸茶繘鍏?Teacher 鍚彂寮忚瑙ｉ樁娈点€?,
++            }.get(default_route, "宸茶繘鍏ユ暀瀛﹀洖绛旈樁娈点€?)
+             await on_progress(f"[OUTPUT]\n{output_text}")
+ 
+         try:
+@@ -521,6 +547,7 @@ class TutorWorkflow:
+             bilibili_results="",
+             document_chunks=document_chunks,
+             pedagogical_action=pedagogical_action,
++            prerequisite_hints=state.get("prerequisite_hints"),
+         )
+ 
+     @staticmethod
+diff --git a/apps/api/app/tutor/intent_router.py b/apps/api/app/tutor/intent_router.py
+index cae5b48..1f5465e 100644
+--- a/apps/api/app/tutor/intent_router.py
++++ b/apps/api/app/tutor/intent_router.py
+@@ -7,6 +7,7 @@ class Intent(str, Enum):
+     CHECK_STUDENT_STEP = "check_student_step"
+     FULL_SOLUTION = "full_solution"
+     GENERATE_EXERCISE = "generate_exercise"
++    PROOF_HINT = "proof_hint"
+ 
+ 
+ def route_intent(message: str, mode: str = "socratic") -> Intent:
+@@ -15,6 +16,8 @@ def route_intent(message: str, mode: str = "socratic") -> Intent:
+         return Intent.FULL_SOLUTION
+     if any(key in message for key in ["绫讳技棰?, "鍐嶅嚭", "缁冧範棰?, "鐢熸垚棰?]):
+         return Intent.GENERATE_EXERCISE
++    if any(key in message for key in ["璇佹槑", "鎬庝箞璇?, "璇佹硶", "鎺ㄥ"]):
++        return Intent.PROOF_HINT
+     if any(key in message for key in ["瀵瑰悧", "杩欎竴姝?, "鍝噷閿?, "涓轰粈涔堥敊", "鎴戠畻", "鎴戣寰?]):
+         return Intent.CHECK_STUDENT_STEP
+     if any(key in message for key in ["浠€涔堟槸", "鎬庝箞鐞嗚В", "瀹氫箟", "鐩磋", "姒傚康"]) or lowered.startswith("what is"):
+diff --git a/apps/api/app/tutor/prompt_builder.py b/apps/api/app/tutor/prompt_builder.py
+index 8411a3c..d2f5a4e 100644
+--- a/apps/api/app/tutor/prompt_builder.py
++++ b/apps/api/app/tutor/prompt_builder.py
+@@ -32,6 +32,7 @@ def build_messages(
+     bilibili_results: str = "",
+     document_chunks: list[str] = [],
+     pedagogical_action: str | None = None,
++    prerequisite_hints: list[dict[str, str]] | None = None,
+ ) -> list[dict[str, str]]:
+     hint_instruction = hint_level_instruction(hint_level)
+     
+@@ -56,11 +57,20 @@ def build_messages(
+         elif pedagogical_action == "generate_exercise":
+             action_constraint += "-> 鍑洪(Generate Exercise)瑙勫垯锛氬嚭涓€閬撳拰褰撳墠棰樼洰绫讳技鐨勬柊缁冧範棰樸€俓n"
+ 
++    prereq_instruction = ""
++    if prerequisite_hints:
++        prereq_text = "The student is struggling. Recommend they review these prerequisite concepts:\n"
++        for p in prerequisite_hints:
++            prereq_text += f"- {p['name']}: {p['desc']}\n"
++        prereq_text += "\nGently suggest they might have forgotten these basics, rather than just giving them the answer."
++        prereq_instruction = f"\n=== 鍓嶇疆鐭ヨ瘑鎺ㄨ崘 ===\n{prereq_text}\n=====================\n"
++
+     system = f"""
+ 浣犳槸鐝炵張鏁版櫤鍔╂暀 Web App 鐨?Tutor Agent銆傝鐢ㄤ腑鏂囧洖绛斻€? 
+ === 鍔╂暀鏍稿績鎶€鑳借瀹?(Skill Rules) ===
+ {skill_text}
++{prereq_instruction}
+ ================================
+ 
+ 鏍稿績瑙勫垯鎽樿锛?diff --git a/apps/api/tests/test_agent_graph.py b/apps/api/tests/test_agent_graph.py
+index b6726a2..199d343 100644
+--- a/apps/api/tests/test_agent_graph.py
++++ b/apps/api/tests/test_agent_graph.py
+@@ -114,10 +114,10 @@ def test_symbolic_success_routes_directly_to_teacher():
+     assert route_after_context(state) == "teacher"
+ 
+ 
+-def test_complex_proof_routes_through_verifier():
++def test_complex_proof_routes_through_proof_tutor():
+     state = make_state("璇佹槑鎷夋牸鏈楁棩涓€煎畾鐞?)
+ 
+-    assert route_after_context(state) == "verifier"
++    assert route_after_context(state) == "proof_tutor"
+ 
+ 
+ @pytest.mark.asyncio
+@@ -158,11 +158,8 @@ async def test_symbolic_success_skips_verifier_llm():
+ 
+ 
+ @pytest.mark.asyncio
+-async def test_complex_proof_uses_verifier_then_teacher():
++async def test_complex_proof_uses_proof_tutor_directly():
+     workflow = TutorWorkflow(get_settings(), make_repository())
+-    workflow.llm.chat_completion = AsyncMock(
+-        return_value='{"verified": true, "summary": "璁鸿瘉缁撴瀯鍙敤"}'
+-    )
+     install_fake_stream(workflow, "鍏堟槑纭畾鐞嗕腑鐨勬潯浠跺垎鍒捣浠€涔堜綔鐢ㄣ€?)
+     state = make_state("璇佹槑鎷夋牸鏈楁棩涓€煎畾鐞?)
+ 
+@@ -171,9 +168,8 @@ async def test_complex_proof_uses_verifier_then_teacher():
+         config=make_config(state["session_id"]),
+     )
+ 
+-    assert final_state["metrics"]["llm_call_count"] == 2
+-    assert final_state["metrics"]["route"] == "verifier_teacher"
+-    workflow.llm.chat_completion.assert_awaited_once()
++    assert final_state["metrics"]["llm_call_count"] == 1
++    assert final_state["metrics"]["route"] == "proof_tutor"
+ 
+ 
+ @pytest.mark.asyncio
+diff --git a/apps/api/tests/test_api_routes.py b/apps/api/tests/test_api_routes.py
+index a460d7e..8b6665d 100644
+--- a/apps/api/tests/test_api_routes.py
++++ b/apps/api/tests/test_api_routes.py
+@@ -339,3 +339,15 @@ def test_tutor_sse_mastery_summary():
+     assert data["total_concepts"] >= 1
+     assert "average_score" in data
+     assert "weak_concepts" in data
++
++
++def test_list_models_route():
++    client = TestClient(app)
++    resp = client.get("/api/models")
++    assert resp.status_code == 200
++    data = resp.json()
++    assert "default_model" in data
++    assert "allowed_models" in data
++    assert len(data["models"]) > 0
++    assert any(m["id"] == "deepseek-chat" for m in data["models"])
++
+diff --git a/apps/api/tests/test_fast_context.py b/apps/api/tests/test_fast_context.py
+index 505a2b4..40d0268 100644
+--- a/apps/api/tests/test_fast_context.py
++++ b/apps/api/tests/test_fast_context.py
+@@ -153,3 +153,35 @@ async def test_short_follow_up_keeps_previous_concepts():
+     context = await collector.collect(make_state("濂界殑锛岀户缁?))
+ 
+     assert context.concepts == ["QR 绠楁硶", "姝ｄ氦鐩镐技鍙樻崲"]
++
++
++@pytest.mark.asyncio
++async def test_low_mastery_resolves_prerequisite_hints_from_display_names():
++    repository = make_repository()
++    repository.get_consecutive_errors.return_value = 2
++    target = KnowledgeHit(
++        item=KnowledgeItem(
++            id="target",
++            subject="calculus",
++            source_file="test",
++            concept_zh="鍑芥暟鏋侀檺锛堝畾涔夋硶锛?,
++            prerequisite=["鏁板垪鏋侀檺锛堝畾涔夋硶璇佹槑锛?],
++            description="鐩爣鐭ヨ瘑鐐?,
++            intuitive_explanation="",
++            solution="",
++        ),
++        score=100,
++    )
++
++    async def target_search(*args, **kwargs):
++        return [target]
++
++    collector = FastContextCollector(
++        repository=repository,
++        local_search=target_search,
++    )
++
++    context = await collector.collect(make_state("鍑芥暟鏋侀檺瀹氫箟"))
++
++    assert context.prerequisite_hints
++    assert context.prerequisite_hints[0]["name"] == "鏁板垪鏋侀檺锛堝畾涔夋硶璇佹槑锛?
+diff --git a/apps/api/tests/test_knowledge_search.py b/apps/api/tests/test_knowledge_search.py
+index 24c588d..ba15ae1 100644
+--- a/apps/api/tests/test_knowledge_search.py
++++ b/apps/api/tests/test_knowledge_search.py
+@@ -1,6 +1,10 @@
+ import pytest
+ from app.knowledge.loader import load_knowledge
+-from app.knowledge.search import search_knowledge, search_knowledge_local
++from app.knowledge.search import (
++    get_knowledge_by_refs,
++    search_knowledge,
++    search_knowledge_local,
++)
+ 
+ 
+ def test_loads_all_json_knowledge_files():
+@@ -9,6 +13,15 @@ def test_loads_all_json_knowledge_files():
+     assert {"concept_gs.json", "ex.json", "la.json", "proba.json", "Proba_example.json"} <= sources
+ 
+ 
++def test_prerequisite_references_resolve_by_id_or_display_name():
++    by_id = get_knowledge_by_refs(["CH1_EX_001"], subject="calculus")
++    by_name = get_knowledge_by_refs(["鏁板垪鏋侀檺锛堝畾涔夋硶璇佹槑锛?], subject="calculus")
++
++    assert by_id
++    assert by_name
++    assert by_id[0].id == by_name[0].id
++
++
+ @pytest.mark.asyncio
+ async def test_search_linear_algebra_determinant():
+     hits = await search_knowledge("浜岄樁琛屽垪寮?, "linear_algebra")
+@@ -44,3 +57,22 @@ async def test_local_search_never_creates_embedding(monkeypatch):
+ 
+     assert hits
+ 
++
++def test_schema_v1_knowledge_units_contract():
++    from app.knowledge.loader import load_knowledge_units
++    from app.knowledge.schema import KnowledgeUnit, SourceDocument, KnowledgeRelation
++
++    units = load_knowledge_units(course_id="la_course_101")
++    assert len(units) > 0
++    unit = units[0]
++    assert isinstance(unit, KnowledgeUnit)
++    assert unit.schema_version == "v1"
++    assert unit.course_id == "la_course_101"
++    assert unit.review_status == "verified"
++
++    # Test SourceDocument & KnowledgeRelation contracts
++    doc = SourceDocument(id="doc_1", course_id="la_course_101", filename="la_ch1.pdf")
++    assert doc.id == "doc_1"
++    rel = KnowledgeRelation(source_unit_id="ku_1", target_unit_id="ku_2", relation_type="prerequisite")
++    assert rel.relation_type == "prerequisite"
++
+diff --git a/apps/api/tests/test_visualizer.py b/apps/api/tests/test_visualizer.py
+index 23bf37f..fc377a6 100644
+--- a/apps/api/tests/test_visualizer.py
++++ b/apps/api/tests/test_visualizer.py
+@@ -13,12 +13,32 @@ class TestVisualizerFunctionCurve:
+         result = generate_plot(VizType.FUNCTION_CURVE, {"expr": "sin(x)", "x_min": -6, "x_max": 6})
+         assert len(result) > 100
+ 
++    def test_rejects_expression_side_effects(self, tmp_path):
++        marker = tmp_path / "pwned.txt"
++        expr = f"__import__('pathlib').Path(r'{marker}').write_text('x') or x**2"
++
++        result = generate_plot(VizType.FUNCTION_CURVE, {"expr": expr})
++
++        assert isinstance(result, str)
++        assert len(result) > 100
++        assert not marker.exists()
++
+ 
+ class TestVisualizerIntegralArea:
+     def test_integral_area(self):
+         result = generate_plot(VizType.INTEGRAL_AREA, {"expr": "x**2", "a": 0, "b": 2})
+         assert len(result) > 100
+ 
++    def test_integral_rejects_expression_side_effects(self, tmp_path):
++        marker = tmp_path / "integral-pwned.txt"
++        expr = f"__import__('pathlib').Path(r'{marker}').write_text('x') or x**2"
++
++        result = generate_plot(VizType.INTEGRAL_AREA, {"expr": expr, "a": 0, "b": 2})
++
++        assert isinstance(result, str)
++        assert len(result) > 100
++        assert not marker.exists()
++
+ 
+ class TestVisualizerPDF:
+     def test_normal_pdf(self):
+diff --git a/apps/web/app/auth/login/page.tsx b/apps/web/app/auth/login/page.tsx
+index 52fab95..dc4dc13 100644
+--- a/apps/web/app/auth/login/page.tsx
++++ b/apps/web/app/auth/login/page.tsx
+@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
+ import Link from "next/link";
+ import { motion, type Variants } from "framer-motion";
+ import { ArrowRight, KeyRound, User } from "lucide-react";
++import { grantDemoAccess } from "@/lib/demo-auth";
+ 
+ export default function LoginPage() {
+   const router = useRouter();
+@@ -13,8 +14,8 @@ export default function LoginPage() {
+   const handleLogin = (e: React.FormEvent) => {
+     e.preventDefault();
+     setIsAuthenticating(true);
+-    // Mock authentication
+     setTimeout(() => {
++      grantDemoAccess();
+       router.push("/chat");
+     }, 800);
+   };
+diff --git a/apps/web/app/auth/register/page.tsx b/apps/web/app/auth/register/page.tsx
+index 0c34d69..eac24b2 100644
+--- a/apps/web/app/auth/register/page.tsx
++++ b/apps/web/app/auth/register/page.tsx
+@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
+ import Link from "next/link";
+ import { motion, type Variants } from "framer-motion";
+ import { ArrowRight, KeyRound, User, Mail } from "lucide-react";
++import { grantDemoAccess } from "@/lib/demo-auth";
+ 
+ export default function RegisterPage() {
+   const router = useRouter();
+@@ -13,8 +14,8 @@ export default function RegisterPage() {
+   const handleRegister = (e: React.FormEvent) => {
+     e.preventDefault();
+     setIsInitializing(true);
+-    // Mock authentication
+     setTimeout(() => {
++      grantDemoAccess();
+       router.push("/chat");
+     }, 800);
+   };
+diff --git a/apps/web/app/chat/page.tsx b/apps/web/app/chat/page.tsx
+index 95d666c..d402f78 100644
+--- a/apps/web/app/chat/page.tsx
++++ b/apps/web/app/chat/page.tsx
+@@ -1,5 +1,11 @@
+ import { TutorChat } from "@/components/tutor-chat";
++import { InkBackground } from "@/components/ink-background";
+ 
+ export default function Home() {
+-  return <TutorChat />;
++  return (
++    <>
++      <InkBackground withParticles={false} />
++      <TutorChat />
++    </>
++  );
+ }
+diff --git a/apps/web/app/globals.css b/apps/web/app/globals.css
+index 354efe2..5a5a1c2 100644
+--- a/apps/web/app/globals.css
++++ b/apps/web/app/globals.css
+@@ -18,7 +18,7 @@
+   --bg-chat: transparent;
+   
+   --bg-user-bubble: #617a55;
+-  --bg-assistant-bubble: #ffffff;
++  --bg-assistant-bubble: #fdfaf6;
+   
+   --bg-header: rgba(250, 247, 242, 0.95);
+   --bg-sidebar: #f2efe9;
+@@ -70,7 +70,7 @@ html.dark {
+   --bg-chat: transparent;
+   
+   --bg-user-bubble: #4e6344;
+-  --bg-assistant-bubble: #2a2b26;
++  --bg-assistant-bubble: #33342d;
+   
+   --bg-header: rgba(30, 30, 27, 0.95);
+   --bg-sidebar: #242421;
+@@ -118,6 +118,15 @@ body {
+   transition: background-color 0.4s ease, color 0.4s ease;
+ }
+ 
++code, pre {
++  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
++  font-variant-ligatures: contextual;
++}
++
++.katex {
++  vertical-align: -0.05em;
++}
++
+ body::before, body::after {
+   display: none;
+ }
+diff --git a/apps/web/app/layout.tsx b/apps/web/app/layout.tsx
+index 08b3322..1a2a2ca 100644
+--- a/apps/web/app/layout.tsx
++++ b/apps/web/app/layout.tsx
+@@ -13,6 +13,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
+   return (
+     <html lang="zh-CN" suppressHydrationWarning>
+       <head>
++        <link rel="preconnect" href="https://fonts.googleapis.com" />
++        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
++        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet" />
+         <script src="https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6" async />
+       </head>
+       <body>
+diff --git a/apps/web/app/page.tsx b/apps/web/app/page.tsx
+index fdb66f5..a52eecb 100644
+--- a/apps/web/app/page.tsx
++++ b/apps/web/app/page.tsx
+@@ -6,6 +6,9 @@ import { ArrowRight, BookOpen, PenTool, Lightbulb, Target, Quote, FileText, Prin
+ import { motion } from "framer-motion";
+ import { ParticleField } from "@/components/particle-field";
+ import { LiveSandbox } from "@/components/live-sandbox";
++import { AgentArchitectureDiagram } from "@/components/agent-architecture-diagram";
++import { grantDemoAccess, hasDemoAccess } from "@/lib/demo-auth";
++import { InkBackground } from "@/components/ink-background";
+ 
+ const MARQUEE_CONCEPTS = [
+   "娲涘繀杈炬硶鍒?, "娉板嫆鍏紡", "鐗瑰緛鍊间笌鐗瑰緛鍚戦噺", "姝ｆ€佸垎甯?, "鍏ㄦ鐜囧叕寮忎笌璐濆彾鏂叕寮?,
+@@ -47,17 +50,7 @@ export default function SplashPage() {
+   return (
+     <div className="relative flex flex-col w-full min-h-screen bg-[#faf7f2] dark:bg-[#1e1e1b] text-[#2a2b26] dark:text-[#e6e4dc] selection:bg-[#617a55]/30">
+       {/* FIXED INK WASH BACKGROUND ELEMENTS */}
+-      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
+-        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#617a55] rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[150px] opacity-20" />
+-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#c44a3d] rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[150px] opacity-10" />
+-        <div className="absolute top-1/2 left-1/2 w-[1000px] h-[1000px] bg-[#d6d0ba] dark:bg-[#3e3f36] rounded-full filter blur-[120px] opacity-20 transform -translate-x-1/2 -translate-y-1/2" />
+-        
+-        {/* Subtle bamboo/rice paper texture */}
+-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.05%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22 opacity=%220.05%22/%3E%3C/svg%3E')] opacity-30" />
+-        
+-        {/* Interactive 3D Math Particle Field */}
+-        <ParticleField />
+-      </div>
++      <InkBackground withParticles={true} />
+ 
+       {/* TOP NAVIGATION */}
+       <motion.nav 
+diff --git a/apps/web/components/latex-renderer.tsx b/apps/web/components/latex-renderer.tsx
+index 56f5558..cd8f30f 100644
+--- a/apps/web/components/latex-renderer.tsx
++++ b/apps/web/components/latex-renderer.tsx
+@@ -5,6 +5,7 @@ import { Copy, Check, Eye, Code } from "lucide-react";
+ import { useState } from "react";
+ import { MathPlot } from "./math-plot";
+ import { VideoRecommend } from "./video-recommend";
++import { sanitizeHtmlBlock } from "@/lib/html-sanitize";
+ 
+ function CodeBlock({ language, content }: { language: string; content: string }) {
+   const [copied, setCopied] = useState(false);
+@@ -468,9 +469,7 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
+     case "bilibili-search":
+       return <VideoRecommend key={`bili-${blockIndex}`} keyword={block.keyword} />;
+     case "html": {
+-      const safeContent = block.content
+-        .replace(/<style[\s\S]*?<\/style>/gi, "")
+-        .replace(/<script[\s\S]*?<\/script>/gi, "");
++      const safeContent = sanitizeHtmlBlock(block.content);
+       return (
+         <div 
+           key={`html-${blockIndex}`} 
+diff --git a/apps/web/components/math-message.tsx b/apps/web/components/math-message.tsx
+index f29843e..68eb174 100644
+--- a/apps/web/components/math-message.tsx
++++ b/apps/web/components/math-message.tsx
+@@ -29,8 +29,8 @@ function parseThinkingChain(text: string): ThinkingStep[] {
+   const steps: ThinkingStep[] = [];
+   if (!text) return steps;
+ 
+-  const pattern = /(\[(?:闅愬紡 RAG|Orchestrator|娌欑鎵ц|鎵ц缁撴灉|PLAN|VERIFY|OUTPUT|CORRECT)\])/g;
+-  const stagePattern = /^\[(?:闅愬紡 RAG|Orchestrator|娌欑鎵ц|鎵ц缁撴灉|PLAN|VERIFY|OUTPUT|CORRECT)\]$/;
++  const pattern = /(\[(?:馃幆 瑙ｉ绛栫暐鍒嗘瀽|馃摎 鐭ヨ瘑鐐瑰叧鑱攟馃攳 姝ラ妫€鏌馃挰 缁勭粐鍥炵瓟|Orchestrator|娌欑鎵ц|鎵ц缁撴灉|PLAN|VERIFY|OUTPUT|闅愬紡 RAG|CORRECT)\])/g;
++  const stagePattern = /^\[(?:馃幆 瑙ｉ绛栫暐鍒嗘瀽|馃摎 鐭ヨ瘑鐐瑰叧鑱攟馃攳 姝ラ妫€鏌馃挰 缁勭粐鍥炵瓟|Orchestrator|娌欑鎵ц|鎵ц缁撴灉|PLAN|VERIFY|OUTPUT|闅愬紡 RAG|CORRECT)\]$/;
+   const parts = text.split(pattern);
+ 
+   let currentTitle = "鍐呴儴鎬濊€?;
+@@ -52,13 +52,13 @@ function parseThinkingChain(text: string): ThinkingStep[] {
+       currentTitle = part.replace(/[\[\]]/g, "");
+       currentContent = "";
+ 
+-      if (part.includes("RAG")) currentType = "rag";
++      if (part.includes("RAG") || part.includes("鐭ヨ瘑鐐瑰叧鑱?)) currentType = "rag";
+       else if (part.includes("Orchestrator")) currentType = "orchestrator";
+       else if (part.includes("娌欑鎵ц")) currentType = "sandbox";
+       else if (part.includes("鎵ц缁撴灉")) currentType = "result";
+-      else if (part.includes("PLAN")) currentType = "plan";
+-      else if (part.includes("VERIFY")) currentType = "verify";
+-      else if (part.includes("OUTPUT")) currentType = "output";
++      else if (part.includes("PLAN") || part.includes("瑙ｉ绛栫暐鍒嗘瀽")) currentType = "plan";
++      else if (part.includes("VERIFY") || part.includes("姝ラ妫€鏌?)) currentType = "verify";
++      else if (part.includes("OUTPUT") || part.includes("缁勭粐鍥炵瓟")) currentType = "output";
+       else if (part.includes("CORRECT")) currentType = "correct";
+       else currentType = "generic";
+     } else {
+@@ -77,26 +77,36 @@ function parseThinkingChain(text: string): ThinkingStep[] {
+   return steps;
+ }
+ 
++function displayThinkingTitle(title: string) {
++  const labels: Record<string, string> = {
++    PLAN: "瑙ｉ绛栫暐鍒嗘瀽",
++    "闅愬紡 RAG": "鐭ヨ瘑鐐瑰叧鑱?,
++    VERIFY: "姝ラ妫€鏌?,
++    OUTPUT: "缁勭粐鍥炵瓟",
++  };
++  return labels[title] || title;
++}
++
+ function getStepIcon(type: ThinkingStep['type']) {
+   switch (type) {
+     case 'rag':
+-      return <Search className="w-3.5 h-3.5 text-blue-500" />;
++      return <Search className="w-3.5 h-3.5 text-[#4b5cc4]" />;
+     case 'orchestrator':
+-      return <BrainCircuit className="w-3.5 h-3.5 text-purple-500" />;
++      return <BrainCircuit className="w-3.5 h-3.5 text-[#7e4b52]" />;
+     case 'sandbox':
+-      return <Terminal className="w-3.5 h-3.5 text-amber-500" />;
++      return <Terminal className="w-3.5 h-3.5 text-[#845a33]" />;
+     case 'result':
+-      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
++      return <Cpu className="w-3.5 h-3.5 text-[#789262]" />;
+     case 'plan':
+-      return <ListChecks className="w-3.5 h-3.5 text-cyan-500" />;
++      return <ListChecks className="w-3.5 h-3.5 text-[#5cb3cc]" />;
+     case 'verify':
+-      return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
++      return <CheckCircle2 className="w-3.5 h-3.5 text-[#728956]" />;
+     case 'output':
+-      return <Cpu className="w-3.5 h-3.5 text-emerald-500" />;
++      return <Cpu className="w-3.5 h-3.5 text-[#789262]" />;
+     case 'correct':
+-      return <RefreshCcw className="w-3.5 h-3.5 text-red-500 animate-spin" style={{ animationDuration: '3s' }} />;
++      return <RefreshCcw className="w-3.5 h-3.5 text-[#c44a3d] animate-spin" style={{ animationDuration: '3s' }} />;
+     default:
+-      return <ChevronRight className="w-3.5 h-3.5 text-slate-500" />;
++      return <ChevronRight className="w-3.5 h-3.5 text-[#757a6b]" />;
+   }
+ }
+ 
+@@ -140,7 +150,7 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
+                       {getStepIcon(step.type)}
+                     </div>
+                     <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
+-                      <span>{step.title}</span>
++                      <span>{displayThinkingTitle(step.title)}</span>
+                       <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
+                         姝ラ {idx + 1}
+                       </span>
+@@ -193,7 +203,7 @@ function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { sum
+                         {getStepIcon(step.type)}
+                       </div>
+                       <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
+-                        <span>{step.title}</span>
++                        <span>{displayThinkingTitle(step.title)}</span>
+                         <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
+                           姝ラ {idx + 1}
+                         </span>
+@@ -281,7 +291,7 @@ export function MathMessage({
+           "max-w-[85%] sm:max-w-[75%] rounded-3xl px-6 py-5 shadow-bubble transition-all duration-300 border",
+           isUser
+             ? "rounded-tr-sm border-[var(--border-accent)] text-white shadow-[0_4px_20px_var(--accent-light)]"
+-            : "rounded-tl-sm border-[var(--border-primary)] bg-white dark:bg-[var(--bg-assistant-bubble)] text-[var(--text-primary)] shadow-sm"
++            : "rounded-tl-sm border-[var(--border-subtle)] bg-[var(--bg-assistant-bubble)] text-[var(--text-primary)] shadow-sm"
+         )}
+         style={isUser ? { background: 'var(--bg-user-bubble)' } : undefined}
+       >
+diff --git a/apps/web/components/math-plot.tsx b/apps/web/components/math-plot.tsx
+index 3e49bd6..b8fc4d4 100644
+--- a/apps/web/components/math-plot.tsx
++++ b/apps/web/components/math-plot.tsx
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import React, { useMemo } from "react";
++import { buildPlotPoints } from "@/lib/math-expression";
+ 
+ interface MathPlotProps {
+   function: string;
+@@ -16,47 +17,7 @@ export function MathPlot({ function: fn, domain = "-10,10" }: MathPlotProps) {
+   
+   // Calculate points
+   const points = useMemo(() => {
+-    try {
+-      const step = (maxX - minX) / 100;
+-      const pts: { x: number; y: number }[] = [];
+-      
+-      // Simple sanitize and map math functions
+-      const safeFn = fn
+-        .replace(/sin/g, 'Math.sin')
+-        .replace(/cos/g, 'Math.cos')
+-        .replace(/tan/g, 'Math.tan')
+-        .replace(/exp/g, 'Math.exp')
+-        .replace(/log/g, 'Math.log')
+-        .replace(/sqrt/g, 'Math.sqrt')
+-        .replace(/abs/g, 'Math.abs')
+-        .replace(/pi/g, 'Math.PI')
+-        .replace(/\^/g, '**');
+-
+-      // Evaluator
+-      const evaluator = new Function("x", `return ${safeFn};`);
+-      
+-      let minY = Infinity;
+-      let maxY = -Infinity;
+-
+-      for (let x = minX; x <= maxX; x += step) {
+-        const y = evaluator(x);
+-        if (Number.isFinite(y)) {
+-          if (y < minY) minY = y;
+-          if (y > maxY) maxY = y;
+-          pts.push({ x, y });
+-        }
+-      }
+-
+-      // Add padding to Y range to avoid clipping
+-      const yRange = maxY === minY ? 1 : maxY - minY;
+-      minY -= yRange * 0.1;
+-      maxY += yRange * 0.1;
+-
+-      return { pts, minY, maxY };
+-    } catch (e) {
+-      console.error("Failed to parse plot function:", fn, e);
+-      return null;
+-    }
++    return buildPlotPoints(fn, minX, maxX);
+   }, [fn, minX, maxX]);
+ 
+   if (!points) return <div className="p-4 bg-red-50 text-red-500 rounded border border-red-200">鏃犳硶娓叉煋鍑芥暟鍥惧儚: {fn}</div>;
+diff --git a/apps/web/components/model-settings.tsx b/apps/web/components/model-settings.tsx
+index 76b0900..76e4945 100644
+--- a/apps/web/components/model-settings.tsx
++++ b/apps/web/components/model-settings.tsx
+@@ -1,12 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useState } from "react";
+-import { testModel } from "@/lib/api";
++import { fetchModels, testModel, type ModelInfo } from "@/lib/api";
+ import {
+   getPreferredModel,
+   getUserApiKey,
+   setPreferredModel,
+   setUserApiKey,
++  DEFAULT_MODEL,
+   type SupportModel
+ } from "@/lib/local-settings";
+ import { Button } from "@/components/ui/button";
+@@ -16,12 +17,28 @@ import { Card, CardTitle } from "@/components/ui/card";
+ 
+ export function ModelSettings() {
+   const [key, setKey] = useState("");
+-  const [model, setModel] = useState<SupportModel>("deepseek-v4-flash");
++  const [model, setModel] = useState<SupportModel>(DEFAULT_MODEL);
+   const [status, setStatus] = useState("");
++  const [modelCatalog, setModelCatalog] = useState<Record<string, ModelInfo[]>>({});
+ 
+   useEffect(() => {
+     setKey(getUserApiKey());
+     setModel(getPreferredModel());
++
++    fetchModels()
++      .then((data) => {
++        const groups: Record<string, ModelInfo[]> = {};
++        for (const item of data.models) {
++          if (!groups[item.provider]) {
++            groups[item.provider] = [];
++          }
++          groups[item.provider].push(item);
++        }
++        setModelCatalog(groups);
++      })
++      .catch(() => {
++        // Fallback to empty catalog (will use static markup below)
++      });
+   }, []);
+ 
+   async function saveAndTest() {
+@@ -32,6 +49,8 @@ export function ModelSettings() {
+     setStatus(result.message);
+   }
+ 
++  const hasDynamicModels = Object.keys(modelCatalog).length > 0;
++
+   return (
+     <Card>
+       <CardTitle>妯″瀷璁剧疆</CardTitle>
+@@ -41,40 +60,41 @@ export function ModelSettings() {
+         value={model}
+         onChange={(event) => setModel(event.target.value)}
+       >
+-        <optgroup label="DeepSeek">
+-          <option value="deepseek-v4-flash">DeepSeek v4 Flash</option>
+-          <option value="deepseek-v4-pro">DeepSeek v4 Pro</option>
+-        </optgroup>
+-        <optgroup label="閫氫箟鍗冮棶 (Qwen)">
+-          <option value="qwen-max-latest">Qwen Max Latest</option>
+-          <option value="qwen3.7-max">Qwen3.7-Max</option>
+-          <option value="qwen-plus-latest">Qwen Plus Latest</option>
+-        </optgroup>
+-        <optgroup label="Kimi (Moonshot)">
+-          <option value="kimi-k2.6">Kimi K2.6</option>
+-          <option value="kimi-k2.5">Kimi K2.5</option>
+-          <option value="moonshot-v1-auto">Moonshot v1 Auto</option>
+-        </optgroup>
+-        <optgroup label="鏅鸿氨 (ZhipuAI)">
+-          <option value="glm-5">GLM-5</option>
+-          <option value="glm-5-turbo">GLM-5-Turbo</option>
+-          <option value="glm-4.7-flash">GLM-4.7-Flash</option>
+-        </optgroup>
+-        <optgroup label="OpenAI">
+-          <option value="gpt-5.5-instant">GPT-5.5 Instant</option>
+-          <option value="gpt-5.5">GPT-5.5</option>
+-          <option value="gpt-5.5-pro">GPT-5.5 Pro</option>
+-          <option value="gpt-5.3-codex">GPT-5.3 Codex</option>
+-        </optgroup>
+-        <optgroup label="Anthropic">
+-          <option value="claude-opus-4-8">Claude Opus 4.8</option>
+-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+-          <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+-        </optgroup>
+-        <optgroup label="Google">
+-          <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+-          <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
+-        </optgroup>
++        {hasDynamicModels ? (
++          Object.entries(modelCatalog).map(([provider, items]) => (
++            <optgroup key={provider} label={provider}>
++              {items.map((m) => (
++                <option key={m.id} value={m.id}>
++                  {m.name}
++                </option>
++              ))}
++            </optgroup>
++          ))
++        ) : (
++          <>
++            <optgroup label="DeepSeek">
++              <option value="deepseek-chat">DeepSeek Chat</option>
++              <option value="deepseek-reasoner">DeepSeek Reasoner</option>
++              <option value="deepseek-v4-flash">DeepSeek v4 Flash</option>
++              <option value="deepseek-v4-pro">DeepSeek v4 Pro</option>
++            </optgroup>
++            <optgroup label="閫氫箟鍗冮棶 (Qwen)">
++              <option value="qwen-max">Qwen Max</option>
++              <option value="qwen-plus">Qwen Plus</option>
++              <option value="qwen-turbo">Qwen Turbo</option>
++              <option value="qwen-math-plus">Qwen Math Plus</option>
++            </optgroup>
++            <optgroup label="Kimi (Moonshot)">
++              <option value="moonshot-v1-8k">Moonshot v1 8K</option>
++              <option value="moonshot-v1-32k">Moonshot v1 32K</option>
++            </optgroup>
++            <optgroup label="鏅鸿氨 (ZhipuAI)">
++              <option value="glm-4">GLM-4</option>
++              <option value="glm-4-flash">GLM-4 Flash</option>
++              <option value="glm-4v">GLM-4V</option>
++            </optgroup>
++          </>
++        )}
+       </Select>
+       <Input
+         className="mb-2"
+@@ -90,4 +110,3 @@ export function ModelSettings() {
+     </Card>
+   );
+ }
+-
+diff --git a/apps/web/components/notebook-chat.tsx b/apps/web/components/notebook-chat.tsx
+index 0136c82..ba885a3 100644
+--- a/apps/web/components/notebook-chat.tsx
++++ b/apps/web/components/notebook-chat.tsx
+@@ -14,6 +14,8 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
+   const [inputValue, setInputValue] = useState("");
+   const abortControllerRef = useRef<AbortController | null>(null);
+   const messagesEndRef = useRef<HTMLDivElement>(null);
++  const scrollContainerRef = useRef<HTMLDivElement>(null);
++  const [autoScroll, setAutoScroll] = useState(true);
+ 
+   useEffect(() => {
+     setLoading(true);
+@@ -27,8 +29,18 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
+   }, [sessionId]);
+ 
+   useEffect(() => {
+-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+-  }, [messages, isStreaming]);
++    if (autoScroll) {
++      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
++    }
++  }, [messages, isStreaming, autoScroll]);
++
++  const handleScroll = () => {
++    if (scrollContainerRef.current) {
++      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
++      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
++      setAutoScroll(isAtBottom);
++    }
++  };
+ 
+   async function submit(value: string, mode: TutorMode = "socratic") {
+     const userMsg = { id: crypto.randomUUID(), session_id: sessionId, role: "user" as const, content: value, created_at: new Date().toISOString() };
+@@ -94,7 +106,11 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
+ 
+   return (
+     <div className="flex flex-col h-full bg-[var(--bg-primary)] border-l border-[var(--border-subtle)]">
+-      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
++      <div 
++        className="flex-1 overflow-y-auto p-4 space-y-4 relative"
++        ref={scrollContainerRef}
++        onScroll={handleScroll}
++      >
+         {loading ? (
+           <div className="flex justify-center items-center h-full text-[var(--text-muted)]">
+             <Loader2 className="w-6 h-6 animate-spin" />
+diff --git a/apps/web/components/tutor-chat.tsx b/apps/web/components/tutor-chat.tsx
+index c8b5b82..a696cc5 100644
+--- a/apps/web/components/tutor-chat.tsx
++++ b/apps/web/components/tutor-chat.tsx
+@@ -108,12 +108,22 @@ export function TutorChat() {
+   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
+   const [isResizing, setIsResizing] = useState<string | null>(null);
+   const messagesEndRef = useRef<HTMLDivElement>(null);
++  const scrollContainerRef = useRef<HTMLDivElement>(null);
++  const [autoScroll, setAutoScroll] = useState(true);
+ 
+   useEffect(() => {
+-    if (messagesEndRef.current) {
++    if (autoScroll && messagesEndRef.current) {
+       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+     }
+-  }, [messages, isStreaming, thinkingElapsed]);
++  }, [messages, isStreaming, thinkingElapsed, autoScroll]);
++
++  const handleScroll = () => {
++    if (scrollContainerRef.current) {
++      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
++      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
++      setAutoScroll(isAtBottom);
++    }
++  };
+ 
+   const status = useMemo(() => {
+     if (!meta) return undefined;
+@@ -551,7 +561,11 @@ export function TutorChat() {
+           </button>
+         )}
+         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
+-          <div className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}>
++          <div 
++            className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
++            ref={scrollContainerRef}
++            onScroll={handleScroll}
++          >
+             <div className="mx-auto max-w-3xl px-4 py-8 pb-32">
+ 
+               {(() => {
+diff --git a/apps/web/components/video-recommend.tsx b/apps/web/components/video-recommend.tsx
+index 3115a5d..1b9bde1 100644
+--- a/apps/web/components/video-recommend.tsx
++++ b/apps/web/components/video-recommend.tsx
+@@ -81,7 +81,7 @@ export function VideoRecommend({ keyword }: { keyword: string }) {
+                 </div>
+               </div>
+               <div className="p-3">
+-                <div className="text-xs font-bold line-clamp-2 leading-tight text-[var(--text-primary)] mb-1" dangerouslySetInnerHTML={{ __html: v.title }} />
++                <div className="text-xs font-bold line-clamp-2 leading-tight text-[var(--text-primary)] mb-1">{v.title}</div>
+                 <div className="text-[10px] text-[var(--text-muted)] truncate">{v.author}</div>
+               </div>
+             </div>
+diff --git a/apps/web/lib/api.ts b/apps/web/lib/api.ts
+index 2626a1c..65ebb0b 100644
+--- a/apps/web/lib/api.ts
++++ b/apps/web/lib/api.ts
+@@ -280,3 +280,21 @@ export async function deleteNote(noteId: string) {
+   if (!res.ok) throw new Error("鍒犻櫎绗旇澶辫触");
+   return res.json();
+ }
++
++export type ModelInfo = {
++  id: string;
++  name: string;
++  provider: string;
++};
++
++export type ModelCatalogResponse = {
++  default_model: string;
++  allowed_models: string[];
++  models: ModelInfo[];
++};
++
++export async function fetchModels(): Promise<ModelCatalogResponse> {
++  const res = await fetch(`${API_BASE}/api/models`, { cache: "no-store" });
++  if (!res.ok) throw new Error("鑾峰彇妯″瀷鍒楄〃澶辫触");
++  return res.json();
++}
+diff --git a/apps/web/lib/local-settings.ts b/apps/web/lib/local-settings.ts
+index 71f58c1..6771e0f 100644
+--- a/apps/web/lib/local-settings.ts
++++ b/apps/web/lib/local-settings.ts
+@@ -5,13 +5,30 @@ export function getUserApiKey() {
+ 
+ export type SupportModel = string;
+ 
++export const DEFAULT_MODEL = "deepseek-chat";
++const SUPPORTED_MODELS = new Set([
++  "deepseek-chat",
++  "deepseek-reasoner",
++  "deepseek-v4-flash",
++  "deepseek-v4-pro",
++  "qwen-max",
++  "qwen-plus",
++  "qwen-turbo",
++  "qwen-math-plus",
++  "moonshot-v1-8k",
++  "moonshot-v1-32k",
++  "glm-4",
++  "glm-4-flash",
++  "glm-4v",
++]);
++
+ export function getPreferredModel(): SupportModel {
+-  if (typeof window === "undefined") return "deepseek-v4-flash";
++  if (typeof window === "undefined") return DEFAULT_MODEL;
+   const value = window.localStorage.getItem("luojia_model");
+-  if (value) {
++  if (value && SUPPORTED_MODELS.has(value)) {
+     return value;
+   }
+-  return "deepseek-v4-flash";
++  return DEFAULT_MODEL;
+ }
+ 
+ export function setPreferredModel(model: SupportModel) {
+diff --git a/apps/web/package.json b/apps/web/package.json
+index 5f27853..57dfdb2 100644
+--- a/apps/web/package.json
++++ b/apps/web/package.json
+@@ -2,6 +2,7 @@
+   "name": "luojia-math-tutor-web",
+   "version": "0.1.0",
+   "private": true,
++  "type": "module",
+   "scripts": {
+     "dev": "next dev",
+     "build": "next build",
+diff --git a/apps/web/postcss.config.js b/apps/web/postcss.config.js
+deleted file mode 100644
+index 5098f12..0000000
+--- a/apps/web/postcss.config.js
++++ /dev/null
+@@ -1,7 +0,0 @@
+-module.exports = {
+-  plugins: {
+-    tailwindcss: {},
+-    autoprefixer: {}
+-  }
+-};
+-
+diff --git a/package.json b/package.json
+index 2444b18..02ad9ac 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "luojia-math-tutor-init",
+   "version": "1.0.0",
+-  "description": "鐝炵張鏁版櫤鍔╂暀 - 鍏ㄥ钩鍙版暟瀛?AI 鍔╂暀鍒濆鍖栧伐鍏?,
++  "description": "Luojia Math Tutor - full-stack AI math tutoring toolkit",
+   "main": "bin/init.js",
+   "bin": {
+     "luojia-math-init": "bin/init.js"
+@@ -20,7 +20,7 @@
+     "test": "node scripts/validate-json.js && node scripts/run-api-tests.js && npm.cmd run test:web:ui",
+     "test:knowledge": "node scripts/validate-json.js",
+     "test:api": "node scripts/run-api-tests.js",
+-    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts",
++    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts",
+     "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
+     "dev:web": "cd apps/web && npm.cmd run dev",
+     "build:web": "cd apps/web && npm.cmd run build",
+diff --git a/scripts/video_db/build_video_db.py b/scripts/video_db/build_video_db.py
+index 5de6aa7..d294d51 100644
+--- a/scripts/video_db/build_video_db.py
++++ b/scripts/video_db/build_video_db.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ KEYWORDS = [
+     "楂樼瓑鏁板", "寰Н鍒?, "瀵兼暟", "瀹氱Н鍒?, "涓嶅畾绉垎", "鍋忓鏁?, "澶氶噸绉垎", "绾ф暟", "娉板嫆灞曞紑", "寰垎鏂圭▼",
+@@ -14,10 +15,7 @@ KEYWORDS = [
+     "鏃堕棿搴忓垪", "鍌呴噷鍙跺彉鎹?, "鎷夋櫘鎷夋柉鍙樻崲", "澶嶅彉鍑芥暟", "绂绘暎鏁板", "鍥捐", "鏁板寤烘ā"
+ ]
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, kw):
+     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"
+diff --git a/scripts/video_db/update_video_db.py b/scripts/video_db/update_video_db.py
+index 7a114f4..166a6bb 100644
+--- a/scripts/video_db/update_video_db.py
++++ b/scripts/video_db/update_video_db.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ NEW_KEYWORDS = [
+     # 灏忓 K1-K6
+@@ -25,10 +26,7 @@ NEW_KEYWORDS = [
+     "绾挎€ц鍒?, "闈炵嚎鎬ц鍒?, "鏁板€煎垎鏋?, "鍋忓井鍒嗘柟绋嬫暟鍊艰В", "闅忔満杩囩▼"
+ ]
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, kw):
+     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"
+diff --git a/scripts/video_db/update_video_db_granular.py b/scripts/video_db/update_video_db_granular.py
+index 4774b9d..788a18c 100644
+--- a/scripts/video_db/update_video_db_granular.py
++++ b/scripts/video_db/update_video_db_granular.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ GRANULAR_KEYWORDS = [
+     # 灏忓寰姒傚康
+@@ -38,10 +39,7 @@ GRANULAR_KEYWORDS = [
+     "鏋佸ぇ浼肩劧浼拌姝ラ", "鏃犲亸浼拌璇佹槑"
+ ]
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, kw):
+     url = f"https://api.bilibili.com/x/web-interface/search/all/v2?keyword={kw}"
+diff --git a/scripts/video_db/update_video_db_subsection.py b/scripts/video_db/update_video_db_subsection.py
+index 5d2da97..c795222 100644
+--- a/scripts/video_db/update_video_db_subsection.py
++++ b/scripts/video_db/update_video_db_subsection.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ # 鏁欑涔︾簿缁嗗埌鈥滃皬鑺傗€濈骇鍒殑鍏抽敭璇? SUBSECTIONS = [
+@@ -52,10 +53,7 @@ SUBSECTIONS = [
+     "鎶芥牱鍒嗗竷", "鐭╀及璁℃硶", "鏈€澶т技鐒朵及璁℃硶", "鍖洪棿浼拌", "鍋囪妫€楠岀殑鍩烘湰鎬濇兂", "姝ｆ€佹€讳綋鍧囧€肩殑鍋囪妫€楠?
+ ]
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, original_kw):
+     search_kw = f"{original_kw} 鏁欏 璁茶В"
+diff --git a/scripts/video_db/update_video_db_teaching.py b/scripts/video_db/update_video_db_teaching.py
+index 116787d..c6f7835 100644
+--- a/scripts/video_db/update_video_db_teaching.py
++++ b/scripts/video_db/update_video_db_teaching.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ # Combine all the keywords we used
+ ALL_KEYWORDS = [
+@@ -38,10 +39,7 @@ ALL_KEYWORDS = [
+ # De-duplicate
+ ALL_KEYWORDS = list(set(ALL_KEYWORDS))
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, original_kw):
+     # 涓轰繚璇佹悳绱㈣川閲忥紝鎷兼帴缁嗗寲鍏抽敭璇?diff --git a/scripts/video_db/update_video_db_textbook.py b/scripts/video_db/update_video_db_textbook.py
+index d937420..9fc23ef 100644
+--- a/scripts/video_db/update_video_db_textbook.py
++++ b/scripts/video_db/update_video_db_textbook.py
+@@ -3,6 +3,7 @@ import asyncio
+ import json
+ import time
+ import os
++from common import get_bilibili_headers
+ 
+ # 鏁欑涔︾珷鑺傜骇鍏抽敭璇? TEXTBOOK_CHAPTERS = [
+@@ -41,10 +42,7 @@ TEXTBOOK_CHAPTERS = [
+     "鐢熸垚瀵规姉缃戠粶GAN", "寮哄寲瀛︿範鏁板鍩虹", "鏈€浼樺寲绠楁硶鐞嗚", "鍥捐鍒濇", "绂绘暎鏁板闆嗗悎涓庡浘"
+ ]
+ 
+-HEADERS = {
+-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+-    "Cookie": "buvid3=D44F2E1E-B9AB-7B93-DE44-24E48DF42E4349141infoc;"
+-}
++HEADERS = get_bilibili_headers()
+ 
+ async def fetch_keyword(client, original_kw):
+     search_kw = f"{original_kw} 鏁欏 璁茶В"

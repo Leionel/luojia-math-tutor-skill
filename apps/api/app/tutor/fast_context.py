@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
 from app.knowledge.schema import KnowledgeHit
@@ -37,6 +37,7 @@ class FastContext:
     mastery_label_str: str
     hint_level: int
     metrics: dict[str, float | int | str | bool]
+    prerequisite_hints: list[dict[str, str]] = field(default_factory=list)
 
 
 class FastContextCollector:
@@ -106,9 +107,13 @@ class FastContextCollector:
             mistake,
             previous_concepts,
         )
+        learning_state = {
+            **state,
+            "hits": hits,
+        }
         mastery = await asyncio.to_thread(
             self._finalize_learning_state,
-            state,
+            learning_state,
             concepts,
             verifier_result,
             mistake,
@@ -135,6 +140,7 @@ class FastContextCollector:
             mastery_label_str=mastery["mastery_label_str"],
             hint_level=mastery["hint_level"],
             metrics=metrics,
+            prerequisite_hints=mastery.get("prerequisite_hints", []),
         )
 
     def _prepare_session(
@@ -297,10 +303,17 @@ class FastContextCollector:
                 and verifier_result.is_correct is not None
                 and state.get("intent") is Intent.CHECK_STUDENT_STEP
             ):
+                from app.memory.mastery import LearningEvent
+                event = LearningEvent(
+                    event_type="check_step",
+                    correct=verifier_result.is_correct,
+                    hint_level=1 if state.get("requested_hint") else 0,
+                    difficulty=3,  # default difficulty
+                    error_type=mistake.code if mistake else None
+                )
                 update = update_mastery(
                     mastery_score,
-                    verifier_result.is_correct,
-                    1 if state.get("requested_hint") else 0,
+                    event
                 )
                 mastery_delta = update.delta
                 mastery_score = update.new_score
@@ -321,6 +334,33 @@ class FastContextCollector:
                 state.get("requested_hint", False),
                 state.get("mode", "socratic"),
             ).value
+
+            # --- KNOWLEDGE GRAPH LINKAGE ---
+            if consecutive_errors >= 2 or mastery_score < 0.3:
+                primary_item = next(
+                    (
+                        hit.item
+                        for hit in state.get("hits", [])
+                        if hit.item.id == primary_concept
+                        or hit.item.concept_zh == primary_concept
+                    ),
+                    state.get("hits", [None])[0].item
+                    if state.get("hits")
+                    else None,
+                )
+                if primary_item and primary_item.prerequisite:
+                    from app.knowledge.search import get_knowledge_by_refs
+
+                    prereq_items = get_knowledge_by_refs(
+                        primary_item.prerequisite,
+                        subject=primary_item.subject,
+                    )
+                    if prereq_items:
+                        state["prerequisite_hints"] = [
+                            {"id": p.id, "name": p.concept_zh, "desc": p.description}
+                            for p in prereq_items
+                        ]
+            # -------------------------------
 
         try:
             self.repository.add_attempt(
@@ -348,4 +388,5 @@ class FastContextCollector:
             "mastery_delta": mastery_delta,
             "mastery_label_str": mastery_label(mastery_score),
             "hint_level": hint_level,
+            "prerequisite_hints": state.get("prerequisite_hints", []),
         }

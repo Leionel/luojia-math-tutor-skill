@@ -339,3 +339,15 @@ def test_tutor_sse_mastery_summary():
     assert data["total_concepts"] >= 1
     assert "average_score" in data
     assert "weak_concepts" in data
+
+
+def test_list_models_route():
+    client = TestClient(app)
+    resp = client.get("/api/models")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "default_model" in data
+    assert "allowed_models" in data
+    assert len(data["models"]) > 0
+    assert any(m["id"] == "deepseek-chat" for m in data["models"])
+

@@ -28,6 +28,7 @@ _ACTION_BY_INTENT = {
     Intent.CHECK_STUDENT_STEP: "ask_question",
     Intent.FULL_SOLUTION: "explain",
     Intent.GENERATE_EXERCISE: "generate_exercise",
+    Intent.PROOF_HINT: "provide_hint",
 }
 
 _OBJECTIVE_BY_INTENT = {
@@ -36,6 +37,7 @@ _OBJECTIVE_BY_INTENT = {
     Intent.CHECK_STUDENT_STEP: "核对当前步骤并定位需要调整之处",
     Intent.FULL_SOLUTION: "梳理解题条件并完成关键推导",
     Intent.GENERATE_EXERCISE: "通过同类练习巩固当前考点",
+    Intent.PROOF_HINT: "定位证明中的逻辑缺口并给出下一步提示",
 }
 
 _PROOF_MARKERS = (
@@ -95,5 +97,6 @@ def generate_opening(route: FastRoute) -> str:
         Intent.CHECK_STUDENT_STEP: "我先检查你这一步使用的规则，再一起定位需要调整的位置。",
         Intent.FULL_SOLUTION: "我先整理题目的已知条件和目标，再按关键步骤展开。",
         Intent.GENERATE_EXERCISE: "我会围绕当前考点给你一道同难度练习，并保留独立作答空间。",
+        Intent.PROOF_HINT: "我先检查证明的结构和已用定理，再给你一个不剧透结论的下一步提示。",
     }
     return openings[route.intent]

@@ -13,11 +13,31 @@ class TestVisualizerFunctionCurve:
         result = generate_plot(VizType.FUNCTION_CURVE, {"expr": "sin(x)", "x_min": -6, "x_max": 6})
         assert len(result) > 100
 
+    def test_rejects_expression_side_effects(self, tmp_path):
+        marker = tmp_path / "pwned.txt"
+        expr = f"__import__('pathlib').Path(r'{marker}').write_text('x') or x**2"
+
+        result = generate_plot(VizType.FUNCTION_CURVE, {"expr": expr})
+
+        assert isinstance(result, str)
+        assert len(result) > 100
+        assert not marker.exists()
+
 
 class TestVisualizerIntegralArea:
     def test_integral_area(self):
         result = generate_plot(VizType.INTEGRAL_AREA, {"expr": "x**2", "a": 0, "b": 2})
         assert len(result) > 100
+
+    def test_integral_rejects_expression_side_effects(self, tmp_path):
+        marker = tmp_path / "integral-pwned.txt"
+        expr = f"__import__('pathlib').Path(r'{marker}').write_text('x') or x**2"
+
+        result = generate_plot(VizType.INTEGRAL_AREA, {"expr": expr, "a": 0, "b": 2})
+
+        assert isinstance(result, str)
+        assert len(result) > 100
+        assert not marker.exists()
 
 
 class TestVisualizerPDF:

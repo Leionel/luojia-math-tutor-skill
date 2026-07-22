@@ -1,6 +1,8 @@
-import os
+import re
 import uuid
-from fastapi import APIRouter, UploadFile, File, Depends
+from pathlib import Path
+
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from app.services.mineru_client import extract_markdown_agent_api
@@ -9,8 +11,55 @@ from app.memory.repository import Repository
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
-UPLOAD_DIR = "data/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = Path("data/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "pdf", "pptx", "docx", "doc"}
+SAFE_UPLOAD_NAME = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\."
+    r"(?:png|jpg|jpeg|webp|gif|pdf|pptx|docx|doc)$",
+    re.IGNORECASE,
+)
+
+
+def _upload_dir() -> Path:
+    path = Path(UPLOAD_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _safe_extension(filename: str) -> str:
+    suffix = Path(filename or "upload.png").name.rsplit(".", 1)
+    ext = suffix[-1].lower() if len(suffix) == 2 else "png"
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Unsupported upload file type")
+    return ext
+
+
+async def _read_limited_upload(file: UploadFile) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Upload exceeds 10MB limit")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _resolve_uploaded_file(filename: str) -> Path | None:
+    if not SAFE_UPLOAD_NAME.fullmatch(filename):
+        return None
+    base = _upload_dir().resolve()
+    path = (base / filename).resolve()
+    try:
+        path.relative_to(base)
+    except ValueError:
+        return None
+    return path
 
 def chunk_markdown(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     chunks = []
@@ -27,18 +76,17 @@ async def upload_image(
     repo: Repository = Depends(get_repository)
 ):
     filename_attr = getattr(file, "filename", "") or ""
-    ext = filename_attr.split('.')[-1] if '.' in filename_attr else 'png'
+    ext = _safe_extension(filename_attr)
+    data = await _read_limited_upload(file)
     file_id = str(uuid.uuid4())
     filename = f"{file_id}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
+    filepath = _upload_dir() / filename
     
-    with open(filepath, "wb") as f:
-        f.write(await file.read())
+    filepath.write_bytes(data)
         
     document_id = None
     try:
-        abs_filepath = os.path.abspath(filepath)
-        extracted_md = await extract_markdown_agent_api(abs_filepath)
+        extracted_md = await extract_markdown_agent_api(str(filepath.resolve()))
         
         # If the file is a document (pdf, pptx, docx), store it for Implicit RAG
         if ext.lower() in ['pdf', 'pptx', 'docx', 'doc']:
@@ -58,7 +106,7 @@ async def upload_image(
 
 @router.get("/{filename}")
 async def get_uploaded_image(filename: str):
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(filepath):
+    filepath = _resolve_uploaded_file(filename)
+    if filepath and filepath.exists():
         return FileResponse(filepath)
-    return {"error": "Not found"}
+    raise HTTPException(status_code=404, detail="Upload not found")

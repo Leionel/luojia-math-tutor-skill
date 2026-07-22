@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight, KeyRound, User } from "lucide-react";
+import { grantDemoAccess } from "@/lib/demo-auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,8 +14,8 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthenticating(true);
-    // Mock authentication
     setTimeout(() => {
+      grantDemoAccess();
       router.push("/chat");
     }, 800);
   };

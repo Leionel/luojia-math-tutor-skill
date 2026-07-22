@@ -14,6 +14,8 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
   const [inputValue, setInputValue] = useState("");
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -27,8 +29,18 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
   }, [sessionId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isStreaming]);
+    if (autoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isStreaming, autoScroll]);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setAutoScroll(isAtBottom);
+    }
+  };
 
   async function submit(value: string, mode: TutorMode = "socratic") {
     const userMsg = { id: crypto.randomUUID(), session_id: sessionId, role: "user" as const, content: value, created_at: new Date().toISOString() };
@@ -94,7 +106,11 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)] border-l border-[var(--border-subtle)]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+      >
         {loading ? (
           <div className="flex justify-center items-center h-full text-[var(--text-muted)]">
             <Loader2 className="w-6 h-6 animate-spin" />
