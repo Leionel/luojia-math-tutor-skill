@@ -168,94 +168,228 @@ export default function AdminKnowledgePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  
+  // New States
+  const [filterStatus, setFilterStatus] = useState<string>("draft");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const [isPublishing, setIsPublishing] = useState(false);
 
-  const fetchPending = async () => {
+  const fetchUnits = async () => {
     try {
       setLoading(true);
       setFetchError(null);
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/pending`);
-      if (!res.ok) throw new Error("Failed to fetch pending knowledge units");
+      const res = await fetch(`${API_BASE}/api/admin/knowledge/list`);
+      if (!res.ok) throw new Error("Failed to fetch knowledge units");
       const data = await res.json();
       setUnits(data.units || data.items || []);
     } catch (err: any) {
       console.error(err);
-      setFetchError(err.message || "An unexpected error occurred while fetching pending units.");
+      setFetchError(err.message || "An unexpected error occurred while fetching units.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPending();
+    fetchUnits();
   }, []);
+
+  const handleProcessed = (id: string) => {
+    // We don't remove it from units anymore, we just refetch or update its status locally
+    setUnits((prev) => prev.map((u) => {
+      // It's already updated on the backend, we should just refetch or optimistically update.
+      // Easiest is to refetch, but for UX, let's just refetch all to keep them in sync.
+      return u;
+    }));
+    fetchUnits();
+  };
+
+  const handleBatchReview = async (action: "approve" | "reject") => {
+    if (selectedIds.size === 0) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/api/admin/knowledge/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unit_ids: Array.from(selectedIds), action }),
+      });
+      if (!res.ok) throw new Error(`Failed to batch ${action}`);
+      setSelectedIds(new Set());
+      await fetchUnits();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!confirm("即将根据已激活的知识库重新构建大语言模型的向量索引，是否继续？")) return;
+    setIsPublishing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/knowledge/publish`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to publish");
+      alert("发布成功 (Publish successful)!");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const toggleChapter = (chapter: string) => {
+    setExpandedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(chapter)) next.delete(chapter);
+      else next.add(chapter);
+      return next;
+    });
+  };
+
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const filteredUnits = units.filter(u => {
+    if (filterStatus !== "all" && u.review_status !== filterStatus && (u as any).status !== filterStatus) {
+      // check both review_status and status just in case backend used different key
+      const status = u.review_status || (u as any).status || "draft";
+      if (status !== filterStatus) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return u.title?.toLowerCase().includes(q) || u.content?.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   const selectedUnit = units.find((u) => u.id === selectedId);
 
   // Group by chapter
-  const grouped = units.reduce((acc, unit) => {
+  const grouped = filteredUnits.reduce((acc, unit) => {
     const key = unit.chapter_path || "Uncategorized";
     if (!acc[key]) acc[key] = [];
     acc[key].push(unit);
     return acc;
   }, {} as Record<string, KnowledgeUnit[]>);
 
-  const handleProcessed = (id: string) => {
-    setUnits((prev) => prev.filter((u) => u.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  };
-
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-800 dark:text-slate-200">
       {/* Left Pane */}
-      <div className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-          <h2 className="font-semibold text-slate-800 dark:text-slate-100">
-            Pending Review ({units.length})
-          </h2>
-          {fetchError && (
-            <Button variant="ghost" size="sm" onClick={fetchPending} title="Retry fetch">
-              Retry
+      <div className="w-96 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-lg">Review Center</h2>
+            <Button variant="default" size="sm" onClick={handlePublish} disabled={isPublishing}>
+              {isPublishing ? "Publishing..." : "Publish"}
             </Button>
+          </div>
+          
+          <input 
+            type="text" 
+            placeholder="Search units..." 
+            className="w-full px-3 py-2 border rounded-md text-sm dark:bg-slate-800 dark:border-slate-700"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-md text-sm">
+            {["draft", "active", "rejected", "all"].map(tab => (
+              <button 
+                key={tab}
+                onClick={() => setFilterStatus(tab)}
+                className={`flex-1 py-1 text-center rounded-sm capitalize transition-colors ${filterStatus === tab ? "bg-white dark:bg-slate-700 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{selectedIds.size} selected</span>
+              <div className="space-x-2">
+                <Button variant="success" size="sm" className="h-7 text-xs px-2" onClick={() => handleBatchReview("approve")}>Approve</Button>
+                <Button variant="danger" size="sm" className="h-7 text-xs px-2" onClick={() => handleBatchReview("reject")}>Reject</Button>
+              </div>
+            </div>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading ? (
-            <div className="text-sm text-slate-500">Loading pending units...</div>
+            <div className="text-sm text-slate-500">Loading units...</div>
           ) : fetchError ? (
             <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-3 rounded-md">
-              {fetchError}
+              {fetchError} <Button variant="ghost" size="sm" onClick={fetchUnits}>Retry</Button>
             </div>
           ) : Object.keys(grouped).length === 0 ? (
-            <div className="text-sm text-slate-500">No pending units.</div>
+            <div className="text-sm text-slate-500">No units match your criteria.</div>
           ) : (
-            Object.entries(grouped).map(([chapter, items]) => (
-              <div key={chapter}>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  {chapter}
-                </h3>
-                <div className="space-y-1">
-                  {items.map((unit) => (
-                    <button
-                      key={unit.id}
-                      onClick={() => setSelectedId(unit.id)}
-                      className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        selectedId === unit.id
-                          ? "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      <div className="font-medium truncate">{unit.title}</div>
-                    </button>
-                  ))}
+            Object.entries(grouped).map(([chapter, items]) => {
+              const isExpanded = !expandedChapters.has(chapter); // default expanded
+              return (
+                <div key={chapter} className="border border-slate-100 dark:border-slate-800 rounded-md overflow-hidden">
+                  <div 
+                    className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                    onClick={() => toggleChapter(chapter)}
+                  >
+                    <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider truncate mr-2" title={chapter}>
+                      {chapter}
+                    </h3>
+                    <span className="text-xs text-slate-400">{items.length}</span>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {items.map((unit) => (
+                        <div 
+                          key={unit.id}
+                          onClick={() => setSelectedId(unit.id)}
+                          className={`flex items-start px-3 py-2 cursor-pointer transition-colors ${
+                            selectedId === unit.id
+                              ? "bg-blue-50 dark:bg-blue-900/20"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                          }`}
+                        >
+                          <div className="pt-1 mr-3">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedIds.has(unit.id)}
+                              onChange={() => {}}
+                              onClick={(e) => toggleSelection(unit.id, e)}
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-medium truncate ${selectedId === unit.id ? 'text-blue-900 dark:text-blue-200' : 'text-slate-700 dark:text-slate-300'}`}>
+                              {unit.title}
+                            </div>
+                            <div className="text-xs text-slate-400 truncate mt-0.5">
+                              {unit.content?.substring(0, 50) || "No content"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
       {/* Right Pane */}
-      <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {selectedUnit ? (
           <KnowledgeReviewEditor
             key={selectedUnit.id}

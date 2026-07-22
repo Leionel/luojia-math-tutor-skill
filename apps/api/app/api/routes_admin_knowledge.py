@@ -27,11 +27,11 @@ class ReviewRequest(BaseModel):
 def get_output_dir(settings: Settings) -> Path:
     return settings.knowledge_root / "output"
 
-@router.get("/pending")
-def get_pending_knowledge(settings: Settings = Depends(get_settings)):
+@router.get("/list")
+def get_knowledge_list(settings: Settings = Depends(get_settings)):
     output_dir = get_output_dir(settings)
-    pending_units = []
-    pending_relations = []
+    all_units = []
+    all_relations = []
     
     if output_dir.exists():
         for file_path in output_dir.glob("m1_*.json"):
@@ -43,19 +43,17 @@ def get_pending_knowledge(settings: Settings = Depends(get_settings)):
                 relations = data.get("relations", [])
                 
                 for u in units:
-                    if u.get("review_status") == "draft":
-                        pending_units.append(u)
+                    all_units.append(u)
                         
                 for r in relations:
-                    if r.get("review_status") == "draft":
-                        # Assign a composite id if it doesn't exist
-                        if "id" not in r:
-                            r["id"] = f"{r.get('source_unit_id')}_{r.get('target_unit_id')}_{r.get('relation_type')}"
-                        pending_relations.append(r)
+                    # Assign a composite id if it doesn't exist
+                    if "id" not in r:
+                        r["id"] = f"{r.get('source_unit_id')}_{r.get('target_unit_id')}_{r.get('relation_type')}"
+                    all_relations.append(r)
             except Exception as e:
                 logger.error(f"Error processing {file_path}: {e}")
                 
-    return {"units": pending_units, "relations": pending_relations}
+    return {"units": all_units, "relations": all_relations}
 
 @router.put("/units/{unit_id}")
 def update_unit(unit_id: str, payload: UnitUpdateRequest, settings: Settings = Depends(get_settings)):

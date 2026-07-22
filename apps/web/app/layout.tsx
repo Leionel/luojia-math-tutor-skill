@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/lib/theme-context";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "\u73de\u73c8\u6570\u667a\u52a9\u6559",
+  title: "珞珈数智助教",
   description:
-    "\u9762\u5411\u5927\u5b66\u6570\u5b66\u8bfe\u7a0b\u7684 AI Tutor",
+    "面向大学数学课程的 AI Tutor",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -20,7 +21,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <div className="bg-noise" />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+            <SiteHeader />
+            <main className="flex-1 flex flex-col">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

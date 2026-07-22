@@ -50,12 +50,14 @@ def mock_output_dir(tmp_path):
     yield output_dir
     app.dependency_overrides.clear()
 
-def test_get_pending_knowledge(mock_output_dir):
-    res = client.get("/api/admin/knowledge/pending")
+def test_get_knowledge_list(mock_output_dir):
+    res = client.get("/api/admin/knowledge/list")
     assert res.status_code == 200
     data = res.json()
-    assert len(data["units"]) == 1
-    assert data["units"][0]["id"] == "u1"
+    assert len(data["units"]) == 2
+    ids = [u["id"] for u in data["units"]]
+    assert "u1" in ids
+    assert "u2" in ids
     assert len(data["relations"]) == 1
     assert data["relations"][0]["review_status"] == "draft"
 
