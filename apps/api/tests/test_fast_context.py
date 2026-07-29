@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.memory.repository import Repository
-from app.knowledge.schema import KnowledgeHit, KnowledgeItem
+from app.knowledge.schema import KnowledgeHit, KnowledgeItem, EvidencePack
 from app.tutor.fast_context import FastContextCollector
 from app.tutor.fast_path import VerificationMode, route_fast_path
 
@@ -40,7 +40,7 @@ async def test_optional_context_timeout_returns_defaults():
 
     async def slow_search(*args, **kwargs):
         await asyncio.sleep(1)
-        return []
+        return EvidencePack(direct_hits=[], graph_hits=[])
 
     collector = FastContextCollector(
         repository=repository,
@@ -144,7 +144,7 @@ async def test_short_follow_up_keeps_previous_concepts():
     )
 
     async def noisy_search(*args, **kwargs):
-        return [noisy_hit]
+        return EvidencePack(direct_hits=[noisy_hit], graph_hits=[])
 
     collector = FastContextCollector(
         repository=repository,
@@ -174,7 +174,7 @@ async def test_low_mastery_resolves_prerequisite_hints_from_display_names():
     )
 
     async def target_search(*args, **kwargs):
-        return [target]
+        return EvidencePack(direct_hits=[target], graph_hits=[])
 
     collector = FastContextCollector(
         repository=repository,

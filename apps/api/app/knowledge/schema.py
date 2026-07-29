@@ -116,3 +116,14 @@ class KnowledgeRelation:
     review_status: str = "verified"  # draft | verified | rejected | deprecated
 
 
+@dataclass
+class EvidencePack:
+    query_scope: dict[str, str] = field(default_factory=dict)
+    direct_hits: list[KnowledgeHit] = field(default_factory=list)
+    graph_hits: list[KnowledgeHit] = field(default_factory=list)
+    citations: list[dict[str, Any]] = field(default_factory=list)
+    confidence: float = 1.0
+    teaching_hints: list[dict[str, Any]] = field(default_factory=list)
+
+
+

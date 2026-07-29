@@ -221,3 +221,56 @@ search_knowledge = search_knowledge_semantic
 def clear_vector_store_cache():
     global _vector_store
     _vector_store = None
+
+from app.knowledge.loader import load_knowledge_relations
+from app.knowledge.schema import EvidencePack
+
+async def search_evidence_pack(
+    query: str,
+    subject: str | None = None,
+    limit: int = 3,
+    api_key: str | None = None,
+) -> EvidencePack:
+    # 1. Direct hits
+    direct_hits = await search_knowledge_semantic(query, subject, limit, api_key)
+    
+    # 2. Graph expansion
+    relations = load_knowledge_relations()
+    items = {item.id: item for item in load_knowledge()}
+    
+    graph_hits = []
+    direct_ids = {hit.item.id for hit in direct_hits}
+    
+    for hit in direct_hits:
+        uid = hit.item.id
+        # Expand 1-hop prerequisites or supports
+        for r in relations:
+            if r.target_unit_id == uid and r.source_unit_id in items and r.source_unit_id not in direct_ids:
+                source_item = items[r.source_unit_id]
+                if not any(gh.item.id == source_item.id for gh in graph_hits):
+                    graph_hits.append(KnowledgeHit(item=source_item, score=int(hit.score * 0.8)))
+    
+    citations = []
+    teaching_hints = []
+    
+    for h in direct_hits + graph_hits:
+        # Check if the item has source info. In current KnowledgeItem, source is a dict.
+        if h.item.source:
+            citations.append({
+                "id": h.item.id,
+                "title": h.item.concept_zh,
+                "source": h.item.source
+            })
+        if h.item.prerequisite:
+            teaching_hints.append({
+                "id": h.item.id,
+                "prerequisites": h.item.prerequisite
+            })
+            
+    return EvidencePack(
+        query_scope={"subject": subject} if subject else {},
+        direct_hits=direct_hits,
+        graph_hits=graph_hits,
+        citations=citations,
+        teaching_hints=teaching_hints
+    )

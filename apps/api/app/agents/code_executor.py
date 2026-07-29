@@ -146,22 +146,24 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
         temp_file_path = f.name
 
     try:
-        # Isolated mode ignores user site packages and environment variables.
-        process = await asyncio.create_subprocess_exec(
-            sys.executable, "-I", temp_file_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        
+        import subprocess
+        # Run subprocess in a separate thread to avoid blocking the event loop,
+        # and to support WindowsSelectorEventLoopPolicy which doesn't support create_subprocess_exec.
+        def run_proc():
+            return subprocess.run(
+                [sys.executable, "-I", temp_file_path],
+                capture_output=True,
+                timeout=timeout,
+                text=True
+            )
+            
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.communicate()
+            process = await asyncio.to_thread(run_proc)
+        except subprocess.TimeoutExpired:
             return f"Error: Code execution timed out after {timeout} seconds."
             
-        out_str = stdout.decode('utf-8').strip()
-        err_str = stderr.decode('utf-8').strip()
+        out_str = process.stdout.strip()
+        err_str = process.stderr.strip()
         
         result = ""
         if out_str:

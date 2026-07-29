@@ -10,6 +10,7 @@ import {
   type MasteryTrend,
 } from "@/lib/ui-runtime";
 import { RadarChart } from "./radar-chart";
+import { KnowledgeGraph } from "./knowledge-graph";
 import {
   AlertCircle,
   BarChart2,
@@ -142,6 +143,7 @@ export function LearningPanel({
   mistakes: Mistake[];
 }) {
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"radar" | "graph">("radar");
   const [overallMastery, setOverallMastery] = useState<MasteryItem[]>([]);
   const [previousAverage, setPreviousAverage] = useState<number | null>(null);
   const [masteryTrend, setMasteryTrend] = useState<MasteryTrend | null>(null);
@@ -324,48 +326,65 @@ export function LearningPanel({
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
             <BarChart2 className="h-3.5 w-3.5 text-[var(--accent)]" />
-            能力雷达图
+            能力雷达与图谱
           </h2>
-        </div>
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
-          <RadarChart
-            data={competencyScores.map((c) => ({
-              label: c.label,
-              value: c.value,
-              assessed: c.assessed,
-            }))}
-            size={220}
-          />
-          {averageMastery !== null ? (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" />
-              综合掌握度 {averageMastery}%
-              {masteryTrend === "up" && (
-                <span title={previousAverage !== null ? `较上次 ${previousAverage}% 提升` : ""}>↑</span>
-              )}
-              {masteryTrend === "down" && (
-                <span title={previousAverage !== null ? `较上次 ${previousAverage}% 下降` : ""}>↓</span>
-              )}
-              {masteryTrend === "flat" && <span title="与上次基本一致">→</span>}
-            </div>
-          ) : (
-            <div className="text-[11px] italic text-[var(--text-muted)]">
-              完成一次可验算的解题后，雷达图各能力轴将逐步填充。
-            </div>
-          )}
-          {/* Per-axis breakdown */}
-          <div className="grid w-full grid-cols-1 gap-1.5 pt-2 border-t border-[var(--border-subtle)]">
-            {competencyScores.map((c) => (
-              <div key={c.label} className="flex items-center justify-between gap-2 text-[11px]">
-                <span className={c.assessed ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]/70 italic"}>
-                  {c.label}
-                </span>
-                <span className={c.assessed ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-muted)]/70"}>
-                  {c.assessed ? `${Math.round(c.value * 100)}%` : "待评估"}
-                </span>
-              </div>
-            ))}
+          <div className="flex bg-[var(--bg-tertiary)] p-0.5 rounded-lg border border-[var(--border-subtle)]">
+             <button onClick={() => setActiveTab("radar")} className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", activeTab === "radar" ? "bg-white dark:bg-slate-800 shadow-sm text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+                雷达
+             </button>
+             <button onClick={() => setActiveTab("graph")} className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", activeTab === "graph" ? "bg-white dark:bg-slate-800 shadow-sm text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+                图谱
+             </button>
           </div>
+        </div>
+        <div className="flex flex-col items-center gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 relative overflow-hidden">
+          
+          {activeTab === "radar" ? (
+             <div className="flex flex-col items-center gap-4 w-full">
+                <RadarChart
+                  data={competencyScores.map((c) => ({
+                    label: c.label,
+                    value: c.value,
+                    assessed: c.assessed,
+                  }))}
+                  size={220}
+                />
+                {averageMastery !== null ? (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    综合掌握度 {averageMastery}%
+                    {masteryTrend === "up" && (
+                      <span title={previousAverage !== null ? `较上次 ${previousAverage}% 提升` : ""}>↑</span>
+                    )}
+                    {masteryTrend === "down" && (
+                      <span title={previousAverage !== null ? `较上次 ${previousAverage}% 下降` : ""}>↓</span>
+                    )}
+                    {masteryTrend === "flat" && <span title="与上次基本一致">→</span>}
+                  </div>
+                ) : (
+                  <div className="text-[11px] italic text-[var(--text-muted)]">
+                    完成一次可验算的解题后，雷达图各能力轴将逐步填充。
+                  </div>
+                )}
+                {/* Per-axis breakdown */}
+                <div className="grid w-full grid-cols-1 gap-1.5 pt-2 border-t border-[var(--border-subtle)]">
+                  {competencyScores.map((c) => (
+                    <div key={c.label} className="flex items-center justify-between gap-2 text-[11px]">
+                      <span className={c.assessed ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]/70 italic"}>
+                        {c.label}
+                      </span>
+                      <span className={c.assessed ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-muted)]/70"}>
+                        {c.assessed ? `${Math.round(c.value * 100)}%` : "待评估"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+             </div>
+          ) : (
+             <div className="w-full h-[350px] -mx-4 -mt-4 -mb-4">
+               <KnowledgeGraph className="w-full h-full border-0 rounded-none !bg-transparent" />
+             </div>
+          )}
         </div>
       </section>
 

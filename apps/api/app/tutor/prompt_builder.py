@@ -1,3 +1,4 @@
+from typing import Any
 from app.knowledge.schema import KnowledgeHit
 from app.math_tools.verifier import VerifyResult
 from app.tutor.hint_policy import HintLevel, hint_level_instruction
@@ -33,12 +34,23 @@ def build_messages(
     document_chunks: list[str] = [],
     pedagogical_action: str | None = None,
     prerequisite_hints: list[dict[str, str]] | None = None,
+    evidence_pack: Any = None,
 ) -> list[dict[str, str]]:
     hint_instruction = hint_level_instruction(hint_level)
     
     docs_context = ""
     if document_chunks:
         docs_context = "\n=== 关联讲义参考内容 ===\n" + "\n---\n".join(document_chunks) + "\n=====================\n"
+
+    if evidence_pack:
+        citations = evidence_pack.citations
+        if citations:
+            cite_str = "\n".join([
+                f"- 来源 [{c['id']}] {c['title']}: {c['source']} "
+                for c in citations
+            ])
+            docs_context += f"\n=== 可用引用来源 ===\n{cite_str}\n=====================\n你必须在讲解时引用这些来源！在用到该知识时，加上类似 [P.xx] 的角标，例如：这是根据条件概率的定义 [P.12] 得到的。如果不在本资料里，请说明超纲。\n"
+
 
     action_constraint = ""
     if pedagogical_action:

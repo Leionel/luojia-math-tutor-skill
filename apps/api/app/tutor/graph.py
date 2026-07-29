@@ -69,6 +69,7 @@ class AgentState(TypedDict, total=False):
     thinking_steps: list[str]
     final_output: str
     thinking_chain: str
+    evidence_pack: Any
     metrics: dict[str, float | int | str | bool]
 
 
@@ -183,6 +184,7 @@ class TutorWorkflow:
             context.mastery_score,
             context.hint_level,
             state["pedagogical_action"],
+            evidence_pack=context.evidence_pack,
         )
         metrics = {
             **state.get("metrics", {}),
@@ -277,6 +279,7 @@ class TutorWorkflow:
             "mastery_delta": context.mastery_delta,
             "mastery_label_str": context.mastery_label_str,
             "hint_level": context.hint_level,
+            "evidence_pack": context.evidence_pack,
             "messages": messages,
             "metrics": metrics,
         }
@@ -353,6 +356,7 @@ class TutorWorkflow:
             state.get("mastery_score", 0.5),
             state.get("hint_level", 0),
             action.value,
+            evidence_pack=state.get("evidence_pack"),
         )
         return {
             "pedagogical_action": action.value,
@@ -531,6 +535,7 @@ class TutorWorkflow:
         mastery_score: float,
         hint_level: int,
         pedagogical_action: str,
+        evidence_pack: Any = None,
     ) -> list[dict[str, str]]:
         return build_messages(
             skill_text=self.skill_text,
@@ -548,6 +553,7 @@ class TutorWorkflow:
             document_chunks=document_chunks,
             pedagogical_action=pedagogical_action,
             prerequisite_hints=state.get("prerequisite_hints"),
+            evidence_pack=evidence_pack,
         )
 
     @staticmethod

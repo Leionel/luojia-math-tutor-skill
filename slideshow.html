@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>珞珈数智助教 · Agent 技术栈</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <style>
+    /* ================================================
+       DESIGN SYSTEM
+       ================================================ */
+    :root {
+      /* Base */
+      --bg-0: #06060d;
+      --bg-1: #0c0c18;
+      --bg-2: #14142b;
+      --bg-3: #1c1c3a;
+      --border: rgba(255,255,255,0.07);
+      --border-2: rgba(255,255,255,0.14);
+
+      /* Accents */
+      --cyan: #00d4ff;
+      --cyan-d: #0099cc;
+      --purple: #8b5cf6;
+      --purple-d: #6d28d9;
+      --green: #22c55e;
+      --green-d: #16a34a;
+      --amber: #fbbf24;
+      --amber-d: #d97706;
+      --pink: #f472b6;
+      --red: #ef4444;
+      --blue: #3b82f6;
+
+      /* Text */
+      --t-0: #ffffff;
+      --t-1: rgba(255,255,255,0.72);
+      --t-2: rgba(255,255,255,0.48);
+      --t-3: rgba(255,255,255,0.28);
+
+      /* Fonts */
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, monospace;
+      --serif: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+
+      /* Motion */
+      --slide-t: 550ms cubic-bezier(0.22, 1, 0.36, 1);
+      --ui-t: 220ms ease;
+      --glow: 0 0 24px;
+
+      /* Layout */
+      --pad: clamp(1.5rem, 3.6cqw, 3.5rem);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    /* ================================================
+       RESET
+       ================================================ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg-0);
+      color: var(--t-0);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1rem; overflow-x: hidden;
+    }
+    body::before, body::after {
+      content: ''; position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(100px);
+    }
+    body::before { top: -10%; left: -5%; width: 40vw; height: 40vw; background: rgba(0,212,255,0.04); }
+    body::after { bottom: -10%; right: -5%; width: 40vw; height: 40vw; background: rgba(139,92,246,0.04); }
+
+    /* ================================================
+       HEADER
+       ================================================ */
+    .app-header { text-align: center; margin-bottom: 0.9rem; z-index: 1; }
+    .app-header h1 {
+      font-size: clamp(1.4rem, 3vw, 2.1rem); font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .app-header p { font-size: 0.88rem; color: var(--t-2); margin-top: 2px; }
+
+    /* ================================================
+       CAROUSEL
+       ================================================ */
+    .carousel {
+      position: relative; width: min(1320px, 96vw);
+      height: min(780px, calc(100vh - 175px));
+      min-height: 460px;
+      container-type: inline-size;
+      border-radius: var(--radius);
+      overflow: hidden; background: var(--bg-1);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.7), 0 0 0 1px var(--border);
+      z-index: 1; user-select: none; -webkit-user-select: none;
+    }
+
+    .track {
+      display: flex; width: 100%; height: 100%;
+      transition: transform var(--slide-t); will-change: transform;
+    }
+
+    .slide {
+      position: relative; flex: 0 0 100%; width: 100%; height: 100%;
+      overflow-y: auto; overflow-x: hidden;
+      padding: var(--pad);
+      display: flex; flex-direction: column;
+    }
+    .slide::-webkit-scrollbar { width: 4px; }
+    .slide::-webkit-scrollbar-track { background: transparent; }
+    .slide::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+    .slide.active { z-index: 1; }
+
+    /* ================================================
+       SLIDE BACKGROUNDS (gradient, no images)
+       ================================================ */
+    .bg-grad {
+      position: absolute; inset: 0; z-index: 0;
+    }
+    .bg-grad::title {
+      background: linear-gradient(135deg, #06060d 0%, #0c0c20 40%, #0a1828 70%, #06060d 100%);
+    }
+    .bg-grad::architecture {
+      background: linear-gradient(160deg, #06060d 0%, #08111a 50%, #06060d 100%);
+    }
+    .bg-grad-1 { background: linear-gradient(135deg, #06060d 0%, #0c0c20 40%, #0a1828 70%, #06060d 100%); }
+    .bg-grad-2 { background: linear-gradient(160deg, #06060d 0%, #0a0a1a 50%, #06060d 100%); }
+    .bg-grad-3 { background: linear-gradient(145deg, #06060d 0%, #0a1018 50%, #06060d 100%); }
+    .bg-grad-4 { background: linear-gradient(200deg, #06060d 0%, #0c0a18 50%, #06060d 100%); }
+
+    /* Decorative grid */
+    .bg-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ================================================
+       SLIDE TAG
+       ================================================ */
+    .slide-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: clamp(0.7rem, 0.88cqw, 0.86rem); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 2px; padding: 4px 14px; border-radius: 20px;
+      margin-bottom: 0.85rem; align-self: flex-start;
+      border: 1px solid;
+    }
+    .tag-cyan { color: var(--cyan); background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.2); }
+    .tag-purple { color: var(--purple); background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.2); }
+    .tag-green { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+    .tag-amber { color: var(--amber); background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); }
+    .tag-pink { color: var(--pink); background: rgba(244,114,182,0.08); border-color: rgba(244,114,182,0.2); }
+    .tag-blue { color: var(--blue); background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); }
+
+    /* ================================================
+       SLIDE TITLE
+       ================================================ */
+    .slide-title {
+      font-size: clamp(1.3rem, 2.3cqw, 2.05rem); font-weight: 800;
+      line-height: 1.2; margin-bottom: 0.4rem;
+    }
+    .slide-desc {
+      font-size: clamp(0.86rem, 1.18cqw, 1.08rem); color: var(--t-1);
+      line-height: 1.55; max-width: 680px; margin-bottom: 1.2rem;
+    }
+
+    /* ================================================
+       SLIDE 1: TITLE
+       ================================================ */
+    .s-title {
+      justify-content: center; align-items: center; text-align: center;
+    }
+    .s-title .hero {
+      position: relative; z-index: 1;
+    }
+    .s-title h1 {
+      font-size: clamp(2rem, 4.2cqw, 3.5rem); font-weight: 900;
+      letter-spacing: -1px; line-height: 1.1; margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 50%, var(--pink) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .s-title .sub {
+      font-size: clamp(0.95rem, 1.75cqw, 1.45rem); color: var(--t-1);
+      font-family: var(--serif); margin-bottom: 0.4rem;
+    }
+    .s-title .pitch {
+      font-size: clamp(0.78rem, 1.1cqw, 1rem); color: var(--t-2);
+      max-width: 520px; line-height: 1.6; margin-bottom: 1.8rem;
+    }
+    .tech-badges {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;
+    }
+    .tech-badge {
+      font-size: clamp(0.7rem, 0.88cqw, 0.86rem); font-weight: 600; padding: 4px 12px;
+      border-radius: 6px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); color: var(--t-1);
+      font-family: var(--mono);
+    }
+
+    /* Animated gradient orbs for title slide */
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(60px);
+      opacity: 0.15; z-index: 0;
+    }
+    .orb-1 { width: 300px; height: 300px; background: var(--cyan); top: 10%; left: 15%; animation: float1 8s ease-in-out infinite; }
+    .orb-2 { width: 250px; height: 250px; background: var(--purple); bottom: 15%; right: 20%; animation: float2 10s ease-in-out infinite; }
+    .orb-3 { width: 200px; height: 200px; background: var(--pink); top: 40%; right: 35%; animation: float1 12s ease-in-out infinite reverse; }
+    @keyframes float1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-20px); } }
+    @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-25px,15px); } }
+
+    /* ================================================
+       CONTENT LAYOUTS
+       ================================================ */
+    .content-row {
+      display: flex; gap: 1.5rem; flex: 1; min-height: 0;
+      position: relative; z-index: 1;
+    }
+    .content-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    /* ================================================
+       CODE BLOCK
+       ================================================ */
+    .code-block {
+      background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1rem 1.1rem;
+      font-family: var(--mono); font-size: clamp(0.72rem, 0.95cqw, 0.92rem);
+      line-height: 1.7; color: rgba(255,255,255,0.82);
+      overflow-x: auto; flex: 1; backdrop-filter: blur(4px);
+    }
+    .code-block::-webkit-scrollbar { height: 4px; }
+    .code-block::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+    .kw { color: #c678dd; }
+    .fn { color: #61afef; }
+    .str { color: #98c379; }
+    .num { color: #d19a66; }
+    .cmt { color: rgba(255,255,255,0.3); font-style: italic; }
+    .cls { color: #e5c07b; }
+    .op { color: #56b6c2; }
+
+    /* ================================================
+       HIGHLIGHT CARDS
+       ================================================ */
+    .hl-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1rem; margin-top: 1rem;
+    }
+    .hl-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1rem;
+      border-left: 3px solid;
+    }
+    .hl-card h4 {
+      font-size: clamp(0.86rem, 1.05cqw, 1.02rem); font-weight: 700; margin-bottom: 0.35rem;
+    }
+    .hl-card p {
+      font-size: clamp(0.76rem, 0.92cqw, 0.9rem); color: var(--t-2); line-height: 1.5;
+    }
+
+    /* ================================================
+       SVG DIAGRAM CONTAINER
+       ================================================ */
+    .diagram-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      min-height: 0; position: relative; z-index: 1;
+    }
+    .diagram-wrap svg {
+      max-width: 100%; max-height: 100%; height: auto;
+    }
+    .diagram-wrap text { font-family: var(--sans); }
+
+    /* ================================================
+       PARAMETER CARDS
+       ================================================ */
+    .param-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem; margin-top: 0.5rem;
+    }
+    .param-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0.75rem; text-align: center;
+    }
+    .param-card .sym {
+      font-size: clamp(1rem, 1.5cqw, 1.4rem); font-weight: 800; font-family: var(--mono);
+      margin-bottom: 2px;
+    }
+    .param-card .desc {
+      font-size: clamp(0.64rem, 0.82cqw, 0.78rem); color: var(--t-2); line-height: 1.4;
+    }
+
+    /* ================================================
+       ADAPTIVE TABLE
+       ================================================ */
+    .adapt-table {
+      width: 100%; border-collapse: collapse;
+      font-size: clamp(0.66rem, 0.88cqw, 0.84rem); margin-top: 0.5rem;
+    }
+    .adapt-table th {
+      text-align: left; padding: 0.5rem 0.6rem; color: var(--t-2);
+      font-weight: 600; border-bottom: 1px solid var(--border-2);
+      font-size: clamp(0.62rem, 0.78cqw, 0.74rem); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .adapt-table td {
+      padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border);
+      color: var(--t-1);
+    }
+    .adapt-table tr:last-child td { border-bottom: none; }
+
+    /* ================================================
+       TECH STACK GRID
+       ================================================ */
+    .stack-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; flex: 1; min-height: 0; position: relative; z-index: 1;
+    }
+    .stack-col {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column;
+    }
+    .stack-col h4 {
+      font-size: clamp(0.72rem, 0.92cqw, 0.88rem); font-weight: 700; margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem; border-bottom: 2px solid;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .stack-items {
+      display: flex; flex-direction: column; gap: 0.4rem; flex: 1;
+    }
+    .stack-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: clamp(0.68rem, 0.88cqw, 0.84rem); color: var(--t-1);
+      padding: 4px 8px; border-radius: 4px;
+      background: rgba(255,255,255,0.02);
+      font-family: var(--mono); font-weight: 500;
+    }
+    .stack-item .dot-mark {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .stack-item .ver {
+      margin-left: auto; font-size: clamp(0.6rem, 0.76cqw, 0.72rem); color: var(--t-3);
+    }
+
+    /* ================================================
+       METRIC CARDS
+       ================================================ */
+    .metrics-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; margin-bottom: 1.2rem; position: relative; z-index: 1;
+    }
+    .metric-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .metric-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .metric-card .val {
+      font-size: clamp(1.1rem, 2cqw, 1.8rem); font-weight: 900;
+      font-family: var(--mono); margin-bottom: 2px;
+    }
+    .metric-card .lbl {
+      font-size: clamp(0.64rem, 0.82cqw, 0.78rem); color: var(--t-2);
+    }
+
+    /* Latency table */
+    .latency-table {
+      width: 100%; border-collapse: collapse;
+      font-size: clamp(0.66rem, 0.88cqw, 0.84rem); position: relative; z-index: 1;
+    }
+    .latency-table th {
+      text-align: left; padding: 0.5rem 0.7rem; color: var(--t-2);
+      font-weight: 600; border-bottom: 1px solid var(--border-2);
+      font-size: clamp(0.62rem, 0.78cqw, 0.74rem); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .latency-table td {
+      padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); color: var(--t-1);
+    }
+    .latency-table td:first-child { font-weight: 600; }
+    .latency-table tr:last-child td { border-bottom: none; }
+
+    /* ================================================
+       FORMULA BOX
+       ================================================ */
+    .formula-box {
+      background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1.2rem 1.5rem;
+      text-align: center; margin: 0.5rem 0; position: relative; z-index: 1;
+      font-size: clamp(0.9rem, 1.3cqw, 1.2rem);
+    }
+    .formula-box .katex { font-size: 1.3em !important; }
+    .formula-caption {
+      font-size: clamp(0.64rem, 0.82cqw, 0.78rem); color: var(--t-2); margin-top: 0.5rem;
+    }
+
+    /* ================================================
+       VERIFICATION FLOW (chips)
+       ================================================ */
+    .verify-chips {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem;
+      position: relative; z-index: 1;
+    }
+    .verify-chip {
+      font-size: clamp(0.66rem, 0.82cqw, 0.78rem); padding: 4px 10px; border-radius: 6px;
+      background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.15);
+      color: var(--green); font-family: var(--mono); font-weight: 500;
+    }
+
+    /* ================================================
+       UTILITY TEXT CLASSES (container-query adaptive)
+       ================================================ */
+    .u-card-title {
+      font-size: clamp(0.76rem, 0.96cqw, 0.92rem); font-weight: 700; margin-bottom: 0.35rem;
+    }
+    .u-card-text {
+      font-size: clamp(0.68rem, 0.88cqw, 0.82rem); color: var(--t-2); line-height: 1.55;
+    }
+    .u-mono-list {
+      font-size: clamp(0.64rem, 0.8cqw, 0.76rem); color: var(--t-2); line-height: 1.6; font-family: var(--mono);
+    }
+    .u-step-text {
+      font-size: clamp(0.66rem, 0.84cqw, 0.8rem); color: var(--t-1);
+    }
+    .u-badge-num {
+      background: rgba(0,212,255,0.15); color: var(--cyan); padding: 2px 6px;
+      border-radius: 3px; font-family: var(--mono);
+      font-size: clamp(0.6rem, 0.74cqw, 0.7rem);
+    }
+    .u-badge-num.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+
+    /* SSE event rows */
+    .event-row {
+      display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.8rem;
+      border-radius: var(--radius-sm); border: 1px solid; border-left: 3px solid;
+    }
+    .event-name {
+      font-family: var(--mono); font-weight: 700; min-width: 66px;
+      font-size: clamp(0.66rem, 0.85cqw, 0.8rem);
+    }
+    .event-time {
+      color: var(--t-3); min-width: 56px; font-family: var(--mono);
+      font-size: clamp(0.6rem, 0.76cqw, 0.72rem);
+    }
+    .event-desc {
+      color: var(--t-1);
+      font-size: clamp(0.66rem, 0.86cqw, 0.82rem);
+    }
+
+    /* Info card block (slide 9) */
+    .info-card {
+      border-radius: var(--radius-sm); padding: 0.85rem;
+      border: 1px solid;
+    }
+    .info-card .info-title {
+      font-size: clamp(0.76rem, 0.98cqw, 0.94rem); font-weight: 700; margin-bottom: 0.35rem;
+    }
+    .info-card .info-text {
+      font-size: clamp(0.68rem, 0.88cqw, 0.82rem); color: var(--t-2); line-height: 1.55;
+    }
+    .subject-row {
+      padding: 0.5rem 0.6rem; border-radius: 6px;
+    }
+    .subject-row .subject-name {
+      font-weight: 700; font-family: var(--mono);
+      font-size: clamp(0.7rem, 0.88cqw, 0.84rem);
+    }
+    .subject-row .subject-tags {
+      color: var(--t-2); display: block; margin-top: 2px;
+      font-size: clamp(0.62rem, 0.78cqw, 0.74rem);
+    }
+    .panel-footnote {
+      color: var(--t-3); margin-top: 0.7rem; padding-top: 0.6rem;
+      border-top: 1px solid var(--border); line-height: 1.5;
+      font-size: clamp(0.6rem, 0.76cqw, 0.72rem);
+    }
+    .panel-title {
+      font-weight: 700; margin-bottom: 0.7rem;
+      font-size: clamp(0.76rem, 0.98cqw, 0.94rem);
+    }
+
+    /* ================================================
+       NAVIGATION
+       ================================================ */
+    .nav-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 54px; height: 54px; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--t-0); font-size: 1.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--ui-t); z-index: 10; opacity: 0.85;
+    }
+    .nav-btn:hover {
+      background: rgba(0,212,255,0.28); opacity: 1;
+      border-color: rgba(0,212,255,0.5);
+      box-shadow: var(--glow) rgba(0,212,255,0.35);
+    }
+    .nav-btn:active { transform: translateY(-50%) scale(0.92); }
+    .nav-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; opacity: 1; }
+    .nav-btn.prev { left: 1rem; }
+    .nav-btn.next { right: 1rem; }
+
+    /* ================================================
+       CONTROLS BAR
+       ================================================ */
+    .controls {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.25rem; margin-top: 1rem; z-index: 1;
+    }
+    .dots { display: flex; gap: 0.35rem; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.2); cursor: pointer;
+      transition: all var(--ui-t); padding: 0;
+    }
+    .dot:hover { background: rgba(255,255,255,0.45); transform: scale(1.2); }
+    .dot.active {
+      width: 28px; border-radius: 4px; background: var(--cyan);
+      box-shadow: 0 0 10px rgba(0,212,255,0.4);
+    }
+    .dot:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+    .play-btn {
+      width: 38px; height: 38px; border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 50%; background: transparent; color: var(--t-0);
+      font-size: 0.85rem; cursor: pointer; transition: all var(--ui-t);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .play-btn:hover {
+      border-color: var(--cyan); background: rgba(0,212,255,0.08);
+      box-shadow: var(--glow) rgba(0,212,255,0.2);
+    }
+    .play-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+    .counter-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1px; min-width: 6rem;
+    }
+    .counter {
+      font-size: 0.84rem; color: var(--t-1);
+      font-variant-numeric: tabular-nums; text-align: center; font-weight: 700;
+    }
+    .chap-name {
+      font-size: 0.66rem; color: var(--t-3); font-family: var(--mono);
+      max-width: 10rem; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; letter-spacing: 0.3px;
+    }
+    .fs-btn {
+      width: 34px; height: 34px; border: 1px solid var(--border-2);
+      border-radius: 50%; background: rgba(255,255,255,0.03);
+      color: var(--t-2); cursor: pointer; font-size: 0.95rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--ui-t);
+    }
+    .fs-btn:hover { color: var(--cyan); border-color: rgba(0,212,255,0.5); background: rgba(0,212,255,0.1); }
+    .fs-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    /* Fullscreen mode */
+    body:fullscreen { padding: 0.6rem; background: var(--bg-1); }
+    body:fullscreen .app-header,
+    body:fullscreen .kbd-hint { display: none; }
+    body:fullscreen .carousel {
+      width: 100%; max-width: none; height: calc(100vh - 76px); border-radius: var(--radius-sm);
+    }
+    body:-webkit-full-screen { padding: 0.6rem; background: var(--bg-1); }
+    body:-webkit-full-screen .app-header,
+    body:-webkit-full-screen .kbd-hint { display: none; }
+    body:-webkit-full-screen .carousel {
+      width: 100%; max-width: none; height: calc(100vh - 76px); border-radius: var(--radius-sm);
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,0.06); z-index: 11;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      transition: width 80ms linear;
+    }
+
+    /* ================================================
+       ENTRY ANIMATIONS
+       ================================================ */
+    .anim { opacity: 1; }
+    .slide.active .anim {
+      animation: enterUp 500ms cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .slide.active .anim-1 { animation-delay: 80ms; }
+    .slide.active .anim-2 { animation-delay: 160ms; }
+    .slide.active .anim-3 { animation-delay: 240ms; }
+    .slide.active .anim-4 { animation-delay: 320ms; }
+    @keyframes enterUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ================================================
+       KEYBOARD HINT
+       ================================================ */
+    .kbd-hint {
+      margin-top: 0.6rem; font-size: 0.7rem; color: var(--t-3);
+      text-align: center; z-index: 1;
+    }
+    .kbd-hint kbd {
+      display: inline-block; padding: 1px 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: 3px; font-family: var(--mono); font-size: 0.68rem;
+      margin: 0 1px;
+    }
+
+    /* ================================================
+       RESPONSIVE
+       ================================================ */
+    @media (max-width: 768px) {
+      :root { --pad: 1.25rem; }
+      .carousel { border-radius: 10px; }
+      .nav-btn { width: 36px; height: 36px; font-size: 1.1rem; }
+      .nav-btn.prev { left: 0.4rem; }
+      .nav-btn.next { right: 0.4rem; }
+      .content-row { flex-direction: column; gap: 0.75rem; }
+      .hl-cards { grid-template-columns: 1fr; }
+      .param-grid { grid-template-columns: repeat(2, 1fr); }
+      .stack-grid { grid-template-columns: repeat(2, 1fr); }
+      .metrics-row { grid-template-columns: repeat(2, 1fr); }
+      .code-block { font-size: 0.62rem; }
+      .kbd-hint { display: none; }
+      .controls { gap: 0.9rem; }
+    }
+
+    @media (max-width: 480px) {
+      .code-block { display: none; }
+      .formula-box .katex { font-size: 1em !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .track { transition: none; }
+      .orb { animation: none; }
+      .slide.active .anim { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>珞珈数智助教 · Agent 技术栈</h1>
+    <p>Verifiable Learning Agent — 双轨可验证工作流 · LangGraph · SymPy · BKT</p>
+  </header>
+
+  <main class="carousel" id="carousel" role="region" aria-label="Agent技术栈轮播" aria-roledescription="carousel">
+
+    <div class="track" id="track" aria-live="polite">
+
+      <!-- ============================================
+           SLIDE 1: TITLE
+           ============================================ -->
+      <section class="slide s-title active" id="s1" data-title="珞珈数智助教" role="tabpanel" aria-label="第1张">
+        <div class="bg-grad bg-grad-1"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="hero anim anim-1">
+          <h1>珞珈数智助教</h1>
+          <p class="sub">面向 STEM 教育的可验证学习智能体</p>
+          <p class="pitch">
+            将大模型的「教学」与「解题」职责彻底剥离——双轨执行引擎完美平衡启发式引导与 SymPy 确定性校验，
+            BKT 四参数模型动态追踪掌握度，从根源上消除概率性幻觉。
+          </p>
+          <div class="tech-badges">
+            <span class="tech-badge">Python 3.10+</span>
+            <span class="tech-badge">FastAPI</span>
+            <span class="tech-badge">LangGraph</span>
+            <span class="tech-badge">SymPy</span>
+            <span class="tech-badge">Next.js 14</span>
+            <span class="tech-badge">TypeScript</span>
+            <span class="tech-badge">SQLite</span>
+            <span class="tech-badge">KaTeX</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 2: ARCHITECTURE
+           ============================================ -->
+      <section class="slide" id="s2" data-title="双轨智能体架构" role="tabpanel" aria-label="第2张">
+        <div class="bg-grad bg-grad-2"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-cyan anim anim-1">Architecture</span>
+        <h2 class="slide-title anim anim-1">双轨智能体架构</h2>
+        <p class="slide-desc anim anim-2">
+          Teacher Agent 负责启发式教学引导，Verifier Agent 调用 SymPy 进行确定性符号校验。
+          Fast Path Router 根据本地风险与置信度按需调度，普通请求仅 1 次 LLM 调用。
+        </p>
+        <div class="diagram-wrap anim anim-3">
+          <svg viewBox="0 0 880 340" aria-label="系统架构图">
+            <defs>
+              <marker id="ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="rgba(255,255,255,0.35)"/>
+              </marker>
+              <marker id="ar-c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#00d4ff"/>
+              </marker>
+            </defs>
+
+            <!-- Student -->
+            <circle cx="50" cy="170" r="26" fill="rgba(0,212,255,0.1)" stroke="#00d4ff" stroke-width="1.5"/>
+            <text x="50" y="174" text-anchor="middle" font-size="11" fill="#00d4ff" font-weight="600">学生</text>
+
+            <!-- FastAPI -->
+            <rect x="110" y="145" width="80" height="50" rx="8" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="150" y="168" text-anchor="middle" font-size="11" fill="#3b82f6" font-weight="700">FastAPI</text>
+            <text x="150" y="182" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.4)">ASGI Gateway</text>
+            <line x1="76" y1="170" x2="108" y2="170" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#ar)"/>
+
+            <!-- Router -->
+            <polygon points="250,155 290,170 250,185 210,170" fill="rgba(139,92,246,0.12)" stroke="#8b5cf6" stroke-width="1.5"/>
+            <text x="250" y="173" text-anchor="middle" font-size="9" fill="#8b5cf6" font-weight="600">Router</text>
+            <text x="250" y="184" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">FastPath</text>
+            <line x1="190" y1="170" x2="208" y2="170" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#ar)"/>
+
+            <!-- LangGraph container -->
+            <rect x="320" y="40" width="380" height="280" rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,3"/>
+            <text x="510" y="58" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.35)" font-weight="600">LangGraph StateGraph</text>
+
+            <line x1="290" y1="170" x2="318" y2="170" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#ar-c)"/>
+
+            <!-- fast_context node -->
+            <rect x="340" y="85" width="110" height="38" rx="6" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="395" y="103" text-anchor="middle" font-size="10" fill="#fbbf24" font-weight="700">fast_context</text>
+            <text x="395" y="115" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">并行采集 ≤350ms</text>
+
+            <!-- Teacher -->
+            <rect x="340" y="155" width="100" height="38" rx="6" fill="rgba(34,197,94,0.1)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="390" y="173" text-anchor="middle" font-size="10" fill="#22c55e" font-weight="700">Teacher</text>
+            <text x="390" y="185" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">启发式引导</text>
+
+            <!-- Verifier -->
+            <rect x="340" y="215" width="100" height="38" rx="6" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="390" y="233" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="700">Verifier</text>
+            <text x="390" y="245" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">LLM 验证</text>
+
+            <!-- Examiner -->
+            <rect x="470" y="155" width="100" height="38" rx="6" fill="rgba(244,114,182,0.1)" stroke="#f472b6" stroke-width="1.5"/>
+            <text x="520" y="173" text-anchor="middle" font-size="10" fill="#f472b6" font-weight="700">Examiner</text>
+            <text x="520" y="185" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">出题/测验</text>
+
+            <!-- Edges inside graph -->
+            <line x1="395" y1="123" x2="395" y2="153" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" marker-end="url(#ar)"/>
+            <line x1="395" y1="123" x2="395" y2="213" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="450" y1="174" x2="468" y2="174" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" marker-end="url(#ar)"/>
+            <line x1="390" y1="253" x2="390" y2="195" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" marker-end="url(#ar)" stroke-dasharray="3,2"/>
+            <text x="405" y="228" font-size="7" fill="rgba(255,255,255,0.3)">验证结果</text>
+
+            <!-- Tools column -->
+            <rect x="610" y="85" width="75" height="30" rx="5" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+            <text x="647" y="104" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="600">SymPy 沙盒</text>
+
+            <rect x="610" y="130" width="75" height="30" rx="5" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.3)" stroke-width="1"/>
+            <text x="647" y="149" text-anchor="middle" font-size="8" fill="#fbbf24" font-weight="600">BKT 引擎</text>
+
+            <rect x="610" y="175" width="75" height="30" rx="5" fill="rgba(59,130,246,0.08)" stroke="rgba(59,130,246,0.3)" stroke-width="1"/>
+            <text x="647" y="194" text-anchor="middle" font-size="8" fill="#3b82f6" font-weight="600">SQLite</text>
+
+            <rect x="610" y="220" width="75" height="30" rx="5" fill="rgba(139,92,246,0.08)" stroke="rgba(139,92,246,0.3)" stroke-width="1"/>
+            <text x="647" y="239" text-anchor="middle" font-size="8" fill="#8b5cf6" font-weight="600">BM25 检索</text>
+
+            <line x1="440" y1="234" x2="608" y2="100" stroke="rgba(34,197,94,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="440" y1="100" x2="608" y2="145" stroke="rgba(251,191,36,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="440" y1="100" x2="608" y2="190" stroke="rgba(59,130,246,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="440" y1="100" x2="608" y2="235" stroke="rgba(139,92,246,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+
+            <!-- SSE output -->
+            <rect x="760" y="155" width="80" height="38" rx="6" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+            <text x="800" y="173" text-anchor="middle" font-size="10" fill="#00d4ff" font-weight="600">SSE 流式</text>
+            <text x="800" y="185" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">→ 前端</text>
+
+            <line x1="570" y1="174" x2="758" y2="174" stroke="rgba(0,212,255,0.3)" stroke-width="1.5" marker-end="url(#ar-c)"/>
+            <line x1="685" y1="190" x2="758" y2="174" stroke="rgba(0,212,255,0.15)" stroke-width="1" stroke-dasharray="3,2"/>
+
+            <!-- Legend -->
+            <text x="340" y="300" font-size="8" fill="rgba(255,255,255,0.3)">── 实线 = 主路径</text>
+            <text x="500" y="300" font-size="8" fill="rgba(255,255,255,0.3)">- - 虚线 = 按需调用 / 数据回流</text>
+          </svg>
+        </div>
+        <div class="hl-cards anim anim-4">
+          <div class="hl-card" style="border-left-color: var(--green)">
+            <h4 style="color: var(--green)">双轨引擎</h4>
+            <p>Teacher 启发式引导 + Verifier SymPy 确定性校验，教学与验证职责彻底分离</p>
+          </div>
+          <div class="hl-card" style="border-left-color: var(--purple)">
+            <h4 style="color: var(--purple)">按需调度</h4>
+            <p>FastPath Router 本地预判意图与风险，条件路由避免无意义的 LLM 串行排队</p>
+          </div>
+          <div class="hl-card" style="border-left-color: var(--amber)">
+            <h4 style="color: var(--amber)">延迟预算</h4>
+            <p>opening &lt;150ms · fast_context ≤350ms · 普通请求 LLM×1 · 高风险 LLM×2</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 3: LANGGRAPH
+           ============================================ -->
+      <section class="slide" id="s3" data-title="LangGraph 工作流" role="tabpanel" aria-label="第3张">
+        <div class="bg-grad bg-grad-3"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-purple anim anim-1">Workflow</span>
+        <h2 class="slide-title anim anim-1">LangGraph 状态图工作流</h2>
+        <p class="slide-desc anim anim-2">
+          使用 LangGraph StateGraph 构建条件路由图。fast_context 并行采集后，根据意图与验证模式动态路由到
+          Teacher / Examiner / Verifier / Proof Tutor，MemorySaver 提供检查点恢复。
+        </p>
+        <div class="content-row anim anim-3">
+          <div class="content-col" style="flex: 0 0 48%;">
+            <pre class="code-block"><code><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, END, START
+
+workflow = StateGraph(AgentState)
+workflow.add_node(<span class="str">"fast_context"</span>, self.fast_context_node)
+workflow.add_node(<span class="str">"teacher"</span>, self.teacher_node)
+workflow.add_node(<span class="str">"verifier"</span>, self.verifier_node)
+workflow.add_node(<span class="str">"examiner"</span>, self.examiner_node)
+workflow.add_node(<span class="str">"proof_tutor"</span>, self.proof_tutor_node)
+workflow.add_node(<span class="str">"policy_fallback"</span>, self.policy_fallback_node)
+
+workflow.add_edge(START, <span class="str">"fast_context"</span>)
+workflow.add_conditional_edges(
+    <span class="str">"fast_context"</span>, route_after_context,
+    {
+        <span class="str">"teacher"</span>: <span class="str">"teacher"</span>,
+        <span class="str">"verifier"</span>: <span class="str">"verifier"</span>,
+        <span class="str">"examiner"</span>: <span class="str">"examiner"</span>,
+        <span class="str">"proof_tutor"</span>: <span class="str">"proof_tutor"</span>,
+        <span class="str">"policy_fallback"</span>: <span class="str">"policy_fallback"</span>,
+    },
+)
+workflow.add_edge(<span class="str">"verifier"</span>, <span class="str">"teacher"</span>)
+workflow.add_edge(<span class="str">"teacher"</span>, END)
+workflow.add_edge(<span class="str">"examiner"</span>, END)
+workflow.add_edge(<span class="str">"proof_tutor"</span>, END)
+
+graph = workflow.compile(checkpointer=MemorySaver())
+
+<span class="cmt"># 普通请求: fast_context → teacher → END  (1×LLM)</span>
+<span class="cmt"># 验证请求: fast_context → verifier → teacher → END  (2×LLM)</span></code></pre>
+          </div>
+          <div class="content-col">
+            <div class="diagram-wrap">
+              <svg viewBox="0 0 400 360" aria-label="LangGraph状态机">
+                <defs>
+                  <marker id="ar2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="rgba(255,255,255,0.35)"/>
+                  </marker>
+                </defs>
+
+                <!-- START -->
+                <circle cx="200" cy="25" r="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                <text x="200" y="29" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)">START</text>
+
+                <!-- fast_context -->
+                <rect x="140" y="60" width="120" height="40" rx="8" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="1.5"/>
+                <text x="200" y="78" text-anchor="middle" font-size="11" fill="#fbbf24" font-weight="700">fast_context</text>
+                <text x="200" y="91" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">并行采集 ≤350ms</text>
+                <line x1="200" y1="41" x2="200" y2="58" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+                <!-- Decision diamond -->
+                <polygon points="200,120 250,160 200,200 150,160" fill="rgba(139,92,246,0.08)" stroke="rgba(139,92,246,0.3)" stroke-width="1" stroke-dasharray="3,2"/>
+                <text x="200" y="158" text-anchor="middle" font-size="8" fill="rgba(139,92,246,0.6)">route()</text>
+                <text x="200" y="170" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.3)">条件路由</text>
+                <line x1="200" y1="100" x2="200" y2="118" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+                <!-- 5 branches -->
+                <!-- policy_fallback -->
+                <rect x="20" y="220" width="95" height="34" rx="6" fill="rgba(139,92,246,0.08)" stroke="rgba(139,92,246,0.25)" stroke-width="1"/>
+                <text x="67" y="237" text-anchor="middle" font-size="9" fill="#8b5cf6" font-weight="600">policy_fallback</text>
+                <text x="67" y="248" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)">低置信度回退</text>
+                <line x1="155" y1="175" x2="90" y2="218" stroke="rgba(139,92,246,0.2)" stroke-width="1" marker-end="url(#ar2)"/>
+
+                <!-- verifier -->
+                <rect x="130" y="220" width="80" height="34" rx="6" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.25)" stroke-width="1"/>
+                <text x="170" y="237" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="600">verifier</text>
+                <text x="170" y="248" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)">LLM 验证</text>
+                <line x1="185" y1="190" x2="170" y2="218" stroke="rgba(239,68,68,0.2)" stroke-width="1" marker-end="url(#ar2)"/>
+
+                <!-- teacher -->
+                <rect x="225" y="220" width="70" height="34" rx="6" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.25)" stroke-width="1"/>
+                <text x="260" y="237" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="600">teacher</text>
+                <text x="260" y="248" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)">启发引导</text>
+                <line x1="210" y1="185" x2="255" y2="218" stroke="rgba(34,197,94,0.2)" stroke-width="1" marker-end="url(#ar2)"/>
+
+                <!-- examiner -->
+                <rect x="310" y="220" width="75" height="34" rx="6" fill="rgba(244,114,182,0.08)" stroke="rgba(244,114,182,0.25)" stroke-width="1"/>
+                <text x="347" y="237" text-anchor="middle" font-size="9" fill="#f472b6" font-weight="600">examiner</text>
+                <text x="347" y="248" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)">出题/测验</text>
+                <line x1="245" y1="170" x2="330" y2="218" stroke="rgba(244,114,182,0.2)" stroke-width="1" marker-end="url(#ar2)"/>
+
+                <!-- verifier → teacher -->
+                <path d="M170,254 L170,275 L255,275 L255,254" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ar2)"/>
+                <text x="200" y="288" font-size="6" fill="rgba(255,255,255,0.25)">验证→教学</text>
+
+                <!-- END -->
+                <circle cx="200" cy="330" r="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                <text x="200" y="334" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)">END</text>
+                <line x1="260" y1="254" x2="210" y2="316" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#ar2)"/>
+                <line x1="347" y1="254" x2="210" y2="316" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 4: SYMPY
+           ============================================ -->
+      <section class="slide" id="s4" data-title="SymPy 符号验证" role="tabpanel" aria-label="第4张">
+        <div class="bg-grad bg-grad-4"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-green anim anim-1">Verification</span>
+        <h2 class="slide-title anim anim-1">SymPy 符号验证引擎</h2>
+        <p class="slide-desc anim anim-2">
+          大模型在数学推导中存在概率性幻觉。SymPy 作为 Python 符号数学库，提供确定性的表达式等价校验——
+          <code style="font-family:var(--mono);color:var(--green);font-size:0.85em">simplify(lhs - rhs) == 0</code> 从根源上消除幻觉风险。
+        </p>
+        <div class="content-row anim anim-3">
+          <div class="content-col" style="flex: 0 0 55%;">
+            <pre class="code-block"><code><span class="kw">from</span> sympy <span class="kw">import</span> symbols, diff, simplify
+<span class="kw">from</span> sympy.parsing.sympy_parser <span class="kw">import</span> (
+    parse_expr, standard_transformations,
+    implicit_multiplication_application, convert_xor,
+)
+
+<span class="cmt"># 学生输入 "2x" 自动解析为 2*x</span>
+TRANSFORMS = standard_transformations + (
+    implicit_multiplication_application, convert_xor,
+)
+
+<span class="kw">def</span> <span class="fn">verify_equivalent</span>(lhs: <span class="cls">str</span>, rhs: <span class="cls">str</span>) -> VerifyResult:
+    <span class="str">"""验证两个数学表达式是否等价"""</span>
+    lhs_expr = <span class="fn">parse_math</span>(lhs)   <span class="cmt"># LaTeX → SymPy</span>
+    rhs_expr = <span class="fn">parse_math</span>(rhs)
+    diff = <span class="fn">simplify</span>(lhs_expr - rhs_expr)
+    ok = diff == <span class="num">0</span>                <span class="cmt"># 确定性判断</span>
+    <span class="kw">return</span> <span class="cls">VerifyResult</span>(verified=<span class="kw">True</span>, is_correct=ok)
+
+<span class="kw">def</span> <span class="fn">verify_derivative</span>(expr, var, expected):
+    derivative = <span class="fn">diff</span>(<span class="fn">parse_math</span>(expr), <span class="fn">Symbol</span>(var))
+    ok = <span class="fn">simplify</span>(derivative - <span class="fn">parse_math</span>(expected)) == <span class="num">0</span>
+    <span class="kw">return</span> <span class="cls">VerifyResult</span>(verified=<span class="kw">True</span>, is_correct=ok)
+
+<span class="kw">def</span> <span class="fn">verify_integral</span>(integrand, var, candidate):
+    <span class="cmt"># 对候选结果求导，与被积函数比较</span>
+    deriv = <span class="fn">diff</span>(<span class="fn">parse_math</span>(candidate), <span class="fn">Symbol</span>(var))
+    ok = <span class="fn">simplify</span>(deriv - <span class="fn">parse_math</span>(integrand)) == <span class="num">0</span>
+    <span class="kw">return</span> <span class="cls">VerifyResult</span>(verified=<span class="kw">True</span>, is_correct=ok)</code></pre>
+          </div>
+          <div class="content-col">
+            <div style="display:flex;flex-direction:column;gap:0.6rem;flex:1">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.85rem">
+                <p class="u-card-title" style="color:var(--green)">验证管线</p>
+                <div style="display:flex;flex-direction:column;gap:0.35rem">
+                  <div style="display:flex;align-items:center;gap:0.4rem">
+                    <span class="u-badge-num">1</span>
+                    <span class="u-step-text">学生输入 LaTeX</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.4rem">
+                    <span class="u-badge-num">2</span>
+                    <span class="u-step-text">normalize_math() 归一化</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.4rem">
+                    <span class="u-badge-num">3</span>
+                    <span class="u-step-text">parse_expr() → SymPy 对象</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.4rem">
+                    <span class="u-badge-num">4</span>
+                    <span class="u-step-text">simplify(lhs - rhs) == 0</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.4rem">
+                    <span class="u-badge-num ok">5</span>
+                    <span class="u-step-text" style="color:var(--green)">→ VerifyResult (确定性)</span>
+                  </div>
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.85rem;flex:1">
+                <p class="u-card-title" style="color:var(--cyan)">LaTeX 归一化</p>
+                <div class="u-mono-list">
+                  <div>\frac{a}{b} → ((a)/(b))</div>
+                  <div>\sqrt{x} → sqrt(x)</div>
+                  <div>\cdot → *</div>
+                  <div>x² → x^2</div>
+                  <div>\left( \right) → ( )</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="verify-chips anim anim-4">
+          <span class="verify-chip">✓ 表达式等价</span>
+          <span class="verify-chip">✓ 求导验证</span>
+          <span class="verify-chip">✓ 积分验证</span>
+          <span class="verify-chip">✓ 矩阵乘法</span>
+          <span class="verify-chip">✓ 行列式</span>
+          <span class="verify-chip">✓ 洛必达条件</span>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 5: BKT
+           ============================================ -->
+      <section class="slide" id="s5" data-title="BKT 知识追踪" role="tabpanel" aria-label="第5张">
+        <div class="bg-grad bg-grad-1"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-amber anim anim-1">Pedagogy</span>
+        <h2 class="slide-title anim anim-1">BKT 贝叶斯知识追踪</h2>
+        <p class="slide-desc anim anim-2">
+          摒弃简单"正确数/总数"算分。基于四参数隐马尔可夫模型动态更新掌握概率 P(L|obs)，
+          P(G)/P(T) 根据提示依赖度自适应调整，防止"被动喂饭"导致分数虚高。
+        </p>
+        <div class="formula-box anim anim-2">
+          $$P(L_{n+1}) = P(L_n) \cdot (1 - P(S)) + (1 - P(L_n)) \cdot P(G)$$
+          <p class="formula-caption">掌握度更新公式：已掌握且不失误 + 未掌握但猜中（含知识转移 P(T)）</p>
+        </div>
+        <div class="param-grid anim anim-3">
+          <div class="param-card">
+            <div class="sym" style="color:var(--cyan)">P(L₀)</div>
+            <div class="desc">初始掌握率<br>默认 0.5</div>
+          </div>
+          <div class="param-card">
+            <div class="sym" style="color:var(--red)">P(S)</div>
+            <div class="desc">粗心失误率<br>默认 0.10</div>
+          </div>
+          <div class="param-card">
+            <div class="sym" style="color:var(--amber)">P(G)</div>
+            <div class="desc">猜测猜中率<br>自适应 0.1~0.8</div>
+          </div>
+          <div class="param-card">
+            <div class="sym" style="color:var(--green)">P(T)</div>
+            <div class="desc">知识转移率<br>自适应 0~0.15</div>
+          </div>
+        </div>
+        <table class="adapt-table anim anim-4">
+          <thead>
+            <tr>
+              <th>提示等级</th>
+              <th>P(G) 猜测率</th>
+              <th>P(T) 转移率</th>
+              <th>设计意图</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--green)">Level 0 · 独立解答</td>
+              <td>0.10</td>
+              <td>0.15</td>
+              <td>低猜测率，高转移率 → 掌握度显著上升</td>
+            </tr>
+            <tr>
+              <td style="color:var(--amber)">Level 1 · 少量提示</td>
+              <td>0.40</td>
+              <td>0.05</td>
+              <td>中猜测率，低转移率 → 掌握度小幅上升</td>
+            </tr>
+            <tr>
+              <td style="color:var(--red)">Level 2+ · 大量提示</td>
+              <td>0.80</td>
+              <td>0.00</td>
+              <td>高猜测率，零转移率 → 几乎不变，防虚高</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ============================================
+           SLIDE 6: TECH STACK
+           ============================================ -->
+      <section class="slide" id="s6" data-title="全栈技术架构" role="tabpanel" aria-label="第6张">
+        <div class="bg-grad bg-grad-2"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-pink anim anim-1">Stack</span>
+        <h2 class="slide-title anim anim-1">全栈技术架构</h2>
+        <p class="slide-desc anim anim-2">
+          后端 FastAPI + LangGraph 编排多智能体条件流；前端 Next.js 14 + React 18 + KaTeX 渲染数学公式；
+          SSE 流式输出 + SQLite 异步持久化；本地 BM25 + 语义向量混合检索。
+        </p>
+        <div class="stack-grid anim anim-3">
+          <div class="stack-col">
+            <h4 style="color:var(--cyan);border-color:var(--cyan)">Backend</h4>
+            <div class="stack-items">
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>Python<span class="ver">3.10+</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>FastAPI<span class="ver">0.100+</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>uvicorn<span class="ver">ASGI</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>LangGraph<span class="ver">1.2+</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>langchain-core<span class="ver">1.4+</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>SymPy<span class="ver">符号计算</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>httpx<span class="ver">async</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--cyan)"></span>Pydantic<span class="ver">校验</span></div>
+            </div>
+          </div>
+          <div class="stack-col">
+            <h4 style="color:var(--purple);border-color:var(--purple)">Frontend</h4>
+            <div class="stack-items">
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>Next.js<span class="ver">14.2</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>React<span class="ver">18.2</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>TypeScript<span class="ver">5.4</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>Tailwind CSS<span class="ver">3.4</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>KaTeX<span class="ver">0.16</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>Framer Motion<span class="ver">12</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>Recharts<span class="ver">3.8</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--purple)"></span>@xyflow<span class="ver">12</span></div>
+            </div>
+          </div>
+          <div class="stack-col">
+            <h4 style="color:var(--green);border-color:var(--green)">AI / Algorithm</h4>
+            <div class="stack-items">
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>BKT<span class="ver">4参数</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>BM25<span class="ver">本地检索</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>Vector Search<span class="ver">语义</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>SSE<span class="ver">流式输出</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>Intent Router<span class="ver">本地</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>Hint Policy<span class="ver">分级</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>OpenAI-Compatible<span class="ver">多模型</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--green)"></span>MemorySaver<span class="ver">检查点</span></div>
+            </div>
+          </div>
+          <div class="stack-col">
+            <h4 style="color:var(--amber);border-color:var(--amber)">Data / Tools</h4>
+            <div class="stack-items">
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>SQLite<span class="ver">内置</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>pytest<span class="ver">测试</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>matplotlib<span class="ver">可视化</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>eslint<span class="ver">lint</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>PostCSS<span class="ver">后处理</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>lucide-react<span class="ver">图标</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>clsx<span class="ver">工具</span></div>
+              <div class="stack-item"><span class="dot-mark" style="background:var(--amber)"></span>tailwind-merge<span class="ver">合并</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 7: PERFORMANCE
+           ============================================ -->
+      <section class="slide" id="s7" data-title="性能与延迟预算" role="tabpanel" aria-label="第7张">
+        <div class="bg-grad bg-grad-3"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-blue anim anim-1">Performance</span>
+        <h2 class="slide-title anim anim-1">性能优化与延迟预算</h2>
+        <p class="slide-desc anim anim-2">
+          FastContext 并行采集（350ms 截止）+ 条件路由按需调度 LLM + asyncio.to_thread 移除阻塞 +
+          语义缓存后台预热 + 页面可见性感知暂停——全链路延迟控制。
+        </p>
+        <div class="metrics-row anim anim-3">
+          <div class="metric-card" style="--mc: var(--cyan)">
+            <div class="val" style="color:var(--cyan)">&lt;150ms</div>
+            <div class="lbl">本地 Opening 延迟</div>
+          </div>
+          <div class="metric-card" style="--mc: var(--green)">
+            <div class="val" style="color:var(--green)">≤2</div>
+            <div class="lbl">LLM 调用上限</div>
+          </div>
+          <div class="metric-card" style="--mc: var(--amber)">
+            <div class="val" style="color:var(--amber)">&lt;400ms</div>
+            <div class="lbl">SymPy 验证延迟</div>
+          </div>
+          <div class="metric-card" style="--mc: var(--purple)">
+            <div class="val" style="color:var(--purple)">SSE</div>
+            <div class="lbl">流式输出协议</div>
+          </div>
+        </div>
+        <table class="latency-table anim anim-4">
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>预算</th>
+              <th>技术手段</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Opening</td>
+              <td style="color:var(--cyan)">&lt;150ms</td>
+              <td>本地规则生成</td>
+              <td>快速给出有意义开场白，不等待 LLM</td>
+            </tr>
+            <tr>
+              <td>Fast Context</td>
+              <td style="color:var(--amber)">350ms</td>
+              <td>asyncio.wait + timeout</td>
+              <td>并行采集 BKT/BM25/SymPy/历史，超时自动取消</td>
+            </tr>
+            <tr>
+              <td>普通请求</td>
+              <td style="color:var(--green)">LLM × 1</td>
+              <td>条件路由 → Teacher</td>
+              <td>概念讲解、SymPy 已确认的步骤校验</td>
+            </tr>
+            <tr>
+              <td>高风险验证</td>
+              <td style="color:var(--red)">LLM × 2</td>
+              <td>Verifier → Teacher</td>
+              <td>复杂证明、开放推导、本地无法判定</td>
+            </tr>
+            <tr>
+              <td>SQLite 访问</td>
+              <td style="color:var(--purple)">非阻塞</td>
+              <td>asyncio.to_thread</td>
+              <td>同步 I/O 移至线程池，不阻塞事件循环</td>
+            </tr>
+            <tr>
+              <td>语义搜索</td>
+              <td style="color:var(--pink)">后台预热</td>
+              <td>asyncio.create_task + LRU 缓存</td>
+              <td>异步预加载下一轮可能用到的知识</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ============================================
+           SLIDE 8: SSE STREAMING
+           ============================================ -->
+      <section class="slide" id="s8" data-title="SSE 流式输出" role="tabpanel" aria-label="第8张">
+        <div class="bg-grad bg-grad-4"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-cyan anim anim-1">Streaming</span>
+        <h2 class="slide-title anim anim-1">SSE 流式输出与事件序列</h2>
+        <p class="slide-desc anim anim-2">
+          基于 HTTP 长连接的单向流式协议。服务端按事件序列持续推送——opening 快速开场、thinking 摘要、meta 路由元数据、message 逐 token、done 收尾指标。前端用 fetch + ReadableStream 消费，支持自定义 Header 携带 API Key。
+        </p>
+        <div class="content-row anim anim-3">
+          <div class="content-col" style="flex: 0 0 54%;">
+            <div style="display:flex;flex-direction:column;gap:0.5rem;flex:1">
+              <div class="event-row" style="background:rgba(0,212,255,0.05);border-color:rgba(0,212,255,0.15);border-left-color:var(--cyan)">
+                <span class="event-name" style="color:var(--cyan)">opening</span>
+                <span class="event-time">&lt; 150ms</span>
+                <span class="event-desc">本地快速开场白，不等待 LLM</span>
+              </div>
+              <div class="event-row" style="background:rgba(139,92,246,0.05);border-color:rgba(139,92,246,0.15);border-left-color:var(--purple)">
+                <span class="event-name" style="color:var(--purple)">thinking</span>
+                <span class="event-time">采集中</span>
+                <span class="event-desc">[隐式RAG] [VERIFY] [OUTPUT] 摘要</span>
+              </div>
+              <div class="event-row" style="background:rgba(251,191,36,0.05);border-color:rgba(251,191,36,0.15);border-left-color:var(--amber)">
+                <span class="event-name" style="color:var(--amber)">meta</span>
+                <span class="event-time">路由后</span>
+                <span class="event-desc">意图 / 学科 / 概念 / 掌握度</span>
+              </div>
+              <div class="event-row" style="background:rgba(34,197,94,0.05);border-color:rgba(34,197,94,0.15);border-left-color:var(--green)">
+                <span class="event-name" style="color:var(--green)">message</span>
+                <span class="event-time">流式</span>
+                <span class="event-desc">逐 token 回答（过滤 reasoning）</span>
+              </div>
+              <div class="event-row" style="background:rgba(244,114,182,0.05);border-color:rgba(244,114,182,0.15);border-left-color:var(--pink)">
+                <span class="event-name" style="color:var(--pink)">done</span>
+                <span class="event-time">收尾</span>
+                <span class="event-desc">metrics / route / llm_call_count</span>
+              </div>
+            </div>
+          </div>
+          <div class="content-col">
+            <div class="hl-cards" style="grid-template-columns:1fr;gap:0.55rem;margin-top:0">
+              <div class="hl-card" style="border-left-color: var(--cyan)">
+                <h4 style="color: var(--cyan)">为何 SSE 而非 WebSocket</h4>
+                <p>单工场景 + 标准 HTTP + 自动重连 + 穿透代理更可靠，无需协议升级</p>
+              </div>
+              <div class="hl-card" style="border-left-color: var(--green)">
+                <h4 style="color: var(--green)">reasoning 过滤</h4>
+                <p>模型内部思考链不向学生暴露，防止答案直接泄露，保证启发式教学</p>
+              </div>
+              <div class="hl-card" style="border-left-color: var(--amber)">
+                <h4 style="color: var(--amber)">fetch 替代 EventSource</h4>
+                <p>EventSource 不支持自定义 Header，用 fetch + ReadableStream 解析 SSE 帧以携带用户 Key</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 9: KNOWLEDGE RETRIEVAL
+           ============================================ -->
+      <section class="slide" id="s9" data-title="知识检索" role="tabpanel" aria-label="第9张">
+        <div class="bg-grad bg-grad-1"></div>
+        <div class="bg-grid"></div>
+        <span class="slide-tag tag-purple anim anim-1">Retrieval</span>
+        <h2 class="slide-title anim anim-1">BM25 + 向量混合检索</h2>
+        <p class="slide-desc anim anim-2">
+          本地 BM25 全文检索先行（零延迟、精确概念匹配），语义向量搜索作为后台异步任务预热缓存（覆盖同义/近义表达）。350ms 截止，超时自动取消，部分结果仍可用。
+        </p>
+        <div class="content-row anim anim-3">
+          <div class="content-col" style="flex:0 0 52%">
+            <div style="display:flex;flex-direction:column;gap:0.6rem;flex:1">
+              <div class="info-card" style="background:rgba(139,92,246,0.05);border-color:rgba(139,92,246,0.2)">
+                <p class="info-title" style="color:var(--purple)">BM25 本地检索</p>
+                <p class="info-text">基于词频的全文检索，零网络延迟。适合精确概念匹配（如"洛必达"、"特征值"），结果即时可用。</p>
+              </div>
+              <div class="info-card" style="background:rgba(244,114,182,0.05);border-color:rgba(244,114,182,0.2)">
+                <p class="info-title" style="color:var(--pink)">语义向量搜索</p>
+                <p class="info-text">调用 LLM Embedding API 计算语义相似度，覆盖同义/近义表达。后台异步执行，LRU 缓存 128 条预热下一轮。</p>
+              </div>
+              <div class="info-card" style="background:rgba(34,197,94,0.05);border-color:rgba(34,197,94,0.2)">
+                <p class="info-title" style="color:var(--green)">融合策略</p>
+                <p class="info-text">BM25 先行（350ms 截止），向量搜索异步预热。直接命中 + 图谱扩展双路融合，返回 EvidencePack。</p>
+              </div>
+            </div>
+          </div>
+          <div class="content-col">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;flex:1;display:flex;flex-direction:column">
+              <p class="panel-title" style="color:var(--cyan)">学科自动检测</p>
+              <div style="display:flex;flex-direction:column;gap:0.55rem;flex:1">
+                <div class="subject-row" style="background:rgba(34,197,94,0.05)">
+                  <span class="subject-name" style="color:var(--green)">calculus</span>
+                  <span class="subject-tags">高数 · 微积分 · 导数 · 积分 · 极限 · 洛必达</span>
+                </div>
+                <div class="subject-row" style="background:rgba(251,191,36,0.05)">
+                  <span class="subject-name" style="color:var(--amber)">linear_algebra</span>
+                  <span class="subject-tags">线代 · 矩阵 · 行列式 · 特征值 · 秩</span>
+                </div>
+                <div class="subject-row" style="background:rgba(244,114,182,0.05)">
+                  <span class="subject-name" style="color:var(--pink)">probability</span>
+                  <span class="subject-tags">概率 · 随机 · 分布 · 期望 · 方差 · 互斥</span>
+                </div>
+              </div>
+              <p class="panel-footnote">关键词命中即判定学科，注入 fast_context 指导检索与 prompt 构建</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================
+           SLIDE 10: SUMMARY
+           ============================================ -->
+      <section class="slide s-title" id="s10" data-title="核心亮点总结" role="tabpanel" aria-label="第10张">
+        <div class="bg-grad bg-grad-2"></div>
+        <div class="orb orb-1" style="opacity:0.08"></div>
+        <div class="orb orb-2" style="opacity:0.08"></div>
+        <div class="hero anim anim-1" style="width:100%;max-width:900px">
+          <h1 style="font-size:clamp(1.6rem,3.6cqw,2.5rem);margin-bottom:0.6rem">可验证 · 低延迟 · 自适应</h1>
+          <p class="sub" style="margin-bottom:1.2rem">每一项技术选型都有明确的问题驱动</p>
+          <div class="hl-cards anim anim-2" style="grid-template-columns:repeat(3,1fr);text-align:left;margin-top:0">
+            <div class="hl-card" style="border-left-color:var(--green)">
+              <h4 style="color:var(--green)">LangGraph</h4>
+              <p>条件路由把 LLM 调用压到平均 1 次，风险驱动调度</p>
+            </div>
+            <div class="hl-card" style="border-left-color:var(--cyan)">
+              <h4 style="color:var(--cyan)">SymPy</h4>
+              <p>符号计算确定性校验，从根源消除数学幻觉</p>
+            </div>
+            <div class="hl-card" style="border-left-color:var(--amber)">
+              <h4 style="color:var(--amber)">BKT</h4>
+              <p>四参数自适应掌握度，防止被动喂饭分数虚高</p>
+            </div>
+            <div class="hl-card" style="border-left-color:var(--purple)">
+              <h4 style="color:var(--purple)">FastAPI</h4>
+              <p>asyncio + to_thread，高并发下延迟可控</p>
+            </div>
+            <div class="hl-card" style="border-left-color:var(--pink)">
+              <h4 style="color:var(--pink)">SSE</h4>
+              <p>流式输出 + reasoning 过滤，实时反馈不泄答案</p>
+            </div>
+            <div class="hl-card" style="border-left-color:var(--blue)">
+              <h4 style="color:var(--blue)">SQLite</h4>
+              <p>异步仓储 + 线程池，轻量部署与持久化平衡</p>
+            </div>
+          </div>
+          <p class="pitch anim anim-3" style="margin-top:1.3rem;max-width:680px">
+            珞珈数智助教——用工程化方式让大模型在数学辅导中「可信、可控、可解释」。
+          </p>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Navigation -->
+    <button class="nav-btn prev" id="btnPrev" aria-label="上一张" type="button">&#8249;</button>
+    <button class="nav-btn next" id="btnNext" aria-label="下一张" type="button">&#8250;</button>
+
+    <!-- Progress -->
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </main>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="play-btn" id="btnPlay" aria-label="自动播放" type="button"><span id="playIcon">&#9654;</span></button>
+    <div class="dots" id="dots" role="tablist" aria-label="指示器"></div>
+    <div class="counter-wrap">
+      <span class="counter" id="counter">1 / 10</span>
+      <span class="chap-name" id="chapName">珞珈数智助教</span>
+    </div>
+    <button class="fs-btn" id="btnFs" aria-label="全屏切换" type="button" title="全屏 (F)"><span id="fsIcon">&#x26F6;</span></button>
+  </div>
+
+  <p class="kbd-hint">
+    <kbd>&#8592;</kbd> 上一张 · <kbd>&#8594;</kbd> 下一张 · <kbd>Space</kbd> 播放/暂停 · <kbd>F</kbd> 全屏 · <kbd>Esc</kbd> 停止
+  </p>
+
+  <script>
+    'use strict';
+
+    class Carousel {
+      constructor(config = {}) {
+        this.slides = document.querySelectorAll('.slide');
+        this.total = this.slides.length;
+        this.current = 0;
+        this.isPlaying = false;
+        this.interval = config.interval || 7000;
+        this.progressRate = 50;
+        this.touchThreshold = 50;
+        this.touchStartX = 0;
+        this.progressTimer = null;
+        this.progressVal = 0;
+
+        // DOM
+        this.track = document.getElementById('track');
+        this.dotsContainer = document.getElementById('dots');
+        this.counter = document.getElementById('counter');
+        this.chapName = document.getElementById('chapName');
+        this.progressFill = document.getElementById('progressFill');
+        this.playIcon = document.getElementById('playIcon');
+        this.btnPrev = document.getElementById('btnPrev');
+        this.btnNext = document.getElementById('btnNext');
+        this.btnPlay = document.getElementById('btnPlay');
+        this.btnFs = document.getElementById('btnFs');
+        this.carousel = document.getElementById('carousel');
+
+        this.init();
+      }
+
+      init() {
+        this.renderDots();
+        this.bindEvents();
+        this.updateUI();
+        this.renderMath();
+      }
+
+      renderDots() {
+        const frag = document.createDocumentFragment();
+        this.slides.forEach((_, i) => {
+          const dot = document.createElement('button');
+          dot.className = 'dot' + (i === 0 ? ' active' : '');
+          dot.type = 'button';
+          dot.setAttribute('role', 'tab');
+          dot.setAttribute('aria-label', `第${i+1}张`);
+          dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+          dot.dataset.index = i;
+          frag.appendChild(dot);
+        });
+        this.dotsContainer.appendChild(frag);
+        this.dots = this.dotsContainer.querySelectorAll('.dot');
+      }
+
+      renderMath() {
+        const tryRender = () => {
+          if (typeof renderMathInElement !== 'undefined') {
+            renderMathInElement(this.track, {
+              delimiters: [{left: '$$', right: '$$', display: true}],
+              throwOnError: false
+            });
+          } else {
+            setTimeout(tryRender, 100);
+          }
+        };
+        tryRender();
+      }
+
+      goTo(index) {
+        index = ((index % this.total) + this.total) % this.total;
+        if (index === this.current) return;
+        this.track.style.transform = `translateX(-${index * 100}%)`;
+        this.slides[this.current].classList.remove('active');
+        const next = this.slides[index];
+        next.classList.add('active');
+        // 强制重新触发入场动画，避免切换后文字停留在 opacity:0
+        next.querySelectorAll('.anim').forEach((el) => {
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = '';
+        });
+        this.current = index;
+        this.updateUI();
+        if (this.isPlaying) this.resetProgress();
+      }
+
+      next() { this.goTo(this.current + 1); }
+      prev() { this.goTo(this.current - 1); }
+
+      updateUI() {
+        this.dots.forEach((d, i) => {
+          d.classList.toggle('active', i === this.current);
+          d.setAttribute('aria-selected', i === this.current ? 'true' : 'false');
+        });
+        this.counter.textContent = `${this.current + 1} / ${this.total}`;
+        if (this.chapName) {
+          this.chapName.textContent = this.slides[this.current].dataset.title || '';
+        }
+      }
+
+      play() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        this.playIcon.innerHTML = '&#10074;&#10074;';
+        this.btnPlay.setAttribute('aria-label', '暂停');
+        this.startProgress();
+      }
+
+      pause() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        this.playIcon.innerHTML = '&#9654;';
+        this.btnPlay.setAttribute('aria-label', '播放');
+        this.stopProgress();
+      }
+
+      toggle() { this.isPlaying ? this.pause() : this.play(); }
+
+      toggleFullscreen() {
+        const el = document.body;
+        const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (!isFs) {
+          (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+        }
+      }
+      updateFsIcon() {
+        const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+        const icon = document.getElementById('fsIcon');
+        if (icon) icon.innerHTML = isFs ? '&#x2715;' : '&#x26F6;';
+      }
+
+      startProgress() {
+        this.progressVal = 0;
+        this.progressFill.style.width = '0%';
+        this.progressTimer = setInterval(() => {
+          this.progressVal += (this.progressRate / this.interval) * 100;
+          this.progressFill.style.width = `${this.progressVal}%`;
+          if (this.progressVal >= 100) this.next();
+        }, this.progressRate);
+      }
+
+      stopProgress() {
+        clearInterval(this.progressTimer);
+        this.progressTimer = null;
+        this.progressFill.style.width = '0%';
+      }
+
+      resetProgress() { this.stopProgress(); this.startProgress(); }
+
+      bindEvents() {
+        this.btnPrev.addEventListener('click', () => this.prev());
+        this.btnNext.addEventListener('click', () => this.next());
+        this.btnPlay.addEventListener('click', () => this.toggle());
+        this.btnFs?.addEventListener('click', () => this.toggleFullscreen());
+        const fsChange = () => this.updateFsIcon();
+        document.addEventListener('fullscreenchange', fsChange);
+        document.addEventListener('webkitfullscreenchange', fsChange);
+
+        this.dotsContainer.addEventListener('click', (e) => {
+          const dot = e.target.closest('.dot');
+          if (dot) this.goTo(parseInt(dot.dataset.index, 10));
+        });
+
+        document.addEventListener('keydown', (e) => {
+          switch (e.key) {
+            case 'ArrowLeft': e.preventDefault(); this.prev(); break;
+            case 'ArrowRight': e.preventDefault(); this.next(); break;
+            case ' ': e.preventDefault(); this.toggle(); break;
+            case 'Escape': e.preventDefault(); this.pause(); break;
+            case 'f': case 'F': e.preventDefault(); this.toggleFullscreen(); break;
+          }
+        });
+
+        this.carousel.addEventListener('touchstart', (e) => {
+          this.touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        this.carousel.addEventListener('touchend', (e) => {
+          const diff = this.touchStartX - e.changedTouches[0].screenX;
+          if (Math.abs(diff) > this.touchThreshold) {
+            diff > 0 ? this.next() : this.prev();
+          }
+        }, { passive: true });
+
+        this.carousel.addEventListener('mouseenter', () => {
+          if (this.isPlaying) this.stopProgress();
+        });
+        this.carousel.addEventListener('mouseleave', () => {
+          if (this.isPlaying) this.startProgress();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden && this.isPlaying) this.stopProgress();
+          else if (!document.hidden && this.isPlaying) this.startProgress();
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.__carousel = new Carousel({ interval: 7000 });
+    });
+  </script>
+</body>
+</html>

@@ -116,7 +116,7 @@ function KnowledgeReviewEditor({
               )}
               {unit.source_span.quote && (
                 <blockquote className="text-sm text-amber-900 dark:text-amber-200/80 border-l-2 border-amber-400 dark:border-amber-700 pl-3 italic">
-                  "{unit.source_span.quote}"
+                  &quot;{unit.source_span.quote}&quot;
                 </blockquote>
               )}
             </div>
@@ -259,9 +259,9 @@ export default function AdminKnowledgePage() {
   };
 
   const filteredUnits = units.filter(u => {
-    if (filterStatus !== "all" && u.review_status !== filterStatus && (u as any).status !== filterStatus) {
+    if (filterStatus !== "all" && (u as any).review_status !== filterStatus && (u as any).status !== filterStatus) {
       // check both review_status and status just in case backend used different key
-      const status = u.review_status || (u as any).status || "draft";
+      const status = (u as any).review_status || (u as any).status || "draft";
       if (status !== filterStatus) return false;
     }
     if (searchQuery) {
@@ -288,7 +288,7 @@ export default function AdminKnowledgePage() {
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <h2 className="font-semibold text-lg">Review Center</h2>
-            <Button variant="default" size="sm" onClick={handlePublish} disabled={isPublishing}>
+            <Button variant="primary" size="sm" onClick={handlePublish} disabled={isPublishing}>
               {isPublishing ? "Publishing..." : "Publish"}
             </Button>
           </div>

@@ -6,6 +6,11 @@ import { usePathname } from "next/navigation";
 export function SiteHeader() {
   const pathname = usePathname();
 
+  // Hide the global site header on main app routes where they have their own headers
+  if (['/chat', '/notebook', '/mistake-book'].some(p => pathname.startsWith(p))) {
+    return null;
+  }
+
   const links = [
     { href: "/", label: "首页 (Home)" },
     { href: "/chat", label: "进入对话 (AI Tutor)" },

@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Subject, TutorMode } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { Menu, LayoutPanelLeft, Target, User, LogOut, BookOpen, FileText, Loader2 } from "lucide-react";
+import { Menu, LayoutPanelLeft, Target, User, LogOut, BookOpen, FileText, Loader2, Network } from "lucide-react";
 import { ModeSwitcher } from "./mode-switcher";
 import { SettingsDrawer } from "./settings-drawer";
 import { ThemeToggle } from "./theme-toggle";
@@ -26,8 +26,8 @@ export function AppHeader({
   onToggleZenMode?: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-50 flex h-16 flex-shrink-0 items-center justify-between border-b border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-header)] backdrop-blur-md px-4 sm:px-6 transition-colors duration-300">
-      <div className="flex items-center gap-2 sm:gap-4">
+    <header className="relative z-50 flex h-16 flex-shrink-0 items-center justify-between px-4 sm:px-6 transition-colors duration-300 pointer-events-none">
+      <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto">
         {onToggleSidebar && (
           <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-9 w-9 -ml-2 text-[var(--text-secondary)]">
             <Menu className="w-5 h-5" />
@@ -61,7 +61,11 @@ export function AppHeader({
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </Link>
       </div>
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 pointer-events-auto">
+        <Link href="/graph" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-md border border-cyan-500/20 bg-cyan-500/5 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 transition-colors text-xs font-bold font-body shadow-sm">
+          <Network className="w-4 h-4" />
+          知识网络
+        </Link>
         <Link href="/notebook" className="hidden md:flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-md border border-indigo-500/20 bg-indigo-500/5 text-indigo-500 hover:bg-indigo-500/10 transition-colors text-xs font-bold font-body shadow-sm">
           <BookOpen className="w-4 h-4" />
           笔记本

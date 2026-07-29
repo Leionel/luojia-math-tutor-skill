@@ -91,4 +91,32 @@ def load_knowledge_units(course_id: str = "default_course"):
     units = [item.to_unit(course_id=course_id, prereq_id_map=name_to_id_map) for item in items]
     return tuple(units)
 
-
+@lru_cache
+def load_knowledge_relations() -> tuple[Any, ...]:
+    output_dir = get_settings().knowledge_root / "output"
+    relations = []
+    has_published = (output_dir / "published_knowledge.json").exists()
+    
+    for path in sorted(output_dir.glob("*.json")):
+        if has_published and path.name.startswith("m1_"):
+            continue
+            
+        try:
+            parsed_data = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(parsed_data, dict) and "relations" in parsed_data:
+                from app.knowledge.schema import KnowledgeRelation
+                for r in parsed_data["relations"]:
+                    relations.append(
+                        KnowledgeRelation(
+                            source_unit_id=r.get("source_unit_id", ""),
+                            target_unit_id=r.get("target_unit_id", ""),
+                            relation_type=r.get("relation_type", ""),
+                            confidence=float(r.get("confidence", 1.0)),
+                            provenance=r.get("provenance", "rule"),
+                            review_status=r.get("review_status", "verified")
+                        )
+                    )
+        except Exception:
+            pass
+            
+    return tuple(relations)

@@ -4,8 +4,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
-from app.knowledge.schema import KnowledgeHit
-from app.knowledge.search import search_knowledge_local
+from app.knowledge.schema import KnowledgeHit, EvidencePack
+from app.knowledge.search import search_evidence_pack
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.step_checker import check_step
 from app.math_tools.verifier import VerifyResult
@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 
 LocalSearch = Callable[
     [str, str | None, int],
-    Awaitable[list[KnowledgeHit]],
+    Awaitable[EvidencePack],
 ]
 
 
 @dataclass
 class FastContext:
     history: list[dict[str, str]]
+    evidence_pack: EvidencePack | None
     hits: list[KnowledgeHit]
     document_chunks: list[str]
     concepts: list[str]
@@ -45,7 +46,7 @@ class FastContextCollector:
         self,
         repository: Repository,
         timeout_seconds: float = 0.35,
-        local_search: LocalSearch = search_knowledge_local,
+        local_search: LocalSearch = search_evidence_pack,
     ):
         self.repository = repository
         self.timeout_seconds = timeout_seconds
@@ -88,7 +89,8 @@ class FastContextCollector:
         if pending:
             await asyncio.gather(*pending, return_exceptions=True)
 
-        hits = results.get("hits", [])
+        pack = results.get("hits", None)
+        hits = pack.direct_hits + pack.graph_hits if pack else []
         document_chunks = results.get("document_chunks", [])
         verifier_result, mistake = results.get(
             "symbolic",
@@ -130,6 +132,7 @@ class FastContextCollector:
         }
         return FastContext(
             history=history,
+            evidence_pack=pack,
             hits=hits,
             document_chunks=document_chunks,
             concepts=concepts,
@@ -178,18 +181,18 @@ class FastContextCollector:
     async def _collect_local_hits(
         self,
         state: dict[str, Any],
-    ) -> tuple[list[KnowledgeHit], float]:
+    ) -> tuple[EvidencePack | None, float]:
         started = time.perf_counter()
         try:
-            hits = await self.local_search(
+            pack = await self.local_search(
                 state["message"],
                 state.get("detected_subject") or state.get("subject"),
                 5,
             )
         except Exception:
             logger.exception("Local knowledge search failed")
-            hits = []
-        return hits, (time.perf_counter() - started) * 1000
+            pack = None
+        return pack, (time.perf_counter() - started) * 1000
 
     async def _collect_document_chunks(
         self,

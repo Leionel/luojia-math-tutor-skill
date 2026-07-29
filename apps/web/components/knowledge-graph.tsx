@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -11,12 +11,14 @@ import {
   addEdge,
   Handle,
   Position,
-  BackgroundVariant
+  BackgroundVariant,
+  Node,
+  Edge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { CheckCircle2, Lock, Flame } from 'lucide-react';
+import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
 
-const initialNodes = [
+const defaultNodes: Node[] = [
   // Branch A: Calculus (Blue/Cyan)
   { id: '1', position: { x: 400, y: 50 }, data: { label: '函数与极限', status: 'mastered' }, type: 'skillNode' },
   { id: '2', position: { x: 250, y: 150 }, data: { label: '连续性', status: 'mastered' }, type: 'skillNode' },
@@ -47,7 +49,7 @@ const initialNodes = [
   { id: '23', position: { x: 50, y: 350 }, data: { label: '中心极限定理', status: 'locked' }, type: 'skillNode' },
 ];
 
-const initialEdges = [
+const defaultEdges: Edge[] = [
   // Calculus Edges
   { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
   { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
@@ -79,23 +81,115 @@ const initialEdges = [
   { id: 'e21-23', source: '21', target: '23', style: { stroke: '#4b5563', strokeWidth: 1 } },
 ];
 
+export interface EvidencePackItem {
+  id: string;
+  concept_zh: string;
+  prerequisite?: string[];
+  status?: 'mastered' | 'learning' | 'locked' | 'unknown';
+}
+
+export interface KnowledgeGraphProps {
+  items?: EvidencePackItem[];
+  nodes?: Node[];
+  edges?: Edge[];
+  className?: string;
+}
+
+function generateGraphLayout(items: EvidencePackItem[]) {
+  const levels = new Map<string, number>();
+  
+  items.forEach(item => levels.set(item.id, 0));
+  
+  for (let i = 0; i < items.length; i++) {
+    let changed = false;
+    items.forEach(item => {
+      if (item.prerequisite && item.prerequisite.length > 0) {
+        let maxPrereqLevel = -1;
+        item.prerequisite.forEach(prereq => {
+          if (levels.has(prereq)) {
+            maxPrereqLevel = Math.max(maxPrereqLevel, levels.get(prereq)!);
+          }
+        });
+        if (maxPrereqLevel !== -1 && levels.get(item.id)! <= maxPrereqLevel) {
+          levels.set(item.id, maxPrereqLevel + 1);
+          changed = true;
+        }
+      }
+    });
+    if (!changed) break;
+  }
+
+  const byLevel = new Map<number, EvidencePackItem[]>();
+  items.forEach(item => {
+    const lvl = levels.get(item.id) || 0;
+    if (!byLevel.has(lvl)) {
+      byLevel.set(lvl, []);
+    }
+    byLevel.get(lvl)!.push(item);
+  });
+
+  const newNodes: Node[] = [];
+  const newEdges: Edge[] = [];
+
+  const LEVEL_HEIGHT = 150;
+  const NODE_WIDTH = 250;
+
+  items.forEach(item => {
+    const lvl = levels.get(item.id) || 0;
+    const siblings = byLevel.get(lvl)!;
+    const idx = siblings.findIndex(s => s.id === item.id);
+    
+    const totalWidth = siblings.length * NODE_WIDTH;
+    const startX = -totalWidth / 2;
+    
+    newNodes.push({
+      id: item.id,
+      position: { x: startX + idx * NODE_WIDTH + NODE_WIDTH / 2, y: lvl * LEVEL_HEIGHT },
+      data: { label: item.concept_zh, status: item.status || 'unknown' },
+      type: 'skillNode'
+    });
+
+    if (item.prerequisite) {
+      item.prerequisite.forEach(prereq => {
+        newEdges.push({
+          id: `e${prereq}-${item.id}`,
+          source: prereq,
+          target: item.id,
+          animated: true,
+          style: { stroke: '#9ca3af', strokeWidth: 2 }
+        });
+      });
+    }
+  });
+
+  return { nodes: newNodes, edges: newEdges };
+}
+
 function SkillNode({ data }: { data: any }) {
   const isMastered = data.status === 'mastered';
   const isLearning = data.status === 'learning';
+  const isLocked = data.status === 'locked';
   
   return (
     <div className={`px-4 py-2 shadow-lg rounded-full border-2 bg-white dark:bg-[#1e1e1b] flex items-center gap-2 transition-all duration-500
       ${isMastered ? 'border-emerald-500 shadow-emerald-500/20' : ''}
       ${isLearning ? 'border-blue-500 shadow-blue-500/20 ring-4 ring-blue-500/10' : ''}
-      ${!isMastered && !isLearning ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
+      ${isLocked ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
+      ${!isMastered && !isLearning && !isLocked ? 'border-purple-500 shadow-purple-500/20' : ''}
     `}>
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-[var(--border-subtle)]" />
       
       {isMastered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
       {isLearning && <Flame className="w-4 h-4 text-blue-500 animate-pulse" />}
-      {!isMastered && !isLearning && <Lock className="w-4 h-4 text-gray-400" />}
+      {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
+      {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-purple-500" />}
       
-      <span className={`font-semibold text-sm ${isMastered ? 'text-emerald-700 dark:text-emerald-400' : isLearning ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500'}`}>
+      <span className={`font-semibold text-sm ${
+        isMastered ? 'text-emerald-700 dark:text-emerald-400' : 
+        isLearning ? 'text-blue-700 dark:text-blue-400' : 
+        isLocked ? 'text-gray-500' : 
+        'text-purple-700 dark:text-purple-400'
+      }`}>
         {data.label}
       </span>
       
@@ -104,10 +198,24 @@ function SkillNode({ data }: { data: any }) {
   );
 }
 
-export function KnowledgeGraph() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+export function KnowledgeGraph({ items, nodes: propNodes, edges: propEdges, className }: KnowledgeGraphProps) {
+  const initialNodes = propNodes || (items ? [] : defaultNodes);
+  const initialEdges = propEdges || (items ? [] : defaultEdges);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
   
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const layout = generateGraphLayout(items);
+      setNodes(layout.nodes);
+      setEdges(layout.edges);
+    } else if (propNodes && propEdges) {
+      setNodes(propNodes);
+      setEdges(propEdges);
+    }
+  }, [items, propNodes, propEdges, setNodes, setEdges]);
+
   const nodeTypes = useMemo(() => ({ skillNode: SkillNode }), []);
 
   const onConnect = useCallback(
@@ -116,7 +224,7 @@ export function KnowledgeGraph() {
   );
 
   return (
-    <div className="w-full h-[600px] border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18]">
+    <div className={`w-full h-[600px] border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] ${className || ''}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -132,7 +240,8 @@ export function KnowledgeGraph() {
           nodeColor={(n) => {
             if (n.data?.status === 'mastered') return '#10b981';
             if (n.data?.status === 'learning') return '#3b82f6';
-            return '#4b5563';
+            if (n.data?.status === 'locked') return '#4b5563';
+            return '#a855f7'; // purple-500
           }}
           className="bg-white/50 dark:bg-black/50 border-[var(--border-subtle)]"
           maskColor="rgba(0,0,0,0.1)"

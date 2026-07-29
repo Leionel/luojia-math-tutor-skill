@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import sys
+import asyncio
+
+# Fix for Windows uvicorn exit code -1073741510 during reload
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from app.api.routes_exercises import router as exercises_router
 from app.api.routes_mastery import router as mastery_router

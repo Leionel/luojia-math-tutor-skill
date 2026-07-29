@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 
-interface SourceSpan {
+export interface SourceSpan {
   source_document_id?: string;
   page_start?: number;
   page_end?: number;
   quote?: string;
+  id?: string;
 }
 
 export function SourceSpanCard({ sourceSpan, className = "" }: { sourceSpan: SourceSpan; className?: string }) {
@@ -14,18 +15,19 @@ export function SourceSpanCard({ sourceSpan, className = "" }: { sourceSpan: Sou
 
   if (!sourceSpan) return null;
 
-  const title = `📖 来源 P.${sourceSpan.page_start || "?"}`;
+  const displayLabel = sourceSpan.id || (sourceSpan.page_start ? `P.${sourceSpan.page_start}` : "来源");
+  const title = `📖 来源 ${displayLabel}`;
 
   return (
-    <div className={`inline-block ${className}`}>
+    <span className={`inline-block relative ${className}`}>
       {!isExpanded ? (
-        <button
+        <sup
           onClick={() => setIsExpanded(true)}
-          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors shadow-sm"
+          className="cursor-pointer text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 ml-0.5 px-1 rounded-sm bg-amber-100/50 dark:bg-amber-900/30 transition-colors"
           title="点击查看原文出处"
         >
-          {title}
-        </button>
+          [{displayLabel}]
+        </sup>
       ) : (
         <div 
           className="relative block mt-2 mb-2 bg-amber-50 dark:bg-[#2a2416] border border-amber-200 dark:border-amber-800/50 rounded-lg p-4 shadow-sm max-w-lg cursor-pointer transition-all hover:shadow-md"
@@ -39,7 +41,7 @@ export function SourceSpanCard({ sourceSpan, className = "" }: { sourceSpan: Sou
           </h4>
           {sourceSpan.quote ? (
             <blockquote className="text-sm text-amber-900 dark:text-amber-200/90 border-l-2 border-amber-400 dark:border-amber-700 pl-3 py-1 font-serif leading-relaxed">
-              "{sourceSpan.quote}"
+              &quot;{sourceSpan.quote}&quot;
             </blockquote>
           ) : (
             <div className="text-sm text-amber-700 dark:text-amber-500/70 italic">
@@ -51,6 +53,6 @@ export function SourceSpanCard({ sourceSpan, className = "" }: { sourceSpan: Sou
           </div>
         </div>
       )}
-    </div>
+    </span>
   );
 }

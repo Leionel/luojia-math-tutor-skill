@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
 import { sanitizeHtmlBlock } from "@/lib/html-sanitize";
+import { SourceSpanCard } from "./source-span-card";
 
 function CodeBlock({ language, content }: { language: string; content: string }) {
   const [copied, setCopied] = useState(false);
@@ -124,14 +125,16 @@ function renderMarkdownInline(text: string): React.ReactNode {
     const codeMatch = remaining.match(/`([^`]+?)`/);
     const imageMatch = remaining.match(/!\[([^\]]*)\]\(([^)]+)\)/);
     const linkMatch = remaining.match(/(?<!!)\[([^\]]*)\]\(([^)]+)\)/);
+    const citationMatch = remaining.match(/\[(P\.[a-zA-Z0-9_-]+|\d+)\](?!\()/i);
 
     const boldIndex = boldMatch?.index ?? Infinity;
     const italicIndex = italicMatch?.index ?? Infinity;
     const codeIndex = codeMatch?.index ?? Infinity;
     const imageIndex = imageMatch?.index ?? Infinity;
     const linkIndex = linkMatch?.index ?? Infinity;
+    const citationIndex = citationMatch?.index ?? Infinity;
 
-    const minIndex = Math.min(boldIndex, italicIndex, codeIndex, imageIndex, linkIndex);
+    const minIndex = Math.min(boldIndex, italicIndex, codeIndex, imageIndex, linkIndex, citationIndex);
 
     if (minIndex === Infinity) {
       parts.push(<span key={key++}>{remaining}</span>);
@@ -149,6 +152,17 @@ function renderMarkdownInline(text: string): React.ReactNode {
       if (before) parts.push(<span key={key++}>{before}</span>);
       parts.push(<em key={key++}>{renderMarkdownInline(italicMatch[1])}</em>);
       remaining = remaining.slice(italicIndex + italicMatch[0].length);
+    } else if (citationIndex === minIndex && citationMatch) {
+      const before = remaining.slice(0, citationIndex);
+      if (before) parts.push(<span key={key++}>{before}</span>);
+      parts.push(
+        <SourceSpanCard 
+          key={key++} 
+          sourceSpan={{ id: citationMatch[1] }} 
+          className="mx-0.5 inline-flex" 
+        />
+      );
+      remaining = remaining.slice(citationIndex + citationMatch[0].length);
     } else if (codeIndex === minIndex && codeMatch) {
       const before = remaining.slice(0, codeIndex);
       if (before) parts.push(<span key={key++}>{before}</span>);
