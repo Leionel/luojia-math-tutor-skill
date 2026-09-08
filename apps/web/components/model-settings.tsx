@@ -54,7 +54,7 @@ export function ModelSettings() {
   return (
     <Card>
       <CardTitle>模型设置</CardTitle>
-      <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">系统已内置免费的 DeepSeek 兜底 Key，您可以直接使用！若额度耗尽，您也可以在此输入私人 Key 以接管服务。</div>
+      <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">模型凭证默认由服务端管理。仅当管理员显式开启用户 Key 转发时，此处的临时 Key 才会生效。</div>
       <Select
         className="mb-2"
         value={model}
@@ -73,25 +73,22 @@ export function ModelSettings() {
         ) : (
           <>
             <optgroup label="DeepSeek">
-              <option value="deepseek-chat">DeepSeek Chat</option>
-              <option value="deepseek-reasoner">DeepSeek Reasoner</option>
               <option value="deepseek-v4-flash">DeepSeek v4 Flash</option>
               <option value="deepseek-v4-pro">DeepSeek v4 Pro</option>
             </optgroup>
             <optgroup label="通义千问 (Qwen)">
-              <option value="qwen-max">Qwen Max</option>
               <option value="qwen-plus">Qwen Plus</option>
-              <option value="qwen-turbo">Qwen Turbo</option>
-              <option value="qwen-math-plus">Qwen Math Plus</option>
+              <option value="qwen3.5-plus">Qwen 3.5 Plus</option>
+              <option value="qwen3.6-plus">Qwen 3.6 Plus</option>
             </optgroup>
             <optgroup label="Kimi (Moonshot)">
-              <option value="moonshot-v1-8k">Moonshot v1 8K</option>
-              <option value="moonshot-v1-32k">Moonshot v1 32K</option>
+              <option value="kimi-k3">Kimi K3</option>
+              <option value="kimi-k2.6">Kimi K2.6</option>
             </optgroup>
             <optgroup label="智谱 (ZhipuAI)">
-              <option value="glm-4">GLM-4</option>
-              <option value="glm-4-flash">GLM-4 Flash</option>
-              <option value="glm-4v">GLM-4V</option>
+              <option value="glm-4.7">GLM-4.7</option>
+              <option value="glm-4.7-flash">GLM-4.7 Flash</option>
+              <option value="glm-4.6v-flash">GLM-4.6V Flash</option>
             </optgroup>
           </>
         )}

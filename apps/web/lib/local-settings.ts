@@ -5,21 +5,18 @@ export function getUserApiKey() {
 
 export type SupportModel = string;
 
-export const DEFAULT_MODEL = "deepseek-chat";
+export const DEFAULT_MODEL = "deepseek-v4-flash";
 const SUPPORTED_MODELS = new Set([
-  "deepseek-chat",
-  "deepseek-reasoner",
   "deepseek-v4-flash",
   "deepseek-v4-pro",
-  "qwen-max",
   "qwen-plus",
-  "qwen-turbo",
-  "qwen-math-plus",
-  "moonshot-v1-8k",
-  "moonshot-v1-32k",
-  "glm-4",
-  "glm-4-flash",
-  "glm-4v",
+  "qwen3.5-plus",
+  "qwen3.6-plus",
+  "kimi-k3",
+  "kimi-k2.6",
+  "glm-4.7",
+  "glm-4.7-flash",
+  "glm-4.6v-flash",
 ]);
 
 export function getPreferredModel(): SupportModel {

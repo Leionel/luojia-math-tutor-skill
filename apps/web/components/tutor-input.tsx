@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageIcon, X, Loader2, PenTool, Eraser, Check, AlertCircle, Undo2, Redo2, Keyboard, LineChart } from "lucide-react";
 import { DesmosModal } from "./desmos-modal";
+import { getAuthHeaders } from "@/lib/demo-auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -142,6 +143,7 @@ export function TutorInput({
         formData.append("file", selectedFile);
         const res = await fetch(`${API_BASE}/api/uploads`, {
           method: "POST",
+          headers: getAuthHeaders(),
           body: formData,
         });
         if (!res.ok) throw new Error("Upload failed");

@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ParticleField } from "@/components/particle-field";
 import { LiveSandbox } from "@/components/live-sandbox";
 import { AgentArchitectureDiagram } from "@/components/agent-architecture-diagram";
-import { grantDemoAccess, hasDemoAccess } from "@/lib/demo-auth";
+import { hasDemoAccess } from "@/lib/demo-auth";
 import { InkBackground } from "@/components/ink-background";
 
 const MARQUEE_CONCEPTS = [
@@ -23,10 +23,7 @@ export default function SplashPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Simulate auth state checking
-    if (localStorage.getItem("mock_auth_token")) {
-      setIsLoggedIn(true);
-    }
+    setIsLoggedIn(hasDemoAccess());
   }, []);
 
   if (!mounted) return null;
@@ -75,18 +72,18 @@ export default function SplashPage() {
             </>
           ) : (
             <>
-              <button 
-                onClick={() => { localStorage.setItem("mock_auth_token", "true"); setIsLoggedIn(true); }} 
+              <Link
+                href="/auth/login"
                 className="text-sm font-title tracking-widest text-[#4a4d44] dark:text-[#c5c2b6] hover:text-[#617a55] dark:hover:text-[#879f7a] transition-colors"
               >
                 登 录 (Login)
-              </button>
-              <button 
-                onClick={() => { localStorage.setItem("mock_auth_token", "true"); setIsLoggedIn(true); }}
+              </Link>
+              <Link
+                href="/auth/register"
                 className="px-6 py-2 text-sm font-title tracking-widest bg-[#617a55] text-[#faf7f2] hover:bg-transparent hover:text-[#617a55] dark:hover:text-[#879f7a] border border-[#617a55] rounded-full transition-all shadow-sm"
               >
                 注 册 (Register)
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -130,25 +127,25 @@ export default function SplashPage() {
               <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">自动错题本</h3>
               <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Auto Mistake Book</p>
               <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                智能捕捉推导中的谬误，并自动记录成册。温故而知新，避免在同样的逻辑迷宫中徘徊。
+                在可识别的步骤错误出现时记录对应知识点与错因，方便回看并进行针对性练习。
               </p>
             </div>
             {/* Feature 3 */}
             <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
               <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">叁</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">动态可视化</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Dynamic Visualization</p>
+              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">公式与图像</h3>
+              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Math Rendering</p>
               <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                抽象的几何与代数在水墨氤氲中徐徐展开。通过动态可视化的渲染，让复杂的数学结构呈现出独有的灵动与韵味。
+                规范渲染 LaTeX 公式，并可按题目需要生成函数、统计等数学图像，帮助理解抽象结构。
               </p>
             </div>
             {/* Feature 4 */}
             <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
               <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">肆</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">多模型基座</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Multi-Model Architecture</p>
+              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">模型接入配置</h3>
+              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Model Configuration</p>
               <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                集百家之长，汇聚多种AI模型的智慧。在后台默契配合，为你提供最精准、多维度的学情推演。
+                支持配置兼容接口、模型名称与访问密钥，在不同服务之间切换，并沿用同一套助教流程。
               </p>
             </div>
           </motion.div>
@@ -399,7 +396,7 @@ export default function SplashPage() {
               <div className="text-7xl font-title text-[#617a55] opacity-10 absolute -right-2 -bottom-6 group-hover:scale-110 transition-transform">3</div>
               <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">观象 (Visualize)</h3>
               <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed relative z-10">
-                当文字难以名状，系统会实时渲染出精美的数学公式与动态几何图形，让抽象的数理跃然纸上。
+                回答中的数学公式会按 LaTeX 规范渲染；需要图像时，可结合绘图工具补充函数或统计图。
               </p>
             </motion.div>
 
@@ -545,7 +542,7 @@ export default function SplashPage() {
                 <h3 className="text-2xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">刷题模式</h3>
                 <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] mb-4 tracking-widest uppercase font-bold">Practice Mode</p>
                 <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
-                  举一反三，温故知新。基于你当前的错题薄与能力模型，系统将自动生成难度匹配的同源变式题，陪你进行刻意练习。
+                  根据当前知识点和所选难度生成相关练习；错题本也可从原错因出发，发起一道针对性练习。
                 </p>
               </div>
             </motion.div>
@@ -560,7 +557,7 @@ export default function SplashPage() {
                 <h3 className="text-2xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">整理笔记</h3>
                 <p className="text-xs text-[#879f7a] mb-4 tracking-widest uppercase font-bold">Notes Mode</p>
                 <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
-                  化繁为简，提炼精粹。将你凌乱的草稿或杂乱的思绪发送给助教，它将自动生成结构清晰、排版绝美的 Markdown/LaTeX 数学笔记。
+                  将本轮对话整理为结构清晰的 Markdown/LaTeX 随堂笔记，保存后可继续阅读、打印或发起小测。
                 </p>
               </div>
             </motion.div>
@@ -582,7 +579,7 @@ export default function SplashPage() {
               引擎矩阵 / <span className="text-[#c44a3d]">生态底座</span>
             </motion.h2>
             <motion.p variants={fadeUpVariants} className="text-lg font-body text-[#757a6b] dark:text-[#8d8a7d]">
-              极致的工程化打磨，为您提供行业顶配的数智学习生态。
+              围绕题目讲解、步骤校验、知识追踪与复习记录，形成连贯的学习流程。
             </motion.p>
           </motion.div>
 
@@ -600,9 +597,9 @@ export default function SplashPage() {
                 <div className="w-14 h-14 rounded-xl bg-[#c44a3d]/10 flex items-center justify-center mb-6">
                   <Printer className="w-7 h-7 text-[#c44a3d]" />
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-3">全自动错题实体卷导出</h3>
+                <h3 className="text-2xl sm:text-3xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-3">错题打印与导出</h3>
                 <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-base leading-relaxed max-w-md">
-                  诊断学习瓶颈后自动收录错题。一键切换「实体试卷」模式，自动抹除 UI 干扰、排版留白，直接导出完美 A4 格式进行线下打印复习。
+                  汇总已保存的错因与相关题目，切换到打印样式后隐藏操作控件，并保留作答空白，便于打印或另存为 PDF。
                 </p>
               </div>
             </motion.div>
@@ -612,9 +609,9 @@ export default function SplashPage() {
               <div className="absolute top-8 right-8 text-[#617a55] opacity-20 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
                 <Video className="w-12 h-12" />
               </div>
-              <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">262 项课本级视频库</h3>
+              <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">课程视频索引</h3>
               <p className="text-[#757a6b] dark:text-[#8d8a7d] text-sm leading-relaxed">
-                覆盖高数、线代、概统全部小节的精选 B站讲解视频精准投喂。
+                按识别到的知识点检索本地索引与 B 站讲解资源，作为文字讲解之外的补充。
               </p>
             </motion.div>
 
@@ -625,7 +622,7 @@ export default function SplashPage() {
               </div>
               <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">记忆体与智能分流</h3>
               <p className="text-[#757a6b] dark:text-[#8d8a7d] text-sm leading-relaxed">
-                全时记忆对话历史，首句提问自动凝练为精准的会话标签。
+                保存会话消息与学习状态，并根据首轮问题生成便于检索的会话标题和学科标签。
               </p>
             </motion.div>
 
@@ -637,9 +634,9 @@ export default function SplashPage() {
                   <div className="w-12 h-12 rounded-full bg-[#faf7f2]/10 flex items-center justify-center mb-4">
                     <LineChart className="w-6 h-6 text-[#d6d0ba]" />
                   </div>
-                  <h3 className="text-2xl font-title font-bold text-[#faf7f2] mb-2">JSXGraph 动态几何域</h3>
+                  <h3 className="text-2xl font-title font-bold text-[#faf7f2] mb-2">数学公式与绘图</h3>
                   <p className="text-[#d6d0ba] text-sm leading-relaxed max-w-lg">
-                    不仅仅是 LaTeX 公式。从函数微积分曲线，到高维线性代数变换，通过内嵌交互式绘图板，让死板的公式真正“动”起来。
+                    对公式进行安全、清晰的排版；对函数曲线、统计分布等可视化请求，生成对应图像辅助说明。
                   </p>
                 </div>
                 <div className="hidden md:flex flex-1 justify-end opacity-60 mix-blend-screen">

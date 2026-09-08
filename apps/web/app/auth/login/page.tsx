@@ -5,19 +5,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight, KeyRound, User } from "lucide-react";
-import { grantDemoAccess } from "@/lib/demo-auth";
+import { authenticate } from "@/lib/demo-auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthenticating(true);
-    setTimeout(() => {
-      grantDemoAccess();
+    setError("");
+    try {
+      await authenticate("login", userId, password);
       router.push("/chat");
-    }, 800);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "登录失败");
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   const containerVariants: Variants = {
@@ -56,6 +64,8 @@ export default function LoginPage() {
             <input 
               type="text" 
               required
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="user@domain.com"
             />
@@ -69,11 +79,16 @@ export default function LoginPage() {
             <input 
               type="password" 
               required
+              minLength={10}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="••••••••"
             />
           </div>
         </div>
+
+        {error && <p role="alert" className="text-sm text-[#c44a3d]">{error}</p>}
 
         <motion.div variants={itemVariants} className="pt-4">
           <button 

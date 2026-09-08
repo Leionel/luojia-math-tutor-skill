@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LatexRenderer } from "@/components/latex-renderer";
 import { Textarea } from "@/components/ui/textarea";
+import { getAuthHeaders } from "@/lib/demo-auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -42,7 +43,7 @@ function KnowledgeReviewEditor({
         };
         const res = await fetch(`${API_BASE}/api/admin/knowledge/units/${unit.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error("Failed to save content edits.");
@@ -52,7 +53,7 @@ function KnowledgeReviewEditor({
       const action = status === "active" ? "approve" : "reject";
       const resPost = await fetch(`${API_BASE}/api/admin/knowledge/review`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ unit_ids: [unit.id], action }),
       });
       if (!resPost.ok) throw new Error("Failed to update status.");
@@ -180,7 +181,7 @@ export default function AdminKnowledgePage() {
     try {
       setLoading(true);
       setFetchError(null);
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/list`);
+      const res = await fetch(`${API_BASE}/api/admin/knowledge/list`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch knowledge units");
       const data = await res.json();
       setUnits(data.units || data.items || []);
@@ -212,7 +213,7 @@ export default function AdminKnowledgePage() {
       setLoading(true);
       const res = await fetch(`${API_BASE}/api/admin/knowledge/review`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ unit_ids: Array.from(selectedIds), action }),
       });
       if (!res.ok) throw new Error(`Failed to batch ${action}`);
@@ -229,7 +230,7 @@ export default function AdminKnowledgePage() {
     if (!confirm("即将根据已激活的知识库重新构建大语言模型的向量索引，是否继续？")) return;
     setIsPublishing(true);
     try {
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/publish`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/api/admin/knowledge/publish`, { method: "POST", headers: getAuthHeaders() });
       if (!res.ok) throw new Error("Failed to publish");
       alert("发布成功 (Publish successful)!");
     } catch (err: any) {

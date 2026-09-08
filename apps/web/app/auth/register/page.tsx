@@ -5,19 +5,28 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight, KeyRound, User, Mail } from "lucide-react";
-import { grantDemoAccess } from "@/lib/demo-auth";
+import { authenticate } from "@/lib/demo-auth";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isInitializing, setIsInitializing] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsInitializing(true);
-    setTimeout(() => {
-      grantDemoAccess();
+    setError("");
+    try {
+      await authenticate("register", userId, password, displayName);
       router.push("/chat");
-    }, 800);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "注册失败");
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const containerVariants: Variants = {
@@ -56,6 +65,8 @@ export default function RegisterPage() {
             <input 
               type="text" 
               required
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="您的称呼"
             />
@@ -69,6 +80,8 @@ export default function RegisterPage() {
             <input 
               type="email" 
               required
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="user@domain.com"
             />
@@ -101,20 +114,24 @@ export default function RegisterPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">密码</label>
-            <span className="text-xs text-[#a0a596] dark:text-[#757a6b]">至少 8 个字符</span>
+            <span className="text-xs text-[#a0a596] dark:text-[#757a6b]">至少 10 个字符</span>
           </div>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757a6b]" />
             <input 
               type="password" 
               required
-              minLength={8}
-              maxLength={32}
+              minLength={10}
+              maxLength={256}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
               placeholder="••••••••"
             />
           </div>
         </div>
+
+        {error && <p role="alert" className="text-sm text-[#c44a3d]">{error}</p>}
 
         <motion.div variants={itemVariants} className="pt-4">
           <button 
