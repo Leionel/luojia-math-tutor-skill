@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
+from app.config import Settings, get_settings
 from app.knowledge.schema import KnowledgeHit, EvidencePack
 from app.knowledge.search import search_evidence_pack
 from app.knowledge.concepts import extract_explicit_concepts
@@ -31,6 +33,7 @@ class FastContext:
     hits: list[KnowledgeHit]
     document_chunks: list[str]
     concepts: list[str]
+    concept_items: list[dict[str, Any]]
     verifier_result: VerifyResult
     mistake: Mistake | None
     mastery_score: float
@@ -47,14 +50,21 @@ class FastContextCollector:
         repository: Repository,
         timeout_seconds: float = 0.35,
         local_search: LocalSearch = search_evidence_pack,
+        settings: Settings | None = None,
     ):
         self.repository = repository
         self.timeout_seconds = timeout_seconds
         self.local_search = local_search
+        self.settings = settings or get_settings()
 
     async def collect(self, state: dict[str, Any]) -> FastContext:
         started = time.perf_counter()
-        history, document_id, previous_concepts = await asyncio.to_thread(
+        (
+            history,
+            document_id,
+            previous_concepts,
+            previous_concept_items,
+        ) = await asyncio.to_thread(
             self._prepare_session,
             state["user_id"],
             state["session_id"],
@@ -109,6 +119,18 @@ class FastContextCollector:
             mistake,
             previous_concepts,
         )
+        concept_items = self._build_concept_items(
+            message=state["message"],
+            concepts=concepts,
+            hits=hits,
+            mistake=mistake,
+            previous_items=previous_concept_items,
+            assessed=(
+                state.get("intent") is Intent.CHECK_STUDENT_STEP
+                and verifier_result.verified
+                and verifier_result.is_correct is not None
+            ),
+        )
         learning_state = {
             **state,
             "hits": hits,
@@ -136,6 +158,7 @@ class FastContextCollector:
             hits=hits,
             document_chunks=document_chunks,
             concepts=concepts,
+            concept_items=concept_items,
             verifier_result=verifier_result,
             mistake=mistake,
             mastery_score=mastery["mastery_score"],
@@ -151,7 +174,12 @@ class FastContextCollector:
         user_id: str,
         session_id: str,
         message: str,
-    ) -> tuple[list[dict[str, str]], str | None, list[str]]:
+    ) -> tuple[
+        list[dict[str, str]],
+        str | None,
+        list[str],
+        list[dict[str, Any]],
+    ]:
         self.repository.ensure_user(user_id)
         db_messages = self.repository.list_messages(session_id)
         history = [
@@ -159,11 +187,13 @@ class FastContextCollector:
             for item in db_messages
         ]
         previous_concepts: list[str] = []
+        previous_concept_items: list[dict[str, Any]] = []
         for item in reversed(db_messages):
             learning_meta = item.get("learning_meta") or {}
             concepts = learning_meta.get("concepts") or []
             if item.get("role") == "assistant" and concepts:
                 previous_concepts = concepts
+                previous_concept_items = learning_meta.get("concept_items") or []
                 break
         self.repository.add_message(session_id, "user", message)
         sessions = self.repository.list_sessions(user_id)
@@ -176,7 +206,7 @@ class FastContextCollector:
             if current_session
             else None
         )
-        return history, document_id, previous_concepts
+        return history, document_id, previous_concepts, previous_concept_items
 
     async def _collect_local_hits(
         self,
@@ -239,6 +269,21 @@ class FastContextCollector:
         return result, (time.perf_counter() - started) * 1000
 
     @staticmethod
+    def _classify_integral(message: str) -> str | None:
+        compact = message.replace(" ", "").lower()
+        if "∫" not in compact and "\\int" not in compact:
+            return None
+        if re.search(r"(?:∫|\\int)_?\{?[^}]*\}?\^\{?[^}]*\}?", compact):
+            return "定积分"
+        if any(marker in compact for marker in ("sin", "cos", "tan", "正弦", "余弦")):
+            return "三角函数积分"
+        if any(marker in compact for marker in ("e^", "exp", "指数")):
+            return "指数函数积分"
+        if re.search(r"x(?:\^|[¹²³⁴⁵⁶⁷⁸⁹])", compact):
+            return "幂函数积分"
+        return "积分"
+
+    @staticmethod
     def _derive_concepts(
         message: str,
         hits: list[KnowledgeHit],
@@ -264,11 +309,149 @@ class FastContextCollector:
                 for hit in hits[:3]
                 if hit.item.concept_zh
             ]
-        if ("∫" in message or "\\int" in message) and "幂函数积分" not in concepts:
-            concepts.insert(0, "幂函数积分")
+        integral_concept = FastContextCollector._classify_integral(message)
+        if not concepts and integral_concept:
+            concepts.append(integral_concept)
         if mistake and mistake.concept not in concepts:
             concepts.insert(0, mistake.concept)
         return list(dict.fromkeys(concepts))
+
+    @staticmethod
+    def _build_concept_items(
+        message: str,
+        concepts: list[str],
+        hits: list[KnowledgeHit],
+        mistake: Mistake | None,
+        previous_items: list[dict[str, Any]] | None = None,
+        assessed: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Keep the concept trace explainable without changing legacy labels."""
+        explicit = set(extract_explicit_concepts(message))
+        hits_by_label = {
+            hit.item.concept_zh: hit.item
+            for hit in hits
+            if hit.item.concept_zh
+        }
+        previous_by_label = {
+            str(item.get("label")): item
+            for item in (previous_items or [])
+            if item.get("label")
+        }
+        hit_ids_by_label = {
+            hit.item.concept_zh: hit.item.id
+            for hit in hits
+            if hit.item.concept_zh
+        }
+        result: list[dict[str, Any]] = []
+
+        for index, label in enumerate(concepts):
+            knowledge_item = hits_by_label.get(label) or next(
+                (
+                    hit.item
+                    for hit in hits
+                    if hit.item.concept_zh
+                    and (
+                        label in hit.item.concept_zh
+                        or hit.item.concept_zh in label
+                    )
+                ),
+                None,
+            )
+            previous = previous_by_label.get(label, {})
+            is_mistake = bool(mistake and mistake.concept == label)
+
+            if is_mistake:
+                source = "mistake"
+                evidence = f"步骤检查定位到：{mistake.label}"
+            elif label in explicit:
+                source = "explicit"
+                evidence = "题目或提问中直接提及"
+            elif knowledge_item:
+                source = "retrieval"
+                evidence = "根据题意与本地知识库匹配"
+            elif previous:
+                source = "conversation"
+                evidence = "沿用本会话上一轮的考点"
+            else:
+                source = "rule"
+                evidence = "根据题目中的数学符号与规则识别"
+
+            chapter = (
+                knowledge_item.chapter
+                if knowledge_item
+                else str(previous.get("chapter") or "")
+            )
+            section = (
+                knowledge_item.section
+                if knowledge_item
+                else str(previous.get("section") or "")
+            )
+            description = (
+                knowledge_item.description
+                if knowledge_item
+                else str(previous.get("description") or "")
+            )
+            description = " ".join(description.split())
+            if len(description) > 180:
+                description = f"{description[:177]}..."
+
+            raw_prerequisites = (
+                knowledge_item.prerequisite
+                if knowledge_item
+                else previous.get("prerequisites") or []
+            )
+            prerequisites: list[dict[str, str]] = []
+            for prerequisite in raw_prerequisites:
+                if isinstance(prerequisite, dict):
+                    prerequisite_label = str(
+                        prerequisite.get("label")
+                        or prerequisite.get("display_name")
+                        or prerequisite.get("id")
+                        or ""
+                    )
+                    prerequisite_id = str(
+                        prerequisite.get("id")
+                        or prerequisite.get("unit_id")
+                        or hit_ids_by_label.get(prerequisite_label)
+                        or f"concept:{prerequisite_label}"
+                    )
+                else:
+                    prerequisite_label = str(prerequisite)
+                    prerequisite_id = str(
+                        hit_ids_by_label.get(prerequisite_label)
+                        or f"concept:{prerequisite_label}"
+                    )
+                if prerequisite_label:
+                    prerequisites.append(
+                        {"id": prerequisite_id, "label": prerequisite_label}
+                    )
+
+            result.append(
+                {
+                    "id": (
+                        knowledge_item.id
+                        if knowledge_item
+                        else str(previous.get("id") or f"concept:{label}")
+                    ),
+                    "label": label,
+                    "subject": (
+                        knowledge_item.subject
+                        if knowledge_item
+                        else str(previous.get("subject") or "")
+                    ),
+                    "chapter": chapter,
+                    "section": section,
+                    "path": [part for part in (chapter, section) if part],
+                    "description": description,
+                    "role": "primary" if index == 0 else "related",
+                    "assessed": bool(index == 0 and assessed),
+                    "source": source,
+                    "evidence": evidence,
+                    "prerequisites": prerequisites,
+                }
+            )
+
+        return result
 
     def _finalize_learning_state(
         self,
@@ -277,7 +460,7 @@ class FastContextCollector:
         verifier_result: VerifyResult,
         mistake: Mistake | None,
     ) -> dict[str, float | int | str]:
-        mastery_score = 0.5
+        mastery_score = self.settings.initial_mastery
         mastery_delta = 0.0
         hint_level = 0
 
@@ -299,7 +482,11 @@ class FastContextCollector:
                 state["user_id"],
                 primary_concept,
             )
-            mastery_score = existing["score"] if existing else 0.5
+            mastery_score = (
+                existing["score"]
+                if existing
+                else self.settings.initial_mastery
+            )
 
             if (
                 verifier_result.verified
@@ -311,12 +498,23 @@ class FastContextCollector:
                     event_type="check_step",
                     correct=verifier_result.is_correct,
                     hint_level=1 if state.get("requested_hint") else 0,
-                    difficulty=3,  # default difficulty
+                    difficulty=self.settings.default_difficulty,
                     error_type=mistake.code if mistake else None
                 )
                 update = update_mastery(
                     mastery_score,
-                    event
+                    event,
+                    slip_probability=self.settings.bkt_slip_probability,
+                    guess_probabilities=(
+                        self.settings.bkt_guess_independent,
+                        self.settings.bkt_guess_light_hint,
+                        self.settings.bkt_guess_heavy_hint,
+                    ),
+                    learn_probabilities=(
+                        self.settings.bkt_learn_independent,
+                        self.settings.bkt_learn_light_hint,
+                        self.settings.bkt_learn_heavy_hint,
+                    ),
                 )
                 mastery_delta = update.delta
                 mastery_score = update.new_score
@@ -336,10 +534,24 @@ class FastContextCollector:
                 consecutive_errors,
                 state.get("requested_hint", False),
                 state.get("mode", "socratic"),
+                error_thresholds=(
+                    self.settings.hint_error_light,
+                    self.settings.hint_error_formula,
+                    self.settings.hint_error_near_answer,
+                ),
+                mastery_thresholds=(
+                    self.settings.hint_mastery_formula,
+                    self.settings.hint_mastery_light,
+                ),
             ).value
 
             # --- KNOWLEDGE GRAPH LINKAGE ---
-            if consecutive_errors >= 2 or mastery_score < 0.3:
+            if (
+                consecutive_errors
+                >= self.settings.remediation_error_threshold
+                or mastery_score
+                < self.settings.remediation_mastery_threshold
+            ):
                 primary_item = next(
                     (
                         hit.item

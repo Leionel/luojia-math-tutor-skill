@@ -222,3 +222,48 @@ async def test_model_reasoning_is_not_forwarded_or_persisted():
         for call in config["configurable"]["on_thinking"].await_args_list
     ]
     assert all("private chain of thought" not in event for event in thinking_events)
+
+
+@pytest.mark.asyncio
+async def test_teacher_executes_requested_verification_before_showing_output(monkeypatch):
+    workflow = TutorWorkflow(get_settings(), make_repository())
+    responses = iter([
+        "[VERIFY]\n```python\nprint(2 + 2)\n```\n[OUTPUT]\n尚未核对",
+        "[OUTPUT]\n已核对，结果是 4。",
+    ])
+
+    async def fake_stream(messages, api_key=None, model=None):
+        yield {"type": "content", "content": next(responses)}
+
+    execute = AsyncMock(return_value="Output:\n4")
+    monkeypatch.setattr("app.tutor.graph.execute_python_code", execute)
+    workflow.llm.stream = fake_stream
+    state = make_state("请核对 2+2")
+    state["messages"] = [{"role": "system", "content": "skill"}, {"role": "user", "content": state["message"]}]
+
+    result = await workflow.teacher_node(state, make_config())
+
+    execute.assert_awaited_once_with("print(2 + 2)", timeout=workflow.settings.tool_timeout_seconds)
+    assert result["final_output"] == "已核对，结果是 4。"
+    assert result["metrics"]["sandbox_tool_calls"] == 1
+    assert "尚未核对" not in result["final_output"]
+
+
+@pytest.mark.asyncio
+async def test_vision_parse_enriches_the_turn_and_emits_confirmation():
+    workflow = TutorWorkflow(get_settings(), make_repository())
+    workflow.vision_parser.parse_images = AsyncMock(return_value={
+        "problem_text": "求 x^2 的导数",
+        "latex": ["x^2"],
+        "confidence": 0.98,
+        "needs_confirmation": True,
+    })
+    state = make_state("请看图")
+    state["image_urls"] = ["data:image/png;base64,aA=="]
+    config = make_config()
+
+    result = await workflow.vision_parse_node(state, config)
+
+    assert "求 x^2 的导数" in result["message"]
+    events = [call.args[0] for call in config["configurable"]["on_thinking"].await_args_list]
+    assert any("event: vision_confirmation" in event for event in events)

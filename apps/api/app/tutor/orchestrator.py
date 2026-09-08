@@ -4,13 +4,12 @@ import logging
 import time
 from collections.abc import AsyncIterator
 
-from app.agents.harness_evaluator import PedagogyHarness
-from app.agents.vision_agent import VisionParser
 from app.config import Settings
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
+from app.observability import current_request_id
 from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
 
@@ -30,8 +29,6 @@ class TutorOrchestrator:
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
-        self.vision_parser = VisionParser()
-        self.harness = PedagogyHarness(settings)
         self.workflow_owner = TutorWorkflow(settings, repository)
         self.workflow = self.workflow_owner.workflow
 
@@ -163,12 +160,37 @@ class TutorOrchestrator:
             getattr(verifier_result, "summary", ""),
         )
         mistake = state.get("mistake")
+        concepts = state.get("concepts", [])
+        concept_items_by_label = {
+            str(item.get("label")): item
+            for item in state.get("concept_items", [])
+            if isinstance(item, dict) and item.get("label")
+        }
+        concept_items = []
+        for index, concept in enumerate(concepts):
+            item = dict(concept_items_by_label.get(concept, {}))
+            item.setdefault("id", f"concept:{concept}")
+            item["label"] = concept
+            item["role"] = "primary" if index == 0 else "related"
+            item["assessed"] = bool(
+                index == 0
+                and verified
+                and is_correct is not None
+                and intent == "check_student_step"
+            )
+            item.setdefault("path", [])
+            item.setdefault("description", "")
+            item.setdefault("source", "rule")
+            item.setdefault("evidence", "根据本轮题意识别")
+            item.setdefault("prerequisites", [])
+            concept_items.append(item)
         return {
             "intent": intent,
             "subject": state.get("detected_subject")
             or state.get("subject")
             or "auto",
-            "concepts": state.get("concepts", []),
+            "concepts": concepts,
+            "concept_items": concept_items,
             "verified": verified,
             "is_correct": is_correct,
             "mistake": getattr(mistake, "label", mistake),
@@ -195,6 +217,12 @@ class TutorOrchestrator:
         image_urls: list[str] | None = None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
+        request_id = current_request_id()
+        initial_mastery = getattr(
+            getattr(self, "settings", None),
+            "initial_mastery",
+            0.5,
+        )
         route = route_fast_path(message, mode, subject)
         opening = generate_opening(route)
         opening_ms = round(
@@ -212,6 +240,7 @@ class TutorOrchestrator:
 
         initial_state = {
             "message": message,
+            "original_message": message,
             "session_id": session_id,
             "user_id": user_id,
             "subject": subject,
@@ -220,6 +249,7 @@ class TutorOrchestrator:
             "model": model,
             "requested_hint": requested_hint,
             "image_urls": image_urls,
+            "vision_result": {},
             "intent": route.intent,
             "detected_subject": route.subject,
             "pedagogical_action": route.pedagogical_action,
@@ -237,7 +267,8 @@ class TutorOrchestrator:
             "verification_result": {},
             "mistake": None,
             "concepts": [],
-            "mastery_score": 0.5,
+            "concept_items": [],
+            "mastery_score": initial_mastery,
             "mastery_delta": 0.0,
             "mastery_label_str": "一般",
             "hint_level": 0,
@@ -246,6 +277,7 @@ class TutorOrchestrator:
             "final_output": "",
             "thinking_chain": "",
             "metrics": {
+                "request_id": request_id,
                 "opening_ms": opening_ms,
                 "fast_context_ms": 0.0,
                 "local_rag_ms": 0.0,
@@ -253,6 +285,8 @@ class TutorOrchestrator:
                 "policy_fallback_ms": 0.0,
                 "verifier_ms": 0.0,
                 "teacher_first_token_ms": 0.0,
+                "vision_parse_ms": 0.0,
+                "sandbox_tool_calls": 0,
                 "total_ms": 0.0,
                 "llm_call_count": 0,
                 "route": "",
@@ -384,6 +418,7 @@ class TutorOrchestrator:
             thinking_elapsed_ms,
             learning_meta,
         )
+        yield sse("meta_update", learning_meta)
         metrics = dict(final_state.get("metrics", {}))
         metrics["total_ms"] = round(
             (time.perf_counter() - request_started) * 1000,

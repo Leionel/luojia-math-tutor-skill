@@ -18,6 +18,8 @@ def decide_hint_level(
     consecutive_errors: int,
     user_requested_hint: bool,
     mode: str = "socratic",
+    error_thresholds: tuple[int, int, int] = (1, 2, 3),
+    mastery_thresholds: tuple[float, float] = (0.2, 0.4),
 ) -> HintLevel:
     """决定提示层级。
 
@@ -35,17 +37,19 @@ def decide_hint_level(
     base = HintLevel.LIGHT_HINT if user_requested_hint else HintLevel.INDEPENDENT
 
     # 连续错误次数升级提示
-    if consecutive_errors >= 3:
+    light_errors, formula_errors, near_answer_errors = error_thresholds
+    formula_mastery, light_mastery = mastery_thresholds
+    if consecutive_errors >= near_answer_errors:
         base = max(base, HintLevel.NEAR_ANSWER)
-    elif consecutive_errors >= 2:
+    elif consecutive_errors >= formula_errors:
         base = max(base, HintLevel.FORMULA_HINT)
-    elif consecutive_errors >= 1:
+    elif consecutive_errors >= light_errors:
         base = max(base, HintLevel.LIGHT_HINT)
 
     # 掌握度低时升级提示
-    if mastery_score < 0.2:
+    if mastery_score < formula_mastery:
         base = max(base, HintLevel.FORMULA_HINT)
-    elif mastery_score < 0.4:
+    elif mastery_score < light_mastery:
         base = max(base, HintLevel.LIGHT_HINT)
 
     return HintLevel(min(base, HintLevel.NEAR_ANSWER))

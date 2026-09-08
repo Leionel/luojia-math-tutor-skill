@@ -185,3 +185,41 @@ async def test_low_mastery_resolves_prerequisite_hints_from_display_names():
 
     assert context.prerequisite_hints
     assert context.prerequisite_hints[0]["name"] == "数列极限（定义法证明）"
+
+
+@pytest.mark.asyncio
+async def test_concept_trace_keeps_chapter_description_and_prerequisites():
+    repository = make_repository()
+    target = KnowledgeHit(
+        item=KnowledgeItem(
+            id="CALC_CONTINUITY_01",
+            subject="calculus",
+            source_file="test",
+            concept_zh="一致连续性判定",
+            prerequisite=["函数连续性"],
+            description="判断函数在给定区间上是否一致连续。",
+            intuitive_explanation="",
+            solution="",
+            chapter="函数与极限",
+            section="连续性",
+        ),
+        score=100,
+    )
+
+    async def target_search(*args, **kwargs):
+        return EvidencePack(direct_hits=[target], graph_hits=[])
+
+    collector = FastContextCollector(
+        repository=repository,
+        local_search=target_search,
+    )
+    context = await collector.collect(make_state("如何判断函数是否一致连续？"))
+
+    primary = context.concept_items[0]
+    assert primary["id"] == "CALC_CONTINUITY_01"
+    assert primary["path"] == ["函数与极限", "连续性"]
+    assert primary["description"] == "判断函数在给定区间上是否一致连续。"
+    assert primary["prerequisites"] == [
+        {"id": "concept:函数连续性", "label": "函数连续性"}
+    ]
+    assert primary["evidence"] == "根据题意与本地知识库匹配"

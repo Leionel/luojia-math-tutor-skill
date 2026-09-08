@@ -1,3 +1,4 @@
+import json
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -11,39 +12,37 @@ class ProofCheckResult(BaseModel):
 
 
 def build_proof_tutor_prompt(state: dict) -> list[dict[str, str]]:
-    """Builds a prompt specifically for the Proof Tutoring Protocol."""
-    
-    system_prompt = """You are an expert Math Tutor specializing in abstract proofs (Real Analysis, Topology, Linear Algebra, etc.).
-Your goal is to guide the student through a proof structurally, NOT to give them the final answer or a complete formal verification.
-
-When analyzing a student's proof step:
-1. Identify if they are using a specific theorem.
-2. Check if the prerequisites for that theorem are met in their context.
-3. Check for logic gaps (did they skip a crucial intermediate step?).
-4. Check for circular reasoning or definition confusion.
-
-You MUST respond using a structured approach. Do NOT write the rest of the proof for them.
-Instead, provide a Socratic hint that points out the missing reason or suggests the next logical target.
-"""
-
-    history = state.get("messages", [])
-    user_message = state.get("message", "")
-    
-    messages = [{"role": "system", "content": system_prompt}]
-    
-    # Add history
-    for msg in history:
-        messages.append(msg)
-        
-    # Provide the current context (RAG)
-    context_text = ""
+    """Add proof-specific slots without replacing the SKILL.md system source."""
+    messages = list(state.get("messages", []))
+    context = []
     for hit in state.get("hits", []):
         item = getattr(hit, "item", hit)
-        context_text += f"Theorem/Concept: {getattr(item, 'concept_zh', '')}\n{getattr(item, 'description', '')}\n\n"
-        
-    if context_text:
-        messages.append({"role": "system", "content": f"Relevant Course Material:\n{context_text}"})
-
-    messages.append({"role": "user", "content": f"Student's current proof step or question: {user_message}"})
-    
+        context.append(
+            {
+                "concept": getattr(item, "concept_zh", ""),
+                "description": getattr(item, "description", ""),
+            }
+        )
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                "[NODE_CONTEXT]\n"
+                + json.dumps(
+                    {
+                        "task": "proof_tutoring",
+                        "relevant_material": context,
+                        "verification": state.get("verification_result") or {},
+                        "instruction": (
+                            "检查所用定理的前提、逻辑缺口与循环论证；"
+                            "按 SKILL.md 的启发式规则给下一步提示，不代写完整证明。"
+                        ),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                + "\n[/NODE_CONTEXT]"
+            ),
+        }
+    )
     return messages

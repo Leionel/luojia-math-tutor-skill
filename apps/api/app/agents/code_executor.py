@@ -5,6 +5,8 @@ import sys
 import tempfile
 
 _ALLOWED_IMPORT_ROOTS = {"math", "sympy"}
+_MAX_CODE_CHARS = 8_000
+_MAX_OUTPUT_CHARS = 16_000
 _ALLOWED_CALL_NAMES = {
     "Abs",
     "Eq",
@@ -82,6 +84,8 @@ def _import_root(name: str) -> str:
 
 
 def _validate_math_code(code: str) -> str | None:
+    if len(code) > _MAX_CODE_CHARS:
+        return f"Error: code exceeds {_MAX_CODE_CHARS} characters."
     try:
         tree = ast.parse(code)
     except SyntaxError as exc:
@@ -136,6 +140,7 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
     Executes Python code in a separate subprocess and captures stdout/stderr.
     Useful for SymPy math verification.
     """
+    timeout = max(1, min(int(timeout), 10))
     validation_error = _validate_math_code(code)
     if validation_error:
         return validation_error
@@ -162,8 +167,8 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
         except subprocess.TimeoutExpired:
             return f"Error: Code execution timed out after {timeout} seconds."
             
-        out_str = process.stdout.strip()
-        err_str = process.stderr.strip()
+        out_str = process.stdout.strip()[:_MAX_OUTPUT_CHARS]
+        err_str = process.stderr.strip()[:_MAX_OUTPUT_CHARS]
         
         result = ""
         if out_str:

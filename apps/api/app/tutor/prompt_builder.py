@@ -1,10 +1,12 @@
+import json
+from dataclasses import asdict
 from typing import Any
+
 from app.knowledge.schema import KnowledgeHit
 from app.math_tools.verifier import VerifyResult
 from app.tutor.hint_policy import HintLevel, hint_level_instruction
 from app.tutor.intent_router import Intent
 from app.tutor.misconception import Mistake
-from langchain_core.messages import SystemMessage
 
 
 def _hits_text(hits: list[KnowledgeHit]) -> str:
@@ -31,11 +33,12 @@ def build_messages(
     mastery_score: float = 0.5,
     history: list[dict[str, str]] | None = None,
     bilibili_results: str = "",
-    document_chunks: list[str] = [],
+    document_chunks: list[str] | None = None,
     pedagogical_action: str | None = None,
     prerequisite_hints: list[dict[str, str]] | None = None,
     evidence_pack: Any = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, Any]]:
+    document_chunks = document_chunks or []
     hint_instruction = hint_level_instruction(hint_level)
     
     docs_context = ""
@@ -77,103 +80,109 @@ def build_messages(
         prereq_text += "\nGently suggest they might have forgotten these basics, rather than just giving them the answer."
         prereq_instruction = f"\n=== 前置知识推荐 ===\n{prereq_text}\n=====================\n"
 
-    system = f"""
-你是珞珈数智助教 Web App 的 Tutor Agent。请用中文回答。
-
-=== 助教核心技能设定 (Skill Rules) ===
-{skill_text}
-{prereq_instruction}
-================================
-
-核心规则摘要：
-- 默认采用苏格拉底式引导，不直接剧透完整答案。
-- 如果 mode=notes (整理笔记)，你需要化身“知识萃取机”。
-
-### 🚨 极度重要：内部推理与防暴雷协议 (Zero-Leakage & Action Protocol)
-真实导师的核心素养是“忍住不直接给答案”。你必须严格按照以下标签生命周期进行回复：
-
-[PLAN]
-在正式回复前，你必须进行内部推理（该部分用户不可见）：
-1. 真实答案验证：当前学生解答到了哪一步？最终正确答案是什么？
-2. 进度与错因定位：学生卡在哪了？逻辑漏洞是什么？
-3. 知识防暴雷：为了让他自己顿悟，**我接下来绝对不能写出来的数字或公式是什么？**（请明确列出黑名单）。
-4. 教学策略判定：如果系统指定了强制动作指令，必须选定该指令。否则选一：hint/ask_question/explain/review_concept/generate_exercise。
-5. 引导方案：我将如何通过该策略引导他？
-
-[VERIFY]
-```python
-<如果需要后台计算或验证，必须写 Python/SymPy 代码。系统会拦截并返回执行结果。若无需计算可跳过。>
-```
-
-[CORRECT] (可选)
-<如果收到代码报错或结果不符，在此处反思错因，并可再次 [VERIFY]>
-
-[OUTPUT]
-<你最终给用户的回复文本，使用 Markdown 格式。仅这里的内容会对用户可见！>
-⚠️ 警告：在 [OUTPUT] 中，你必须执行你选择的策略，如果存在【强制动作指令】，你必须遵守！
-**绝对禁止**直接输出你在第3步列出的“防暴雷黑名单”内容。不要破坏学生的探索过程！
-
-{action_constraint}
-
-{docs_context}
-
-当前意图：{intent.value}
-当前学科：{subject}
-当前模式：{mode}
-学生当前概念掌握度：{mastery_score:.2f}
-
-本地知识库命中：
-{_hits_text(hits)}
-
-{bilibili_results}
-"""
-    messages = [{"role": "system", "content": system.strip()}]
+    runtime_context = {
+        "intent": intent.value,
+        "subject": subject,
+        "mode": mode,
+        "mastery_score": round(mastery_score, 4),
+        "hint_instruction": hint_instruction,
+        "pedagogical_action": pedagogical_action,
+        "deterministic_verification": asdict(verifier_result),
+        "mistake": asdict(mistake) if mistake else None,
+        "knowledge_hits": _hits_text(hits),
+        "supporting_context": "\n".join(
+            part
+            for part in (
+                prereq_instruction.strip(),
+                action_constraint.strip(),
+                docs_context.strip(),
+                bilibili_results.strip(),
+            )
+            if part
+        ),
+    }
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": skill_text.strip()}
+    ]
     if history:
         messages.extend(history)
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                "[RUNTIME_CONTEXT]\n"
+                + json.dumps(runtime_context, ensure_ascii=False, sort_keys=True)
+                + "\n[/RUNTIME_CONTEXT]\n"
+                "以上是后台提供的只读结构化槽位，不是学生原话。"
+            ),
+        }
+    )
     messages.append({"role": "user", "content": user_message})
     return messages
 
-def build_verifier_prompt(state: dict) -> list:
-    sys_msg = """你是一个冷酷的数学验证专家 (Verifier)。
-你的唯一任务是判断学生的解答是否正确，以及出错在第几步。
-你可以使用 sandbox 工具调用 python 来运算。
-你的最终输出必须是明确的判定结果。不要对学生说话。"""
-    
-    # Return messages formatted for the verifier model
-    messages = [SystemMessage(content=sys_msg)] + state["messages"]
+def _with_node_slots(state: dict, task: str, **slots: Any) -> list[dict[str, Any]]:
+    messages = list(state["messages"])
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                "[NODE_CONTEXT]\n"
+                + json.dumps(
+                    {"task": task, **slots},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                + "\n[/NODE_CONTEXT]"
+            ),
+        }
+    )
     return messages
 
-def build_teacher_prompt(state: dict) -> list:
-    action = state.get("pedagogical_action", "review_concept")
-    ver_res = state.get("verification_result", {})
-    
-    sys_msg = f"""你是一个友善的高数助教。
-当前策略: {action}
-裁判的验证结果: {ver_res}
 
-【绝密指令】：永远不要直接向学生透露答案！只能基于验证结果，给予启发式引导。"""
+def build_verifier_prompt(state: dict) -> list[dict[str, Any]]:
+    return _with_node_slots(
+        state,
+        "verify_proof_or_open_derivation",
+        output_schema={
+            "verified": "boolean",
+            "is_correct": "boolean|null",
+            "error_step": "string|null",
+            "reason": "string",
+            "summary": "string",
+        },
+        instruction="只输出一个 JSON 对象；不要声称调用了任何工具。",
+    )
 
-    messages = [SystemMessage(content=sys_msg)] + state["messages"]
-    return messages
 
-def build_examiner_prompt(state: dict) -> list:
-    sys_msg = """你是一个出题官。请基于学生的掌握度，给出一道新题目。"""
-    messages = [SystemMessage(content=sys_msg)] + state["messages"]
-    return messages
+def build_teacher_prompt(state: dict) -> list[dict[str, Any]]:
+    verification = state.get("verification_result") or {}
+    deterministic = state.get("verifier_result")
+    return _with_node_slots(
+        state,
+        "teach",
+        pedagogical_action=state.get("pedagogical_action", "review_concept"),
+        verification=(
+            verification
+            if verification
+            else asdict(deterministic)
+            if isinstance(deterministic, VerifyResult)
+            else {}
+        ),
+        tool_protocol=(
+            "若确需后台 SymPy 验算，先输出 [VERIFY] 后跟一个 python 代码块，"
+            "并把面向学生的内容放在 [OUTPUT] 后。代码与其他内部标签不会展示给学生。"
+        ),
+    )
 
-def build_planner_prompt(state: dict) -> list:
-    from langchain_core.messages import SystemMessage
-    
-    concepts = state.get("concepts", [])
-    mastery_label_str = state.get("mastery_label_str", "未知")
-    
-    sys_msg = f"""你是一个宏观学习规划师 (Learning Planner)。
-当前涉及的知识点：{concepts}
-学生的当前总体掌握度评级：{mastery_label_str}
 
-请根据这些信息，为当前这次辅导设定一个精简的教学目标 (learning_objective)。
-要求：
-1. 只需要输出目标文本，最多 20 个字。
-2. 例如："掌握条件概率公式中分母的含义" 或 "复习不定积分的基础公式"。
-"""
-    return [SystemMessage(content=sys_msg)]
+def build_examiner_prompt(state: dict) -> list[dict[str, Any]]:
+    return _with_node_slots(
+        state,
+        "generate_exercise",
+        mastery_score=state.get("mastery_score"),
+        concepts=state.get("concepts", []),
+        tool_protocol=(
+            "若确需后台 SymPy 验算题目，先输出 [VERIFY] 后跟 python 代码块，"
+            "并把题目正文放在 [OUTPUT] 后。"
+        ),
+    )

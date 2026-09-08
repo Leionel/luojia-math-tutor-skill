@@ -62,10 +62,11 @@ def parse_math(expr: str) -> sp.Expr:
 
 def verify_equivalent(lhs: str, rhs: str) -> VerifyResult:
     try:
-        lhs_expr = parse_math(lhs)
-        rhs_expr = parse_math(rhs)
+        lhs_expr = sp.nsimplify(parse_math(lhs), rational=True)
+        rhs_expr = sp.nsimplify(parse_math(rhs), rational=True)
         diff = sp.simplify(lhs_expr - rhs_expr)
-        ok = diff == 0
+        equals = lhs_expr.equals(rhs_expr)
+        ok = diff == 0 or equals is True
         return VerifyResult(
             verified=True,
             is_correct=bool(ok),
@@ -171,4 +172,3 @@ def verify_lhopital_conditions(message: str) -> VerifyResult:
         is_correct=False,
         summary="未确认未定式（0/0 或 ∞/∞）就使用洛必达法则，条件不满足。",
     )
-

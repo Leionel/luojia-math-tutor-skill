@@ -249,5 +249,7 @@ async def test_sidebar_learning_meta_is_persisted_with_assistant_message():
     assert learning_meta["intent"] == "solve_step_by_step"
     assert learning_meta["subject"] == "linear_algebra"
     assert learning_meta["learning_objective"]
+    assert learning_meta["concept_items"]
+    assert learning_meta["concept_items"][0]["role"] == "primary"
     assert "verified" in learning_meta
     assert "mastery_score" in learning_meta

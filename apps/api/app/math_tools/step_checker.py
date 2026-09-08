@@ -4,6 +4,7 @@ from app.math_tools.verifier import (
     VerifyResult,
     verify_derivative,
     verify_determinant_2x2,
+    verify_equivalent,
     verify_integral,
     verify_lhopital_conditions,
 )
@@ -52,6 +53,35 @@ def _extract_determinant_attempt(text: str) -> tuple[list[list[float]], str] | N
     return None
 
 
+def _extract_equivalence_attempt(text: str) -> tuple[str, str] | None:
+    """Extract an algebraic transformation, not an equation-solving prompt."""
+    if "=" not in text:
+        return None
+    if not any(
+        marker in text
+        for marker in (
+            "对吗",
+            "正确吗",
+            "等价",
+            "化简",
+            "展开",
+            "我算",
+            "这一步",
+        )
+    ):
+        return None
+    compact = text.replace("$", "").replace("，", ",")
+    compact = re.sub(r"^(?:我算|我觉得|这一步|化简|展开)[:：]?\s*", "", compact)
+    match = re.search(r"([^=\n，,？?]+)=([^=\n，,？?]+)", compact)
+    if not match:
+        return None
+    lhs = match.group(1).strip()
+    rhs = re.sub(r"(?:对吗|正确吗).*$", "", match.group(2)).strip()
+    if not lhs or not rhs:
+        return None
+    return lhs, rhs
+
+
 def check_step(message: str) -> tuple[VerifyResult, Mistake | None]:
     integral = _extract_integral_attempt(message)
     if integral:
@@ -89,8 +119,12 @@ def check_step(message: str) -> tuple[VerifyResult, Mistake | None]:
         result = verify_lhopital_conditions(message)
         return result, detect_mistake(message, result.summary)
 
+    equivalence = _extract_equivalence_attempt(message)
+    if equivalence:
+        result = verify_equivalent(*equivalence)
+        return result, detect_mistake(message, result.summary)
+
     mistake = detect_mistake(message)
     if mistake:
         return VerifyResult(True, False, mistake.label), mistake
     return VerifyResult(False, None, "未识别到可自动验证的单步推导。"), None
-

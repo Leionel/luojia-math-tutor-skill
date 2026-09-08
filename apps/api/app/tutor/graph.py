@@ -1,21 +1,28 @@
 import json
 import logging
 import asyncio
+import re
 import time
 from typing import Any, TypedDict
 
 from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph as CompiledGraph
 
 from app.config import Settings
+from app.agents.code_executor import execute_python_code
+from app.agents.multimodal import normalize_image_reference
+from app.agents.vision_agent import VisionParser
 from app.knowledge.search import search_knowledge_semantic
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
-from app.tutor.fast_path import VerificationMode
+from app.tutor.fast_path import (
+    VerificationMode,
+    learning_objective_for_intent,
+    route_fast_path,
+)
 from app.tutor.intent_router import Intent
 from app.tutor.policy_router import PolicyRouter
 from app.tutor.prompt_builder import (
@@ -46,6 +53,8 @@ class AgentState(TypedDict, total=False):
     model: str | None
     requested_hint: bool
     image_urls: list[str] | None
+    original_message: str
+    vision_result: dict[str, Any]
 
     intent: Intent
     pedagogical_action: str
@@ -59,13 +68,14 @@ class AgentState(TypedDict, total=False):
     verifier_result: VerifyResult
     mistake: Any | None
     concepts: list[str]
+    concept_items: list[dict[str, Any]]
     mastery_score: float
     mastery_delta: float
     mastery_label_str: str
     hint_level: int
     learning_objective: str
 
-    messages: list[dict[str, str]]
+    messages: list[dict[str, Any]]
     thinking_steps: list[str]
     final_output: str
     thinking_chain: str
@@ -110,18 +120,17 @@ class TutorWorkflow:
         self.settings = settings
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
+        self.vision_parser = VisionParser(settings, self.llm)
         self.policy_router = PolicyRouter(self.llm)
-        self.context_collector = FastContextCollector(repository)
-        self._semantic_cache: dict[
-            tuple[str, str],
-            list[Any],
-        ] = {}
-        self._background_tasks: set[asyncio.Task] = set()
+        self.context_collector = FastContextCollector(repository, settings=settings)
+        self._semantic_worker_task: asyncio.Task | None = None
+        self._semantic_worker_stop = asyncio.Event()
         self.skill_text = settings.skill_file.read_text(encoding="utf-8")
         self.workflow = self.build_tutor_graph()
 
     def build_tutor_graph(self) -> CompiledGraph:
         workflow = StateGraph(AgentState)
+        workflow.add_node("vision_parse", self.vision_parse_node)
         workflow.add_node("fast_context", self.fast_context_node)
         workflow.add_node("policy_fallback", self.policy_fallback_node)
         workflow.add_node("verifier", self.verifier_node)
@@ -129,7 +138,8 @@ class TutorWorkflow:
         workflow.add_node("examiner", self.examiner_node)
         workflow.add_node("proof_tutor", self.proof_tutor_node)
 
-        workflow.add_edge(START, "fast_context")
+        workflow.add_edge(START, "vision_parse")
+        workflow.add_edge("vision_parse", "fast_context")
         workflow.add_conditional_edges(
             "fast_context",
             route_after_context,
@@ -155,7 +165,110 @@ class TutorWorkflow:
         workflow.add_edge("teacher", END)
         workflow.add_edge("examiner", END)
         workflow.add_edge("proof_tutor", END)
-        return workflow.compile(checkpointer=MemorySaver())
+        # SQLite history is the sole cross-turn authority. A process-local
+        # checkpointer would diverge after a restart or under multiple workers.
+        return workflow.compile()
+
+    async def vision_parse_node(
+        self,
+        state: AgentState,
+        config: RunnableConfig,
+    ) -> dict[str, Any]:
+        references = state.get("image_urls") or []
+        if not references:
+            return {"vision_result": {}}
+
+        started = time.perf_counter()
+        try:
+            normalized = await asyncio.gather(
+                *(
+                    asyncio.to_thread(
+                        normalize_image_reference,
+                        reference,
+                        self.settings.upload_root,
+                    )
+                    for reference in references[:4]
+                )
+            )
+            parsed = await self.vision_parser.parse_images(
+                normalized,
+                state.get("message", ""),
+                api_key=state.get("user_api_key"),
+            )
+            problem_text = str(parsed.get("problem_text") or "").strip()
+            latex = [str(item) for item in parsed.get("latex", [])]
+            if not problem_text and not latex:
+                raise ValueError("视觉模型没有返回可确认的题意。")
+            parsed_text = "\n".join(
+                part
+                for part in (
+                    problem_text,
+                    "\n".join(f"$${item}$$" for item in latex),
+                )
+                if part
+            )
+            original = state.get("message", "").strip()
+            enriched_message = (
+                f"{original}\n\n[图片解析草稿，待学生确认]\n{parsed_text}"
+                if original
+                else f"[图片解析草稿，待学生确认]\n{parsed_text}"
+            )
+            route = route_fast_path(
+                enriched_message,
+                state.get("mode", "socratic"),
+                state.get("subject", "auto"),
+            )
+            confirmation = (
+                "我先把图片识别为下面这道题，请你确认公式和条件是否准确；"
+                "若有误请直接指出：\n\n"
+                f"{parsed_text}"
+            )
+            on_thinking = self._callback(config, "on_thinking")
+            if on_thinking:
+                await on_thinking(
+                    sse(
+                        "vision_confirmation",
+                        {
+                            "content": confirmation,
+                            "parsed": parsed,
+                            "requires_confirmation": True,
+                        },
+                    )
+                )
+            return {
+                "original_message": state.get("message", ""),
+                "message": enriched_message,
+                "vision_result": parsed,
+                "intent": route.intent,
+                "detected_subject": route.subject,
+                "pedagogical_action": route.pedagogical_action,
+                "learning_objective": route.learning_objective,
+                "verification_mode": route.verification_mode.value,
+                "confidence": route.confidence,
+                "requires_policy_fallback": route.requires_policy_fallback,
+                "metrics": {
+                    **state.get("metrics", {}),
+                    "vision_parse_ms": round(
+                        (time.perf_counter() - started) * 1000,
+                        2,
+                    ),
+                },
+            }
+        except Exception as exc:
+            logger.warning("Vision parsing rejected: %s", exc)
+            on_progress = self._callback(config, "on_progress")
+            if on_progress:
+                await on_progress(f"[VISION]\n图片解析未完成：{exc}")
+            return {
+                "vision_result": {"error": str(exc)},
+                "metrics": {
+                    **state.get("metrics", {}),
+                    "vision_parse_ms": round(
+                        (time.perf_counter() - started) * 1000,
+                        2,
+                    ),
+                },
+            }
 
     async def fast_context_node(
         self,
@@ -165,9 +278,11 @@ class TutorWorkflow:
         context = await self.context_collector.collect(state)
         hits = self._merge_hits(
             context.hits,
-            self._semantic_cache.get(
-                (state["detected_subject"], state["message"]),
-                [],
+            await asyncio.to_thread(
+                self.repository.get_semantic_cache,
+                str(state.get("detected_subject") or state.get("subject") or "auto"),
+                state["message"],
+                self.settings.semantic_cache_ttl_seconds,
             ),
         )
         state_with_context = {
@@ -213,6 +328,7 @@ class TutorWorkflow:
                         "intent": state["intent"].value,
                         "subject": state["detected_subject"],
                         "concepts": context.concepts,
+                        "concept_items": context.concept_items,
                         "verified": context.verifier_result.verified,
                         "is_correct": context.verifier_result.is_correct,
                         "mistake": (
@@ -273,6 +389,7 @@ class TutorWorkflow:
             "hits": hits,
             "document_chunks": context.document_chunks,
             "concepts": context.concepts,
+            "concept_items": context.concept_items,
             "verifier_result": context.verifier_result,
             "mistake": context.mistake,
             "mastery_score": context.mastery_score,
@@ -290,17 +407,74 @@ class TutorWorkflow:
         subject: str,
         api_key: str | None,
     ) -> None:
-        if not api_key and not self.settings.llm_api_key:
+        # User-supplied keys are intentionally never persisted in the durable
+        # queue. Shared enrichment uses only the operator-managed service key.
+        if not self.settings.llm_api_key:
             return
-        task = asyncio.create_task(
-            self._run_semantic_enrichment(
-                message,
-                subject,
-                api_key,
+        self.repository.enqueue_semantic_job(subject, message)
+        if self._semantic_worker_task is None or self._semantic_worker_task.done():
+            self._semantic_worker_stop.clear()
+            self._semantic_worker_task = asyncio.create_task(
+                self._semantic_worker_loop()
             )
-        )
-        self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
+
+    async def start_background_worker(self) -> None:
+        if not self.settings.llm_api_key:
+            return
+        await asyncio.to_thread(self.repository.recover_semantic_jobs)
+        if self._semantic_worker_task is None or self._semantic_worker_task.done():
+            self._semantic_worker_stop.clear()
+            self._semantic_worker_task = asyncio.create_task(
+                self._semantic_worker_loop()
+            )
+
+    async def stop_background_worker(self) -> None:
+        self._semantic_worker_stop.set()
+        task = self._semantic_worker_task
+        if task and not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        self._semantic_worker_task = None
+
+    async def _semantic_worker_loop(self) -> None:
+        while not self._semantic_worker_stop.is_set():
+            worked = await self._run_next_semantic_job()
+            if worked:
+                continue
+            try:
+                await asyncio.wait_for(
+                    self._semantic_worker_stop.wait(),
+                    timeout=max(0.1, self.settings.semantic_worker_poll_seconds),
+                )
+            except TimeoutError:
+                pass
+
+    async def _run_next_semantic_job(self) -> bool:
+        job = await asyncio.to_thread(self.repository.claim_semantic_job)
+        if not job:
+            return False
+        try:
+            hits = await search_knowledge_semantic(
+                job["query"],
+                job["subject"],
+                limit=5,
+                api_key=None,
+            )
+            await asyncio.to_thread(
+                self.repository.complete_semantic_job,
+                job["id"],
+                job["subject"],
+                job["query"],
+                hits,
+            )
+        except Exception as exc:
+            logger.exception("Durable semantic enrichment failed")
+            await asyncio.to_thread(
+                self.repository.fail_semantic_job,
+                job["id"],
+                str(exc),
+            )
+        return True
 
     async def _run_semantic_enrichment(
         self,
@@ -308,20 +482,9 @@ class TutorWorkflow:
         subject: str,
         api_key: str | None,
     ) -> None:
-        try:
-            hits = await search_knowledge_semantic(
-                message,
-                subject,
-                limit=5,
-                api_key=api_key,
-            )
-        except Exception:
-            logger.exception("Background semantic enrichment failed")
-            return
-        if len(self._semantic_cache) >= 128:
-            oldest_key = next(iter(self._semantic_cache))
-            self._semantic_cache.pop(oldest_key, None)
-        self._semantic_cache[(subject, message)] = hits
+        """Compatibility entry point; work is now claimed from SQLite."""
+        self.schedule_semantic_enrichment(message, subject, api_key)
+        await self._run_next_semantic_job()
 
     async def policy_fallback_node(
         self,
@@ -329,11 +492,13 @@ class TutorWorkflow:
         config: RunnableConfig,
     ) -> dict:
         started = time.perf_counter()
-        action = await self.policy_router.decide_action(
+        decision = await self.policy_router.decide_route(
             state["message"],
+            state["intent"],
             state.get("user_api_key"),
             state.get("model"),
         )
+        action = decision.action
         metrics = dict(state.get("metrics", {}))
         metrics["llm_call_count"] = (
             int(metrics.get("llm_call_count", 0)) + 1
@@ -343,8 +508,17 @@ class TutorWorkflow:
             2,
         )
         metrics["route"] = f"policy_{action.value}"
+        metrics["policy_confidence"] = decision.confidence
+        metrics["policy_uncertain"] = decision.uncertain
+        decided_state = {
+            **state,
+            "intent": decision.intent,
+            "learning_objective": learning_objective_for_intent(decision.intent),
+            "pedagogical_action": action.value,
+            "requires_policy_fallback": False,
+        }
         messages = self._build_base_messages(
-            state,
+            decided_state,
             self._history_from_messages(
                 state.get("messages", []),
                 state["message"],
@@ -359,7 +533,10 @@ class TutorWorkflow:
             evidence_pack=state.get("evidence_pack"),
         )
         return {
+            "intent": decision.intent,
             "pedagogical_action": action.value,
+            "learning_objective": decided_state["learning_objective"],
+            "requires_policy_fallback": False,
             "messages": messages,
             "metrics": metrics,
         }
@@ -448,17 +625,14 @@ class TutorWorkflow:
     ) -> dict:
         prompt = self._normalize_prompt(messages)
         metrics = dict(state.get("metrics", {}))
-        metrics["llm_call_count"] = (
-            int(metrics.get("llm_call_count", 0)) + 1
-        )
         if not metrics.get("route") or metrics["route"] == "policy_fallback":
             metrics["route"] = default_route
 
         on_token = self._callback(config, "on_token")
         on_progress = self._callback(config, "on_progress")
         started = time.perf_counter()
-        saw_content = False
         response_text = ""
+        tool_evidence: list[dict[str, str]] = []
 
         if on_progress:
             output_text = {
@@ -469,44 +643,56 @@ class TutorWorkflow:
             await on_progress(f"[OUTPUT]\n{output_text}")
 
         try:
-            async for token in self.llm.stream(
-                prompt,
-                api_key=state.get("user_api_key"),
-                model=state.get("model"),
-            ):
-                if isinstance(token, dict):
-                    token_type = token.get("type")
-                    content = str(token.get("content", ""))
-                    is_reasoning = token_type == "reasoning"
-                else:
-                    content = str(token)
-                    is_reasoning = content.startswith("<think>")
-                    if is_reasoning:
-                        content = content.replace(
-                            "<think>",
-                            "",
-                        ).replace("</think>", "")
+            max_rounds = max(0, min(self.settings.tool_max_rounds, 2))
+            for tool_round in range(max_rounds + 1):
+                candidate = await self._collect_model_response(
+                    prompt,
+                    state.get("user_api_key"),
+                    state.get("model"),
+                )
+                metrics["llm_call_count"] = (
+                    int(metrics.get("llm_call_count", 0)) + 1
+                )
+                code_blocks = self._extract_verify_code(candidate)
+                if not code_blocks or tool_round >= max_rounds:
+                    response_text = self._visible_output(candidate)
+                    break
 
-                if is_reasoning:
-                    continue
+                results = []
+                for code in code_blocks:
+                    result = await execute_python_code(
+                        code,
+                        timeout=self.settings.tool_timeout_seconds,
+                    )
+                    results.append(result)
+                    tool_evidence.append({"code": code, "result": result})
+                prompt = [
+                    *prompt,
+                    {"role": "assistant", "content": candidate},
+                    {
+                        "role": "user",
+                        "content": (
+                            "[TOOL_RESULT]\n"
+                            + json.dumps(results, ensure_ascii=False)
+                            + "\n[/TOOL_RESULT]\n"
+                            "请根据真实执行结果纠正推导；如仍需验证可再请求一次，"
+                            "最终学生可见内容必须放在 [OUTPUT] 后。"
+                        ),
+                    },
+                ]
 
-                if not saw_content:
-                    metrics["teacher_first_token_ms"] = round(
-                        (time.perf_counter() - started) * 1000,
-                        2,
+            metrics["sandbox_tool_calls"] = len(tool_evidence)
+            metrics["teacher_first_token_ms"] = round(
+                (time.perf_counter() - started) * 1000,
+                2,
+            )
+            if on_token and response_text:
+                await on_token(
+                    sse(
+                        "message",
+                        {"type": "message", "content": response_text},
                     )
-                    saw_content = True
-                response_text += content
-                if on_token:
-                    await on_token(
-                        sse(
-                            "message",
-                            {
-                                "type": "message",
-                                "content": content,
-                            },
-                        )
-                    )
+                )
         except Exception as exc:
             logger.error(
                 "Generation node failed: %s",
@@ -521,8 +707,58 @@ class TutorWorkflow:
             ],
             "final_output": response_text,
             "thinking_chain": "",
+            "tool_evidence": tool_evidence,
             "metrics": metrics,
         }
+
+    async def _collect_model_response(
+        self,
+        prompt: list[dict[str, Any]],
+        api_key: str | None,
+        model: str | None,
+    ) -> str:
+        response = ""
+        async for token in self.llm.stream(
+            prompt,
+            api_key=api_key,
+            model=model,
+        ):
+            if isinstance(token, dict):
+                if token.get("type") == "reasoning":
+                    continue
+                response += str(token.get("content", ""))
+                continue
+            content = str(token)
+            if content.startswith("<think>"):
+                continue
+            response += content
+        return response
+
+    @staticmethod
+    def _extract_verify_code(response: str) -> list[str]:
+        blocks = re.findall(
+            r"\[VERIFY\]\s*```(?:python|py)\s*\n(.*?)```",
+            response,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        return [block.strip() for block in blocks if block.strip()]
+
+    @staticmethod
+    def _visible_output(response: str) -> str:
+        output = re.search(
+            r"\[OUTPUT\]\s*(.*)$",
+            response,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if output:
+            return output.group(1).strip()
+        cleaned = re.sub(
+            r"\[(?:PLAN|VERIFY|CORRECT)\].*?(?=\[(?:PLAN|VERIFY|CORRECT|OUTPUT)\]|$)",
+            "",
+            response,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        return cleaned.strip()
 
     def _build_base_messages(
         self,
@@ -536,7 +772,7 @@ class TutorWorkflow:
         hint_level: int,
         pedagogical_action: str,
         evidence_pack: Any = None,
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, Any]]:
         return build_messages(
             skill_text=self.skill_text,
             user_message=state["message"],
@@ -558,9 +794,9 @@ class TutorWorkflow:
 
     @staticmethod
     def _history_from_messages(
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         current_message: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, Any]]:
         history = [
             message
             for message in messages
@@ -591,10 +827,10 @@ class TutorWorkflow:
         return merged[:5]
 
     @staticmethod
-    def _normalize_prompt(messages: list | Any) -> list[dict[str, str]]:
+    def _normalize_prompt(messages: list | Any) -> list[dict[str, Any]]:
         if not isinstance(messages, list):
             return [{"role": "system", "content": str(messages)}]
-        prompt: list[dict[str, str]] = []
+        prompt: list[dict[str, Any]] = []
         for message in messages:
             if isinstance(message, dict):
                 prompt.append(message)
@@ -620,11 +856,25 @@ class TutorWorkflow:
             end = response_text.rindex("}") + 1
             parsed = json.loads(response_text[start:end])
             if isinstance(parsed, dict):
-                return parsed
+                is_correct = parsed.get("is_correct")
+                if is_correct not in {True, False, None}:
+                    is_correct = None
+                reason = str(parsed.get("reason") or "").strip()
+                summary = str(parsed.get("summary") or reason).strip()
+                return {
+                    "verified": bool(parsed.get("verified")),
+                    "is_correct": is_correct,
+                    "error_step": parsed.get("error_step"),
+                    "reason": reason,
+                    "summary": summary,
+                }
         except (ValueError, json.JSONDecodeError):
             pass
         return {
             "verified": False,
+            "is_correct": None,
+            "error_step": None,
+            "reason": "Verifier did not return the required JSON schema.",
             "summary": response_text.strip(),
         }
 

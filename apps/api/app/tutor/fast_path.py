@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from app.knowledge.search import detect_subject
-from app.tutor.intent_router import Intent, route_intent
+from app.tutor.intent_router import ACTION_BY_INTENT, Intent, route_intent_decision
 
 
 class VerificationMode(str, Enum):
@@ -22,15 +22,6 @@ class FastRoute:
     requires_policy_fallback: bool
 
 
-_ACTION_BY_INTENT = {
-    Intent.CONCEPT: "explain",
-    Intent.SOLVE_STEP_BY_STEP: "hint",
-    Intent.CHECK_STUDENT_STEP: "ask_question",
-    Intent.FULL_SOLUTION: "explain",
-    Intent.GENERATE_EXERCISE: "generate_exercise",
-    Intent.PROOF_HINT: "provide_hint",
-}
-
 _OBJECTIVE_BY_INTENT = {
     Intent.CONCEPT: "理解概念的核心含义与适用场景",
     Intent.SOLVE_STEP_BY_STEP: "识别题型并完成下一步推导",
@@ -39,6 +30,10 @@ _OBJECTIVE_BY_INTENT = {
     Intent.GENERATE_EXERCISE: "通过同类练习巩固当前考点",
     Intent.PROOF_HINT: "定位证明中的逻辑缺口并给出下一步提示",
 }
+
+
+def learning_objective_for_intent(intent: Intent) -> str:
+    return _OBJECTIVE_BY_INTENT[intent]
 
 _PROOF_MARKERS = (
     "证明",
@@ -64,7 +59,8 @@ _SYMBOLIC_MARKERS = (
 
 
 def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
-    intent = route_intent(message, mode)
+    intent_decision = route_intent_decision(message, mode)
+    intent = intent_decision.intent
     detected_subject = detect_subject(message, subject) or subject
 
     if any(marker in message.lower() for marker in _PROOF_MARKERS):
@@ -76,17 +72,14 @@ def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
     else:
         verification_mode = VerificationMode.NONE
 
-    stripped = message.strip()
-    confidence = 0.55 if len(stripped) < 3 else 0.9
-
     return FastRoute(
         intent=intent,
         subject=detected_subject,
-        pedagogical_action=_ACTION_BY_INTENT[intent],
-        learning_objective=_OBJECTIVE_BY_INTENT[intent],
+        pedagogical_action=ACTION_BY_INTENT[intent].value,
+        learning_objective=learning_objective_for_intent(intent),
         verification_mode=verification_mode,
-        confidence=confidence,
-        requires_policy_fallback=confidence < 0.7,
+        confidence=intent_decision.confidence,
+        requires_policy_fallback=intent_decision.uncertain,
     )
 
 

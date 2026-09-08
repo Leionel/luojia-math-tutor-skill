@@ -8,7 +8,7 @@ import logging
 import re
 from typing import Any, AsyncGenerator
 
-from app.config import get_settings
+from app.config import Settings
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.agents.multimodal import format_vision_message
 
@@ -18,16 +18,19 @@ logger = logging.getLogger(__name__)
 class VisionParser:
     """Agent for analyzing math problem images."""
 
-    def __init__(self, api_key: str | None = None, base_url: str | None = None):
+    def __init__(
+        self,
+        settings: Settings,
+        client: OpenAICompatibleClient | None = None,
+    ):
         """Initialize the Vision Parser.
 
         Args:
             api_key: API key for LLM provider
             base_url: Base URL for LLM API
         """
-        self.settings = get_settings()
-        self.client = OpenAICompatibleClient(self.settings)
-        self.api_key = api_key
+        self.settings = settings
+        self.client = client or OpenAICompatibleClient(settings)
 
     def _extract_json_from_response(self, response: str) -> dict:
         """Extract JSON from LLM response, handling markdown code blocks."""
@@ -58,7 +61,8 @@ class VisionParser:
         self,
         base64_img: str,
         text_prompt: str,
-        model: str = "deepseek-v4-pro"
+        model: str | None = None,
+        api_key: str | None = None,
     ) -> dict[str, Any]:
         """Parse an image and text prompt, returning a structured JSON output.
         
@@ -78,8 +82,8 @@ class VisionParser:
         
         response = await self.client.chat_completion(
             messages=[message],  # type: ignore
-            api_key=self.api_key,
-            model=model
+            api_key=api_key,
+            model=model or self.settings.vision_model,
         )
         
         if not response:
@@ -91,7 +95,8 @@ class VisionParser:
         self,
         base64_img: str,
         text_prompt: str,
-        model: str = "deepseek-v4-pro"
+        model: str | None = None,
+        api_key: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream the parsing analysis for an image and text prompt.
         
@@ -111,7 +116,40 @@ class VisionParser:
         
         async for chunk in self.client.stream(
             messages=[message],  # type: ignore
-            api_key=self.api_key,
-            model=model
+            api_key=api_key,
+            model=model or self.settings.vision_model,
         ):
             yield chunk
+
+    async def parse_images(
+        self,
+        image_urls: list[str],
+        text_prompt: str,
+        api_key: str | None = None,
+    ) -> dict[str, Any]:
+        if not image_urls:
+            return {}
+        message = format_vision_message(
+            prompt=(
+                "请只输出 JSON："
+                '{"problem_text":"题意文字","latex":["公式"],'
+                '"confidence":0到1,"uncertain_parts":["不确定处"]}。'
+                "逐字识别图片中的数学题，不要求解。学生补充说明："
+                f"{text_prompt}"
+            ),
+            image_urls=image_urls[:4],
+        )
+        response = await self.client.chat_completion(
+            messages=[message],
+            api_key=api_key,
+            model=self.settings.vision_model,
+        )
+        parsed = self._extract_json_from_response(response)
+        problem_text = str(parsed.get("problem_text") or "").strip()
+        latex = parsed.get("latex")
+        if not isinstance(latex, list):
+            latex = []
+        parsed["problem_text"] = problem_text
+        parsed["latex"] = [str(item).strip() for item in latex if str(item).strip()]
+        parsed["needs_confirmation"] = True
+        return parsed

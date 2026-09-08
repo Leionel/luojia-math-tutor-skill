@@ -35,6 +35,9 @@ def update_mastery(
     difficulty: int = 3,
     error_type: Optional[str] = None,
     time_spent: Optional[int] = None,
+    slip_probability: float = 0.10,
+    guess_probabilities: tuple[float, float, float] = (0.10, 0.40, 0.80),
+    learn_probabilities: tuple[float, float, float] = (0.15, 0.05, 0.00),
 ) -> MasteryUpdate:
     """计算掌握度更新 (Bayesian Knowledge Tracing).
 
@@ -78,15 +81,15 @@ def update_mastery(
 
     event = learning_event
     p_l = max(0.001, min(0.999, old_score)) # Avoid absolute 0 or 1
-    p_s = 0.10
+    p_s = max(0.0, min(0.95, slip_probability))
 
     # Difficulty adjustment (1-5, higher is harder). Normalizes base probabilities.
     difficulty_factor = max(1, min(5, event.difficulty)) / 3.0
 
     # Dynamic parameters based on hint and difficulty
     if event.hint_level == 0:
-        base_p_g = 0.10
-        p_t = 0.15
+        base_p_g = guess_probabilities[0]
+        p_t = learn_probabilities[0]
         if event.correct:
             reason = "独立正确解答，掌握度显著上升"
         else:
@@ -94,8 +97,8 @@ def update_mastery(
             if event.error_type:
                 reason = f"回答错误({event.error_type})，掌握度下降"
     elif event.hint_level == 1:
-        base_p_g = 0.40
-        p_t = 0.05
+        base_p_g = guess_probabilities[1]
+        p_t = learn_probabilities[1]
         if event.correct:
             reason = "借助少许提示解答，掌握度小幅上升"
         else:
@@ -103,8 +106,8 @@ def update_mastery(
             if event.error_type:
                 reason = f"回答错误({event.error_type})，掌握度下降"
     else:
-        base_p_g = 0.80
-        p_t = 0.00
+        base_p_g = guess_probabilities[2]
+        p_t = learn_probabilities[2]
         if event.correct:
             reason = "在大量提示下解答，掌握度几乎不变"
         else:
