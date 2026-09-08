@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.main_deps import get_repository
+from app.auth import Principal, get_principal, resolve_user_id
+from app.config import Settings
+from app.main_deps import get_app_settings, get_repository
 from app.memory.repository import Repository
+from app.tutor.exercise_generator import get_fallback_exercises
 
 
 class MistakeCreate(BaseModel):
@@ -16,17 +19,37 @@ router = APIRouter(prefix="/api", tags=["mistakes"])
 
 
 @router.get("/users/{user_id}/mistakes")
-def list_user_mistakes(user_id: str, limit: int = 50, repo: Repository = Depends(get_repository)):
+def list_user_mistakes(
+    user_id: str,
+    limit: int = 50,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     return {"items": repo.list_user_mistakes(user_id, limit)}
 
 
 @router.get("/users/{user_id}/mistakes/stats")
-def get_mistake_stats(user_id: str, repo: Repository = Depends(get_repository)):
+def get_mistake_stats(
+    user_id: str,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     return {"items": repo.get_mistake_stats(user_id)}
 
 
 @router.post("/users/{user_id}/mistakes")
-def create_mistake(user_id: str, body: MistakeCreate, repo: Repository = Depends(get_repository)):
+def create_mistake(
+    user_id: str,
+    body: MistakeCreate,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     event_id = repo.add_mistake_event(
         user_id,
         body.session_id or "manual",
@@ -37,17 +60,26 @@ def create_mistake(user_id: str, body: MistakeCreate, repo: Repository = Depends
     return {"status": "ok", "event_id": event_id}
 
 @router.post("/users/{user_id}/mistakes/{mistake_id}/generate-quiz")
-def generate_quiz(user_id: str, mistake_id: str, repo: Repository = Depends(get_repository)):
+def generate_quiz(
+    user_id: str,
+    mistake_id: str,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     mistake = repo.get_mistake(mistake_id)
-    if not mistake:
-        return {"status": "error", "message": "Mistake not found"}
-    
-    # Normally we would call LLM here. To ensure robustness and speed, we will generate a template quiz.
-    # We could also use ModelFactory.get_model() if we wanted dynamic.
-    # For MVP, we will generate a high-quality math quiz based on the concept and mistake.
+    if not mistake or mistake.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="未找到该错因记录")
+
     concept = mistake.get("concept", "未知考点")
     mistake_code = mistake.get("mistake_code", "")
-    
-    prompt = f"你曾经在以下题目中犯过错，相关的考点是：**{concept}**。你的错误总结为：*{mistake_code}*\n\n为了巩固这个知识点，我为你生成了一道新题目。请尝试解答：\n\n已知函数 \\( f(x) = e^x \\sin x \\)，求其在区间 \\( [0, \\pi] \\) 上的最大值点。\n\n你可以把你的思路或每一步推导发给我，我会为你实时批改！"
-    
+    exercise = get_fallback_exercises(concept, difficulty=2, count=1)[0]
+    prompt = (
+        f"这是一道针对错因「{mistake_code}」的巩固练习，"
+        f"对应知识点为 **{concept}**。\n\n"
+        f"{exercise['text']}\n\n"
+        "请先独立作答，不要直接查看答案。你可以把关键步骤发给我检查。"
+    )
+
     return {"status": "ok", "quiz_content": prompt, "concept": concept}

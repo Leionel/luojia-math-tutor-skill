@@ -1,7 +1,2 @@
-fastapi
-uvicorn[standard]
-pydantic
-sympy
-httpx
-python-multipart
-pytest
+# pyproject.toml is the single dependency source for pip and uv.
+-e .

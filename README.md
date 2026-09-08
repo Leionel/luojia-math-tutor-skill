@@ -224,7 +224,7 @@ DATABASE_URL=sqlite:///./luojia_tutor.db
 LLM_PROVIDER=deepseek
 LLM_BASE_URL=https://api.deepseek.com/v1
 LLM_API_KEY=your_deepseek_api_key
-LLM_MODEL=deepseek-chat
+LLM_MODEL=deepseek-v4-flash
 ALLOW_USER_API_KEY=true
 ```
 

@@ -1,11 +1,17 @@
+import hashlib
 import json
 import re
 import sqlite3
+import time
+from contextlib import contextmanager
+from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from app.config import Settings
 from app.knowledge.concepts import extract_explicit_concepts
+from app.knowledge.schema import KnowledgeHit, KnowledgeItem
+from app.memory.migrations import apply_migrations
 from app.memory.models import new_id, now_iso
 
 
@@ -21,10 +27,21 @@ class Repository:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_db()
 
-    def connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
-        return conn
+        conn.execute("pragma foreign_keys = on")
+        conn.execute("pragma journal_mode = wal")
+        conn.execute("pragma busy_timeout = 5000")
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def init_db(self) -> None:
         with self.connect() as conn:
@@ -112,25 +129,7 @@ class Repository:
                 """
             )
             
-            # Add document_id to sessions dynamically
-            try:
-                conn.execute("ALTER TABLE sessions ADD COLUMN document_id text;")
-            except sqlite3.OperationalError:
-                pass
-
-            # Add thinking_summary and thinking_elapsed_ms to messages dynamically
-            try:
-                conn.execute("ALTER TABLE messages ADD COLUMN thinking_summary text;")
-            except sqlite3.OperationalError:
-                pass
-            try:
-                conn.execute("ALTER TABLE messages ADD COLUMN thinking_elapsed_ms integer;")
-            except sqlite3.OperationalError:
-                pass
-            try:
-                conn.execute("ALTER TABLE messages ADD COLUMN learning_meta text;")
-            except sqlite3.OperationalError:
-                pass
+            apply_migrations(conn)
 
     def ensure_user(self, user_id: str, display_name: str | None = None) -> None:
         with self.connect() as conn:
@@ -581,6 +580,241 @@ class Repository:
                     "update sessions set title = ?, updated_at = ? where id = ?",
                     (title, ts, session_id),
                 )
+
+    def session_belongs_to(self, session_id: str, user_id: str) -> bool:
+        with self.connect() as conn:
+            row = conn.execute(
+                "select 1 from sessions where id = ? and user_id = ?",
+                (session_id, user_id),
+            ).fetchone()
+        return row is not None
+
+    def note_belongs_to(self, note_id: str, user_id: str) -> bool:
+        with self.connect() as conn:
+            row = conn.execute(
+                "select 1 from notes where id = ? and user_id = ?",
+                (note_id, user_id),
+            ).fetchone()
+        return row is not None
+
+    def create_auth_user(
+        self,
+        user_id: str,
+        display_name: str,
+        password_hash: str,
+        password_salt: str,
+    ) -> bool:
+        try:
+            with self.connect() as conn:
+                conn.execute(
+                    """
+                    insert into users(
+                      id, display_name, password_hash, password_salt, created_at
+                    ) values (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        user_id,
+                        display_name,
+                        password_hash,
+                        password_salt,
+                        now_iso(),
+                    ),
+                )
+            return True
+        except sqlite3.IntegrityError:
+            return False
+
+    def get_auth_user(self, user_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                select id, display_name, password_hash, password_salt, created_at
+                from users where id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    @staticmethod
+    def semantic_cache_key(subject: str, query: str) -> str:
+        normalized = f"{subject.strip()}\n{' '.join(query.split())}"
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+    def get_semantic_cache(
+        self,
+        subject: str,
+        query: str,
+        ttl_seconds: int,
+    ) -> list[KnowledgeHit]:
+        cache_key = self.semantic_cache_key(subject, query)
+        cutoff = int(time.time()) - max(0, ttl_seconds)
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                select hits_json from semantic_cache
+                where cache_key = ? and created_at_epoch >= ?
+                """,
+                (cache_key, cutoff),
+            ).fetchone()
+        if not row:
+            return []
+        try:
+            payload = json.loads(row["hits_json"])
+            return [
+                KnowledgeHit(
+                    item=KnowledgeItem(**entry["item"]),
+                    score=int(entry["score"]),
+                )
+                for entry in payload
+            ]
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return []
+
+    def put_semantic_cache(
+        self,
+        subject: str,
+        query: str,
+        hits: list[KnowledgeHit],
+    ) -> None:
+        cache_key = self.semantic_cache_key(subject, query)
+        payload = json.dumps(
+            [
+                {"item": asdict(hit.item), "score": hit.score}
+                for hit in hits
+            ],
+            ensure_ascii=False,
+        )
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into semantic_cache(
+                  cache_key, subject, query, hits_json, created_at_epoch
+                ) values (?, ?, ?, ?, ?)
+                on conflict(cache_key) do update set
+                  hits_json = excluded.hits_json,
+                  created_at_epoch = excluded.created_at_epoch
+                """,
+                (cache_key, subject, query, payload, int(time.time())),
+            )
+
+    def enqueue_semantic_job(self, subject: str, query: str) -> str:
+        cache_key = self.semantic_cache_key(subject, query)
+        job_id = new_id("sem")
+        ts = now_iso()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into semantic_jobs(
+                  id, cache_key, subject, query, status, created_at, updated_at
+                ) values (?, ?, ?, ?, 'pending', ?, ?)
+                on conflict(cache_key) do update set
+                  status = case
+                    when semantic_jobs.status = 'running' then 'running'
+                    else 'pending'
+                  end,
+                  last_error = null,
+                  updated_at = excluded.updated_at
+                """,
+                (job_id, cache_key, subject, query, ts, ts),
+            )
+            row = conn.execute(
+                "select id from semantic_jobs where cache_key = ?",
+                (cache_key,),
+            ).fetchone()
+        return str(row["id"])
+
+    def recover_semantic_jobs(self) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "update semantic_jobs set status = 'pending' where status = 'running'"
+            )
+
+    def claim_semantic_job(self) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            conn.execute("begin immediate")
+            row = conn.execute(
+                """
+                select * from semantic_jobs
+                where status = 'pending' and attempts < 3
+                order by updated_at asc limit 1
+                """
+            ).fetchone()
+            if not row:
+                return None
+            conn.execute(
+                """
+                update semantic_jobs
+                set status = 'running', attempts = attempts + 1, updated_at = ?
+                where id = ?
+                """,
+                (now_iso(), row["id"]),
+            )
+        return dict(row)
+
+    def complete_semantic_job(
+        self,
+        job_id: str,
+        subject: str,
+        query: str,
+        hits: list[KnowledgeHit],
+    ) -> None:
+        self.put_semantic_cache(subject, query, hits)
+        with self.connect() as conn:
+            conn.execute(
+                "update semantic_jobs set status = 'done', updated_at = ? where id = ?",
+                (now_iso(), job_id),
+            )
+
+    def fail_semantic_job(self, job_id: str, error: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                update semantic_jobs
+                set status = case when attempts >= 3 then 'failed' else 'pending' end,
+                    last_error = ?, updated_at = ?
+                where id = ?
+                """,
+                (error[:500], now_iso(), job_id),
+            )
+
+    def record_request_metric(
+        self,
+        request_id: str,
+        method: str,
+        route: str,
+        status_code: int,
+        duration_ms: float,
+    ) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into request_metrics(
+                  id, request_id, method, route, status_code, duration_ms, created_at
+                ) values (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    new_id("metric"),
+                    request_id,
+                    method,
+                    route,
+                    status_code,
+                    duration_ms,
+                    now_iso(),
+                ),
+            )
+
+    def request_metrics_summary(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select route, count(*) as request_count,
+                       round(avg(duration_ms), 2) as average_ms,
+                       sum(case when status_code >= 500 then 1 else 0 end) as errors
+                from request_metrics
+                group by route order by request_count desc
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def _default_title(self, subject: str) -> str:
         from datetime import datetime

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.main_deps import get_repository
+from app.auth import Principal, get_principal, resolve_user_id
+from app.config import Settings
+from app.main_deps import get_app_settings, get_repository
 from app.memory.repository import Repository
 from app.tutor.exercise_generator import get_fallback_exercises
 
@@ -17,6 +19,12 @@ class SimilarExerciseRequest(BaseModel):
 
 
 @router.post("/exercises/similar")
-def similar_exercises(payload: SimilarExerciseRequest, repo: Repository = Depends(get_repository)):
+def similar_exercises(
+    payload: SimilarExerciseRequest,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    resolve_user_id(principal, payload.user_id, settings)
     exercises = get_fallback_exercises(payload.concept, payload.difficulty, payload.count)
     return {"exercises": exercises}

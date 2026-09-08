@@ -1,5 +1,6 @@
 import re
 import uuid
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
@@ -8,8 +9,10 @@ from fastapi.responses import FileResponse
 from app.services.mineru_client import extract_markdown_agent_api
 from app.main_deps import get_repository
 from app.memory.repository import Repository
+from app.auth import Principal, get_principal
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
+logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = Path("data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -73,7 +76,8 @@ def chunk_markdown(text: str, chunk_size: int = 500, overlap: int = 50) -> list[
 @router.post("")
 async def upload_image(
     file: UploadFile = File(...),
-    repo: Repository = Depends(get_repository)
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
 ):
     filename_attr = getattr(file, "filename", "") or ""
     ext = _safe_extension(filename_attr)
@@ -90,12 +94,12 @@ async def upload_image(
         
         # If the file is a document (pdf, pptx, docx), store it for Implicit RAG
         if ext.lower() in ['pdf', 'pptx', 'docx', 'doc']:
-            document_id = repo.insert_document(filename_attr, "demo-user")
+            document_id = repo.insert_document(filename_attr, principal.user_id)
             chunks = chunk_markdown(extracted_md)
             repo.insert_document_chunks(document_id, chunks)
             
     except Exception as e:
-        print(f"MinerU Error: {e}")
+        logger.warning("MinerU extraction failed: %s", e)
         extracted_md = f"⚠️ [MinerU 网络解析失败: {e}]"
         
     return {

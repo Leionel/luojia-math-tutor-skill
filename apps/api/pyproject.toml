@@ -14,9 +14,9 @@ dependencies = [
   "python-multipart>=0.0.32",
   "langgraph>=1.2.4",
   "langchain-core>=1.4.1",
+  "pytest-asyncio",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-

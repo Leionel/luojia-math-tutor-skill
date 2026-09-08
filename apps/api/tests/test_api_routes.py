@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.memory.repository import Repository
 from app.tutor.orchestrator import TutorOrchestrator
+from app.knowledge.schema import KnowledgeItem
+from app.api import routes_knowledge
 
 
 def test_health_route():
@@ -15,6 +17,49 @@ def test_health_route():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"ok": True}
+
+
+def test_knowledge_catalog_returns_groupable_metadata(monkeypatch):
+    monkeypatch.setattr(
+        routes_knowledge,
+        "load_knowledge",
+        lambda: (
+            KnowledgeItem(
+                id="CALC_DEF_01",
+                subject="calculus",
+                source_file="duplicate.json",
+                concept_zh="导数定义",
+                prerequisite=[],
+                description="",
+                intuitive_explanation="",
+                solution="",
+                type="definition",
+            ),
+            KnowledgeItem(
+                id="CALC_DEF_01",
+                subject="calculus",
+                source_file="test.json",
+                concept_zh="导数定义",
+                prerequisite=["函数极限"],
+                description="导数是函数在一点处的瞬时变化率。",
+                intuitive_explanation="",
+                solution="",
+                type="definition",
+                chapter="微分学",
+                section="导数与微分",
+            ),
+        ),
+    )
+
+    response = TestClient(app).get("/api/knowledge/catalog")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["type_label"] == "定义"
+    assert data["items"][0]["chapter"] == "微分学"
+    assert data["items"][0]["prerequisites"] == ["函数极限"]
+    assert data["facets"]["subjects"] == {"calculus": 1}
 
 
 def test_create_session_and_list_messages():
@@ -69,6 +114,32 @@ def test_mastery_summary_empty():
     data = resp.json()
     assert data["total_concepts"] == 0
     assert data["average_score"] == 0.0
+
+
+def test_mistake_quiz_uses_the_recorded_concept():
+    client = TestClient(app)
+    created = client.post(
+        "/api/users/quiz-user/mistakes",
+        json={
+            "subject": "calculus",
+            "concept": "链式法则",
+            "mistake_code": "CHAIN_RULE_MISSING_INNER_DERIVATIVE",
+        },
+    )
+    mistake_id = created.json()["event_id"]
+
+    response = client.post(
+        f"/api/users/quiz-user/mistakes/{mistake_id}/generate-quiz"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["concept"] == "链式法则"
+    assert "链式法则" in data["quiz_content"]
+    assert "最大值点" not in data["quiz_content"]
+    assert client.post(
+        f"/api/users/other-user/mistakes/{mistake_id}/generate-quiz"
+    ).status_code == 404
 
 
 # ── similar exercises ──
@@ -349,5 +420,4 @@ def test_list_models_route():
     assert "default_model" in data
     assert "allowed_models" in data
     assert len(data["models"]) > 0
-    assert any(m["id"] == "deepseek-chat" for m in data["models"])
-
+    assert any(m["id"] == "deepseek-v4-flash" for m in data["models"])

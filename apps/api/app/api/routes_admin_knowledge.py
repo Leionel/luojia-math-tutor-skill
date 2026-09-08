@@ -7,12 +7,17 @@ from collections import defaultdict
 import logging
 
 from app.config import get_settings, Settings
+from app.auth import get_principal
 from app.knowledge.loader import load_knowledge, load_knowledge_units, SUBJECT_BY_FILE
 import app.knowledge.search as search_module
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/knowledge", tags=["admin_knowledge"])
+router = APIRouter(
+    prefix="/api/admin/knowledge",
+    tags=["admin_knowledge"],
+    dependencies=[Depends(get_principal)],
+)
 
 class UnitUpdateRequest(BaseModel):
     content: Optional[str] = None

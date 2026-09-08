@@ -1,15 +1,29 @@
 from fastapi import APIRouter, Depends
-from app.main_deps import get_repository
+from app.auth import Principal, get_principal, resolve_user_id
+from app.config import Settings
+from app.main_deps import get_app_settings, get_repository
 from app.memory.repository import Repository
 
 router = APIRouter(prefix="/api", tags=["Mastery"])
 
 @router.get("/users/{user_id}/mastery")
-def get_user_mastery(user_id: str, repo: Repository = Depends(get_repository)):
+def get_user_mastery(
+    user_id: str,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     return {"items": repo.list_mastery(user_id)}
 
 @router.get("/users/{user_id}/mastery/summary")
-def get_user_mastery_summary(user_id: str, repo: Repository = Depends(get_repository)):
+def get_user_mastery_summary(
+    user_id: str,
+    repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
+):
+    user_id = resolve_user_id(principal, user_id, settings)
     items = repo.list_mastery(user_id)
     if not items:
         return {"total_concepts": 0, "average_score": 0.0, "weak_concepts": []}

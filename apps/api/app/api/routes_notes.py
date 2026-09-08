@@ -3,7 +3,14 @@ import re
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.main_deps import get_repository
+from app.auth import (
+    Principal,
+    ensure_session_access,
+    get_principal,
+    resolve_user_id,
+)
+from app.config import Settings
+from app.main_deps import get_app_settings, get_repository
 from app.memory.repository import Repository
 
 router = APIRouter(prefix="/api", tags=["notes"])
@@ -44,7 +51,16 @@ def _next_step(meta: dict) -> str:
 def generate_note(
     payload: GenerateNoteRequest,
     repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
 ):
+    # Preserve the existing direct-call service contract used by local tools;
+    # FastAPI replaces these dependency markers during real HTTP requests.
+    if not isinstance(settings, Settings):
+        settings = get_app_settings()
+    if not isinstance(principal, Principal):
+        principal = Principal(settings.demo_user_id, False)
+    ensure_session_access(payload.session_id, principal, settings, repo)
     messages = repo.list_messages(payload.session_id)
     user_messages = [
         _compact_text(message["content"], 180)
@@ -118,7 +134,10 @@ def save_note(
     user_id: str,
     body: NoteCreate,
     repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
 ):
+    user_id = resolve_user_id(principal, user_id, settings)
     note_id = repo.save_note(
         user_id,
         body.session_id,
@@ -132,7 +151,10 @@ def save_note(
 def list_notes(
     user_id: str,
     repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
 ):
+    user_id = resolve_user_id(principal, user_id, settings)
     notes = repo.list_notes(user_id)
     return {"notes": notes}
 
@@ -141,6 +163,15 @@ def list_notes(
 def delete_note(
     note_id: str,
     repo: Repository = Depends(get_repository),
+    principal: Principal = Depends(get_principal),
+    settings: Settings = Depends(get_app_settings),
 ):
+    if (principal.authenticated or settings.auth_required) and not repo.note_belongs_to(
+        note_id,
+        principal.user_id,
+    ):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Note was not found.")
     repo.delete_note(note_id)
     return {"status": "ok"}
