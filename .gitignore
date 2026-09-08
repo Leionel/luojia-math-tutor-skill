@@ -20,6 +20,9 @@ venv/
 docs/
 deeptutor/
 outputs/
+output/
+tmp/
+tests_temp/
 apps/api/data/uploads/
 .worktrees/
 data/snapshots/
