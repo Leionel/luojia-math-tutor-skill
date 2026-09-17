@@ -17,69 +17,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
+import { numericalAnalysisNodes, numericalAnalysisEdges } from '@/lib/numerical-analysis-graph';
 
-const defaultNodes: Node[] = [
-  // Branch A: Calculus (Blue/Cyan)
-  { id: '1', position: { x: 400, y: 50 }, data: { label: '函数与极限', status: 'mastered' }, type: 'skillNode' },
-  { id: '2', position: { x: 250, y: 150 }, data: { label: '连续性', status: 'mastered' }, type: 'skillNode' },
-  { id: '3', position: { x: 550, y: 150 }, data: { label: '无穷小比较', status: 'mastered' }, type: 'skillNode' },
-  { id: '4', position: { x: 400, y: 250 }, data: { label: '导数与微分', status: 'learning' }, type: 'skillNode' },
-  { id: '5', position: { x: 200, y: 350 }, data: { label: '微分中值定理', status: 'locked' }, type: 'skillNode' },
-  { id: '6', position: { x: 400, y: 350 }, data: { label: '洛必达法则', status: 'locked' }, type: 'skillNode' },
-  { id: '7', position: { x: 600, y: 350 }, data: { label: '泰勒公式', status: 'locked' }, type: 'skillNode' },
-  { id: '8', position: { x: 400, y: 450 }, data: { label: '不定积分', status: 'locked' }, type: 'skillNode' },
-  { id: '9', position: { x: 400, y: 550 }, data: { label: '定积分与应用', status: 'locked' }, type: 'skillNode' },
-  { id: '10', position: { x: 250, y: 650 }, data: { label: '多元函数微分学', status: 'locked' }, type: 'skillNode' },
-  { id: '11', position: { x: 550, y: 650 }, data: { label: '重积分', status: 'locked' }, type: 'skillNode' },
-  { id: '12', position: { x: 400, y: 750 }, data: { label: '无穷级数', status: 'locked' }, type: 'skillNode' },
-
-  // Branch B: Linear Algebra (Emerald/Green)
-  { id: '13', position: { x: 900, y: 50 }, data: { label: '行列式', status: 'learning' }, type: 'skillNode' },
-  { id: '14', position: { x: 900, y: 150 }, data: { label: '矩阵及其运算', status: 'locked' }, type: 'skillNode' },
-  { id: '15', position: { x: 900, y: 250 }, data: { label: '线性方程组', status: 'locked' }, type: 'skillNode' },
-  { id: '16', position: { x: 900, y: 350 }, data: { label: '向量空间', status: 'locked' }, type: 'skillNode' },
-  { id: '17', position: { x: 750, y: 450 }, data: { label: '特征值与特征向量', status: 'locked' }, type: 'skillNode' },
-  { id: '18', position: { x: 1050, y: 450 }, data: { label: '二次型', status: 'locked' }, type: 'skillNode' },
-
-  // Branch C: Probability (Amber/Orange)
-  { id: '19', position: { x: -100, y: 50 }, data: { label: '随机事件与概率', status: 'locked' }, type: 'skillNode' },
-  { id: '20', position: { x: -100, y: 150 }, data: { label: '一维随机变量', status: 'locked' }, type: 'skillNode' },
-  { id: '21', position: { x: -100, y: 250 }, data: { label: '多维随机变量', status: 'locked' }, type: 'skillNode' },
-  { id: '22', position: { x: -250, y: 350 }, data: { label: '大数定律', status: 'locked' }, type: 'skillNode' },
-  { id: '23', position: { x: 50, y: 350 }, data: { label: '中心极限定理', status: 'locked' }, type: 'skillNode' },
-];
-
-const defaultEdges: Edge[] = [
-  // Calculus Edges
-  { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
-  { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
-  { id: 'e2-4', source: '2', target: '4', animated: true, style: { stroke: '#3b82f6', strokeWidth: 2 } },
-  { id: 'e3-4', source: '3', target: '4', animated: true, style: { stroke: '#3b82f6', strokeWidth: 2 } },
-  { id: 'e4-5', source: '4', target: '5', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e4-6', source: '4', target: '6', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e4-7', source: '4', target: '7', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e5-8', source: '5', target: '8', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e6-8', source: '6', target: '8', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e7-8', source: '7', target: '8', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e8-9', source: '8', target: '9', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e9-10', source: '9', target: '10', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e9-11', source: '9', target: '11', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e10-12', source: '10', target: '12', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e11-12', source: '11', target: '12', style: { stroke: '#4b5563', strokeWidth: 1 } },
-
-  // Linear Algebra Edges
-  { id: 'e13-14', source: '13', target: '14', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e14-15', source: '14', target: '15', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e15-16', source: '15', target: '16', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e16-17', source: '16', target: '17', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e16-18', source: '16', target: '18', style: { stroke: '#4b5563', strokeWidth: 1 } },
-
-  // Probability Edges
-  { id: 'e19-20', source: '19', target: '20', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e20-21', source: '20', target: '21', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e21-22', source: '21', target: '22', style: { stroke: '#4b5563', strokeWidth: 1 } },
-  { id: 'e21-23', source: '21', target: '23', style: { stroke: '#4b5563', strokeWidth: 1 } },
-];
+const defaultNodes: Node[] = numericalAnalysisNodes;
+const defaultEdges: Edge[] = numericalAnalysisEdges;
 
 export interface EvidencePackItem {
   id: string;
@@ -238,15 +179,12 @@ export function KnowledgeGraph({
   nodes: propNodes,
   edges: propEdges,
   className,
-  courseId,
+  courseId = "numerical_analysis",
   scopeFilter,
   studentId
 }: KnowledgeGraphProps) {
-  const initialNodes = propNodes || (items ? [] : defaultNodes);
-  const initialEdges = propEdges || (items ? [] : defaultEdges);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   
   useEffect(() => {
@@ -254,10 +192,29 @@ export function KnowledgeGraph({
       const layout = generateGraphLayout(items);
       setNodes(layout.nodes);
       setEdges(layout.edges);
-    } else if (propNodes && propEdges) {
+      return;
+    }
+    
+    if (propNodes && propEdges) {
       setNodes(propNodes);
       setEdges(propEdges);
-    } else if (courseId) {
+      return;
+    }
+
+    // Default to Numerical Analysis Root-Finding unit graph
+    let baseNodes = [...defaultNodes];
+    let baseEdges = [...defaultEdges];
+
+    if (scopeFilter) {
+      baseNodes = baseNodes.filter((n) => n.data?.scope === scopeFilter);
+      const visibleIds = new Set(baseNodes.map((n) => n.id));
+      baseEdges = baseEdges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target));
+    }
+    setNodes(baseNodes);
+    setEdges(baseEdges);
+
+    // Attempt live sync from backend API
+    if (courseId) {
       setIsLoading(true);
       const params = new URLSearchParams({ format: "react_flow" });
       if (scopeFilter) params.set("scope", scopeFilter);
@@ -275,8 +232,8 @@ export function KnowledgeGraph({
             setEdges(data.edges || []);
           }
         })
-        .catch((err) => {
-          console.warn("Using default demo nodes due to fetch error:", err);
+        .catch(() => {
+          // Gracefully keep the local numerical analysis graph
         })
         .finally(() => {
           setIsLoading(false);
