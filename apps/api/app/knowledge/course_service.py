@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from app.config import get_settings
 from app.knowledge.graph_repository import CourseGraphRepository
 from app.knowledge.case_matcher import TeachingCaseMatcher
 from app.knowledge.candidate_graph import CandidateManager
@@ -28,10 +27,12 @@ class CourseService:
         self._load_default_course_pack()
 
     def _load_default_course_pack(self) -> None:
-        settings = get_settings()
+        current = Path(__file__).resolve()
         pack_candidates = [
-            settings.repo_root / "data" / "course_packs" / "numerical_analysis_root_finding.json",
-            Path(__file__).resolve().parents[4] / "data" / "course_packs" / "numerical_analysis_root_finding.json",
+            current.parents[4] / "data" / "course_packs" / f"{self.course_id}_root_finding.json",
+            current.parents[3] / "data" / "course_packs" / f"{self.course_id}_root_finding.json",
+            Path.cwd() / "data" / "course_packs" / f"{self.course_id}_root_finding.json",
+            Path.cwd().parent.parent / "data" / "course_packs" / f"{self.course_id}_root_finding.json",
         ]
         pack_file = None
         for p in pack_candidates:

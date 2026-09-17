@@ -110,6 +110,8 @@ function SkillNode({ data }: { data: any }) {
   const isMastered = data.status === 'mastered';
   const isLearning = data.status === 'learning';
   const isLocked = data.status === 'locked';
+  const isHighlighted = data.isHighlighted;
+  const isSelected = data.isSelected;
 
   const scopeBadge = data.scope === 'core' ? '核心' :
                      data.scope === 'prerequisite' ? '前置' :
@@ -122,11 +124,13 @@ function SkillNode({ data }: { data: any }) {
                     data.unit_type === 'misconception' ? '易错' : null;
   
   return (
-    <div className={`px-4 py-2 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 min-w-[160px]
-      ${isMastered ? 'border-emerald-500 shadow-emerald-500/20' : ''}
-      ${isLearning ? 'border-blue-500 shadow-blue-500/20 ring-4 ring-blue-500/10' : ''}
-      ${isLocked ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
-      ${!isMastered && !isLearning && !isLocked ? 'border-purple-500 shadow-purple-500/20' : ''}
+    <div className={`px-4 py-2.5 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 min-w-[160px] cursor-pointer hover:shadow-xl hover:scale-[1.02]
+      ${isHighlighted ? 'ring-4 ring-indigo-500 border-indigo-600 shadow-indigo-500/40 scale-105' : ''}
+      ${isSelected && !isHighlighted ? 'ring-2 ring-indigo-400 border-indigo-500 shadow-indigo-400/20' : ''}
+      ${!isHighlighted && !isSelected && isMastered ? 'border-emerald-500 shadow-emerald-500/20' : ''}
+      ${!isHighlighted && !isSelected && isLearning ? 'border-blue-500 shadow-blue-500/20' : ''}
+      ${!isHighlighted && !isSelected && isLocked ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
+      ${!isHighlighted && !isSelected && !isMastered && !isLearning && !isLocked ? 'border-purple-500 shadow-purple-500/20' : ''}
     `}>
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-[var(--border-subtle)]" />
       
@@ -138,6 +142,7 @@ function SkillNode({ data }: { data: any }) {
           {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-purple-500" />}
           
           <span className={`font-semibold text-sm ${
+            isHighlighted ? 'text-indigo-700 dark:text-indigo-300 font-bold' :
             isMastered ? 'text-emerald-700 dark:text-emerald-400' : 
             isLearning ? 'text-blue-700 dark:text-blue-400' : 
             isLocked ? 'text-gray-500' : 
@@ -181,11 +186,16 @@ export function KnowledgeGraph({
   className,
   courseId = "numerical_analysis",
   scopeFilter,
-  studentId
+  studentId,
+  onSelectNode,
+  highlightNodeIds = [],
+  selectedNodeId
 }: KnowledgeGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const highlightSet = useMemo(() => new Set(highlightNodeIds), [highlightNodeIds]);
   
   useEffect(() => {
     if (items && items.length > 0) {
@@ -202,7 +212,14 @@ export function KnowledgeGraph({
     }
 
     // Default to Numerical Analysis Root-Finding unit graph
-    let baseNodes = [...defaultNodes];
+    let baseNodes = defaultNodes.map((n) => ({
+      ...n,
+      data: {
+        ...n.data,
+        isHighlighted: highlightSet.has(n.id),
+        isSelected: selectedNodeId === n.id,
+      }
+    }));
     let baseEdges = [...defaultEdges];
 
     if (scopeFilter) {
@@ -228,7 +245,15 @@ export function KnowledgeGraph({
         })
         .then((data) => {
           if (data.nodes && data.nodes.length > 0) {
-            setNodes(data.nodes);
+            const enriched = data.nodes.map((n: Node) => ({
+              ...n,
+              data: {
+                ...n.data,
+                isHighlighted: highlightSet.has(n.id),
+                isSelected: selectedNodeId === n.id,
+              }
+            }));
+            setNodes(enriched);
             setEdges(data.edges || []);
           }
         })
@@ -239,7 +264,7 @@ export function KnowledgeGraph({
           setIsLoading(false);
         });
     }
-  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, setNodes, setEdges]);
+  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, highlightSet, selectedNodeId, setNodes, setEdges]);
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNode }), []);
 
@@ -248,8 +273,15 @@ export function KnowledgeGraph({
     [setEdges],
   );
 
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      onSelectNode?.(node);
+    },
+    [onSelectNode]
+  );
+
   return (
-    <div className={`w-full h-[600px] border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] relative ${className || ''}`}>
+    <div className={`w-full h-full border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] relative ${className || ''}`}>
       {isLoading && (
         <div className="absolute top-4 right-4 z-20 bg-white/80 dark:bg-black/80 px-3 py-1 rounded-full text-xs font-medium text-indigo-600 dark:text-indigo-400 shadow backdrop-blur">
           正在载入课程图谱...
@@ -261,6 +293,7 @@ export function KnowledgeGraph({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
         className="dark:filter dark:invert-[.05]"
@@ -268,6 +301,7 @@ export function KnowledgeGraph({
         <Controls className="bg-white dark:bg-black border-[var(--border-subtle)] fill-[var(--text-primary)]" />
         <MiniMap 
           nodeColor={(n) => {
+            if (n.data?.isHighlighted) return '#6366f1';
             if (n.data?.status === 'mastered') return '#10b981';
             if (n.data?.status === 'learning') return '#3b82f6';
             if (n.data?.status === 'locked') return '#4b5563';

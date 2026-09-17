@@ -209,6 +209,38 @@ def test_react_flow_export(graph_repo):
     print(f"  [PASS] Exported {rf['total_nodes']} React Flow nodes and {rf['total_edges']} edges.")
 
 
+def test_evidence_builder():
+    print("Testing Course Evidence Builder...")
+    from app.knowledge.evidence_builder import CourseEvidenceBuilder
+    builder = CourseEvidenceBuilder(course_id="numerical_analysis")
+
+    # When allow_extension=False: NA_COUNTER_NEWTON_CYCLE is blocked
+    pack_no_ext = builder.build_evidence_pack(
+        query="为什么牛顿法初值选不好会发散",
+        student_id="student_101",
+        task_mode="error_debugging",
+        allow_extension=False
+    )
+    assert pack_no_ext.matched_case is not None
+    assert pack_no_ext.matched_case["case_id"] == "CASE_NEWTON_INITIAL_VALUE"
+    assert "NA_NEWTON" in pack_no_ext.concept_anchors
+    assert len(pack_no_ext.teaching_hints) >= 1
+    # Because NA_COUNTER_NEWTON_CYCLE is an extension node, it was correctly flagged as boundary crossing
+    assert pack_no_ext.boundary_decision["has_boundary_crossing"] is True
+    assert any(b["unit_id"] == "NA_COUNTER_NEWTON_CYCLE" for b in pack_no_ext.boundary_decision["blocked_units"])
+
+    # When allow_extension=True: NA_COUNTER_NEWTON_CYCLE is permitted in extension_units
+    pack_with_ext = builder.build_evidence_pack(
+        query="为什么牛顿法初值选不好会发散",
+        student_id="student_101",
+        task_mode="error_debugging",
+        allow_extension=True
+    )
+    assert "NA_COUNTER_NEWTON_CYCLE" in pack_with_ext.boundary_decision["extension_units"]
+
+    print("  [PASS] Enriched EvidencePack assembled with matched case, anchors, and boundary crossing detection.")
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("Running Course Graph & Teaching Case Standalone Test Suite")
@@ -220,6 +252,7 @@ if __name__ == "__main__":
     test_candidate_evolution_and_review(repo)
     test_student_overlay_reducer()
     test_react_flow_export(repo)
+    test_evidence_builder()
     print("=" * 60)
     print("ALL STANDALONE TESTS PASSED SUCCESSFULLY!")
     print("=" * 60)
