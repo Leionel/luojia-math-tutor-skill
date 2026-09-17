@@ -169,9 +169,19 @@ function SkillNode({ data }: { data: any }) {
   const isMastered = data.status === 'mastered';
   const isLearning = data.status === 'learning';
   const isLocked = data.status === 'locked';
+
+  const scopeBadge = data.scope === 'core' ? '核心' :
+                     data.scope === 'prerequisite' ? '前置' :
+                     data.scope === 'extension' ? '拓展' : null;
+
+  const typeBadge = data.unit_type === 'algorithm' ? '算法' :
+                    data.unit_type === 'theorem' ? '定理' :
+                    data.unit_type === 'definition' ? '定义' :
+                    data.unit_type === 'counterexample' ? '反例' :
+                    data.unit_type === 'misconception' ? '易错' : null;
   
   return (
-    <div className={`px-4 py-2 shadow-lg rounded-full border-2 bg-white dark:bg-[#1e1e1b] flex items-center gap-2 transition-all duration-500
+    <div className={`px-4 py-2 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 min-w-[160px]
       ${isMastered ? 'border-emerald-500 shadow-emerald-500/20' : ''}
       ${isLearning ? 'border-blue-500 shadow-blue-500/20 ring-4 ring-blue-500/10' : ''}
       ${isLocked ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
@@ -179,31 +189,65 @@ function SkillNode({ data }: { data: any }) {
     `}>
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-[var(--border-subtle)]" />
       
-      {isMastered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-      {isLearning && <Flame className="w-4 h-4 text-blue-500 animate-pulse" />}
-      {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
-      {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-purple-500" />}
-      
-      <span className={`font-semibold text-sm ${
-        isMastered ? 'text-emerald-700 dark:text-emerald-400' : 
-        isLearning ? 'text-blue-700 dark:text-blue-400' : 
-        isLocked ? 'text-gray-500' : 
-        'text-purple-700 dark:text-purple-400'
-      }`}>
-        {data.label}
-      </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {isMastered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+          {isLearning && <Flame className="w-4 h-4 text-blue-500 animate-pulse" />}
+          {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
+          {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-purple-500" />}
+          
+          <span className={`font-semibold text-sm ${
+            isMastered ? 'text-emerald-700 dark:text-emerald-400' : 
+            isLearning ? 'text-blue-700 dark:text-blue-400' : 
+            isLocked ? 'text-gray-500' : 
+            'text-purple-700 dark:text-purple-400'
+          }`}>
+            {data.label}
+          </span>
+        </div>
+
+        {scopeBadge && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${
+            data.scope === 'core' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' :
+            data.scope === 'prerequisite' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' :
+            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+          }`}>
+            {scopeBadge}
+          </span>
+        )}
+      </div>
+
+      {typeBadge && (
+        <div className="flex items-center gap-1 text-[11px] text-gray-400">
+          <span className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-gray-500 dark:text-gray-400">
+            {typeBadge}
+          </span>
+          {data.difficulty && (
+            <span className="text-gray-400">难度★{data.difficulty}</span>
+          )}
+        </div>
+      )}
       
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-[var(--border-subtle)]" />
     </div>
   );
 }
 
-export function KnowledgeGraph({ items, nodes: propNodes, edges: propEdges, className }: KnowledgeGraphProps) {
+export function KnowledgeGraph({
+  items,
+  nodes: propNodes,
+  edges: propEdges,
+  className,
+  courseId,
+  scopeFilter,
+  studentId
+}: KnowledgeGraphProps) {
   const initialNodes = propNodes || (items ? [] : defaultNodes);
   const initialEdges = propEdges || (items ? [] : defaultEdges);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const [isLoading, setIsLoading] = React.useState(false);
   
   useEffect(() => {
     if (items && items.length > 0) {
@@ -213,8 +257,32 @@ export function KnowledgeGraph({ items, nodes: propNodes, edges: propEdges, clas
     } else if (propNodes && propEdges) {
       setNodes(propNodes);
       setEdges(propEdges);
+    } else if (courseId) {
+      setIsLoading(true);
+      const params = new URLSearchParams({ format: "react_flow" });
+      if (scopeFilter) params.set("scope", scopeFilter);
+      if (studentId) params.set("student_id", studentId);
+
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+      fetch(`${apiBase}/api/courses/${courseId}/graph?${params.toString()}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Graph fetch failed");
+          return res.json();
+        })
+        .then((data) => {
+          if (data.nodes && data.nodes.length > 0) {
+            setNodes(data.nodes);
+            setEdges(data.edges || []);
+          }
+        })
+        .catch((err) => {
+          console.warn("Using default demo nodes due to fetch error:", err);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
-  }, [items, propNodes, propEdges, setNodes, setEdges]);
+  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, setNodes, setEdges]);
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNode }), []);
 
@@ -224,7 +292,12 @@ export function KnowledgeGraph({ items, nodes: propNodes, edges: propEdges, clas
   );
 
   return (
-    <div className={`w-full h-[600px] border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] ${className || ''}`}>
+    <div className={`w-full h-[600px] border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] relative ${className || ''}`}>
+      {isLoading && (
+        <div className="absolute top-4 right-4 z-20 bg-white/80 dark:bg-black/80 px-3 py-1 rounded-full text-xs font-medium text-indigo-600 dark:text-indigo-400 shadow backdrop-blur">
+          正在载入课程图谱...
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}

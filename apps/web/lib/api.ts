@@ -375,3 +375,33 @@ export async function fetchModels(): Promise<ModelCatalogResponse> {
   if (!res.ok) throw new Error("获取模型列表失败");
   return res.json();
 }
+
+export async function fetchCourseGraph(
+  courseId: string = "numerical_analysis",
+  scope?: string,
+  studentId?: string
+) {
+  const params = new URLSearchParams({ format: "react_flow" });
+  if (scope) params.set("scope", scope);
+  if (studentId) params.set("student_id", studentId);
+
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/graph?${params.toString()}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error("获取课程图谱失败");
+  return res.json();
+}
+
+export async function matchCourseCase(
+  courseId: string = "numerical_analysis",
+  query: string,
+  context?: Record<string, any>
+) {
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/cases/match`, {
+    method: "POST",
+    headers: headers(true),
+    body: JSON.stringify({ query, context }),
+  });
+  if (!res.ok) throw new Error("案例匹配失败");
+  return res.json();
+}

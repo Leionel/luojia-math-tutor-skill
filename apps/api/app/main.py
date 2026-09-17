@@ -22,6 +22,7 @@ from app.api.routes_resources import router as resources_router
 from app.api.routes_cron import router as cron_router
 from app.api.routes_admin_knowledge import router as admin_knowledge_router
 from app.api.routes_knowledge import router as knowledge_router
+from app.api.routes_courses import router as courses_router
 from app.api.routes_auth import router as auth_router
 from app.api.routes_observability import router as observability_router
 from app.config import get_settings
@@ -78,4 +79,5 @@ app.include_router(notes_router)
 app.include_router(cron_router)
 app.include_router(admin_knowledge_router)
 app.include_router(knowledge_router)
+app.include_router(courses_router)
 app.include_router(observability_router)

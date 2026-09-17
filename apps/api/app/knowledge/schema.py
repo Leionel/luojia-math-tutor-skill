@@ -124,6 +124,11 @@ class EvidencePack:
     citations: list[dict[str, Any]] = field(default_factory=list)
     confidence: float = 1.0
     teaching_hints: list[dict[str, Any]] = field(default_factory=list)
+    matched_case: dict[str, Any] | None = None
+    concept_anchors: list[str] = field(default_factory=list)
+    required_conditions: list[str] = field(default_factory=list)
+    boundary_decision: dict[str, Any] = field(default_factory=dict)
+    student_history_refs: list[dict[str, Any]] = field(default_factory=list)
 
 
 
