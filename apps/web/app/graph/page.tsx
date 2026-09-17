@@ -232,20 +232,20 @@ export default function GraphPage() {
                   {selectedNode.data.label}
                 </h2>
                 {/* Meta tags */}
-                <div className="flex items-center gap-3 text-xs text-slate-500 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span>类型: <strong className="text-slate-700 dark:text-slate-300">{selectedNode.data.unit_type}</strong></span>
-                  <span>难度: <strong className="text-amber-500">★{selectedNode.data.difficulty || 2}</strong></span>
-                  <span>掌握度: <strong className="text-emerald-600">{Math.round((selectedNode.data.mastery || 0.5) * 100)}%</strong></span>
+                <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <span>类型: <strong className="text-slate-700 dark:text-slate-200">{selectedNode.data.unit_type}</strong></span>
+                  <span>难度: <strong className="text-amber-500 dark:text-amber-400">★{selectedNode.data.difficulty || 2}</strong></span>
+                  <span>掌握度: <strong className="text-emerald-600 dark:text-emerald-400">{Math.round((selectedNode.data.mastery || 0.5) * 100)}%</strong></span>
                 </div>
               </div>
 
               {/* KaTeX Mathematical Environment - Prominent Display */}
               {selectedNode.data.latex && (
-                <div className="bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/40 dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/60 shadow-sm">
-                  <span className="text-[10px] font-mono text-indigo-500 dark:text-indigo-400 uppercase tracking-wider font-semibold block mb-1 flex items-center gap-1">
+                <div className="bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/40 dark:from-indigo-950/60 dark:via-slate-800/80 dark:to-indigo-950/40 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-800/80 shadow-sm">
+                  <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 uppercase tracking-wider font-semibold block mb-1 flex items-center gap-1">
                     <Calculator className="w-3.5 h-3.5" /> 数学表达式 / 递推公理 (KaTeX)
                   </span>
-                  <div className="py-1">
+                  <div className="py-1 text-center overflow-x-auto">
                     <MathView math={selectedNode.data.latex} display={true} className="text-sm font-serif text-indigo-950 dark:text-indigo-100" />
                   </div>
                 </div>
@@ -255,10 +255,10 @@ export default function GraphPage() {
               {selectedNode.data.formal_statement && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                     形式化数学定理与定义表述
                   </h3>
-                  <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                  <div className="bg-slate-50 dark:bg-slate-800/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <MathMarkdown content={selectedNode.data.formal_statement} />
                   </div>
                 </div>
@@ -268,10 +268,10 @@ export default function GraphPage() {
               {selectedNode.data.geometric_meaning && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <Eye className="w-3.5 h-3.5 text-teal-500" />
+                    <Eye className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
                     几何直观与图象释义
                   </h3>
-                  <div className="bg-teal-50/50 dark:bg-teal-950/20 p-3 rounded-xl border border-teal-100 dark:border-teal-900/40">
+                  <div className="bg-teal-50/60 dark:bg-teal-950/40 p-3.5 rounded-xl border border-teal-100 dark:border-teal-800/60 shadow-sm">
                     <MathMarkdown content={selectedNode.data.geometric_meaning} />
                   </div>
                 </div>
@@ -281,10 +281,10 @@ export default function GraphPage() {
               {selectedNode.data.conditions_and_failure && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                     前提条件与病态 / 失效模式
                   </h3>
-                  <div className="bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                  <div className="bg-amber-50/60 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-100 dark:border-amber-800/60 shadow-sm">
                     <MathMarkdown content={selectedNode.data.conditions_and_failure} />
                   </div>
                 </div>
@@ -294,10 +294,10 @@ export default function GraphPage() {
               {selectedNode.data.algorithm_steps && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <ListOrdered className="w-3.5 h-3.5 text-blue-500" />
+                    <ListOrdered className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                     计算与递推算法步骤
                   </h3>
-                  <div className="bg-blue-50/40 dark:bg-blue-950/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                  <div className="bg-blue-50/50 dark:bg-blue-950/40 p-3.5 rounded-xl border border-blue-100 dark:border-blue-800/60 shadow-sm">
                     <MathMarkdown content={selectedNode.data.algorithm_steps} />
                   </div>
                 </div>
@@ -309,7 +309,7 @@ export default function GraphPage() {
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
                     知识点释义与教学要点
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     {selectedNode.data.content}
                   </p>
                 </div>
@@ -319,7 +319,7 @@ export default function GraphPage() {
               {selectedNode.data.cases && selectedNode.data.cases.length > 0 && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-indigo-500" />
+                    <Tag className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                     关联 Teaching Cases 教学案例
                   </h3>
                   <div className="space-y-1.5">
@@ -329,7 +329,7 @@ export default function GraphPage() {
                         <div 
                           key={cId}
                           onClick={() => handleRunMatch(caseItem?.accepted_variants[0] || cId)}
-                          className="text-xs p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg cursor-pointer transition-colors border border-slate-100 dark:border-slate-800"
+                          className="text-xs p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700/80"
                         >
                           <div className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5">
                             {caseItem ? caseItem.title : cId}

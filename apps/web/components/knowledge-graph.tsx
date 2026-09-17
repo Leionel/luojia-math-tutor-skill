@@ -176,8 +176,8 @@ function SkillNode({ data }: { data: any }) {
       )}
 
       {data.latex && (
-        <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-850 text-[11px] text-slate-700 dark:text-slate-300 overflow-x-hidden text-ellipsis max-w-[220px]">
-          <MathView math={data.latex} className="text-[11px]" />
+        <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-200 overflow-x-hidden text-ellipsis max-w-[220px]">
+          <MathView math={data.latex} className="text-[11px] text-indigo-900 dark:text-indigo-200" />
         </div>
       )}
       

@@ -239,3 +239,17 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
+
+/* KaTeX math styling for dark mode */
+html.dark .katex {
+  color: #e2e8f0 !important;
+}
+html.dark .katex-html {
+  color: #e2e8f0 !important;
+}
+html.dark .katex-block {
+  color: #e2e8f0;
+}
+html.dark .katex-inline {
+  color: #e2e8f0;
+}
