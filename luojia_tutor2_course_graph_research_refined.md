@@ -2111,3 +2111,96 @@ Event Store
 - FNC teaching code
 
 这些工作主要用于验证“哪些已经被别人做过”，避免把普通 course RAG、Socratic prompt、code execution 或 multi-agent routing 误写成主要创新点。
+
+---
+
+# 23. 全局落地实施状态与 To-Do 清单 (已完成 Deliverables & 待实施 Roadmap)
+
+> 本节记录《珞珈导师 2.0 课程图谱与教学案例演化系统》在工程代码库中的实际落地进展与后续迭代计划。更新时间：2026年9月。
+
+## 23.1 实施进展看板 (Implementation Dashboard)
+
+| 阶段 / 模块 | 核心工作 | 交付状态 | 涉及核心文件 / 模块 |
+| :--- | :--- | :---: | :--- |
+| **Phase 1.1 图谱数据契约** | Course Pack 种子库构建 (Units/Cases/Misconceptions) | ✅ **已完成 (100%)** | `data/course_packs/numerical_analysis_root_finding.json` |
+| **Phase 1.2 规范图谱与边界** | 图谱仓储、4级边界策略、React Flow 拓扑导出 | ✅ **已完成 (100%)** | `apps/api/app/knowledge/graph_repository.py`, `boundary.py` |
+| **Phase 1.3 教学案例匹配** | 复合语义与推理签名多路召回排序器 | ✅ **已完成 (100%)** | `apps/api/app/knowledge/case_matcher.py`, `case_schema.py` |
+| **Phase 1.4 动态候选演化** | 候选池管理与教师人机审核循环 (入图/合并/驳回) | ✅ **已完成 (100%)** | `apps/api/app/knowledge/candidate_graph.py`, `graph_review.py` |
+| **Phase 1.5 学生认知状态** | 学生个性化掌握度与遗忘衰减 Overlay | ✅ **已完成 (100%)** | `apps/api/app/knowledge/student_overlay.py` |
+| **Phase 1.6 证据链装配** | 课程图谱 Typed Evidence Pack 结构化组装器 | ✅ **已完成 (100%)** | `apps/api/app/knowledge/evidence_builder.py` |
+| **Phase 1.7 RESTful 路由** | 标准化 API 路由系统 (/api/courses/...) | ✅ **已完成 (100%)** | `apps/api/app/api/routes_courses.py` |
+| **Phase 1.8 前端图谱交互画板** | React Flow 全景画布、范畴过滤、高对比度节点卡片 | ✅ **已完成 (100%)** | `apps/web/app/graph/page.tsx`, `knowledge-graph.tsx` |
+| **Phase 1.9 数学排版引擎** | KaTeX 隔离解析、Markdown 混合排版、Dark mode 适配 | ✅ **已完成 (100%)** | `apps/web/components/math-view.tsx`, `globals.css` |
+| **Phase 1.10 导师对话直连** | Tutor Chat 自动锚定 Case、注入认知约束与格式规范 | ✅ **已完成 (100%)** | `apps/api/app/tutor/fast_context.py`, `prompt_builder.py` |
+| **Phase 1.11 管理后台审核工作台** | 动态演化候选审核、一键入图/合并/驳回、公式预览 | ✅ **已完成 (100%)** | `apps/web/app/admin/knowledge/page.tsx` |
+| **Phase 2.1 数值符号验证器** | SymPy/NumPy 沙箱可执行数值断言，解决 LLM 浮点幻觉 | ⏳ **待实施 (P1)** | `apps/api/app/verifier/numerical_oracle.py` |
+| **Phase 2.2 代码沙箱调试器** | Python/C++ 牛顿法代码单步追踪与除零保护静态分析 | ⏳ **待实施 (P1)** | `apps/api/app/tutor/code_verifier.py` |
+| **Phase 2.3 自适应支架式策略** | 多轮交互 Help Level 阶梯升级模型 | ⏳ **待实施 (P2)** | `apps/api/app/tutor/scaffolding_policy.py` |
+| **Phase 2.4 学情日志自动聚类** | 未命中提问向量聚类与自动生成待审候选 Worker | ⏳ **待实施 (P2)** | `apps/api/app/knowledge/clustering_worker.py` |
+| **Phase 2.5 迁移评测基准** | 20-30 道未见变体独立解题 (Unaided Transfer) Benchmark | ⏳ **待实施 (P3)** | `benchmarks/eval_transfer_test.py` |
+
+---
+
+## 23.2 已完成工作清单 (Done / Completed)
+
+- [x] **1. 数值分析 Course Pack 数据契约与种子库**
+  - **交付文件**：`data/course_packs/numerical_analysis_root_finding.json`
+  - **功能成果**：涵盖 25+ 核心 KnowledgeUnit、10 种规范拓扑关系、25+ 真实 Teaching Case（包含概念解释、代码调试、算法分析等题型）、8 大类高价值易错家族（Misconceptions）。
+- [x] **2. 规范图谱仓储与范围边界策略引擎 (Course Graph Repository & Boundary Policy)**
+  - **交付文件**：`apps/api/app/knowledge/graph_repository.py`, `boundary.py`, `schema.py`
+  - **功能成果**：支持核心知识元、前置知识元、扩展选学与超纲四级边界判定（`ScopeLevel: core | prerequisite | extension | out_of_scope`），实现图谱规范关系的增删查改与 React Flow 规范拓扑导出。
+- [x] **3. 教学案例表征与复合语义匹配器 (Teaching Case Matcher)**
+  - **交付文件**：`apps/api/app/knowledge/case_schema.py`, `case_matcher.py`
+  - **功能成果**：支持针对学生提问的高频变体（`accepted_variants`）与推理签名（`reasoning_signature`）的复合多路打分与重排序，精准锚定教学案例。
+- [x] **4. 演化候选池与教师人机审核循环 (Human-Governed Candidate Pool & Review)**
+  - **交付文件**：`apps/api/app/knowledge/candidate_graph.py`, `graph_review.py`, `course_service.py`
+  - **功能成果**：实现动态演化缓冲区，支持 `new_unit`、`new_case`、`new_alias`、`new_relation` 等类型；支持教师一键批准（`approve`）、合并至已有概念（`merge`）、驳回（`reject`）、重审（`defer`）完整审计动作。
+- [x] **5. 学生认知状态覆盖层 (Student Overlay Store)**
+  - **交付文件**：`apps/api/app/knowledge/student_overlay.py`
+  - **功能成果**：不复制全图，按学生粒度轻量记录掌握度、独立作答率（`is_independent`）、求助等级（`help_level`）与高频误区，计算动态置信度衰减。
+- [x] **6. 结构化证据组装器 (Course Evidence Builder)**
+  - **交付文件**：`apps/api/app/knowledge/evidence_builder.py`
+  - **功能成果**：输入学生查询，自动串联检索 Teaching Case、锚定核心知识元、执行边界策略判定并组装 Typed Evidence Pack。
+- [x] **7. 后端 RESTful 路由与数据接口**
+  - **交付文件**：`apps/api/app/api/routes_courses.py`
+  - **功能成果**：提供 `/api/courses/{course_id}/graph`, `/candidates`, `/review`, `/overlay`, `/events` 全套标准化端点。
+- [x] **8. 前端全景交互知识图谱画板 (Interactive Canvas View)**
+  - **交付文件**：`apps/web/app/graph/page.tsx`, `components/knowledge-graph.tsx`
+  - **功能成果**：基于 `@xyflow/react` 打造全景节点图谱，支持大纲范畴筛选、搜索高亮、学生掌握度 Overlay 渲染、节点侧边抽屉与高保真公式预览。
+- [x] **9. 现代数学公式排版与渲染引擎 (KaTeX Math View & Dark Mode)**
+  - **交付文件**：`apps/web/components/math-view.tsx`, `apps/web/app/globals.css`
+  - **功能成果**：消除 KaTeX 双重 DOM 污染；实现数学公式 slot 隔离提取与 Markdown 混合渲染；全局 dark 模式高对比度样式适配。
+- [x] **10. 导师对话流直连课程图谱 2.0 (Tutor Chat Orchestration)**
+  - **交付文件**：`apps/api/app/tutor/fast_context.py`, `prompt_builder.py`
+  - **功能成果**：学生在聊天框提问时，底层自动调用 `CourseEvidenceBuilder`，命中案例后注入认知目标、苏格拉底逐步引导决策、诊断探针与公式规范约束。
+- [x] **11. 管理后台图谱动态演化候选审核工作台 (Admin Candidate Review Dashboard)**
+  - **交付文件**：`apps/web/app/admin/knowledge/page.tsx`
+  - **功能成果**：新增顶栏“图谱动态演化候选”工作台标签页，提供状态筛选（待审/已入图/已合并/已驳回）、一键批准入图、合并至已有规范概念模态框、教师批注、提议新候选模态框及高保真 KaTeX 公式预览。
+
+---
+
+## 23.3 待实施研发任务清单 (To-Do / Upcoming Roadmap)
+
+- [ ] **1. 数值符号执行验证器 (Numerical Oracle & Executable Verifier) [P1]**
+  - **目标**：对接 SymPy / NumPy 沙箱，针对学生计算的迭代步数值、变号区间中点、残差等进行确定性断言验证，解决 LLM 在多位浮点数计算中的幻觉问题。
+  - **设计规划**：在 `apps/api/app/verifier/` 模块下实现 `NumericalOracle`，当 Teaching Case 包含可执行公式时，比对学生输入的代数表达式或数值结果。
+  - **交付文件**：`apps/api/app/verifier/numerical_oracle.py`, `tests/test_numerical_oracle.py`
+- [ ] **2. 代码调试型教学案例沙箱 (Executable Code Tutor Sandbox) [P1]**
+  - **目标**：针对学生编写的 Python/NumPy 牛顿法、二分法代码，提供语法静态分析、除零隐患扫描以及沙箱单步跟踪反馈，拦截死循环。
+  - **设计规划**：扩展 `FastContext` 与代码执行单元，提供异常类型映射（如把 ZeroDivisionError 关联至 `MISC_DERIVATIVE_ZERO`）。
+  - **交付文件**：`apps/api/app/tutor/code_verifier.py`, `tests/test_code_verifier.py`
+- [ ] **3. 多轮自适应支架式引导策略 (Adaptive Scaffolding Policy & Help Escalation) [P2]**
+  - **目标**：结合学生在当前对话的多次尝试历史与 `help_level`（0: 概念探针提问 -> 1: 提示核心公式 -> 2: 给出一半步骤代入），避免直接披露解法。
+  - **设计规划**：在 `prompt_builder.py` 中引入 `ScaffoldingPolicy`，根据学生 Overlay 中的求助等级动态调整 LLM 的引导层级。
+  - **交付文件**：`apps/api/app/tutor/scaffolding_policy.py`
+- [ ] **4. 学情日志聚类与候选自动沉淀工作流 (Automated Student Query Clustering) [P2]**
+  - **目标**：基于向量检索与语义聚类，对未命中现有 Case 的高频学生提问，自动聚类并生成带 `support_count` 的动态待审候选，推送给任课教师审核。
+  - **设计规划**：实现后台轻量 worker，定期扫描学生提问日志未命中项，达到支持度阈值（如频次 ≥ 5）后调用 `candidate_mgr.add_candidate()`。
+  - **交付文件**：`apps/api/app/knowledge/clustering_worker.py`
+- [ ] **5. 课程级迁移能力评测基准 (Transfer & Mastery Benchmark) [P3]**
+  - **目标**：构建 20–30 道未见变体测试题，评估经过图谱引导辅导后的学生在独立解题（unaided transfer）中的正确率提升与概念掌握稳定性。
+  - **交付文件**：`benchmarks/eval_transfer_test.py`, `data/benchmarks/transfer_gold.json`
+- [ ] **6. 跨课程多学科知识图谱扩展 (Multi-Course Extension) [P3]**
+  - **目标**：将 Course Graph 2.0 机制扩展至《高等数学》《线性代数》等工科核心数学课程，验证图谱架构的通用性与可复用性。
+  - **交付文件**：`data/course_packs/linear_algebra_systems.json`
+

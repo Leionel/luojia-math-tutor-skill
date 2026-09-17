@@ -213,15 +213,34 @@ class FastContextCollector:
         state: dict[str, Any],
     ) -> tuple[EvidencePack | None, float]:
         started = time.perf_counter()
+        pack = None
+        # 1. Try Course Graph 2.0 evidence builder first for Numerical Analysis or general root-finding
         try:
-            pack = await self.local_search(
-                state["message"],
-                state.get("detected_subject") or state.get("subject"),
-                5,
+            from app.knowledge.evidence_builder import CourseEvidenceBuilder
+            builder = CourseEvidenceBuilder(course_id="numerical_analysis")
+            course_pack = await asyncio.to_thread(
+                builder.build_evidence_pack,
+                query=state["message"],
+                student_id=state.get("user_id"),
+                task_mode=state.get("mode"),
+                allow_extension=False,
             )
-        except Exception:
-            logger.exception("Local knowledge search failed")
-            pack = None
+            if course_pack and (course_pack.matched_case or course_pack.concept_anchors):
+                pack = course_pack
+        except Exception as exc:
+            logger.debug("CourseEvidenceBuilder check failed or bypassed: %s", exc)
+
+        # 2. Fallback to standard local search if not matched to Course Graph 2.0
+        if not pack:
+            try:
+                pack = await self.local_search(
+                    state["message"],
+                    state.get("detected_subject") or state.get("subject"),
+                    5,
+                )
+            except Exception:
+                logger.exception("Local knowledge search failed")
+                pack = None
         return pack, (time.perf_counter() - started) * 1000
 
     async def _collect_document_chunks(

@@ -80,6 +80,39 @@ def build_messages(
         prereq_text += "\nGently suggest they might have forgotten these basics, rather than just giving them the answer."
         prereq_instruction = f"\n=== 前置知识推荐 ===\n{prereq_text}\n=====================\n"
 
+    case_context = ""
+    if evidence_pack:
+        matched_case = getattr(evidence_pack, "matched_case", None)
+        concept_anchors = getattr(evidence_pack, "concept_anchors", None) or []
+        boundary_decision = getattr(evidence_pack, "boundary_decision", None)
+
+        if matched_case or concept_anchors:
+            lines = ["=== 课程图谱 2.0 Teaching Case 教学决策与约束 ==="]
+            if matched_case:
+                case_dict = matched_case if isinstance(matched_case, dict) else matched_case.__dict__
+                lines.append(f"- 匹配教学案例 (Teaching Case)：{case_dict.get('title', '')} (ID: {case_dict.get('case_id', '')})")
+                objectives = "；".join(case_dict.get("learning_objectives", []))
+                if objectives:
+                    lines.append(f"- 核心学习目标：{objectives}")
+                disclosure = case_dict.get("disclosure_policy", "direct")
+                lines.append(f"- 答案披露策略 (Disclosure Policy)：{disclosure}")
+                if disclosure == "scaffolded":
+                    lines.append("  ↳ 启发式引导约束：不要直接倾泻最终证明步骤或代数答案，先以反问或提示分步引导学生反思关键条件！")
+                elif disclosure == "direct":
+                    lines.append("  ↳ 直接清晰解答：给出严谨完整的数学定义、定理前提条件、几何直观与完整逻辑推导。")
+                probes = case_dict.get("diagnostic_probes", [])
+                if probes:
+                    p = probes[0]
+                    lines.append(f"- 推荐诊断探针：{p.get('question', '')} （诊断判定基准：{p.get('correct_answer', '')}）")
+            if concept_anchors:
+                lines.append(f"- 关联知识本体锚点 (Concept Anchors)：{'、'.join(concept_anchors)}")
+            if boundary_decision:
+                bd = boundary_decision if isinstance(boundary_decision, dict) else boundary_decision.__dict__
+                lines.append(f"- 课程边界策略：{bd.get('allowed_scope', 'core')}（{'大纲核心内容' if bd.get('in_boundary') else '课程前置/拓展内容'}）")
+            lines.append("- 数学排版规范：所有数学符号与方程必须使用标准 LaTeX 格式（行内 $...$，独立公式块 $$...$$），确保前端 KaTeX 环境高清晰渲染！")
+            lines.append("==================================================")
+            case_context = "\n" + "\n".join(lines) + "\n"
+
     runtime_context = {
         "intent": intent.value,
         "subject": subject,
@@ -93,6 +126,7 @@ def build_messages(
         "supporting_context": "\n".join(
             part
             for part in (
+                case_context.strip(),
                 prereq_instruction.strip(),
                 action_constraint.strip(),
                 docs_context.strip(),
