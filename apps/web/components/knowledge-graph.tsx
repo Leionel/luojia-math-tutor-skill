@@ -18,6 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
 import { numericalAnalysisNodes, numericalAnalysisEdges } from '@/lib/numerical-analysis-graph';
+import { MathView } from '@/components/math-view';
 
 const defaultNodes: Node[] = numericalAnalysisNodes;
 const defaultEdges: Edge[] = numericalAnalysisEdges;
@@ -171,6 +172,12 @@ function SkillNode({ data }: { data: any }) {
           {data.difficulty && (
             <span className="text-gray-400">难度★{data.difficulty}</span>
           )}
+        </div>
+      )}
+
+      {data.latex && (
+        <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-850 text-[11px] text-slate-700 dark:text-slate-300 overflow-x-hidden text-ellipsis max-w-[220px]">
+          <MathView math={data.latex} className="text-[11px]" />
         </div>
       )}
       

@@ -13,10 +13,15 @@ import {
   AlertCircle,
   HelpCircle,
   Code,
-  Tag
+  Tag,
+  Calculator,
+  Eye,
+  ShieldAlert,
+  ListOrdered
 } from "lucide-react";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 import { matchLocalCase, TeachingCaseSummary, teachingCasesList } from "@/lib/numerical-analysis-graph";
+import { MathView, MathMarkdown } from "@/components/math-view";
 import { Node } from "@xyflow/react";
 
 const PRESET_QUERIES = [
@@ -178,12 +183,16 @@ export default function GraphPage() {
                 </p>
 
                 {matchedCaseResult.case_info.diagnostic_probes.length > 0 && (
-                  <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-2 rounded-lg border border-indigo-100 dark:border-indigo-900 text-[11px] text-indigo-900 dark:text-indigo-200">
-                    <span className="font-semibold block mb-0.5 flex items-center gap-1">
-                      <HelpCircle className="w-3 h-3 text-indigo-500" />
+                  <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900 text-[11px] text-indigo-900 dark:text-indigo-200">
+                    <span className="font-semibold block mb-1 flex items-center gap-1">
+                      <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />
                       教学诊断探针：
                     </span>
-                    {matchedCaseResult.case_info.diagnostic_probes[0].question}
+                    <MathMarkdown content={matchedCaseResult.case_info.diagnostic_probes[0].question} className="text-[11px] text-indigo-900 dark:text-indigo-200 mb-1" />
+                    <div className="mt-1 pt-1 border-t border-indigo-100/60 dark:border-indigo-800/40 text-[10px]">
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 mr-1">诊断基准：</span>
+                      <MathMarkdown content={matchedCaseResult.case_info.diagnostic_probes[0].correct_answer} className="text-[10px] text-slate-600 dark:text-slate-300 inline" />
+                    </div>
                   </div>
                 )}
               </div>
@@ -193,10 +202,10 @@ export default function GraphPage() {
 
         {/* Right Slide-Over Node Detail Drawer */}
         {selectedNode && (
-          <aside className="w-96 flex-shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-20 transition-all">
-            <div>
+          <aside className="w-96 md:w-[450px] flex-shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-20 transition-all">
+            <div className="space-y-4">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
                     selectedNode.data.scope === "core" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" :
@@ -218,38 +227,93 @@ export default function GraphPage() {
               </div>
 
               {/* Title */}
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-                {selectedNode.data.label}
-              </h2>
-
-              {/* Meta tags */}
-              <div className="flex items-center gap-3 text-xs text-slate-500 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <span>类型: <strong className="text-slate-700 dark:text-slate-300">{selectedNode.data.unit_type}</strong></span>
-                <span>难度: <strong className="text-amber-500">★{selectedNode.data.difficulty || 2}</strong></span>
-                <span>掌握度: <strong className="text-emerald-600">{Math.round((selectedNode.data.mastery || 0.5) * 100)}%</strong></span>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  {selectedNode.data.label}
+                </h2>
+                {/* Meta tags */}
+                <div className="flex items-center gap-3 text-xs text-slate-500 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <span>类型: <strong className="text-slate-700 dark:text-slate-300">{selectedNode.data.unit_type}</strong></span>
+                  <span>难度: <strong className="text-amber-500">★{selectedNode.data.difficulty || 2}</strong></span>
+                  <span>掌握度: <strong className="text-emerald-600">{Math.round((selectedNode.data.mastery || 0.5) * 100)}%</strong></span>
+                </div>
               </div>
 
-              {/* LaTeX Formula Display */}
+              {/* KaTeX Mathematical Environment - Prominent Display */}
               {selectedNode.data.latex && (
-                <div className="mb-4 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                    数学表达式 (LaTeX)
+                <div className="bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/40 dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/60 shadow-sm">
+                  <span className="text-[10px] font-mono text-indigo-500 dark:text-indigo-400 uppercase tracking-wider font-semibold block mb-1 flex items-center gap-1">
+                    <Calculator className="w-3.5 h-3.5" /> 数学表达式 / 递推公理 (KaTeX)
                   </span>
-                  <code className="text-xs font-mono text-indigo-600 dark:text-indigo-400 block break-all font-semibold">
-                    {selectedNode.data.latex}
-                  </code>
+                  <div className="py-1">
+                    <MathView math={selectedNode.data.latex} display={true} className="text-sm font-serif text-indigo-950 dark:text-indigo-100" />
+                  </div>
                 </div>
               )}
 
-              {/* Concept Content */}
-              <div className="mb-5">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  知识点释义与教学要点
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
-                  {selectedNode.data.content || "该知识节点定义已收录于《数值分析》求根单元教学本体库中。"}
-                </p>
-              </div>
+              {/* Formal Mathematical Statement / Theorem */}
+              {selectedNode.data.formal_statement && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                    形式化数学定理与定义表述
+                  </h3>
+                  <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    <MathMarkdown content={selectedNode.data.formal_statement} />
+                  </div>
+                </div>
+              )}
+
+              {/* Geometric & Intuitive Meaning */}
+              {selectedNode.data.geometric_meaning && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-teal-500" />
+                    几何直观与图象释义
+                  </h3>
+                  <div className="bg-teal-50/50 dark:bg-teal-950/20 p-3 rounded-xl border border-teal-100 dark:border-teal-900/40">
+                    <MathMarkdown content={selectedNode.data.geometric_meaning} />
+                  </div>
+                </div>
+              )}
+
+              {/* Conditions & Failure Modes */}
+              {selectedNode.data.conditions_and_failure && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                    前提条件与病态 / 失效模式
+                  </h3>
+                  <div className="bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                    <MathMarkdown content={selectedNode.data.conditions_and_failure} />
+                  </div>
+                </div>
+              )}
+
+              {/* Algorithm Steps (if present) */}
+              {selectedNode.data.algorithm_steps && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                    <ListOrdered className="w-3.5 h-3.5 text-blue-500" />
+                    计算与递推算法步骤
+                  </h3>
+                  <div className="bg-blue-50/40 dark:bg-blue-950/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                    <MathMarkdown content={selectedNode.data.algorithm_steps} />
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback Content */}
+              {selectedNode.data.content && !selectedNode.data.formal_statement && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                    知识点释义与教学要点
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+                    {selectedNode.data.content}
+                  </p>
+                </div>
+              )}
 
               {/* Related Teaching Cases */}
               {selectedNode.data.cases && selectedNode.data.cases.length > 0 && (
@@ -265,7 +329,7 @@ export default function GraphPage() {
                         <div 
                           key={cId}
                           onClick={() => handleRunMatch(caseItem?.accepted_variants[0] || cId)}
-                          className="text-xs p-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg cursor-pointer transition-colors border border-slate-100 dark:border-slate-800"
+                          className="text-xs p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg cursor-pointer transition-colors border border-slate-100 dark:border-slate-800"
                         >
                           <div className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5">
                             {caseItem ? caseItem.title : cId}
@@ -282,10 +346,10 @@ export default function GraphPage() {
             </div>
 
             {/* Bottom Action */}
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="pt-4 mt-6 border-t border-slate-200 dark:border-slate-800">
               <Link
                 href={`/chat`}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow transition-colors"
               >
                 在对话中以此知识点提问
               </Link>
