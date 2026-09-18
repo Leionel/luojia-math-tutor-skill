@@ -55,7 +55,7 @@ def detect_mistake(message: str, verifier_summary: str = "") -> Mistake | None:
                 return MISTAKES["LHOPITAL_WITHOUT_INDETERMINATE_FORM"]
             if "lim" in compact and not any(key in compact for key in ["sinx/x", "sin(x)/x", "0/0"]):
                 return MISTAKES["LHOPITAL_WITHOUT_INDETERMINATE_FORM"]
-        if "未确认未定式" in verifier_summary:
+        if "未确认未定式" in verifier_summary or "不满足洛必达法则使用条件" in verifier_summary:
             return MISTAKES["LHOPITAL_WITHOUT_INDETERMINATE_FORM"]
     if "互斥" in text and "独立" in text:
         return MISTAKES["INDEPENDENCE_CONFUSION"]

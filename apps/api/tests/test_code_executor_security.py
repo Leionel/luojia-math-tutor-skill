@@ -41,3 +41,39 @@ Path(r"{marker}").write_text("x")
 
     assert "only math and sympy imports are allowed" in result
     assert not marker.exists()
+
+
+@pytest.mark.asyncio
+async def test_code_executor_rejects_dunder_import_escape() -> None:
+    result = await execute_python_code("__import__('os').system('echo pwned')")
+
+    assert "unsafe name" in result or "not allowed" in result
+
+
+@pytest.mark.asyncio
+async def test_code_executor_rejects_eval_escape() -> None:
+    result = await execute_python_code("eval(\"__import__('os').system('echo pwned')\")")
+
+    assert "unsafe name" in result or "not allowed" in result
+
+
+@pytest.mark.asyncio
+async def test_code_executor_rejects_getattr_escape() -> None:
+    result = await execute_python_code("globals()\n")
+
+    assert "unsafe name" in result or "not allowed" in result
+
+
+@pytest.mark.asyncio
+async def test_code_executor_rejects_builtin_shadowing_escape(tmp_path: Path) -> None:
+    marker = tmp_path / "pwned.txt"
+    code = f"""
+import sympy
+getattr(sympy, 'Symbol')
+open(r'{marker}', 'w').write('x')
+"""
+
+    result = await execute_python_code(code)
+
+    assert "unsafe name" in result or "not allowed" in result
+    assert not marker.exists()

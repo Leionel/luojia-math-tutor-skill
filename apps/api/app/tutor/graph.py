@@ -584,11 +584,19 @@ class TutorWorkflow:
         state: AgentState,
         config: RunnableConfig,
     ) -> dict:
+        # Hard gate: whether symbolic verification runs is decided by the
+        # pipeline (verification mode / an upstream verifier verdict), never
+        # by the model voluntarily emitting a [VERIFY] tag.
+        require_verification = (
+            state.get("verification_mode") == VerificationMode.SYMBOLIC.value
+            or bool(state.get("verification_result"))
+        )
         return await self._stream_generation(
             state,
             config,
             build_teacher_prompt(state),
             default_route="teacher",
+            require_verification=require_verification,
         )
 
     async def examiner_node(
@@ -622,6 +630,7 @@ class TutorWorkflow:
         config: RunnableConfig,
         messages: list,
         default_route: str,
+        require_verification: bool = False,
     ) -> dict:
         prompt = self._normalize_prompt(messages)
         metrics = dict(state.get("metrics", {}))
@@ -633,6 +642,7 @@ class TutorWorkflow:
         started = time.perf_counter()
         response_text = ""
         tool_evidence: list[dict[str, str]] = []
+        verification_forced = False
 
         if on_progress:
             output_text = {
@@ -654,6 +664,30 @@ class TutorWorkflow:
                     int(metrics.get("llm_call_count", 0)) + 1
                 )
                 code_blocks = self._extract_verify_code(candidate)
+                if (
+                    require_verification
+                    and not code_blocks
+                    and not verification_forced
+                    and tool_round < max_rounds
+                ):
+                    # The model skipped the mandatory verification pass. Force
+                    # one explicit sandbox round instead of accepting the
+                    # unverified answer silently.
+                    verification_forced = True
+                    prompt = [
+                        *prompt,
+                        {"role": "assistant", "content": candidate},
+                        {
+                            "role": "user",
+                            "content": (
+                                "[系统强制要求] 本轮包含符号推导，必须先输出 [VERIFY] "
+                                "后跟一个 python 代码块（仅允许 math/sympy），"
+                                "对关键步骤执行 SymPy 验算；收到 [TOOL_RESULT] 后，"
+                                "再把学生可见内容放在 [OUTPUT] 后。"
+                            ),
+                        },
+                    ]
+                    continue
                 if not code_blocks or tool_round >= max_rounds:
                     response_text = self._visible_output(candidate)
                     break
@@ -680,6 +714,26 @@ class TutorWorkflow:
                         ),
                     },
                 ]
+
+            # Observable verification outcome: a required-but-missing sandbox
+            # run, or an upstream verifier failure, is surfaced to the student
+            # instead of silently flowing into the final answer.
+            upstream_failure = (state.get("verification_result") or {}).get("verified") is False
+            if require_verification and not tool_evidence:
+                response_text = (
+                    "⚠️ 本轮未能完成符号验算，以下内容未经确定性验证，请仔细核对。\n\n"
+                    + response_text
+                )
+                metrics["verification_enforced"] = "degraded"
+            elif require_verification:
+                metrics["verification_enforced"] = "enforced"
+            else:
+                metrics["verification_enforced"] = "not_required"
+            if upstream_failure:
+                failure_summary = (
+                    state.get("verification_result") or {}
+                ).get("summary") or "验证器未能确认本步推导。"
+                response_text = f"❗ {failure_summary}\n\n{response_text}"
 
             metrics["sandbox_tool_calls"] = len(tool_evidence)
             metrics["teacher_first_token_ms"] = round(

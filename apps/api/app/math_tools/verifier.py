@@ -153,22 +153,132 @@ def verify_determinant_2x2(matrix: list[list[float]], candidate: str) -> VerifyR
         return VerifyResult(False, None, f"行列式验证失败：{exc}")
 
 
+_LIMIT_HEADING = re.compile(
+    r"lim(?:it)?\s*(?:_\{?\s*)?(?P<var>[a-zA-Z])\s*(?:\\to|->|→)\s*(?P<point>[^\s,，;；]+)\s*\}?\s*[:：]?\s*(?P<expr>[^;；\n]+)",
+    re.IGNORECASE,
+)
+
+# Keyword mentions only mark a candidate for symbolic checking; they can never
+# decide the outcome by themselves.
+_CJK_TOKEN = re.compile(r"[\u4e00-\u9fff，。！？：；、（）]")
+
+
+def _prepare_expr_text(text: str) -> str:
+    # Implicit multiplication cannot turn "sinx" into sin(x), so expand the
+    # common compact forms before parsing. The lookahead stops at ASCII
+    # letters only, so Chinese text directly after the x still matches.
+    text = re.sub(r"sin\s*x(?![a-zA-Z])", "sin(x)", text)
+    text = re.sub(r"cos\s*x(?![a-zA-Z])", "cos(x)", text)
+    text = re.sub(r"tan\s*x(?![a-zA-Z])", "tan(x)", text)
+    return text
+
+
+def _parse_prefix_candidate(expr_text: str) -> sp.Expr | None:
+    """Parse the leading math tokens of free-text trailing a limit heading.
+
+    Trailing natural-language tokens (which may contain the student's own
+    "0/0" claim) are excluded: only the expression itself may be parsed.
+    """
+    math_tokens: list[str] = []
+    for token in expr_text.split():
+        if _CJK_TOKEN.search(token):
+            break
+        math_tokens.append(token)
+    for end in range(len(math_tokens), 0, -1):
+        candidate = _prepare_expr_text(" ".join(math_tokens[:end]))
+        if not candidate.strip():
+            continue
+        try:
+            return parse_math(candidate)
+        except Exception:
+            continue
+    return None
+
+
+def _classify_indeterminate(
+    expr: sp.Expr,
+    var_name: str,
+    point_text: str,
+) -> tuple[str | None, str, str]:
+    """Compute the numerator/denominator limits and classify the form.
+
+    Returns (form, num_limit_str, den_limit_str); form is None when the
+    limit is not an indeterminate 0/0 or ∞/∞ form (or cannot be computed).
+    """
+    x = sp.Symbol(var_name)
+    cleaned_point = point_text.lstrip("+").replace("∞", "oo").replace("\\infty", "oo").replace("infty", "oo")
+    point = parse_math(cleaned_point) if cleaned_point != "oo" else sp.oo
+    num, den = sp.fraction(sp.together(expr))
+    num_lim = sp.limit(num, x, point)
+    den_lim = sp.limit(den, x, point)
+
+    num_zero = sp.simplify(num_lim) == 0
+    den_zero = sp.simplify(den_lim) == 0
+    num_inf = sp.Abs(num_lim) == sp.oo
+    den_inf = sp.Abs(den_lim) == sp.oo
+
+    if num_zero and den_zero:
+        return "0/0", sp.sstr(num_lim), sp.sstr(den_lim)
+    if num_inf and den_inf:
+        return "∞/∞", sp.sstr(num_lim), sp.sstr(den_lim)
+    return None, sp.sstr(num_lim), sp.sstr(den_lim)
+
+
 def verify_lhopital_conditions(message: str) -> VerifyResult:
-    text = message.replace(" ", "").replace("$", "")
-    if any(key in text for key in ["0/0", "∞/∞", "无穷/无穷", "未定式", "indeterminate"]):
+    """Deterministically decide whether the limit in `message` is indeterminate.
+
+    The decision is made by SymPy limit evaluation on the expression found in
+    the message. Keyword mentions like "0/0" only indicate that a check is
+    being requested; they never substitute for the symbolic verdict.
+    """
+    match = _LIMIT_HEADING.search(message)
+    if not match:
         return VerifyResult(
-            verified=True,
-            is_correct=True,
-            summary="已确认极限为未定式，满足洛必达法则使用条件。",
+            verified=False,
+            is_correct=None,
+            summary=(
+                "未能在消息中解析出形如 lim x->a f(x) 的极限表达式，"
+                "无法确定性判定未定式类型，不能据此确认洛必达法则的使用条件。"
+            ),
         )
-    if any(key in text for key in ["sinx/x", "sin(x)/x", "\\sinx/x", "\\sin(x)/x"]):
+
+    var_name = match.group("var")
+    point_text = match.group("point").strip("）)")
+    try:
+        expr = _parse_prefix_candidate(match.group("expr"))
+        if expr is None:
+            raise ValueError("expression parse failed")
+        form, num_lim, den_lim = _classify_indeterminate(expr, var_name, point_text)
+    except Exception as exc:
+        return VerifyResult(
+            verified=False,
+            is_correct=None,
+            summary=f"极限表达式解析或求极限失败，无法判定未定式类型：{exc}",
+        )
+
+    if form == "0/0":
         return VerifyResult(
             verified=True,
             is_correct=True,
-            summary="lim x->0 sinx/x 是 0/0 型未定式，满足洛必达法则使用条件。",
+            summary=(
+                f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
+                "属于 0/0 型未定式，满足洛必达法则使用条件。"
+            ),
+        )
+    if form == "∞/∞":
+        return VerifyResult(
+            verified=True,
+            is_correct=True,
+            summary=(
+                f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
+                "属于 ∞/∞ 型未定式，满足洛必达法则使用条件。"
+            ),
         )
     return VerifyResult(
         verified=True,
         is_correct=False,
-        summary="未确认未定式（0/0 或 ∞/∞）就使用洛必达法则，条件不满足。",
+        summary=(
+            f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
+            "该极限不是 0/0 或 ∞/∞ 型未定式，不满足洛必达法则使用条件。"
+        ),
     )
