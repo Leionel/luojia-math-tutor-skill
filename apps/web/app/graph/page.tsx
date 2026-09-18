@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,7 +20,7 @@ import {
   ListOrdered
 } from "lucide-react";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
-import { matchLocalCase, TeachingCaseSummary, teachingCasesList } from "@/lib/numerical-analysis-graph";
+import { matchCourseCase, listCourseCases } from "@/lib/api";
 import { MathView, MathMarkdown } from "@/components/math-view";
 import { Node } from "@xyflow/react";
 
@@ -34,20 +34,33 @@ const PRESET_QUERIES = [
 export default function GraphPage() {
   const [courseId] = useState("numerical_analysis");
   const [scopeFilter, setScopeFilter] = useState<string | undefined>(undefined);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNode, setSelectedNode] = useState<Node<any> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchedCaseResult, setMatchedCaseResult] = useState<any>(null);
+  const [matchError, setMatchError] = useState<string | null>(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState<string[]>([]);
+  const [courseCases, setCourseCases] = useState<Array<{ case_id: string; title: string; task_type: string; accepted_variants: string[] }>>([]);
+
+  // Course cases live in the backend course pack (single source of truth).
+  useEffect(() => {
+    listCourseCases(courseId)
+      .then(setCourseCases)
+      .catch(() => setCourseCases([]));
+  }, [courseId]);
 
   const handleRunMatch = (queryText: string) => {
     setSearchQuery(queryText);
-    const res = matchLocalCase(queryText);
-    setMatchedCaseResult(res);
-    if (res.concept_anchors && res.concept_anchors.length > 0) {
-      setHighlightNodeIds(res.concept_anchors);
-    } else {
-      setHighlightNodeIds([]);
-    }
+    setMatchError(null);
+    matchCourseCase(courseId, queryText, {})
+      .then((res) => {
+        setMatchedCaseResult(res);
+        setHighlightNodeIds(res.concept_anchor_ids || []);
+      })
+      .catch(() => {
+        setMatchedCaseResult(null);
+        setHighlightNodeIds([]);
+        setMatchError("案例匹配失败：请确认后端 API 已启动。");
+      });
   };
 
   const handleClearMatch = () => {
@@ -82,20 +95,20 @@ export default function GraphPage() {
             <span>《数值分析》求根单元 (27 节点 / 21 关系)</span>
           </div>
 
-          {/* Scope Filters */}
+          {/* Scope Filters — each filter tinted with its scope color */}
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             {[
-              { label: "全部", value: undefined },
-              { label: "核心 (Core)", value: "core" },
-              { label: "前置 (Prereq)", value: "prerequisite" },
-              { label: "拓展 (Extension)", value: "extension" },
+              { label: "全部", value: undefined, active: "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm" },
+              { label: "核心 (Core)", value: "core", active: "bg-indigo-500 text-white shadow-sm" },
+              { label: "前置 (Prereq)", value: "prerequisite", active: "bg-amber-500 text-white shadow-sm" },
+              { label: "拓展 (Extension)", value: "extension", active: "bg-teal-500 text-white shadow-sm" },
             ].map((btn) => (
               <button
                 key={btn.label}
                 onClick={() => setScopeFilter(btn.value)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                   scopeFilter === btn.value
-                    ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    ? btn.active
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                 }`}
               >
@@ -168,30 +181,35 @@ export default function GraphPage() {
             </div>
 
             {/* Matched Case Card */}
-            {matchedCaseResult && matchedCaseResult.case_info && (
+            {matchError && (
+              <div className="mt-2 pt-2 border-t border-red-100 dark:border-red-900/40 text-[11px] text-red-600 dark:text-red-400">
+                {matchError}
+              </div>
+            )}
+            {matchedCaseResult && matchedCaseResult.matched_case && (
               <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-slate-800 dark:text-slate-100">
-                    {matchedCaseResult.case_info.title}
+                    {matchedCaseResult.matched_case.title}
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded font-mono font-medium">
                     {matchedCaseResult.decision} ({Math.round(matchedCaseResult.confidence * 100)}%)
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-                  {matchedCaseResult.case_info.learning_objectives[0]}
+                  {matchedCaseResult.matched_case.learning_objectives[0]}
                 </p>
 
-                {matchedCaseResult.case_info.diagnostic_probes.length > 0 && (
+                {matchedCaseResult.matched_case.diagnostic_probes.length > 0 && (
                   <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900 text-[11px] text-indigo-900 dark:text-indigo-200">
                     <span className="font-semibold block mb-1 flex items-center gap-1">
                       <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />
                       教学诊断探针：
                     </span>
-                    <MathMarkdown content={matchedCaseResult.case_info.diagnostic_probes[0].question} className="text-[11px] text-indigo-900 dark:text-indigo-200 mb-1" />
+                    <MathMarkdown content={matchedCaseResult.matched_case.diagnostic_probes[0].question} className="text-[11px] text-indigo-900 dark:text-indigo-200 mb-1" />
                     <div className="mt-1 pt-1 border-t border-indigo-100/60 dark:border-indigo-800/40 text-[10px]">
                       <span className="font-semibold text-emerald-600 dark:text-emerald-400 mr-1">诊断基准：</span>
-                      <MathMarkdown content={matchedCaseResult.case_info.diagnostic_probes[0].correct_answer} className="text-[10px] text-slate-600 dark:text-slate-300 inline" />
+                      <MathMarkdown content={matchedCaseResult.matched_case.diagnostic_probes[0].correct_answer} className="text-[10px] text-slate-600 dark:text-slate-300 inline" />
                     </div>
                   </div>
                 )}
@@ -210,9 +228,12 @@ export default function GraphPage() {
                   <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
                     selectedNode.data.scope === "core" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" :
                     selectedNode.data.scope === "prerequisite" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
-                    "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+                    selectedNode.data.scope === "extension" ? "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300" :
+                    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                   }`}>
-                    {selectedNode.data.scope === "core" ? "核心必修" : selectedNode.data.scope === "prerequisite" ? "微积分前置" : "课程拓展"}
+                    {selectedNode.data.scope === "core" ? "核心必修" :
+                     selectedNode.data.scope === "prerequisite" ? "微积分前置" :
+                     selectedNode.data.scope === "extension" ? "课程拓展" : "未分类 · 待教师审核"}
                   </span>
                   <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-mono">
                     ID: {selectedNode.id}
@@ -235,7 +256,7 @@ export default function GraphPage() {
                 <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
                   <span>类型: <strong className="text-slate-700 dark:text-slate-200">{selectedNode.data.unit_type}</strong></span>
                   <span>难度: <strong className="text-amber-500 dark:text-amber-400">★{selectedNode.data.difficulty || 2}</strong></span>
-                  <span>掌握度: <strong className="text-emerald-600 dark:text-emerald-400">{Math.round((selectedNode.data.mastery || 0.5) * 100)}%</strong></span>
+                  <span>掌握度: <strong className="text-emerald-600 dark:text-emerald-400">{selectedNode.data.mastery != null ? `${Math.round(selectedNode.data.mastery * 100)}%` : "未评估"}</strong></span>
                 </div>
               </div>
 
@@ -324,9 +345,9 @@ export default function GraphPage() {
                   </h3>
                   <div className="space-y-1.5">
                     {selectedNode.data.cases.map((cId: string) => {
-                      const caseItem = teachingCasesList.find((c) => c.case_id === cId);
+                      const caseItem = courseCases.find((c) => c.case_id === cId);
                       return (
-                        <div 
+                        <div
                           key={cId}
                           onClick={() => handleRunMatch(caseItem?.accepted_variants[0] || cId)}
                           className="text-xs p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700/80"

@@ -51,12 +51,13 @@ export interface GraphCandidate {
     latex?: string;
     keywords?: string[];
     difficulty?: number;
-    scope_level?: "core" | "prerequisite" | "extension";
+    scope_level?: "core" | "prerequisite" | "extension" | "external" | "unclassified";
     teaching_role?: string;
     target_id?: string;
     alias?: string;
     note?: string;
     case_id?: string;
+    course_id?: string;
     task_type?: string;
     learning_objectives?: string[];
     concept_ids?: string[];

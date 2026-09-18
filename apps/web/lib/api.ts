@@ -405,3 +405,27 @@ export async function matchCourseCase(
   if (!res.ok) throw new Error("案例匹配失败");
   return res.json();
 }
+
+export type CourseCase = {
+  case_id: string;
+  title: string;
+  task_type: string;
+  learning_objectives: string[];
+  concept_ids: string[];
+  accepted_variants: string[];
+  diagnostic_probes: Array<{ question: string; correct_answer?: string }>;
+};
+
+export async function listCourseCases(
+  courseId: string = "numerical_analysis",
+  conceptId?: string
+): Promise<CourseCase[]> {
+  const params = new URLSearchParams();
+  if (conceptId) params.set("concept_id", conceptId);
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/cases?${params.toString()}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error("获取教学案例失败");
+  const data = await res.json();
+  return data.cases as CourseCase[];
+}

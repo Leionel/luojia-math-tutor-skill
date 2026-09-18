@@ -47,7 +47,7 @@ class CourseEvidenceBuilder:
             allow_extension=allow_extension
         )
 
-        # 3. Pull Student History Refs
+        # 3. Pull Student History Refs (evidence counts only; mastery belongs to BKT)
         student_history_refs = []
         if student_id:
             overlay = self.service.overlay_store.get_course_overlay(student_id, self.course_id)
@@ -56,9 +56,12 @@ class CourseEvidenceBuilder:
                     u_state = overlay["units"][cid]
                     student_history_refs.append({
                         "unit_id": cid,
-                        "mastery": u_state.get("mastery_estimate", 0.5),
+                        "independent_evidence_count": u_state.get("independent_evidence_count", 0),
+                        "assisted_success_count": u_state.get("assisted_success_count", 0),
+                        "failure_count": u_state.get("failure_count", 0),
+                        "hint_exposure_count": u_state.get("hint_exposure_count", 0),
+                        "latest_outcome": u_state.get("latest_outcome", "unseen"),
                         "errors": u_state.get("misconception_candidate_refs", []),
-                        "independent_count": u_state.get("independent_evidence_count", 0),
                     })
 
         # 4. Construct Teaching Hints

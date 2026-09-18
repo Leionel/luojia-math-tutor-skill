@@ -53,7 +53,7 @@ export function AppHeader({
 
         <ThemeToggle />
         {onToggleZenMode && (
-          <Button variant="ghost" size="icon" onClick={onToggleZenMode} className="h-9 w-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-indigo-500 hover:bg-indigo-500/10 transition-colors shadow-sm" title="进入沉浸模式 (Zen Mode)">
+          <Button variant="ghost" size="icon" onClick={onToggleZenMode} className="h-9 w-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-accent)] hover:bg-[var(--accent-light)] transition-colors shadow-sm" title="进入沉浸模式 (Zen Mode)">
             <Target className="w-4 h-4" />
           </Button>
         )}

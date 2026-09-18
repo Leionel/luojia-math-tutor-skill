@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
 
+from app.knowledge.course_store import CourseStore
+
 
 class CandidateType(str, Enum):
     NEW_UNIT = "new_unit"
@@ -71,12 +73,26 @@ class GraphCandidate:
 
 
 class CandidateManager:
-    """Manages the evolution candidate buffer to ensure no unreviewed updates pollute the canonical graph."""
+    """Manages the evolution candidate buffer to ensure no unreviewed updates pollute the canonical graph.
 
-    def __init__(self, candidates: Optional[list[GraphCandidate]] = None):
+    When a CourseStore is provided, candidates are loaded from it on startup and
+    every add/review is written through, so state survives server restarts.
+    """
+
+    def __init__(self, candidates: Optional[list[GraphCandidate]] = None, store: Optional[CourseStore] = None):
+        self.store = store
         self._candidates: dict[str, GraphCandidate] = {
             c.candidate_id: c for c in (candidates or [])
         }
+        if store:
+            for d in store.load_candidates():
+                if d.get("candidate_id") not in self._candidates:
+                    c = GraphCandidate.from_dict(d)
+                    self._candidates[c.candidate_id] = c
+
+    def _persist(self, candidate: GraphCandidate) -> None:
+        if self.store:
+            self.store.upsert_candidate(candidate.candidate_id, candidate.course_id, candidate.to_dict())
 
     def add_candidate(
         self,
@@ -94,6 +110,7 @@ class CandidateManager:
             existing.last_seen = now
             if evidence_ref and evidence_ref not in existing.evidence_refs:
                 existing.evidence_refs.append(evidence_ref)
+            self._persist(existing)
             return existing
 
         c = GraphCandidate(
@@ -109,6 +126,7 @@ class CandidateManager:
             last_seen=now
         )
         self._candidates[candidate_id] = c
+        self._persist(c)
         return c
 
     def get_candidate(self, candidate_id: str) -> Optional[GraphCandidate]:
@@ -150,4 +168,5 @@ class CandidateManager:
         candidate.reviewer_id = reviewer_id
         candidate.review_note = review_note
         candidate.last_seen = datetime.datetime.now().isoformat()
+        self._persist(candidate)
         return candidate

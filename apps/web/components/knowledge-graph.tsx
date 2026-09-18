@@ -17,11 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
-import { numericalAnalysisNodes, numericalAnalysisEdges } from '@/lib/numerical-analysis-graph';
 import { MathView } from '@/components/math-view';
-
-const defaultNodes: Node[] = numericalAnalysisNodes;
-const defaultEdges: Edge[] = numericalAnalysisEdges;
 
 export interface EvidencePackItem {
   id: string;
@@ -35,6 +31,12 @@ export interface KnowledgeGraphProps {
   nodes?: Node[];
   edges?: Edge[];
   className?: string;
+  courseId?: string;
+  scopeFilter?: string;
+  studentId?: string;
+  onSelectNode?: (node: Node) => void;
+  highlightNodeIds?: string[];
+  selectedNodeId?: string;
 }
 
 function generateGraphLayout(items: EvidencePackItem[]) {
@@ -107,61 +109,83 @@ function generateGraphLayout(items: EvidencePackItem[]) {
   return { nodes: newNodes, edges: newEdges };
 }
 
+// Scope-semantic palette: node borders and badges encode course boundary
+// scope; mastery status is conveyed by icons only.
+const SCOPE_STYLES: Record<string, { badge: string; border: string; minimap: string; label: string }> = {
+  core: {
+    badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+    border: 'border-indigo-500 shadow-indigo-500/10',
+    minimap: '#6366f1',
+    label: '核心',
+  },
+  prerequisite: {
+    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    border: 'border-amber-500 shadow-amber-500/10',
+    minimap: '#f59e0b',
+    label: '前置',
+  },
+  extension: {
+    badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+    border: 'border-teal-500 shadow-teal-500/10',
+    minimap: '#14b8a6',
+    label: '拓展',
+  },
+  unclassified: {
+    badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+    border: 'border-slate-400 border-dashed shadow-slate-500/10',
+    minimap: '#94a3b8',
+    label: '未分类',
+  },
+};
+
+// Case-match highlight: rose, distinct from every scope color.
+const HIGHLIGHT_CLASS = 'ring-4 ring-rose-500 border-rose-500 shadow-rose-500/40 scale-105';
+
+function getScopeStyle(scope?: string) {
+  return SCOPE_STYLES[scope || 'unclassified'] || SCOPE_STYLES.unclassified;
+}
+
 function SkillNode({ data }: { data: any }) {
   const isMastered = data.status === 'mastered';
   const isLearning = data.status === 'learning';
   const isLocked = data.status === 'locked';
   const isHighlighted = data.isHighlighted;
   const isSelected = data.isSelected;
-
-  const scopeBadge = data.scope === 'core' ? '核心' :
-                     data.scope === 'prerequisite' ? '前置' :
-                     data.scope === 'extension' ? '拓展' : null;
+  const scopeStyle = getScopeStyle(data.scope);
 
   const typeBadge = data.unit_type === 'algorithm' ? '算法' :
                     data.unit_type === 'theorem' ? '定理' :
                     data.unit_type === 'definition' ? '定义' :
                     data.unit_type === 'counterexample' ? '反例' :
                     data.unit_type === 'misconception' ? '易错' : null;
-  
+
   return (
     <div className={`px-4 py-2.5 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 min-w-[160px] cursor-pointer hover:shadow-xl hover:scale-[1.02]
-      ${isHighlighted ? 'ring-4 ring-indigo-500 border-indigo-600 shadow-indigo-500/40 scale-105' : ''}
-      ${isSelected && !isHighlighted ? 'ring-2 ring-indigo-400 border-indigo-500 shadow-indigo-400/20' : ''}
-      ${!isHighlighted && !isSelected && isMastered ? 'border-emerald-500 shadow-emerald-500/20' : ''}
-      ${!isHighlighted && !isSelected && isLearning ? 'border-blue-500 shadow-blue-500/20' : ''}
-      ${!isHighlighted && !isSelected && isLocked ? 'border-gray-300 dark:border-gray-700 opacity-60 grayscale' : ''}
-      ${!isHighlighted && !isSelected && !isMastered && !isLearning && !isLocked ? 'border-purple-500 shadow-purple-500/20' : ''}
+      ${isHighlighted ? HIGHLIGHT_CLASS : ''}
+      ${isSelected && !isHighlighted ? `ring-2 ${scopeStyle.border} scale-[1.03]` : ''}
+      ${!isHighlighted && !isSelected && isLocked ? 'opacity-60 grayscale border-slate-300 dark:border-slate-700' : ''}
+      ${!isHighlighted && !isSelected && !isLocked ? scopeStyle.border : ''}
     `}>
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-[var(--border-subtle)]" />
-      
+
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {isMastered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
           {isLearning && <Flame className="w-4 h-4 text-blue-500 animate-pulse" />}
           {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
-          {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-purple-500" />}
-          
+          {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-slate-400" />}
+
           <span className={`font-semibold text-sm ${
-            isHighlighted ? 'text-indigo-700 dark:text-indigo-300 font-bold' :
-            isMastered ? 'text-emerald-700 dark:text-emerald-400' : 
-            isLearning ? 'text-blue-700 dark:text-blue-400' : 
-            isLocked ? 'text-gray-500' : 
-            'text-purple-700 dark:text-purple-400'
+            isHighlighted ? 'text-rose-600 dark:text-rose-400 font-bold' :
+            'text-slate-800 dark:text-slate-100'
           }`}>
             {data.label}
           </span>
         </div>
 
-        {scopeBadge && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${
-            data.scope === 'core' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' :
-            data.scope === 'prerequisite' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' :
-            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
-          }`}>
-            {scopeBadge}
-          </span>
-        )}
+        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${scopeStyle.badge}`}>
+          {scopeStyle.label}
+        </span>
       </div>
 
       {typeBadge && (
@@ -218,26 +242,7 @@ export function KnowledgeGraph({
       return;
     }
 
-    // Default to Numerical Analysis Root-Finding unit graph
-    let baseNodes = defaultNodes.map((n) => ({
-      ...n,
-      data: {
-        ...n.data,
-        isHighlighted: highlightSet.has(n.id),
-        isSelected: selectedNodeId === n.id,
-      }
-    }));
-    let baseEdges = [...defaultEdges];
-
-    if (scopeFilter) {
-      baseNodes = baseNodes.filter((n) => n.data?.scope === scopeFilter);
-      const visibleIds = new Set(baseNodes.map((n) => n.id));
-      baseEdges = baseEdges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target));
-    }
-    setNodes(baseNodes);
-    setEdges(baseEdges);
-
-    // Attempt live sync from backend API
+    // Canonical graph comes from the backend course pack; no local copy participates.
     if (courseId) {
       setIsLoading(true);
       const params = new URLSearchParams({ format: "react_flow" });
@@ -265,7 +270,8 @@ export function KnowledgeGraph({
           }
         })
         .catch(() => {
-          // Gracefully keep the local numerical analysis graph
+          setNodes([]);
+          setEdges([]);
         })
         .finally(() => {
           setIsLoading(false);
@@ -306,13 +312,10 @@ export function KnowledgeGraph({
         className="dark:filter dark:invert-[.05]"
       >
         <Controls className="bg-white dark:bg-black border-[var(--border-subtle)] fill-[var(--text-primary)]" />
-        <MiniMap 
+        <MiniMap
           nodeColor={(n) => {
-            if (n.data?.isHighlighted) return '#6366f1';
-            if (n.data?.status === 'mastered') return '#10b981';
-            if (n.data?.status === 'learning') return '#3b82f6';
-            if (n.data?.status === 'locked') return '#4b5563';
-            return '#a855f7'; // purple-500
+            if (n.data?.isHighlighted) return '#f43f5e'; // rose: case-match highlight
+            return getScopeStyle(n.data?.scope as string | undefined).minimap;
           }}
           className="bg-white/50 dark:bg-black/50 border-[var(--border-subtle)]"
           maskColor="rgba(0,0,0,0.1)"

@@ -124,3 +124,83 @@ def test_student_overlay_routes(client):
     assert overlay_data["units"]["NA_BISECTION"]["independent_evidence_count"] >= 1
     assert "CASE_BISECTION_REQUIREMENTS" in overlay_data["cases"]
     assert overlay_data["cases"]["CASE_BISECTION_REQUIREMENTS"]["latest_outcome"] == "success"
+
+
+def test_event_replay_is_idempotent(client):
+    student_id = "student_replay_001"
+    course_id = "numerical_analysis"
+    event_payload = {
+        "event_id": "evt_replay_once",
+        "unit_ids": ["NA_NEWTON"],
+        "event_type": "attempt",
+        "is_independent": True,
+        "is_success": True,
+    }
+    first = client.post(f"/api/courses/users/{student_id}/{course_id}/events", json=event_payload)
+    assert first.status_code == 200
+    assert first.json()["status"] == "success"
+
+    duplicate = client.post(f"/api/courses/users/{student_id}/{course_id}/events", json=event_payload)
+    assert duplicate.status_code == 200
+    assert duplicate.json()["status"] == "duplicate"
+
+    overlay = client.get(f"/api/courses/users/{student_id}/{course_id}/overlay").json()
+    assert overlay["units"]["NA_NEWTON"]["independent_evidence_count"] == 1
+
+
+def test_outcome_events_must_state_success_explicitly(client):
+    student_id = "student_schema_001"
+    course_id = "numerical_analysis"
+
+    # Outcome events without explicit is_success/is_independent are rejected.
+    missing = {
+        "event_id": "evt_no_outcome",
+        "unit_ids": ["NA_NEWTON"],
+        "event_type": "attempt",
+    }
+    res = client.post(f"/api/courses/users/{student_id}/{course_id}/events", json=missing)
+    assert res.status_code == 422
+
+    # Hint events carry no outcome at all and never touch evidence counts.
+    hint = {
+        "event_id": "evt_hint_1",
+        "unit_ids": ["NA_NEWTON"],
+        "event_type": "hint",
+        "help_level": 1,
+    }
+    res_hint = client.post(f"/api/courses/users/{student_id}/{course_id}/events", json=hint)
+    assert res_hint.status_code == 200
+    overlay = client.get(f"/api/courses/users/{student_id}/{course_id}/overlay").json()
+    assert overlay["units"]["NA_NEWTON"]["independent_evidence_count"] == 0
+    assert overlay["units"]["NA_NEWTON"]["hint_exposure_count"] == 1
+
+
+def test_approved_candidate_produces_graph_revision(client):
+    cand_id = "test_cand_revision"
+    client.post("/api/courses/numerical_analysis/candidates", json={
+        "candidate_id": cand_id,
+        "candidate_type": "new_unit",
+        "payload": {"id": "NA_REVISION_TEST", "title": "Revision 测试知识点"},
+        "proposed_by": "teacher",
+    })
+    res = client.post(
+        f"/api/courses/numerical_analysis/candidates/{cand_id}/review",
+        json={"action": "approve", "reviewer_id": "prof_li", "review_note": "ok"},
+    )
+    assert res.status_code == 200
+    revision_id = res.json().get("revision_id")
+    assert revision_id
+
+    revisions = client.get("/api/courses/numerical_analysis/revisions").json()
+    assert any(r["revision_id"] == revision_id for r in revisions["revisions"])
+    assert revisions["revisions"][-1]["changed_entities"]["entity_id"] == "NA_REVISION_TEST"
+
+
+def test_no_synthetic_seed_candidates_shipped(client):
+    candidates = client.get("/api/courses/numerical_analysis/candidates").json()
+    proposed_by = {c["proposed_by"] for c in candidates["candidates"]}
+    # Fake production-looking seeds (student_dialogue_#849 etc.) must not
+    # appear in a fresh course service.
+    assert "student_query_cluster" not in proposed_by
+    for c in candidates["candidates"]:
+        assert c["candidate_id"] != "CAND_ALIAS_TANGENT_METHOD"

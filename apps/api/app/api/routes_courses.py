@@ -1,10 +1,19 @@
-from typing import Any, Optional
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from typing import Any, Literal, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, model_validator
 
+from app.auth import Principal, get_principal, require_role
+from app.config import Settings
 from app.knowledge.course_service import get_course_service
+from app.main_deps import get_app_settings
 
 router = APIRouter(prefix="/api/courses", tags=["courses"])
+
+EventType = Literal[
+    "attempt", "hint", "revision", "revision_success", "probe", "error"
+]
+# Events that assert an outcome and therefore change evidence counts.
+OUTCOME_EVENT_TYPES = {"attempt", "revision", "revision_success", "probe", "error"}
 
 
 class MatchRequest(BaseModel):
@@ -31,18 +40,32 @@ class ProcessEventRequest(BaseModel):
     event_id: str
     unit_ids: list[str]
     case_id: Optional[str] = None
-    event_type: str = "attempt"
-    is_independent: bool = True
-    is_success: bool = True
+    event_type: EventType = "attempt"
     help_level: int = 0
     misconception_id: Optional[str] = None
+    # Outcome fields have no defaults: an event that asserts an outcome must
+    # state it explicitly instead of silently defaulting to success.
+    is_independent: Optional[bool] = None
+    is_success: Optional[bool] = None
+
+    @model_validator(mode="after")
+    def validate_outcome_fields(self):
+        if self.event_type in OUTCOME_EVENT_TYPES and self.is_success is None:
+            raise ValueError(
+                f"is_success is required for event_type={self.event_type!r}"
+            )
+        if self.event_type in OUTCOME_EVENT_TYPES and self.is_independent is None:
+            raise ValueError(
+                f"is_independent is required for event_type={self.event_type!r}"
+            )
+        return self
 
 
 @router.get("/{course_id}/graph")
 def get_course_graph(
     course_id: str,
     scope: Optional[str] = Query(None, description="Filter by scope: core, prerequisite, extension"),
-    student_id: Optional[str] = Query(None, description="Overlay student mastery"),
+    student_id: Optional[str] = Query(None, description="Overlay student evidence"),
     format: str = Query("react_flow", description="react_flow or raw")
 ):
     service = get_course_service(course_id)
@@ -149,7 +172,12 @@ def list_candidates(course_id: str, status: Optional[str] = Query(None)):
 
 
 @router.post("/{course_id}/candidates")
-def create_candidate(course_id: str, payload: CandidateCreateRequest):
+def create_candidate(
+    course_id: str,
+    payload: CandidateCreateRequest,
+    principal: Principal = Depends(get_principal),
+):
+    require_role(principal, ("teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
     candidate = service.candidate_mgr.add_candidate(
         candidate_id=payload.candidate_id,
@@ -163,13 +191,19 @@ def create_candidate(course_id: str, payload: CandidateCreateRequest):
 
 
 @router.post("/{course_id}/candidates/{candidate_id}/review")
-def review_candidate(course_id: str, candidate_id: str, payload: ReviewCandidateRequest):
+def review_candidate(
+    course_id: str,
+    candidate_id: str,
+    payload: ReviewCandidateRequest,
+    principal: Principal = Depends(get_principal),
+):
+    require_role(principal, ("teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
     try:
         result = service.review_service.review_candidate(
             candidate_id=candidate_id,
             action=payload.action,
-            reviewer_id=payload.reviewer_id,
+            reviewer_id=principal.user_id if principal.authenticated else payload.reviewer_id,
             review_note=payload.review_note,
             merge_target_id=payload.merge_target_id,
         )
@@ -180,6 +214,13 @@ def review_candidate(course_id: str, candidate_id: str, payload: ReviewCandidate
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/{course_id}/revisions")
+def list_revisions(course_id: str):
+    service = get_course_service(course_id)
+    revisions = service.store.list_revisions(course_id)
+    return {"revisions": revisions, "total": len(revisions)}
+
+
 @router.get("/users/{user_id}/{course_id}/overlay")
 def get_student_overlay(user_id: str, course_id: str):
     service = get_course_service(course_id)
@@ -187,9 +228,15 @@ def get_student_overlay(user_id: str, course_id: str):
 
 
 @router.post("/users/{user_id}/{course_id}/events")
-def record_student_event(user_id: str, course_id: str, payload: ProcessEventRequest):
+def record_student_event(
+    user_id: str,
+    course_id: str,
+    payload: ProcessEventRequest,
+    principal: Principal = Depends(get_principal),
+):
+    require_role(principal, ("student", "teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
-    service.overlay_store.record_process_event(
+    result = service.overlay_store.record_process_event(
         event_id=payload.event_id,
         student_id=user_id,
         course_id=course_id,
@@ -201,4 +248,6 @@ def record_student_event(user_id: str, course_id: str, payload: ProcessEventRequ
         help_level=payload.help_level,
         misconception_id=payload.misconception_id,
     )
+    if result.get("status") == "duplicate":
+        return {"status": "duplicate", "event_id": payload.event_id}
     return {"status": "success", "event_id": payload.event_id}

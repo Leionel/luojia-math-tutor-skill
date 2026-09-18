@@ -262,9 +262,9 @@ export default function SplashPage() {
                 <BrainCircuit className="w-6 h-6 text-[#c44a3d]" />
               </div>
               <div>
-                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">动态技能树 (Knowledge Graph)</h3>
+                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">课程知识图谱 (Course Graph 2.0)</h3>
                 <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
-                  错题本不再是冰冷的列表，而是跨越三大知识谱系的23个核心节点技能树。结合游戏化理念点亮属于你的数理世界观。
+                  以《数值分析》求根单元为起点的课程知识图谱：27 个节点按“核心 / 前置 / 拓展”边界语义着色，教学案例匹配与知识点审核全流程可视化，学生进程独立叠加于图谱之上。
                 </p>
               </div>
             </motion.div>

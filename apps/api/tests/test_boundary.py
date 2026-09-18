@@ -59,7 +59,7 @@ def test_external_unit_expansion_strictly_blocked(boundary_checker):
 
 def test_filter_units_respects_boundary(boundary_checker):
     uids = ["NA_NEWTON", "MATH_CONTINUITY", "NA_COUNTER_NEWTON_CYCLE", "OPT_MULTIVARIATE"]
-    
+
     # Core only
     core_filtered = boundary_checker.filter_units(uids, allow_extension=False, allow_prerequisite=False)
     assert core_filtered == ["NA_NEWTON"]
@@ -72,3 +72,37 @@ def test_filter_units_respects_boundary(boundary_checker):
     full_filtered = boundary_checker.filter_units(uids, allow_extension=True, allow_prerequisite=True)
     assert "NA_COUNTER_NEWTON_CYCLE" in full_filtered
     assert "OPT_MULTIVARIATE" not in full_filtered
+
+
+def test_untracked_units_fail_closed(boundary_checker):
+    # A unit without a policy is UNCLASSIFIED and must not be treated as core.
+    assert boundary_checker.get_scope_level("NA_UNKNOWN_UNIT") == ScopeLevel.UNCLASSIFIED
+
+    allowed, reason = boundary_checker.can_expand("NA_UNKNOWN_UNIT", current_depth=1)
+    assert allowed is False
+    assert reason == "unclassified_requires_teacher_review"
+
+    # Candidate evidence only: excluded unless explicitly allowed.
+    assert boundary_checker.filter_units(["NA_UNKNOWN_UNIT"]) == []
+    assert boundary_checker.filter_units(["NA_UNKNOWN_UNIT"], allow_unclassified=True) == ["NA_UNKNOWN_UNIT"]
+
+
+def test_inspect_boundary_decision_typed_contract(boundary_checker):
+    decision = boundary_checker.inspect_boundary_decision(
+        ["NA_NEWTON", "MATH_CONTINUITY", "OPT_MULTIVARIATE", "NA_UNKNOWN_UNIT"],
+        allow_extension=False,
+    )
+    assert decision.core_units == ["NA_NEWTON"]
+    assert decision.prerequisite_units == ["MATH_CONTINUITY"]
+    assert decision.extension_units == []
+    assert decision.unclassified_units == ["NA_UNKNOWN_UNIT"]
+    assert decision.crossing_type == "external_boundary"
+    assert decision.has_boundary_crossing is True
+
+    as_dict = decision.to_dict()
+    assert as_dict["blocked_units"] == [{"unit_id": "OPT_MULTIVARIATE", "reason": "external_boundary"}]
+
+    # Round-trips through the dict contract used by prompt_builder.
+    restored = type(decision).from_dict(as_dict)
+    assert restored.core_units == decision.core_units
+    assert restored.unclassified_units == decision.unclassified_units

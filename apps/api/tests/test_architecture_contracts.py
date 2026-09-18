@@ -30,7 +30,9 @@ def test_auth_token_and_cross_user_boundary():
         auth_token_secret="x" * 32,
     )
     token = issue_token("alice", settings)
-    assert decode_token(token, settings) == "alice"
+    user_id, role = decode_token(token, settings)
+    assert user_id == "alice"
+    assert role == "student"
     with pytest.raises(HTTPException) as exc:
         resolve_user_id(Principal("alice", True), "bob", settings)
     assert exc.value.status_code == 403

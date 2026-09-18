@@ -665,13 +665,13 @@ export function TutorChat() {
             <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
               <button 
                 onClick={() => setRightPanelMode("learning")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-emerald-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
               >
                 状态复盘
               </button>
               <button 
                 onClick={() => setRightPanelMode("note")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-indigo-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
               >
                 随堂笔记
               </button>
@@ -684,7 +684,7 @@ export function TutorChat() {
                 <div className="absolute inset-0 flex flex-col bg-[var(--bg-card)]">
                   <div className="flex justify-between items-center p-3 border-b border-[var(--border-primary)] shrink-0">
                     <div className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] text-sm">
-                      <FileText className="w-4 h-4 text-indigo-500" />
+                      <FileText className="w-4 h-4 text-[var(--text-accent)]" />
                       随堂笔记
                       {!isGeneratingNote && noteContent && (
                         <Link href="/notebook" className="ml-1 text-[10px] font-normal text-[#617a55] bg-[#617a55]/10 hover:bg-[#617a55]/20 px-1.5 py-0.5 rounded-sm border border-[#617a55]/20 transition-colors">
@@ -703,13 +703,13 @@ export function TutorChat() {
                   <div id="note-print-area" className="flex-1 overflow-y-auto p-4 md:p-5">
                     {isGeneratingNote ? (
                       <div className="h-full flex flex-col items-center justify-center space-y-3 text-[var(--text-muted)]">
-                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-accent)]" />
                         <p className="text-xs animate-pulse">正在提炼核心考点...</p>
                       </div>
                     ) : !noteContent ? (
                       <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)] text-center px-4">
-                        <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                          <FileText className="w-8 h-8 text-indigo-500/50" />
+                        <div className="w-16 h-16 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
+                          <FileText className="w-8 h-8 text-[var(--accent)] opacity-60" />
                         </div>
                         <div className="space-y-1">
                           <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
@@ -718,7 +718,7 @@ export function TutorChat() {
                         <button 
                           onClick={handleGenerateNote} 
                           disabled={!sessionId}
-                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         >
                           <Sparkles className="w-4 h-4" /> 
                           一键生成笔记
@@ -740,7 +740,7 @@ export function TutorChat() {
                 <button 
                   onClick={handleGenerateNote}
                   disabled={!sessionId}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                 >
                   <FileText className="w-4 h-4" /> 
                   生成本节课专属笔记
@@ -781,7 +781,7 @@ export function TutorChat() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setShowZenConfirm(false)}>
           <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             <div className="p-6">
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4 text-indigo-500">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent-light)] flex items-center justify-center mb-4 text-[var(--text-accent)]">
                 <Target className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入心流模式</h3>
@@ -805,7 +805,7 @@ export function TutorChat() {
                     setShowZenConfirm(false);
                     void toggleZenMode();
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 shadow-md transition-colors"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full px-6 shadow-md transition-colors"
                 >
                   确认进入
                 </Button>

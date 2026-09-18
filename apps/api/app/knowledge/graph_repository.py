@@ -108,9 +108,9 @@ class CourseGraphRepository:
                 all_neighbors.append((r.source_unit_id, r))
 
             for neighbor_id, rel in all_neighbors:
-                # Boundary check target node
+                # Boundary check target node (fail-closed on unclassified)
                 target_scope = self.boundary_checker.get_scope_level(neighbor_id)
-                if target_scope == ScopeLevel.EXTERNAL:
+                if target_scope in (ScopeLevel.EXTERNAL, ScopeLevel.UNCLASSIFIED):
                     continue
                 if target_scope == ScopeLevel.EXTENSION and not allow_extension:
                     continue
@@ -149,9 +149,13 @@ class CourseGraphRepository:
             for idx, unit in enumerate(row_units):
                 scope = self.boundary_checker.get_scope_level(unit.id).value
                 state = unit_states.get(unit.id, {})
-                mastery = state.get("mastery_estimate", 0.5)
+                # No mastery here: mastery is owned by the BKT model; overlay
+                # only carries evidence counts. Unassessed stays None.
+                mastery = state.get("mastery_estimate")
 
-                if mastery >= 0.8:
+                if mastery is None:
+                    status = "unassessed"
+                elif mastery >= 0.8:
                     status = "mastered"
                 elif mastery >= 0.3:
                     status = "learning"
@@ -169,6 +173,12 @@ class CourseGraphRepository:
                         "scope": scope,
                         "difficulty": unit.difficulty,
                         "mastery": mastery,
+                        "latex": unit.latex,
+                        "cases": [
+                            c.case_id
+                            for c in self.case_repo.list_cases(course_id=self.course_id)
+                            if unit.id in c.concept_ids
+                        ],
                         "description": unit.content[:80] + ("..." if len(unit.content) > 80 else ""),
                     },
                 })

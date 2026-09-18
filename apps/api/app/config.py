@@ -72,6 +72,8 @@ class Settings(BaseModel):
     auth_token_secret: str = os.getenv("AUTH_TOKEN_SECRET", LOCAL_AUTH_SECRET)
     auth_token_ttl_seconds: int = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "86400"))
     demo_user_id: str = os.getenv("DEMO_USER_ID", "demo-user")
+    teacher_user_ids: str = os.getenv("TEACHER_USER_IDS", "teacher,prof_luojia")
+    course_store_path: str = os.getenv("COURSE_STORE_PATH", "")
     initial_mastery: float = float(os.getenv("INITIAL_MASTERY", "0.5"))
     default_difficulty: int = int(os.getenv("DEFAULT_DIFFICULTY", "3"))
     remediation_error_threshold: int = int(
@@ -108,6 +110,10 @@ class Settings(BaseModel):
                 f"Unsupported model {model!r}. Choose a model returned by /api/models."
             )
         return model
+
+    @property
+    def teacher_ids(self) -> frozenset[str]:
+        return frozenset(part.strip() for part in self.teacher_user_ids.split(",") if part.strip())
 
     def resolve_base_url(self, resolved_model: str) -> str:
         spec = configured_model_catalog().get(resolved_model)

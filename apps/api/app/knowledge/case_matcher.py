@@ -63,6 +63,12 @@ class TeachingCaseMatcher:
                 if overlap > 0.65:
                     score = max(score, 0.75 + 0.25 * overlap)
                     matched_aspects.append(f"variant_match: {var}")
+                elif overlap > 0.35:
+                    # Partial variant match: the n-gram tokenizer inflates the
+                    # variant token set, so same-family paraphrases can fall
+                    # below the full-match threshold.
+                    score = max(score, 0.55 + 0.2 * overlap)
+                    matched_aspects.append(f"variant_partial_match: {var}")
 
             # Check title overlap
             title_tokens = _tokenize(case.title)

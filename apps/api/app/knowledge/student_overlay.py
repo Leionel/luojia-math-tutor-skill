@@ -2,15 +2,20 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from app.knowledge.course_store import CourseStore
+
 
 @dataclass
 class StudentUnitState:
     student_id: str
     course_id: str
     unit_id: str
-    mastery_estimate: float = 0.5
     independent_evidence_count: int = 0
     assisted_success_count: int = 0
+    attempt_count: int = 0
+    failure_count: int = 0
+    hint_exposure_count: int = 0
+    latest_outcome: str = "unseen"  # unseen | success | assisted_success | failed
     recent_error_refs: list[str] = field(default_factory=list)
     misconception_candidate_refs: list[str] = field(default_factory=list)
     last_practiced_at: str = field(default_factory=lambda: datetime.datetime.now().isoformat())
@@ -21,9 +26,13 @@ class StudentUnitState:
             "student_id": self.student_id,
             "course_id": self.course_id,
             "unit_id": self.unit_id,
-            "mastery_estimate": round(self.mastery_estimate, 3),
+            "mastery_estimate": None,
             "independent_evidence_count": self.independent_evidence_count,
             "assisted_success_count": self.assisted_success_count,
+            "attempt_count": self.attempt_count,
+            "failure_count": self.failure_count,
+            "hint_exposure_count": self.hint_exposure_count,
+            "latest_outcome": self.latest_outcome,
             "recent_error_refs": self.recent_error_refs,
             "misconception_candidate_refs": self.misconception_candidate_refs,
             "last_practiced_at": self.last_practiced_at,
@@ -36,9 +45,12 @@ class StudentUnitState:
             student_id=data["student_id"],
             course_id=data.get("course_id", "numerical_analysis"),
             unit_id=data["unit_id"],
-            mastery_estimate=float(data.get("mastery_estimate", 0.5)),
             independent_evidence_count=int(data.get("independent_evidence_count", 0)),
             assisted_success_count=int(data.get("assisted_success_count", 0)),
+            attempt_count=int(data.get("attempt_count", 0)),
+            failure_count=int(data.get("failure_count", 0)),
+            hint_exposure_count=int(data.get("hint_exposure_count", 0)),
+            latest_outcome=data.get("latest_outcome", "unseen"),
             recent_error_refs=data.get("recent_error_refs", []),
             misconception_candidate_refs=data.get("misconception_candidate_refs", []),
             last_practiced_at=data.get("last_practiced_at", datetime.datetime.now().isoformat()),
@@ -87,13 +99,26 @@ class StudentCaseState:
 
 
 class StudentOverlayStore:
-    """Stores and reduces observable student process events into lightweight graph overlays."""
+    """Stores observable student process events as evidence counts.
 
-    def __init__(self):
+    This store deliberately does NOT estimate mastery. Mastery is owned by the
+    BKT model in app.memory.mastery; a KT model can later be run over the
+    append-only process_events produced here.
+    """
+
+    def __init__(self, store: Optional[CourseStore] = None):
+        self.store = store
         # key: (student_id, course_id, unit_id) -> StudentUnitState
         self._unit_states: dict[tuple[str, str, str], StudentUnitState] = {}
         # key: (student_id, course_id, case_id) -> StudentCaseState
         self._case_states: dict[tuple[str, str, str], StudentCaseState] = {}
+        if store:
+            for d in store.load_unit_states():
+                s = StudentUnitState.from_dict(d)
+                self._unit_states[(s.student_id, s.course_id, s.unit_id)] = s
+            for d in store.load_case_states():
+                s = StudentCaseState.from_dict(d)
+                self._case_states[(s.student_id, s.course_id, s.case_id)] = s
 
     def get_unit_state(self, student_id: str, course_id: str, unit_id: str) -> StudentUnitState:
         key = (student_id, course_id, unit_id)
@@ -122,19 +147,60 @@ class StudentOverlayStore:
         course_id: str,
         unit_ids: list[str],
         case_id: Optional[str] = None,
-        event_type: str = "attempt",  # attempt | hint | revision_success | error
-        is_independent: bool = True,
-        is_success: bool = True,
+        event_type: str = "attempt",  # attempt | hint | revision | revision_success | probe | error
+        is_independent: Optional[bool] = None,
+        is_success: Optional[bool] = None,
         help_level: int = 0,
-        misconception_id: Optional[str] = None
-    ) -> None:
+        misconception_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Reduce one observable process event into overlay state.
+
+        Idempotent on event_id: a duplicate event is recorded but does not
+        change state twice.
+        """
+        if self.store and self.store.event_exists(event_id):
+            return {"status": "duplicate", "event_id": event_id}
+
         now = datetime.datetime.now().isoformat()
+        payload = {
+            "unit_ids": unit_ids,
+            "case_id": case_id,
+            "event_type": event_type,
+            "is_independent": is_independent,
+            "is_success": is_success,
+            "help_level": help_level,
+            "misconception_id": misconception_id,
+        }
+        if self.store:
+            self.store.append_event(event_id, student_id, course_id, event_type, payload)
+
+        if event_type == "hint":
+            # Hint exposure only counts evidence of help usage; never success.
+            for uid in unit_ids:
+                state = self.get_unit_state(student_id, course_id, uid)
+                state.hint_exposure_count += 1
+                state.last_practiced_at = now
+                state.updated_from_event_id = event_id
+                if self.store:
+                    self.store.upsert_unit_state(student_id, course_id, uid, state.to_dict())
+            if case_id:
+                case_state = self.get_case_state(student_id, course_id, case_id)
+                case_state.max_help_used = max(case_state.max_help_used, help_level)
+                case_state.last_interaction_at = now
+                if self.store:
+                    self.store.upsert_case_state(student_id, course_id, case_id, case_state.to_dict())
+            return {"status": "recorded", "event_id": event_id}
+
+        if is_success is None:
+            raise ValueError(f"is_success is required for event_type={event_type!r}")
+        if is_independent is None:
+            raise ValueError(f"is_independent is required for event_type={event_type!r}")
 
         # Update case state
         if case_id:
             case_state = self.get_case_state(student_id, course_id, case_id)
             case_state.exposure_count += 1
-            if event_type == "attempt":
+            if event_type in ("attempt", "revision", "probe"):
                 case_state.attempt_count += 1
             case_state.max_help_used = max(case_state.max_help_used, help_level)
             case_state.last_interaction_at = now
@@ -145,25 +211,32 @@ class StudentOverlayStore:
             else:
                 case_state.latest_outcome = "failed"
                 case_state.independent_transfer_status = "struggled"
+            if self.store:
+                self.store.upsert_case_state(student_id, course_id, case_id, case_state.to_dict())
 
-        # Update unit states
+        # Update unit states: evidence counts only, no mastery arithmetic.
         for uid in unit_ids:
             unit_state = self.get_unit_state(student_id, course_id, uid)
             unit_state.last_practiced_at = now
             unit_state.updated_from_event_id = event_id
+            unit_state.attempt_count += 1
 
             if is_success:
+                unit_state.latest_outcome = "success" if is_independent else "assisted_success"
                 if is_independent:
                     unit_state.independent_evidence_count += 1
-                    # BKT-like increment toward mastery
-                    unit_state.mastery_estimate = min(1.0, unit_state.mastery_estimate + 0.15)
                 else:
                     unit_state.assisted_success_count += 1
-                    unit_state.mastery_estimate = min(1.0, unit_state.mastery_estimate + 0.05)
             else:
-                unit_state.mastery_estimate = max(0.0, unit_state.mastery_estimate - 0.10)
+                unit_state.latest_outcome = "failed"
+                unit_state.failure_count += 1
                 if misconception_id and misconception_id not in unit_state.misconception_candidate_refs:
                     unit_state.misconception_candidate_refs.append(misconception_id)
+
+            if self.store:
+                self.store.upsert_unit_state(student_id, course_id, uid, unit_state.to_dict())
+
+        return {"status": "recorded", "event_id": event_id}
 
     def get_course_overlay(self, student_id: str, course_id: str) -> dict[str, Any]:
         unit_map = {

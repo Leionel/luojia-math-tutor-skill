@@ -22,6 +22,30 @@ _bearer = HTTPBearer(auto_error=False)
 class Principal:
     user_id: str
     authenticated: bool
+    role: str = "student"  # student | teacher | admin
+
+    @property
+    def is_teacher(self) -> bool:
+        return self.role in ("teacher", "admin")
+
+
+def resolve_role(user_id: str, settings: Settings) -> str:
+    return "teacher" if user_id in settings.teacher_ids else "student"
+
+
+def require_role(principal: Principal, roles: tuple[str, ...], settings: Settings) -> None:
+    """Enforce role-based access.
+
+    Demo mode (unauthenticated principal with AUTH_REQUIRED=false) keeps the
+    existing local compatibility behavior; authenticated users are checked.
+    """
+    if not (principal.authenticated or settings.auth_required):
+        return
+    if principal.role not in roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This action requires one of the following roles: {', '.join(roles)}.",
+        )
 
 
 def _b64_encode(raw: bytes) -> str:
@@ -62,6 +86,7 @@ def issue_token(user_id: str, settings: Settings) -> str:
         "sub": user_id,
         "exp": int(time.time()) + settings.auth_token_ttl_seconds,
         "v": 1,
+        "role": resolve_role(user_id, settings),
     }
     encoded = _b64_encode(
         json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
@@ -74,7 +99,7 @@ def issue_token(user_id: str, settings: Settings) -> str:
     return f"{encoded}.{_b64_encode(signature)}"
 
 
-def decode_token(token: str, settings: Settings) -> str:
+def decode_token(token: str, settings: Settings) -> tuple[str, str]:
     try:
         encoded, signature = token.split(".", 1)
         expected = hmac.new(
@@ -88,7 +113,8 @@ def decode_token(token: str, settings: Settings) -> str:
         user_id = str(payload["sub"])
         if int(payload["exp"]) < int(time.time()) or not _USER_ID.fullmatch(user_id):
             raise ValueError("expired")
-        return user_id
+        role = str(payload.get("role") or resolve_role(user_id, settings))
+        return user_id, role
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,13 +127,14 @@ def get_principal(
     settings: Settings = Depends(get_app_settings),
 ) -> Principal:
     if credentials:
-        return Principal(decode_token(credentials.credentials, settings), True)
+        user_id, role = decode_token(credentials.credentials, settings)
+        return Principal(user_id, True, role)
     if settings.auth_required:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required.",
         )
-    return Principal(settings.demo_user_id, False)
+    return Principal(settings.demo_user_id, False, resolve_role(settings.demo_user_id, settings))
 
 
 def resolve_user_id(

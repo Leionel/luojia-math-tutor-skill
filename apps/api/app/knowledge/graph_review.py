@@ -1,3 +1,4 @@
+import datetime
 import logging
 from typing import Any, Optional
 
@@ -7,6 +8,7 @@ from app.knowledge.candidate_graph import (
     CandidateType,
     GraphCandidate,
 )
+from app.knowledge.course_store import CourseStore
 from app.knowledge.graph_repository import CourseGraphRepository
 from app.knowledge.schema import KnowledgeRelation, KnowledgeUnit
 from app.knowledge.case_schema import TeachingCase
@@ -16,11 +18,45 @@ logger = logging.getLogger(__name__)
 
 
 class GraphReviewService:
-    """Manages the teacher review cycle for dynamic candidate evolution."""
+    """Manages the teacher review cycle for dynamic candidate evolution.
 
-    def __init__(self, graph_repo: CourseGraphRepository, candidate_mgr: CandidateManager):
+    Every approve/merge produces an immutable graph revision record so the
+    canonical graph can be audited, rolled back, and pinned in benchmarks.
+    """
+
+    def __init__(
+        self,
+        graph_repo: CourseGraphRepository,
+        candidate_mgr: CandidateManager,
+        store: Optional[CourseStore] = None,
+    ):
         self.graph_repo = graph_repo
         self.candidate_mgr = candidate_mgr
+        self.store = store
+
+    def _record_revision(
+        self,
+        candidate: GraphCandidate,
+        action: str,
+        applied_changes: dict[str, Any],
+        reviewer_id: str,
+        review_note: str,
+    ) -> Optional[str]:
+        if not self.store:
+            return None
+        revision_id = f"rev_{candidate.course_id}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+        parent = self.store.latest_revision_id(candidate.course_id)
+        self.store.append_revision(
+            revision_id=revision_id,
+            parent_revision_id=parent,
+            course_id=candidate.course_id,
+            candidate_id=candidate.candidate_id,
+            action=action,
+            changed_entities=applied_changes,
+            reviewer_id=reviewer_id,
+            reason=review_note,
+        )
+        return revision_id
 
     def review_candidate(
         self,
@@ -122,4 +158,5 @@ class GraphReviewService:
             "status": "success",
             "candidate": updated_candidate.to_dict(),
             "applied_changes": applied_changes,
+            "revision_id": self._record_revision(candidate, action, applied_changes, reviewer_id, review_note),
         }

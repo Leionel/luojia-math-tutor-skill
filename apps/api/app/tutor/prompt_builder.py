@@ -107,8 +107,23 @@ def build_messages(
             if concept_anchors:
                 lines.append(f"- 关联知识本体锚点 (Concept Anchors)：{'、'.join(concept_anchors)}")
             if boundary_decision:
-                bd = boundary_decision if isinstance(boundary_decision, dict) else boundary_decision.__dict__
-                lines.append(f"- 课程边界策略：{bd.get('allowed_scope', 'core')}（{'大纲核心内容' if bd.get('in_boundary') else '课程前置/拓展内容'}）")
+                bd = boundary_decision if isinstance(boundary_decision, dict) else boundary_decision.to_dict()
+                scope_parts = [f"核心 {len(bd.get('core_units', []))} 个"]
+                if bd.get("prerequisite_units"):
+                    scope_parts.append(f"前置 {len(bd['prerequisite_units'])} 个")
+                if bd.get("extension_units"):
+                    scope_parts.append(f"拓展 {len(bd['extension_units'])} 个（学生主动追问时可展开）")
+                lines.append(f"- 课程边界策略：{ '、'.join(scope_parts) }")
+                blocked = bd.get("blocked_units", [])
+                if blocked:
+                    blocked_ids = "、".join(b["unit_id"] for b in blocked)
+                    lines.append(f"- 越界拦截：{blocked_ids} 超出本课程大纲，不要展开讲解，可简要说明其属于课程之外。")
+                unclassified = bd.get("unclassified_units", [])
+                if unclassified:
+                    lines.append(
+                        f"- 未分类知识点：{'、'.join(unclassified)} 尚未经教师审核（UNCLASSIFIED），"
+                        "最多可作为候选线索提及，禁止作为权威教学内容展开。"
+                    )
             lines.append("- 数学排版规范：所有数学符号与方程必须使用标准 LaTeX 格式（行内 $...$，独立公式块 $$...$$），确保前端 KaTeX 环境高清晰渲染！")
             lines.append("==================================================")
             case_context = "\n" + "\n".join(lines) + "\n"
