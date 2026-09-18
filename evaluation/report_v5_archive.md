@@ -1,3 +1,5 @@
+> **[ARCHIVE / 已归档]** 本报告是 V5 时代基准（Total 38，样本 id 形如 `prob_easy_001` / `prob_med_42`）的一次中途快照，其 Next Steps 中明言"评测仍在后台运行"。它已被 LuojiaMathBench V8（20 条，样本 id 形如 `lmb2_*`）取代，当前有效结果见 `../results/v8_eval_results.jsonl`，两者数据不可比。保留仅为审计追溯。
+
 # LuojiaMathBench Evaluation Report
 
 **Total Evaluated:** 38

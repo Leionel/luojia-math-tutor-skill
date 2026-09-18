@@ -58,16 +58,6 @@ BUILTIN_EXERCISES = {
 }
 
 
-def generate_exercise_prompt(concept: str, difficulty: int, mastery_score: float) -> str:
-    """生成让 LLM 出题的 prompt。"""
-    return (
-        f"\u8bf7\u51fa\u4e00\u9053\u5173\u4e8e\u300c{concept}\u300d\u7684\u7ec3\u4e60\u9898\uff0c\u96be\u5ea6\u7b49\u7ea7 {difficulty}/3\u3002"
-        f"\u5b66\u751f\u5f53\u524d\u638c\u63e1\u5ea6 {mastery_score:.0%}\u3002"
-        f"\u8bf7\u7528 LaTeX \u683c\u5f0f\u8f93\u51fa\u9898\u76ee\u548c\u7b54\u6848\uff0c\u683c\u5f0f\u4e3a\uff1a\n"
-        f"\u9898\u76ee\uff1a...\n\u7b54\u6848\uff1a...\n\u8003\u70b9\uff1a{concept}"
-    )
-
-
 def get_fallback_exercises(concept: str, difficulty: int = 2, count: int = 2) -> list[dict]:
     """从内置题库中获取题目（无 LLM 时的 fallback）。"""
     pool = BUILTIN_EXERCISES.get(concept, [])
