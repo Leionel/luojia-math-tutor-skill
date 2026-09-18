@@ -143,8 +143,26 @@ async def test_ordinary_request_uses_one_generation_call():
 @pytest.mark.asyncio
 async def test_symbolic_success_skips_verifier_llm():
     workflow = TutorWorkflow(get_settings(), make_repository())
+    # The production 0.35s budget is intentionally tight; a cold first call
+    # can spend it all on imports before the symbolic check (a few ms) lands.
+    # This test verifies routing, not the latency budget, so lift it.
+    workflow.context_collector.timeout_seconds = 10.0
     workflow.llm.chat_completion = AsyncMock()
-    install_fake_stream(workflow, "这一步可以通过对结果求导来核对。")
+
+    # First response skips verification; after the forced re-prompt the model
+    # complies with a sandbox check and produces the visible answer.
+    responses = iter([
+        "[OUTPUT] 这一步可以通过对结果求导来核对。",
+        "[VERIFY]\n```python\nfrom sympy import diff, symbols\nx = symbols('x')\nprint(diff(x**2 + 0, x))\n```\n[OUTPUT] 我们对 x^2 + C 求导来核对这一步。",
+        "[OUTPUT] 求导结果为 2x，这一步核对无误。",
+    ])
+    seen_prompts: list[list[dict]] = []
+
+    async def scripted_stream(messages, api_key=None, model=None):
+        seen_prompts.append(list(messages))
+        yield {"type": "content", "content": next(responses)}
+
+    workflow.llm.stream = scripted_stream
     state = make_state("我算 ∫2x dx = x^2 + C，对吗？")
 
     final_state = await workflow.workflow.ainvoke(
@@ -153,7 +171,14 @@ async def test_symbolic_success_skips_verifier_llm():
     )
 
     assert final_state["verifier_result"].verified is True
-    assert final_state["metrics"]["llm_call_count"] == 1
+    # The verifier LLM node is skipped, but the hard gate forces the teacher
+    # through: (0) unverified draft, (1) forced [VERIFY] round, (2) final
+    # answer after the sandbox result — three streamed model calls in total.
+    assert final_state["metrics"]["llm_call_count"] == 3
+    assert final_state["metrics"]["verification_enforced"] == "enforced"
+    assert final_state["metrics"]["sandbox_tool_calls"] >= 1
+    flattened = " ".join(str(m.get("content", "")) for m in seen_prompts[1])
+    assert "[系统强制要求]" in flattened
     workflow.llm.chat_completion.assert_not_awaited()
 
 
