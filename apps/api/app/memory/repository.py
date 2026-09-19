@@ -395,6 +395,51 @@ class Repository:
             )
         return attempt_id
 
+    def insert_document(self, filename: str, user_id: str) -> str:
+        document_id = new_id("doc")
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into documents(id, filename, user_id, created_at)
+                values (?, ?, ?, ?)
+                """,
+                (document_id, filename, user_id, now_iso()),
+            )
+        return document_id
+
+    def insert_document_chunks(self, document_id: str, chunks: list[str]) -> None:
+        with self.connect() as conn:
+            conn.executemany(
+                """
+                insert into document_chunks(id, document_id, content)
+                values (?, ?, ?)
+                """,
+                [(new_id("chunk"), document_id, chunk) for chunk in chunks],
+            )
+
+    def list_document_chunks(self, document_id: str) -> list[str]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select content from document_chunks
+                where document_id = ?
+                order by rowid
+                """,
+                (document_id,),
+            ).fetchall()
+        return [row["content"] for row in rows]
+
+    def get_document(self, document_id: str, user_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                select id, filename, user_id, created_at from documents
+                where id = ? and user_id = ?
+                """,
+                (document_id, user_id),
+            ).fetchone()
+        return dict(row) if row else None
+
     def save_note(self, user_id: str, session_id: str, subject: str, content: str) -> str:
         note_id = new_id("note")
         ts = now_iso()

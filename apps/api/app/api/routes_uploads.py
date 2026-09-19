@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = Path("data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+# Aligned with the MinerU per-file limit (200MB); textbooks up to 200 pages
+# are accepted for note generation.
+MAX_UPLOAD_BYTES = 200 * 1024 * 1024
+MAX_PDF_PAGES = 200
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "pdf", "pptx", "docx", "doc"}
 SAFE_UPLOAD_NAME = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\."
@@ -48,9 +51,17 @@ async def _read_limited_upload(file: UploadFile) -> bytes:
             break
         total += len(chunk)
         if total > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="Upload exceeds 10MB limit")
+            raise HTTPException(
+                status_code=413,
+                detail="文件超过 200MB 上传限制，请拆分后重新上传。",
+            )
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+def _pdf_page_count(data: bytes) -> int:
+    # Rough count from the raw PDF structure; good enough as an upload guard.
+    return len(re.findall(rb"/Type\s*/Page[^s]", data))
 
 
 def _resolve_uploaded_file(filename: str) -> Path | None:
@@ -87,7 +98,14 @@ async def upload_image(
     filepath = _upload_dir() / filename
     
     filepath.write_bytes(data)
-        
+
+    if ext.lower() == "pdf" and _pdf_page_count(data) > MAX_PDF_PAGES:
+        filepath.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=413,
+            detail=f"PDF 超过 {MAX_PDF_PAGES} 页限制，请拆分章节后重新上传。",
+        )
+
     document_id = None
     try:
         extracted_md = await extract_markdown_agent_api(str(filepath.resolve()))
