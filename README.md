@@ -222,6 +222,11 @@ LLM_BASE_URL=https://api.deepseek.com/v1
 LLM_API_KEY=your_deepseek_api_key
 LLM_MODEL=deepseek-v4-flash
 ALLOW_USER_API_KEY=true
+
+# 文档解析（PDF/Word 上传）。在 https://mineru.net/apiManage 创建 token。
+# ⚠️ MinerU token 有效期只有 ~90 天，到期后上传会报 401/403，
+# 需重新生成并替换 MINERU_API_KEY。
+MINERU_API_KEY=your_mineru_api_key
 ```
 
 **前端配置**：在 `apps/web/` 下创建 `.env.local`：
