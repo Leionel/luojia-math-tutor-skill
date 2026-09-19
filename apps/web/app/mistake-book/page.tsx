@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, AlertCircle, Plus, X, Flame, Printer } from "lucide-react";
 import { listUserMistakes, addMistake, generateQuiz, createSession } from "@/lib/api";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
+import { DocumentNoteUpload } from "@/components/document-note-upload";
 
 export default function MistakeBookPage() {
   const router = useRouter();
@@ -100,6 +101,16 @@ export default function MistakeBookPage() {
             </div>
           </div>
         </div>
+
+        {activeTab === "list" && (
+          <div className="mb-8 max-w-xl mx-auto">
+            <DocumentNoteUpload
+              withMistakes={true}
+              description="上传教材（<200MB 且 <200 页），AI 会结合你最近的错题薄弱概念，从书中整理出一份针对性的复习笔记，保存在笔记本中。"
+              onGenerated={() => {}}
+            />
+          </div>
+        )}
 
         {activeTab === "tree" ? (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

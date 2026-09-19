@@ -358,6 +358,72 @@ export async function deleteNote(noteId: string) {
   return res.json();
 }
 
+export type UploadResult = {
+  url: string;
+  markdown: string;
+  document_id: string | null;
+};
+
+export async function uploadTextbook(file: File): Promise<UploadResult> {
+  const res = await fetch(`${API_BASE}/api/uploads`, {
+    method: "POST",
+    headers: headers(),
+    body: file,
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail || "上传失败");
+  }
+  return res.json();
+}
+
+export async function generateDocumentNote(
+  userId: string,
+  documentId: string,
+  withMistakes: boolean = false
+): Promise<{ status: string; note_id: string; note: string }> {
+  userId = activeUserId(userId);
+  const res = await fetch(`${API_BASE}/api/users/${userId}/notes/from-document`, {
+    method: "POST",
+    headers: headers(true),
+    body: JSON.stringify({ document_id: documentId, with_mistakes: withMistakes }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail || "笔记生成失败");
+  }
+  return res.json();
+}
+
+export type DocumentEntry = {
+  id: string;
+  filename: string;
+  created_at: string;
+};
+
+export async function listUploadedDocuments(): Promise<DocumentEntry[]> {
+  const res = await fetch(`${API_BASE}/api/uploads/documents`, { headers: headers() });
+  if (!res.ok) throw new Error("获取文档列表失败");
+  const data = await res.json();
+  return data.documents as DocumentEntry[];
+}
+
+export async function generateCandidatesFromDocument(
+  courseId: string,
+  documentId: string
+): Promise<{ status: string; total: number }> {
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/candidates/from-document`, {
+    method: "POST",
+    headers: headers(true),
+    body: JSON.stringify({ document_id: documentId }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail || "候选生成失败");
+  }
+  return res.json();
+}
+
 export type ModelInfo = {
   id: string;
   name: string;

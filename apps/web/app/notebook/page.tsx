@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, Trash2, Printer, Target } from "lucide-react";
 import { listNotes, deleteNote, type NoteEntry } from "@/lib/api";
 import { LatexRenderer } from "@/components/latex-renderer";
 import { NotebookChat } from "@/components/notebook-chat";
+import { DocumentNoteUpload } from "@/components/document-note-upload";
 
 export default function NotebookPage() {
   const [notes, setNotes] = useState<NoteEntry[]>([]);
@@ -60,8 +61,8 @@ export default function NotebookPage() {
           </div>
         </header>
 
-        <div className="p-4 border-b border-[var(--border-subtle)]">
-          <select 
+        <div className="p-4 border-b border-[var(--border-subtle)] space-y-3">
+          <select
             value={filterSubject}
             onChange={(e) => setFilterSubject(e.target.value)}
             className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#617a55]"
@@ -71,6 +72,10 @@ export default function NotebookPage() {
             <option value="derivation">深度推导 (Derivation)</option>
             <option value="problem_solving">解题实践 (Problem Solving)</option>
           </select>
+          <DocumentNoteUpload
+            description="上传教科书 PDF（<200MB 且 <200 页），MinerU 解析后由 AI 整理成结构化学习笔记。"
+            onGenerated={refresh}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide">
@@ -151,9 +156,18 @@ export default function NotebookPage() {
                 </div>
               </div>
               
-              {/* Right Chat Area */}
+              {/* Right Chat Area — document notes have no live session to revisit */}
               <div className="w-[450px] shrink-0 border-l border-[var(--border-primary)] flex flex-col bg-[var(--bg-primary)] hidden xl:flex">
-                <NotebookChat sessionId={selectedNote.session_id} subject={selectedNote.subject} />
+                {selectedNote.session_id.startsWith("document:") ? (
+                  <div className="flex flex-1 flex-col items-center justify-center text-[var(--text-muted)] p-8 text-center">
+                    <BookOpen className="w-10 h-10 mb-3 opacity-20" />
+                    <p className="text-sm max-w-xs">
+                      这份笔记由上传的教材整理生成。如需深入探讨，回到对话页针对笔记内容继续提问即可。
+                    </p>
+                  </div>
+                ) : (
+                  <NotebookChat sessionId={selectedNote.session_id} subject={selectedNote.subject} />
+                )}
               </div>
             </div>
           </>
