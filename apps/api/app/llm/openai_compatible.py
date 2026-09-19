@@ -29,7 +29,7 @@ class OpenAICompatibleClient:
         model: str | None = None,
     ) -> AsyncIterator[str | dict[str, str]]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
             yield {
                 "type": "content",
@@ -40,7 +40,6 @@ class OpenAICompatibleClient:
             }
             return
 
-        base_url = self.settings.resolve_base_url(resolved_model)
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = {
             "model": resolved_model,
@@ -77,12 +76,11 @@ class OpenAICompatibleClient:
         model: str | None = None,
     ) -> str:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
             raise RuntimeError(
                 "未配置模型 API Key。请在服务端设置 LLM_API_KEY。"
             )
-        base_url = self.settings.resolve_base_url(resolved_model)
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = {
             "model": resolved_model,
@@ -103,10 +101,12 @@ class OpenAICompatibleClient:
 
     async def test(self, api_key: str | None = None, model: str | None = None) -> dict[str, str | bool]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        try:
+            base_url, resolved_model = self.settings.resolve_request(model)
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
         if not key:
             return {"ok": False, "message": "未配置 API Key；离线假回复已禁用。"}
-        base_url = self.settings.resolve_base_url(resolved_model)
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = {
             "model": resolved_model,
@@ -125,7 +125,7 @@ class OpenAICompatibleClient:
                 "ok": True,
                 "message": "模型连接成功。",
                 "model": returned_model,
-                "provider": self.settings.resolve_base_url(resolved_model),
+                "provider": base_url,
             }
         except Exception as exc:
             return {"ok": False, "message": f"模型连接失败：{exc}"}

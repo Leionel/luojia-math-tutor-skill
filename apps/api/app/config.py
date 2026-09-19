@@ -10,7 +10,27 @@ PROVIDER_BASE_URLS: dict[str, str] = {
     "deepseek": "https://api.deepseek.com/v1",
     "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "moonshot": "https://api.moonshot.cn/v1",
-    "glm": "https://open.bigmodel.cn/api/paas/v4"
+    "kimi": "https://api.moonshot.cn/v1",  # UI alias for moonshot
+    "glm": "https://open.bigmodel.cn/api/paas/v4",
+    "openai": "https://api.openai.com/v1",
+    "anthropic": "https://api.anthropic.com/v1",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "grok": "https://api.x.ai/v1",
+    "custom": "",  # user-supplied base URL
+}
+
+# UI-facing provider list shown in the settings drawer. kimi is an alias for
+# the moonshot endpoint; "custom" requires a user-provided https base URL.
+MODEL_PROVIDERS: dict[str, str] = {
+    "deepseek": "DeepSeek",
+    "kimi": "Kimi (Moonshot)",
+    "qwen": "通义千问 (Qwen)",
+    "glm": "智谱 (GLM)",
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "gemini": "Gemini",
+    "grok": "Grok (xAI)",
+    "custom": "自定义",
 }
 LOCAL_AUTH_SECRET = "local-development-only-change-before-production"
 
@@ -103,25 +123,66 @@ class Settings(BaseModel):
     tool_timeout_seconds: int = int(os.getenv("TOOL_TIMEOUT_SECONDS", "8"))
     tool_max_rounds: int = int(os.getenv("TOOL_MAX_ROUNDS", "2"))
 
-    def resolve_model(self, request_model: str | None) -> str:
-        model = request_model or self.llm_model
+    def resolve_request(self, request_model: str | None) -> tuple[str, str]:
+        """Resolve a request model id to (base_url, model_name).
+
+        Free-form ids: "<provider>:<model>" for a known provider, or
+        "custom:<https base-url>|<model>" for a user-hosted endpoint. Bare
+        ids fall back to the curated catalog (kept as server-side defaults).
+        """
+        model = (request_model or self.llm_model).strip()
+        if model.startswith("custom:"):
+            base, _, name = model[len("custom:"):].partition("|")
+            base = base.strip().rstrip("/")
+            name = name.strip()
+            if not base or not name:
+                raise ValueError(
+                    "自定义模型需要同时提供接口地址与模型名称，格式：custom:https://.../v1|模型名"
+                )
+            if not base.startswith("https://") or self._is_local_host(base):
+                raise ValueError("自定义接口地址必须是公网 https:// 地址。")
+            return base, name
+        if ":" in model:
+            provider, _, name = model.partition(":")
+            provider = provider.strip().lower()
+            name = name.strip()
+            base = PROVIDER_BASE_URLS.get(provider)
+            if provider != "custom" and base and name:
+                return base, name
+            raise ValueError(
+                f"Unsupported model {model!r}. 请按 供应商:模型名 填写，例如 openai:gpt-4o-mini。"
+            )
         if model not in configured_model_catalog():
             raise ValueError(
                 f"Unsupported model {model!r}. Choose a model returned by /api/models."
             )
-        return model
+        spec = configured_model_catalog()[model]
+        if model == self.llm_model and self.llm_base_url:
+            return self.llm_base_url, model
+        return PROVIDER_BASE_URLS[spec.provider], model
+
+    @staticmethod
+    def _is_local_host(base_url: str) -> bool:
+        host = base_url.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
+        if host in ("localhost", "0.0.0.0") or host.endswith(".local"):
+            return True
+        if host == "127.0.0.1" or host.startswith("127."):
+            return True
+        if host.startswith("10.") or host.startswith("192.168."):
+            return True
+        if host.startswith("172.") and host.split(".")[1].isdigit() and 16 <= int(host.split(".")[1]) <= 31:
+            return True
+        return False
 
     @property
     def teacher_ids(self) -> frozenset[str]:
         return frozenset(part.strip() for part in self.teacher_user_ids.split(",") if part.strip())
 
+    def resolve_model(self, request_model: str | None) -> str:
+        return self.resolve_request(request_model)[1]
+
     def resolve_base_url(self, resolved_model: str) -> str:
-        spec = configured_model_catalog().get(resolved_model)
-        if not spec:
-            raise ValueError(f"Unsupported model {resolved_model!r}")
-        if resolved_model == self.llm_model and self.llm_base_url:
-            return self.llm_base_url
-        return PROVIDER_BASE_URLS[spec.provider]
+        return self.resolve_request(resolved_model)[0]
 
     @property
     def cors_origins(self) -> list[str]:

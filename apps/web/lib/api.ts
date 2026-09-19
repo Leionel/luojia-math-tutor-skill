@@ -364,10 +364,17 @@ export type ModelInfo = {
   provider: string;
 };
 
+export type ProviderInfo = {
+  id: string;
+  label: string;
+  base_url: string;
+};
+
 export type ModelCatalogResponse = {
   default_model: string;
   allowed_models: string[];
   models: ModelInfo[];
+  providers?: ProviderInfo[];
 };
 
 export async function fetchModels(): Promise<ModelCatalogResponse> {

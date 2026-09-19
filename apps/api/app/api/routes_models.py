@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 
 from app.auth import Principal, get_forwarded_llm_key, get_principal
-from app.config import Settings, configured_model_catalog
+from app.config import MODEL_PROVIDERS, PROVIDER_BASE_URLS, Settings, configured_model_catalog
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.main_deps import get_app_settings
 
@@ -21,10 +21,17 @@ class ModelItem(BaseModel):
     provider: str
 
 
+class ProviderItem(BaseModel):
+    id: str
+    label: str
+    base_url: str  # empty for "custom": the user supplies their own endpoint
+
+
 class ModelListResponse(BaseModel):
     default_model: str
     allowed_models: list[str]
     models: list[ModelItem]
+    providers: list[ProviderItem]
 
 
 @router.get("", response_model=ModelListResponse)
@@ -39,6 +46,10 @@ async def list_models(
         models=[
             ModelItem(id=model_id, name=spec.name, provider=spec.provider)
             for model_id, spec in catalog.items()
+        ],
+        providers=[
+            ProviderItem(id=provider_id, label=label, base_url=PROVIDER_BASE_URLS.get(provider_id, ""))
+            for provider_id, label in MODEL_PROVIDERS.items()
         ],
     )
 
