@@ -440,6 +440,18 @@ class Repository:
             ).fetchone()
         return dict(row) if row else None
 
+    def list_documents(self, user_id: str) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select id, filename, created_at from documents
+                where user_id = ?
+                order by created_at desc
+                """,
+                (user_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def save_note(self, user_id: str, session_id: str, subject: str, content: str) -> str:
         note_id = new_id("note")
         ts = now_iso()

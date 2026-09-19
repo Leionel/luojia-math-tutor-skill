@@ -8,6 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { MathView, MathMarkdown } from "@/components/math-view";
 import { getAuthHeaders } from "@/lib/demo-auth";
 import {
+  generateCandidatesFromDocument,
+  listUploadedDocuments,
+  type DocumentEntry,
+} from "@/lib/api";
+import {
   CheckCircle2,
   XCircle,
   GitMerge,
@@ -233,6 +238,11 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState("NA_NEWTON");
 
+  // Document → candidates generation state
+  const [documents, setDocuments] = useState<DocumentEntry[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState("");
+  const [generatingFromDoc, setGeneratingFromDoc] = useState(false);
+
   // Propose candidate modal state
   const [isProposeModalOpen, setIsProposeModalOpen] = useState(false);
   const [proposeForm, setProposeForm] = useState({
@@ -281,7 +291,35 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
 
   useEffect(() => {
     fetchCandidates();
+    listUploadedDocuments()
+      .then((docs) => {
+        setDocuments(docs);
+        if (docs.length > 0) setSelectedDocumentId((current) => current || docs[0].id);
+      })
+      .catch(() => setDocuments([]));
   }, [courseId, statusFilter]);
+
+  const handleGenerateFromDocument = async () => {
+    if (!selectedDocumentId) return;
+    setGeneratingFromDoc(true);
+    setActionFeedback(null);
+    try {
+      const result = await generateCandidatesFromDocument(courseId, selectedDocumentId);
+      setActionFeedback({
+        type: "success",
+        text: `已从教材生成 ${result.total} 条候选，等待审核。`,
+      });
+      setStatusFilter("pending");
+      await fetchCandidates();
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        text: err instanceof Error ? err.message : "候选生成失败",
+      });
+    } finally {
+      setGeneratingFromDoc(false);
+    }
+  };
 
   const selectedCandidate = candidates.find((c) => c.candidate_id === selectedId) || null;
 
@@ -499,6 +537,32 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
               <Plus className="w-3.5 h-3.5" /> 提议新候选
             </Button>
           </div>
+
+          {/* Textbook → candidates pipeline */}
+          {documents.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <select
+                value={selectedDocumentId}
+                onChange={(e) => setSelectedDocumentId(e.target.value)}
+                className="flex-1 min-w-0 border border-slate-200 dark:border-slate-700 rounded-md text-xs bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {documents.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.filename}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-2.5 gap-1 shrink-0"
+                disabled={generatingFromDoc || !selectedDocumentId}
+                onClick={handleGenerateFromDocument}
+              >
+                {generatingFromDoc ? "生成中…" : "教材提取候选"}
+              </Button>
+            </div>
+          )}
 
           <div className="relative">
             <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-400" />

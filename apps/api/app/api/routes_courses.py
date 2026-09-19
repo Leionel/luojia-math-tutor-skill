@@ -4,8 +4,9 @@ from pydantic import BaseModel, model_validator
 
 from app.auth import Principal, get_principal, require_role
 from app.config import Settings
+from app.knowledge.candidate_pipeline import build_candidates_from_document
 from app.knowledge.course_service import get_course_service
-from app.main_deps import get_app_settings
+from app.main_deps import get_app_settings, get_repository
 
 router = APIRouter(prefix="/api/courses", tags=["courses"])
 
@@ -27,6 +28,10 @@ class CandidateCreateRequest(BaseModel):
     payload: dict[str, Any]
     proposed_by: str = "teacher"
     evidence_ref: Optional[str] = None
+
+
+class CandidatesFromDocumentRequest(BaseModel):
+    document_id: str
 
 
 class ReviewCandidateRequest(BaseModel):
@@ -188,6 +193,42 @@ def create_candidate(
         evidence_ref=payload.evidence_ref,
     )
     return {"status": "created", "candidate": candidate.to_dict()}
+
+
+@router.post("/{course_id}/candidates/from-document")
+def create_candidates_from_document(
+    course_id: str,
+    payload: CandidatesFromDocumentRequest,
+    principal: Principal = Depends(get_principal),
+    repo=Depends(get_repository),
+):
+    require_role(principal, ("teacher", "admin"), get_app_settings())
+    service = get_course_service(course_id)
+
+    doc = repo.get_document(payload.document_id, principal.user_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document was not found.")
+    chunks = repo.list_document_chunks(payload.document_id)
+    if not chunks:
+        raise HTTPException(status_code=400, detail="该文档尚未完成解析，稍后再试。")
+
+    proposals = build_candidates_from_document(
+        payload.document_id,
+        doc["filename"],
+        "\n".join(chunks),
+    )
+    created = []
+    for proposal in proposals:
+        candidate = service.candidate_mgr.add_candidate(
+            candidate_id=proposal["candidate_id"],
+            candidate_type=proposal["candidate_type"],
+            course_id=course_id,
+            payload=proposal["payload"],
+            proposed_by=proposal["proposed_by"],
+            evidence_ref=proposal["evidence_ref"],
+        )
+        created.append(candidate.to_dict())
+    return {"status": "created", "total": len(created), "candidates": created}
 
 
 @router.post("/{course_id}/candidates/{candidate_id}/review")

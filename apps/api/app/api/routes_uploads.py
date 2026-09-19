@@ -126,6 +126,14 @@ async def upload_image(
         "document_id": document_id
     }
 
+@router.get("/documents")
+def list_documents(
+    principal: Principal = Depends(get_principal),
+    repo: Repository = Depends(get_repository),
+):
+    return {"documents": repo.list_documents(principal.user_id)}
+
+
 @router.get("/{filename}")
 async def get_uploaded_image(filename: str):
     filepath = _resolve_uploaded_file(filename)
