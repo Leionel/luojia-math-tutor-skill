@@ -51,7 +51,7 @@ def test_segment_document_splits_by_heading_and_type_markers():
     assert "泰勒展开" not in theorem_section.text
     proof_section = next(s for s in sections if s.unit_type == "proof")
     assert "泰勒展开" in proof_section.text
-    assert proof_section.anchor_title == theorem_section.title
+    assert proof_section.anchor_order == theorem_section.order
 
 
 def test_build_candidates_carries_provenance_and_unclassified_scope():
@@ -267,7 +267,7 @@ def test_mineru_style_heading_markers_keep_their_unit_type():
     assert "取得零值" not in theorem.text
     proof = next(s for s in sections if s.unit_type == "proof")
     assert "取得零值" in proof.text
-    assert proof.anchor_title == theorem.title
+    assert proof.anchor_order == theorem.order
 
 
 def test_candidates_from_mineru_style_markdown_carry_types():
@@ -380,6 +380,131 @@ def test_a_new_section_clears_deeper_heading_levels():
 
     assert definitions[0].chapter_path == ["第 3 章 插值法", "3.1 第一节", "3.1.1 小节"]
     assert definitions[1].chapter_path == ["第 3 章 插值法", "3.2 第二节"]
+
+
+FRONT_MATTER_MARKDOWN = """## Numerical Analysis
+
+时间：August 24, 2022。组织：数学与统计学院。这是一段扉页说明文字，长度足以通过最小长度过滤。
+
+## 前言
+
+本书是在讲义基础上整理而成的，全书共分为六章，第一章介绍误差来源与浮点数系统等基础知识。
+
+## 目录
+
+1.1 数值分析的对象和特点 . 1
+1.2 数值计算的误差 . 5
+
+## 第 1 章 基础知识
+
+本章介绍数值分析的对象、特点与误差来源，这些内容是后续所有算法分析的共同基础。
+
+## 1.1 数值分析的对象和特点
+
+数值分析研究数值计算方法，本节给出课程的整体框架与学习要求，内容足够长以通过过滤。
+
+定义 1.1 近似值：设 x 为准确值，x* 为其近似，则称 e = x - x* 为误差。
+"""
+
+
+def test_front_matter_is_not_promoted_to_knowledge_units():
+    """Title page, 前言 and 目录 sit outside the numbered outline."""
+    proposals = build_candidates_from_document("doc-front", "book.pdf", FRONT_MATTER_MARKDOWN)
+    titles = {p["payload"]["title"] for p in _units(proposals)}
+
+    assert "Numerical Analysis" not in titles
+    assert "前言" not in titles
+    assert "目录" not in titles
+    # Chapter and numbered-section introductions are real teaching content.
+    assert "第 1 章 基础知识" in titles
+    assert any(t.startswith("定义 1.1") for t in titles)
+
+
+def test_front_matter_filter_ignores_typed_markers():
+    """A definition is never front matter, even before chapter 1."""
+    markdown = (
+        "## 前言\n\n"
+        "本书在讲义基础上整理而成，篇幅足够通过最小长度过滤，用于承载前置说明。\n\n"
+        "定义 0.1 近似值：设 x 为准确值，x* 为其近似值，则称 e = x - x* 为误差。\n"
+    )
+
+    units = _units(build_candidates_from_document("doc-fm2", "b.pdf", markdown))
+    types = {p["payload"]["type"] for p in units}
+
+    assert "definition" in types
+    assert not any(p["payload"]["title"] == "前言" for p in units)
+
+
+def test_back_matter_is_dropped_even_after_the_last_chapter():
+    """参考文献 inherits the last chapter's path unless the outline is reset."""
+    markdown = (
+        "## 第 6 章 常微分方程\n\n"
+        "本章介绍常微分方程的数值解法，这些内容是全书的收尾部分，篇幅足够通过过滤。\n\n"
+        "## 6.1 欧拉方法\n\n"
+        "欧拉方法是最简单的单步法，本节给出其构造与收敛性，篇幅足够通过最小长度过滤。\n\n"
+        "## 参考文献\n\n"
+        "[1] 某作者. 某书名. 某出版社, 2020.\n[2] 另一作者. 另一书名. 另一出版社, 2021.\n"
+    )
+
+    titles = {p["payload"]["title"] for p in _units(build_candidates_from_document("doc-bib", "b.pdf", markdown))}
+
+    assert "参考文献" not in titles
+    assert "第 6 章 常微分方程" in titles
+    assert "6.1 欧拉方法" in titles
+
+
+def test_propositions_are_recognised_as_anchors():
+    """命题 is a claim with a proof; treating it as a plain heading lost the type
+    and also reset the anchor, so the proof after it linked to nothing."""
+    markdown = (
+        "## 3.1 插值误差\n\n"
+        "本节讨论插值多项式的误差表达，这些内容是后续数值积分构造的共同基础。\n\n"
+        "命题 3.1 设 f 在节点上连续，则插值多项式存在且唯一，且误差有界。\n\n"
+        "证明 由范德蒙行列式非零可知插值方程组有唯一解，余项由罗尔定理得到。\n"
+    )
+
+    sections = segment_document(markdown)
+    proposition = next(s for s in sections if s.title.startswith("命题 3.1"))
+    proof = next(s for s in sections if s.unit_type == "proof")
+
+    assert proposition.unit_type == "theorem"
+    assert proof.anchor_order == proposition.order
+
+    relations = _relations(build_candidates_from_document("doc-prop", "b.pdf", markdown))
+    assert any(r["payload"]["relation_type"] == "supports_proof" for r in relations)
+
+
+def test_ocr_decorated_chapter_headings_are_not_front_matter():
+    """MinerU emitted exercise headings as "K第 1 章 练习 k"; they are real content."""
+    markdown = (
+        "## 第 1 章 基础知识\n\n"
+        "本章介绍误差来源与浮点数系统，这些内容是后续所有算法分析的共同基础。\n\n"
+        "## K第 1 章 练习 k\n\n"
+        "1. 用二分法求根，要求误差不超过 1e-6，问至少需要迭代多少次才够。\n"
+    )
+
+    titles = {p["payload"]["title"] for p in _units(build_candidates_from_document("doc-ocr", "b.pdf", markdown))}
+
+    assert any("练习" in t for t in titles), titles
+
+
+def test_marker_titles_drop_prose_but_keep_short_names():
+    markdown = (
+        "## 1.2 数值计算的误差\n\n"
+        "本节讨论误差的来源与分类，这些内容是后续算法分析的共同基础，篇幅足够通过过滤。\n\n"
+        "例题 1.1 (1) 多项式计算通常较为简单，我们可以设计一个算法来计算它的值。\n\n"
+        "算法 2.1 二分法\n\n"
+        "步骤一：取区间中点；步骤二：判断中点处函数符号；步骤三：保留异号半区间并重复。\n"
+    )
+
+    titles = {
+        p["payload"]["title"]
+        for p in _units(build_candidates_from_document("doc-title", "b.pdf", markdown))
+    }
+
+    assert "例题 1.1" in titles, titles
+    assert not any("多项式计算通常较为简单" in t for t in titles)
+    assert "算法 2.1 二分法" in titles, titles
 
 
 def test_relations_do_not_cross_a_section_boundary():
