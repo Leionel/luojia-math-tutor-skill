@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 
@@ -73,6 +74,27 @@ def configured_model_catalog() -> dict[str, ModelSpec]:
 
 
 ALLOWED_MODELS = frozenset(configured_model_catalog())
+
+
+# ``Settings`` below binds every default with ``os.getenv`` at *class
+# definition* time, and ``services/mineru_client.py`` reads ``MINERU_API_KEY``
+# the same way. Nothing in the app loaded ``apps/api/.env`` — only
+# ``scripts/evaluate_benchmark.py`` did — so ``npm run dev:api`` used to start
+# with empty LLM and MinerU credentials even when ``.env`` was filled in
+# correctly. Load it here, before the class body runs, without overriding real
+# environment variables.
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+
+def load_env_file(path: Path = ENV_FILE) -> Path | None:
+    """Load a dotenv file into ``os.environ``; return the path, or ``None``."""
+    if not path.is_file():
+        return None
+    load_dotenv(path, override=False)
+    return path
+
+
+load_env_file()
 
 
 class Settings(BaseModel):
