@@ -362,6 +362,8 @@ export type UploadResult = {
   url: string;
   markdown: string;
   document_id: string | null;
+  /** Present when MinerU parsing failed for a non-document upload. */
+  parse_error?: string | null;
 };
 
 export async function uploadTextbook(file: File): Promise<UploadResult> {

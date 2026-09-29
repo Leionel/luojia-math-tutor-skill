@@ -106,24 +106,38 @@ async def upload_image(
             detail=f"PDF 超过 {MAX_PDF_PAGES} 页限制，请拆分章节后重新上传。",
         )
 
+    is_document = ext.lower() in ("pdf", "pptx", "docx", "doc")
     document_id = None
+    extracted_md = ""
+    parse_error: str | None = None
+
     try:
         extracted_md = await extract_markdown_agent_api(str(filepath.resolve()))
-        
-        # If the file is a document (pdf, pptx, docx), store it for Implicit RAG
-        if ext.lower() in ['pdf', 'pptx', 'docx', 'doc']:
-            document_id = repo.insert_document(filename_attr, principal.user_id)
-            chunks = chunk_markdown(extracted_md)
-            repo.insert_document_chunks(document_id, chunks)
-            
     except Exception as e:
         logger.warning("MinerU extraction failed: %s", e)
-        extracted_md = f"⚠️ [MinerU 网络解析失败: {e}]"
-        
+        parse_error = str(e)
+        if is_document:
+            # Nothing was stored, so the caller must not be told this succeeded.
+            # Returning the error text in `markdown` would let it be persisted
+            # and later served as if it were document content.
+            filepath.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=502,
+                detail=f"文档解析失败，未入库，请重试或改用图片上传：{e}",
+            ) from e
+
+    if is_document and not parse_error:
+        document_id = repo.insert_document(filename_attr, principal.user_id, extracted_md)
+        # Chunks are a derived retrieval artifact. `documents.markdown` is the
+        # source of truth for anything needing the whole text, so it must never
+        # be reconstructed by re-joining overlapping chunks.
+        repo.insert_document_chunks(document_id, chunk_markdown(extracted_md))
+
     return {
         "url": f"/api/uploads/{filename}",
         "markdown": extracted_md,
-        "document_id": document_id
+        "document_id": document_id,
+        "parse_error": parse_error,
     }
 
 @router.get("/documents")

@@ -208,14 +208,22 @@ def create_candidates_from_document(
     doc = repo.get_document(payload.document_id, principal.user_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document was not found.")
-    chunks = repo.list_document_chunks(payload.document_id)
-    if not chunks:
-        raise HTTPException(status_code=400, detail="该文档尚未完成解析，稍后再试。")
+
+    markdown = repo.get_document_markdown(payload.document_id, principal.user_id)
+    if not markdown or not markdown.strip():
+        # Fail closed. Re-joining `document_chunks` is not a lossless way to
+        # recover the source: chunk_markdown overlaps by 50 chars, so the
+        # reconstruction duplicates text and yields duplicate candidates whose
+        # support_count is inflated by a single upload.
+        raise HTTPException(
+            status_code=409,
+            detail="该文档没有已保存的解析原文（解析未完成，或上传于原文持久化之前），请重新上传。",
+        )
 
     proposals = build_candidates_from_document(
         payload.document_id,
         doc["filename"],
-        "\n".join(chunks),
+        markdown,
     )
     created = []
     for proposal in proposals:

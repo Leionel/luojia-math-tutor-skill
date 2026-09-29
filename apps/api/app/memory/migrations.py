@@ -74,10 +74,18 @@ def _migration_003_shared_runtime_state(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migration_004_document_markdown(conn: sqlite3.Connection) -> None:
+    # Databases created before the parsed source text was persisted have no
+    # markdown column. Existing rows keep '' and are reported as needing a
+    # re-upload rather than being silently reconstructed from FTS chunks.
+    _add_column(conn, "documents", "markdown", "text not null default ''")
+
+
 MIGRATIONS: tuple[tuple[int, str, Callable[[sqlite3.Connection], None]], ...] = (
     (1, "message_metadata", _migration_001_message_metadata),
     (2, "auth_credentials", _migration_002_auth_credentials),
     (3, "shared_runtime_state", _migration_003_shared_runtime_state),
+    (4, "document_markdown", _migration_004_document_markdown),
 )
 
 

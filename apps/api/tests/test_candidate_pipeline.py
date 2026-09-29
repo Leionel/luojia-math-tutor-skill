@@ -57,16 +57,31 @@ def client():
     return TestClient(app)
 
 
+def _expected_ids(document_id: str, markdown: str = MARKDOWN) -> list[str]:
+    return [
+        p["candidate_id"]
+        for p in build_candidates_from_document(document_id, "教材.pdf", markdown)
+    ]
+
+
+def _chapter(number: int) -> str:
+    return (
+        f"## 2.{number} 迭代法小节 {number}\n\n"
+        f"定义 2.{number} 收敛阶：设迭代格式为 x_(k+1) = g(x_k)，若存在常数 c 与 p，"
+        f"使得误差满足 e_(k+1) ≈ c·e_k^p，则称该迭代为 p 阶收敛，c 为渐进误差常数。"
+        f"这一小节的文字用于把文档撑到跨越多个分块窗口。\n"
+    )
+
+
+# Long enough that chunk_markdown(500, 50) produces several overlapping chunks.
+LONG_MARKDOWN = "# 第2章 非线性方程求根\n\n" + "".join(_chapter(n) for n in range(1, 9))
+
+
 def test_candidates_from_document_route(client):
     repo = get_repository()
-    document_id = repo.insert_document("pipeline_sample.pdf", "demo-user")
-    repo.insert_document_chunks(
-        document_id,
-        [
-            "## 2.2 牛顿迭代法\n牛顿法使用切线代替曲线进行迭代，通过切线斜率逐步逼近方程的根。",
-            "定义 2.1 不动点：若 f(x*) = x*，则称 x* 为函数 f 的不动点，迭代法围绕不动点的存在性与收敛性展开。",
-        ],
-    )
+    document_id = repo.insert_document("pipeline_sample.pdf", "demo-user", MARKDOWN)
+    repo.insert_document_chunks(document_id, ["## 2.2 牛顿迭代法\n牛顿法使用切线代替曲线。"])
+    expected = _expected_ids(document_id)
     try:
         res = client.post(
             "/api/courses/numerical_analysis/candidates/from-document",
@@ -75,7 +90,8 @@ def test_candidates_from_document_route(client):
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "created"
-        assert data["total"] == 2
+        assert data["total"] == len(expected)
+        assert [c["candidate_id"] for c in data["candidates"]] == expected
         assert all(c["status"] == "pending" for c in data["candidates"])
         assert all(c["payload"]["scope_level"] == "unclassified" for c in data["candidates"])
 
@@ -90,8 +106,7 @@ def test_candidates_from_document_route(client):
             "/api/courses/numerical_analysis/candidates/from-document",
             json={"document_id": document_id},
         ).json()
-        rerun_ids = [c["candidate_id"] for c in rerun["candidates"]]
-        assert rerun_ids == candidate_ids[: len(rerun_ids)]
+        assert [c["candidate_id"] for c in rerun["candidates"]] == expected
         assert all(c["support_count"] == 2 for c in rerun["candidates"])
     finally:
         with repo.connect() as conn:
@@ -99,6 +114,80 @@ def test_candidates_from_document_route(client):
                 "delete from document_chunks where document_id = ?", (document_id,)
             )
             conn.execute("delete from documents where id = ?", (document_id,))
+
+
+def test_overlapping_chunks_do_not_change_candidates(client):
+    """Regression: candidates used to be rebuilt by re-joining overlapping chunks.
+
+    `chunk_markdown` overlaps by 50 chars, so `"\\n".join(chunks)` duplicated
+    text at every boundary. That inflated section content and produced repeated
+    candidate ids, which made `support_count` read 2 after a single upload.
+    """
+    from app.api.routes_uploads import chunk_markdown
+
+    repo = get_repository()
+    document_id = repo.insert_document("overlap.pdf", "demo-user", LONG_MARKDOWN)
+    repo.insert_document_chunks(document_id, chunk_markdown(LONG_MARKDOWN))
+    try:
+        chunks = repo.list_document_chunks(document_id)
+        assert len(chunks) > 1, "sample must span multiple chunks to be meaningful"
+        assert len("\n".join(chunks)) > len(LONG_MARKDOWN), "overlap must be present"
+
+        data = client.post(
+            "/api/courses/numerical_analysis/candidates/from-document",
+            json={"document_id": document_id},
+        ).json()
+
+        ids = [c["candidate_id"] for c in data["candidates"]]
+        assert ids == _expected_ids(document_id, LONG_MARKDOWN)
+        assert len(set(ids)) == len(ids), "one upload must not repeat a candidate id"
+        assert all(c["support_count"] == 1 for c in data["candidates"])
+        for candidate in data["candidates"]:
+            content = candidate["payload"]["content"]
+            assert content in LONG_MARKDOWN, "candidate content must come from the source text"
+    finally:
+        with repo.connect() as conn:
+            conn.execute(
+                "delete from document_chunks where document_id = ?", (document_id,)
+            )
+            conn.execute("delete from documents where id = ?", (document_id,))
+
+
+def test_candidates_from_document_requires_stored_markdown(client):
+    """Fail closed rather than reconstructing a lossy document from chunks."""
+    repo = get_repository()
+    document_id = repo.insert_document("legacy.pdf", "demo-user")
+    repo.insert_document_chunks(document_id, ["定义 2.1 不动点：若 f(x*) = x*，则称 x* 为不动点。"])
+    try:
+        res = client.post(
+            "/api/courses/numerical_analysis/candidates/from-document",
+            json={"document_id": document_id},
+        )
+        assert res.status_code == 409
+        assert "原文" in res.json()["detail"]
+    finally:
+        with repo.connect() as conn:
+            conn.execute(
+                "delete from document_chunks where document_id = ?", (document_id,)
+            )
+            conn.execute("delete from documents where id = ?", (document_id,))
+
+
+def test_duplicate_headings_do_not_collapse_into_one_candidate():
+    """Two sections sharing a heading must stay two candidates."""
+    repeated = (
+        "# 第3章 插值法\n\n"
+        "定义 3.1 拉格朗日插值：在互异节点上构造次数不超过 n 的多项式，"
+        "使其在每个节点取给定的函数值，这样的多项式存在且唯一。\n\n"
+        "定义 3.1 拉格朗日插值：另一种等价的表述方式是使用基函数的线性组合，"
+        "每个基函数在自己的节点取一、在其余节点取零，从而直接满足插值条件。\n"
+    )
+    proposals = build_candidates_from_document("doc-dup", "dup.pdf", repeated)
+    ids = [p["candidate_id"] for p in proposals]
+
+    assert len(proposals) == 2
+    assert len(set(ids)) == 2, "identical titles must not share a candidate id"
+    assert proposals[0]["payload"]["content"] != proposals[1]["payload"]["content"]
 
 
 def test_candidates_from_document_requires_existing_document(client):

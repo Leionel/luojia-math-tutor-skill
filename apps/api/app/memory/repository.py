@@ -109,7 +109,8 @@ class Repository:
                   id text primary key,
                   filename text,
                   user_id text not null,
-                  created_at text not null
+                  created_at text not null,
+                  markdown text not null default ''
                 );
 
                 create virtual table if not exists document_chunks using fts5(
@@ -395,17 +396,26 @@ class Repository:
             )
         return attempt_id
 
-    def insert_document(self, filename: str, user_id: str) -> str:
+    def insert_document(self, filename: str, user_id: str, markdown: str = "") -> str:
         document_id = new_id("doc")
         with self.connect() as conn:
             conn.execute(
                 """
-                insert into documents(id, filename, user_id, created_at)
-                values (?, ?, ?, ?)
+                insert into documents(id, filename, user_id, created_at, markdown)
+                values (?, ?, ?, ?, ?)
                 """,
-                (document_id, filename, user_id, now_iso()),
+                (document_id, filename, user_id, now_iso(), markdown),
             )
         return document_id
+
+    def get_document_markdown(self, document_id: str, user_id: str) -> str | None:
+        """Return the persisted parsed source text, or None if not owned/found."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "select markdown from documents where id = ? and user_id = ?",
+                (document_id, user_id),
+            ).fetchone()
+        return str(row[0]) if row else None
 
     def insert_document_chunks(self, document_id: str, chunks: list[str]) -> None:
         with self.connect() as conn:

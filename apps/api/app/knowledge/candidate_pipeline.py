@@ -114,12 +114,17 @@ def build_candidates_from_document(
         text = section.text.strip()
         if len(text) < _MIN_SECTION_CHARS:
             continue
+        # Hash the text as well as the title: a textbook can repeat a heading
+        # (two "证明" blocks, two "定义 2.1" in different editions), and
+        # keying on title alone would collapse them into one candidate,
+        # silently inflating support_count and dropping the second section.
+        # Same document re-uploaded still hashes identically, so dedupe holds.
         proposals.append(
             {
-                "candidate_id": _stable_id("CAND_DOC", document_id, section.title),
+                "candidate_id": _stable_id("CAND_DOC", document_id, section.title, text),
                 "candidate_type": "new_unit",
                 "payload": {
-                    "id": _stable_id("DOC", document_id, section.title),
+                    "id": _stable_id("DOC", document_id, section.title, text),
                     "title": section.title[:_MAX_TITLE_CHARS] or f"{filename} 片段 {section.order + 1}",
                     "type": section.unit_type,
                     "content": text[:_MAX_CONTENT_CHARS],
