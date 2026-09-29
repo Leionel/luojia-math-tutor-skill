@@ -10,6 +10,7 @@ from app.auth import (
     resolve_user_id,
 )
 from app.config import Settings
+from app.knowledge.document_chunking import chunk_document
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.main_deps import get_app_settings, get_repository
 from app.memory.repository import Repository
@@ -29,25 +30,44 @@ class DocumentNoteRequest(BaseModel):
 
 
 # Budget for a single-pass LLM note: the heading outline keeps the global
-# structure, the sampled content covers beginning/middle/end of the book.
-_NOTE_CHAR_BUDGET = 24_000
-_MAX_HEADINGS = 80
+# structure, the sampled content covers the whole book evenly.
+#
+# Headings are cheap (a 150-page textbook has 158, ~5k chars) and they are the
+# only thing that tells the model which chapters exist. At the previous cap of
+# 80 the outline stopped inside chapter 3, so chapters 4-6 were invisible and
+# the model had to guess their titles from body fragments.
+_NOTE_CHAR_BUDGET = 48_000
+_MAX_HEADINGS = 400
 
 
 def _sample_chunks(chunks: list[str], char_budget: int = _NOTE_CHAR_BUDGET) -> str:
-    total = sum(len(c) for c in chunks)
+    """Pick whole chunks, evenly spaced across the document, until the budget fills.
+
+    The previous version kept a proportional *prefix* of every chunk and stopped
+    when the budget ran out. On a real 150-page textbook that meant ~56
+    characters per chunk — over half of which was the context-header line — with
+    body text and LaTeX severed mid-token ("…重要作", "!['", "[Numerical Anal").
+    A note built from that has almost no source to be faithful to, which shows
+    up as the model marking nearly everything "（原文未覆盖）".
+    """
+    if not chunks:
+        return ""
+    total = sum(len(chunk) for chunk in chunks)
     if total <= char_budget:
-        return "\n".join(chunks)
-    ratio = char_budget / total
-    parts: list[str] = []
-    used = 0
-    for chunk in chunks:
-        keep = max(1, int(len(chunk) * ratio))
-        parts.append(chunk[:keep])
-        used += keep
-        if used >= char_budget:
-            break
-    return "\n".join(parts)
+        return "\n\n".join(chunks)
+
+    average = total / len(chunks)
+    capacity = max(1, int(char_budget / average))
+    if capacity >= len(chunks):
+        return "\n\n".join(chunks)
+    if capacity == 1:
+        return chunks[0]
+
+    # Spacing is inclusive of both endpoints, so the last chunk is always
+    # represented; `len/capacity` would stop short of the end of the book.
+    step = (len(chunks) - 1) / (capacity - 1)
+    picked = [chunks[round(index * step)] for index in range(capacity)]
+    return "\n\n".join(picked)
 
 
 def _compact_text(content: str, limit: int = 320) -> str:
@@ -177,11 +197,19 @@ async def generate_document_note(
     doc = repo.get_document(body.document_id, user_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document was not found.")
-    chunks = repo.list_document_chunks(body.document_id)
-    if not chunks:
-        raise HTTPException(status_code=400, detail="该文档尚未完成解析，稍后再试。")
 
-    markdown = "\n".join(chunks)
+    markdown = repo.get_document_markdown(body.document_id, user_id)
+    if not markdown or not markdown.strip():
+        # Fail closed. Re-joining `document_chunks` is not a lossless way to
+        # recover the source, and a note built from severed headings and
+        # duplicated overlap looks authoritative while being wrong.
+        raise HTTPException(
+            status_code=409,
+            detail="该文档没有已保存的解析原文（解析未完成，或上传于原文持久化之前），请重新上传。",
+        )
+
+    # Sampling only; the outline and any full-text need come from the source.
+    chunks = chunk_document(markdown)
     headings = [
         line.strip()
         for line in markdown.splitlines()
