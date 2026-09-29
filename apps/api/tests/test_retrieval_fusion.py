@@ -183,6 +183,26 @@ def test_hits_text_without_hits_is_explicit() -> None:
     assert _hits_text([]) == "未命中本地知识库条目。"
 
 
+def test_hits_text_attributes_a_fragment_to_its_section() -> None:
+    """An unmoored excerpt of a theorem is much less usable than one that says
+    which chapter and section it came from."""
+    hit = _hit("theorem_2_4", 100, description="牛顿法局部二阶收敛。", title="定理 2.4")
+    hit.item.chapter = "第 2 章 非线性方程"
+    hit.item.section = "2.4 牛顿法"
+
+    text = _hits_text([hit])
+
+    assert "第 2 章 非线性方程 › 2.4 牛顿法" in text
+    assert "定理 2.4" in text
+
+
+def test_hits_text_omits_location_when_the_unit_has_none() -> None:
+    text = _hits_text([_hit("unit", 100, description="内容", title="某概念")])
+
+    assert "›" not in text
+    assert "course_pack" in text
+
+
 def test_course_graph_hits_are_scored_by_position_not_a_constant() -> None:
     """Anchored units must outrank 1-hop neighbours pulled in by expansion."""
     builder = CourseEvidenceBuilder(course_id="numerical_analysis")

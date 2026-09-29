@@ -46,6 +46,23 @@ _UNIT_TYPE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 
 _HEADING = re.compile(r"^(#{1,4})\s+(.+)$")
 
+# MinerU flattens the outline: every heading in a real 150-page textbook came
+# out as `##`, so the number of '#' carries no hierarchy at all. Recover the
+# depth from the section numbering instead, which textbooks do carry.
+_CHAPTER_HEADING = re.compile(r"^第\s*[0-9一二三四五六七八九十]+\s*章")
+_NUMBERED_HEADING = re.compile(r"^(\d+(?:\.\d+)*)")
+
+
+def _outline_depth(title: str, markdown_level: int) -> int:
+    """Infer a heading's outline depth from its numbering, not its '#' count."""
+    if _CHAPTER_HEADING.match(title):
+        return 1
+    numbered = _NUMBERED_HEADING.match(title)
+    if numbered:
+        # "2.1" -> 2, "2.1.3" -> 3
+        return len(numbered.group(1).split("."))
+    return markdown_level
+
 # Which typed relation a supporting unit forms with its anchor.
 _ANCHOR_RELATION = {
     "proof": "supports_proof",
@@ -83,6 +100,8 @@ class DocumentSection:
     order: int
     # Enclosing plain heading, used for `part_of`.
     parent_title: str | None = None
+    # Heading path (chapter → section → subsection) the atom sits under.
+    chapter_path: list[str] = field(default_factory=list)
     # Nearest preceding definition/theorem/lemma, used for support relations.
     anchor_title: str | None = None
     # Titles of anchors that follow this unit within the same section; a lemma
@@ -105,6 +124,12 @@ def segment_document(markdown: str) -> list[DocumentSection]:
     parent_title: str | None = None
     anchor_title: str | None = None
     buffer: list[str] = []
+    # Heading text by markdown level, so an atom can report the chapter path it
+    # sits under. A heading at level L replaces L and clears every deeper level.
+    heading_stack: dict[int, str] = {}
+
+    def chapter_path() -> list[str]:
+        return [heading_stack[level] for level in sorted(heading_stack)]
 
     def flush() -> None:
         text = "\n".join(buffer).strip()
@@ -116,6 +141,7 @@ def segment_document(markdown: str) -> list[DocumentSection]:
                     text=text,
                     order=len(sections),
                     parent_title=parent_title,
+                    chapter_path=chapter_path(),
                     anchor_title=anchor_title,
                 )
             )
@@ -141,6 +167,10 @@ def segment_document(markdown: str) -> list[DocumentSection]:
             # links across a section boundary to an unrelated theorem.
             parent_title = current_title
             anchor_title = None
+            level = _outline_depth(current_title, len(heading.group(1)))
+            heading_stack[level] = current_title
+            for deeper in [key for key in heading_stack if key > level]:
+                del heading_stack[deeper]
         else:
             buffer.append(line)
     flush()
@@ -213,6 +243,12 @@ def build_candidates_from_document(
                     "content": text,
                     "keywords": _keywords_from_title(section.title),
                     "difficulty": 3,
+                    # Provenance has to survive review, not just live on the
+                    # candidate's evidence_ref: an approved unit that cannot say
+                    # which document and section it came from is unauditable.
+                    "chapter_path": section.chapter_path,
+                    "context_header": " › ".join(section.chapter_path),
+                    "source_document_id": document_id,
                     # Teacher decides the scope on review; the pipeline never
                     # promotes unreviewed textbook content to core.
                     "scope_level": "unclassified",

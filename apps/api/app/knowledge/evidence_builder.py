@@ -110,6 +110,10 @@ class CourseEvidenceBuilder:
                 solution=u.solution,
                 type=u.type,
                 difficulty=u.difficulty,
+                # Attribution for the prompt: a bare fragment of a theorem is
+                # much less usable than one that says which section it is from.
+                chapter=u.chapter_path[0] if u.chapter_path else "",
+                section=" › ".join(u.chapter_path[1:]) if len(u.chapter_path) > 1 else "",
             )
             relevance = _ANCHOR_RELEVANCE if u.id in anchor_ids else _NEIGHBOUR_RELEVANCE
             graph_hits.append(

@@ -36,8 +36,10 @@ def _hits_text(hits: list[KnowledgeHit]) -> str:
         if cap < _MIN_USEFUL_CHARS:
             break
         item = hit.item
+        origin = " › ".join(part for part in (item.chapter, item.section) if part)
+        location = f"{item.source_file} · {origin}" if origin else item.source_file
         lines.append(
-            f"- {item.concept_zh} ({item.source_file}): {truncate_text(item.description, cap)} "
+            f"- {item.concept_zh} ({location}): {truncate_text(item.description, cap)} "
             f"直观解释: {truncate_text(item.intuitive_explanation, _HIT_EXPLANATION_CAP)}"
         )
         used += len(lines[-1])

@@ -308,6 +308,70 @@ def test_part_of_links_atoms_to_their_section():
     assert all(source != target for source, target in part_of)
 
 
+def test_atoms_carry_their_chapter_path():
+    markdown = (
+        "# 第 2 章 非线性方程\n\n"
+        "## 2.4 牛顿法\n\n"
+        "本节讨论牛顿法及其收敛性质，这些内容是后续误差分析的共同基础。\n\n"
+        "定理 2.4 局部二次收敛性：设 f 二阶连续可微，则牛顿法局部二阶收敛。\n\n"
+        "### 2.4.1 收敛阶补充\n\n"
+        "定义 2.5 收敛阶：若误差满足 e_(k+1) ≈ c·e_k^p，则称为 p 阶收敛。\n"
+    )
+
+    units = [p["payload"] for p in _units(build_candidates_from_document("doc-path", "book.pdf", markdown))]
+    theorem = next(p for p in units if p["type"] == "theorem")
+    definition = next(p for p in units if p["type"] == "definition")
+
+    assert theorem["chapter_path"] == ["第 2 章 非线性方程", "2.4 牛顿法"]
+    assert theorem["context_header"] == "第 2 章 非线性方程 › 2.4 牛顿法"
+    assert theorem["source_document_id"] == "doc-path"
+    assert definition["chapter_path"] == [
+        "第 2 章 非线性方程",
+        "2.4 牛顿法",
+        "2.4.1 收敛阶补充",
+    ]
+
+
+def test_hierarchy_is_recovered_when_markdown_levels_are_flat() -> None:
+    """MinerU emitted all 158 headings of a real textbook as `##`.
+
+    The '#' count then carries no hierarchy, so depth must come from the
+    section numbering; otherwise every atom's chapter path collapses to just
+    its nearest heading.
+    """
+    markdown = (
+        "## 第 2 章 非线性方程\n\n"
+        "## 2.1 单个方程求解问题\n\n"
+        "## 2.1.3 Newton 法\n\n"
+        "定理 2.4 局部二次收敛性：设 f 二阶连续可微，则牛顿法局部二阶收敛。\n"
+    )
+
+    sections = [s for s in segment_document(markdown) if s.unit_type == "theorem"]
+
+    assert sections[0].chapter_path == [
+        "第 2 章 非线性方程",
+        "2.1 单个方程求解问题",
+        "2.1.3 Newton 法",
+    ]
+
+
+def test_a_new_section_clears_deeper_heading_levels():
+    """An atom must not inherit a stale subsection after the section changes."""
+    markdown = (
+        "# 第 3 章 插值法\n\n"
+        "## 3.1 第一节\n\n"
+        "### 3.1.1 小节\n\n"
+        "定义 3.1 甲：内容足够长以通过最小长度过滤，用于承载第一个小节的说明。\n\n"
+        "## 3.2 第二节\n\n"
+        "定义 3.2 乙：内容足够长以通过最小长度过滤，用于承载第二个小节的说明。\n"
+    )
+
+    definitions = [s for s in segment_document(markdown) if s.unit_type == "definition"]
+
+    assert definitions[0].chapter_path == ["第 3 章 插值法", "3.1 第一节", "3.1.1 小节"]
+    assert definitions[1].chapter_path == ["第 3 章 插值法", "3.2 第二节"]
+
+
 def test_relations_do_not_cross_a_section_boundary():
     """A proof must not attach to a theorem from the previous section."""
     markdown = (

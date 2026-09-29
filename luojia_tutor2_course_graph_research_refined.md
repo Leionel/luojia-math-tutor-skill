@@ -2248,7 +2248,7 @@ Event Store
 
 **第一层 · 切细成教学原子。** 类型词表扩为 `definition / theorem / lemma(引理) / corollary(推论) / proof / example / algorithm / remark / section`；`证明`与`例`**不再并入定理**，各自成节点。保持纯规则、可复现、零调用成本，与 §16「抽取必须可审计」一致。
 
-**第二层 · 连贯性用图边表达，不用文本拼接。** 产出 `NEW_RELATION` 候选：`proof --supports_proof--> theorem`、`example --example_of--> theorem|definition`、`corollary --derives--> theorem`、`lemma --supports_proof--> theorem`，并为每个原子挂 `part_of --> 所属小节` 形成层次父子。词表已存在于 `KnowledgeRelation`，仅需新增 `part_of`。
+**第二层 · 连贯性用图边表达，不用文本拼接。** 产出 `NEW_RELATION` 候选：`proof --supports_proof--> theorem`、`example --example_of--> theorem|definition`、`corollary --derives_from--> theorem`、`lemma --supports_proof--> theorem`，并为每个原子挂 `part_of --> 所属小节` 形成层次父子。**无需扩 schema**：`KnowledgeRelation.relation_type` 与 `graph_repository.TASK_TYPE_RELATIONS` 中 `part_of`/`supports_proof`/`example_of`/`derives_from` 均已存在，且 `graph_review.py:115-124` 早已能审 `new_relation`——缺的只是流水线去产出它们。
 
 **第三层 · 上下文在检索期组装。** 命中原子（小而准）→ 沿 `supports_proof`/`example_of`/`part_of` 扩展出证明、例题与所属小节引言 → 按 **token 预算**注入，取代 `hits[:3] × 240 字`。每个原子存 `context_header`（章/节路径 + 一行锚点），避免"这段属于哪一节"在检索后丢失。同时接通两套检索：因 `build_evidence_pack` 是同步的，融合放在异步的 `fast_context._collect_local_hits`——两套检索**并发**执行，混合检索带独立子预算（200ms），使其慢速 embedding 调用不会连带取消课程图谱结果；再按 **RRF 排名融合**（而非原始分数，两者量纲不可比）产出单一有序列表，课程图谱的 case/boundary/hints 元数据保留不变。
 
@@ -2272,7 +2272,32 @@ Event Store
 - 标记优先级：MinerU 把 `定义/定理` 渲染为 `## 定义 1.1`，既是标题又是标记，原分支顺序使类型判定失效（4/65 → 65/65）。
 - 取消 `_MAX_CONTENT_CHARS = 600` 写入期截断：原上限丢弃全书 75% 正文、截断 46 个定理中的 44 个且切断 LaTeX；截断下移到展示层 `app/text_preview.truncate_text`（LaTeX 安全边界）。内容保留率 25% → 99.9%。
 
-## 24.6 参考入口
+## 24.6 A–C 实施结果（实测）
+
+**A · 切细教学原子 + 关系候选**（同一本 150 页教材，320,900 字符）：
+
+| | 改造前 | 改造后 |
+| :--- | :--- | :--- |
+| 候选 | 150 单元 / **0 关系** | **240 单元 / 242 关系** |
+| 类型 | concept 146, definition 2, theorem 2 | concept 78, proof 55, theorem 46, definition 19, example 16, corollary 11, lemma 8, algorithm 4, remark 3 |
+| 关系 | — | part_of 162, supports_proof 57, example_of 13, derives_from 10 |
+| 单元长度中位数 | 1,437 | **774**（p90 5,219 → 3,358） |
+| 正文保留率 | 99.9% | 99.8% |
+
+定理 2.4 从 2,210 字符的大块（命题+证明+例题）变成 293 字符的命题，其证明独立成原子并由 `supports_proof` 连回。
+
+**B · 两套检索融合**：`_collect_local_hits` 由互斥二选一改为并发 + RRF 排名融合；混合检索带 200ms 独立子预算，避免慢速 embedding 调用把课程图谱结果一起拖过 350ms 窗口而被取消。图命中分数由常量 85 改为「锚点 1.0 / 一跳邻居 0.6」× case 置信度并预排序；`prerequisite` 不再被丢成 `[]`。注入预算由 `hits[:3] × 240 字`（约 720 字）改为 2400 字按排名填充，被省略的命中显式报告而非静默丢弃。
+
+**C · 章节路径与溯源**：实施中发现两个新缺陷。
+
+1. **MinerU 把层级压平了**：该书 158 个标题**全部**输出为 `##`，markdown 的 `#` 数完全不携带层级信息。改为从章节编号推断深度（`第 N 章`→1，`N.M`→2，`N.M.K`→3）后，`chapter_path` 深度分布由「239/240 都是 1」变为 `{1: 10, 2: 135, 3: 94}`，每个定理都能定位到「第 2 章 非线性方程（组）的数值求解 › 2.1 单个方程求解问题 › 2.1.3 Newton 法」。
+2. **审核入图会丢溯源**：`graph_review.py` 批准候选时构造 `KnowledgeUnit` 未映射 `chapter_path` / `source_document_id` / `page_start` / `page_end`，候选上的 `evidence_ref` 又留在候选里，于是入图后的规范单元无法回答"我来自哪份材料的哪一节"——违反 §2 约定第 7 条。已补映射。
+
+另：`KnowledgeItem` 已有 `chapter` / `section` 字段，`evidence_builder` 现将 `chapter_path` 填入，`_hits_text` 渲染为 `来源 · 章 › 节`，使注入的片段带出处。
+
+测试：`pytest -q` → **229 passed**（离线，约 9s）。
+
+## 24.7 参考入口
 
 - Graph-Aware Late Chunking for RAG — https://arxiv.org/html/2603.22633v1
 - AutoMathKG: automated mathematical knowledge graph — https://arxiv.org/html/2505.13406v1

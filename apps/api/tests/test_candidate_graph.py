@@ -70,6 +70,51 @@ def test_approve_candidate_into_canonical_graph(review_setup):
     assert unit.title == "割线法"
 
 
+def test_approve_preserves_document_provenance(review_setup):
+    """An approved unit must still be able to say where it came from.
+
+    The candidate carries an `evidence_ref`, but that stays on the candidate.
+    Without mapping these payload fields the canonical unit loses the document
+    and section it was extracted from, which breaks the auditability the review
+    step exists to provide.
+    """
+    graph_repo, candidate_mgr, review_service = review_setup
+    candidate_mgr.add_candidate(
+        candidate_id="NA_DOC_UNIT",
+        candidate_type=CandidateType.NEW_UNIT.value,
+        course_id="numerical_analysis",
+        payload={
+            "id": "NA_DOC_UNIT",
+            "title": "定理 2.4 Newton 法的局部二次收敛性",
+            "type": "theorem",
+            "content": "令 x* 为单根，则 Newton 法局部二阶收敛。",
+            "chapter_path": ["第 2 章 非线性方程", "2.4 牛顿法"],
+            "source_document_id": "doc_656067dd6720",
+            "page_start": 88,
+            "page_end": 90,
+        },
+        proposed_by="document_pipeline",
+        evidence_ref="document:doc_656067dd6720:定理 2.4",
+    )
+
+    res = review_service.review_candidate(
+        candidate_id="NA_DOC_UNIT",
+        action="approve",
+        reviewer_id="teacher_wang",
+        review_note="provenance check",
+    )
+    assert res["status"] == "success"
+
+    unit = graph_repo.get_unit("NA_DOC_UNIT")
+    assert unit is not None
+    assert unit.chapter_path == ["第 2 章 非线性方程", "2.4 牛顿法"]
+    assert unit.source_document_id == "doc_656067dd6720"
+    assert unit.page_start == 88
+    assert unit.page_end == 90
+    assert unit.provenance == "candidate_document_pipeline"
+    assert unit.title == "定理 2.4 Newton 法的局部二次收敛性"
+
+
 def test_merge_candidate_alias_into_existing_unit(review_setup):
     graph_repo, candidate_mgr, review_service = review_setup
     candidate_mgr.add_candidate(

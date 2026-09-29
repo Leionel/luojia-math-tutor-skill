@@ -98,6 +98,14 @@ class GraphReviewService:
                     aliases=payload.get("aliases", []),
                     difficulty=int(payload.get("difficulty", 3)),
                     teaching_role=payload.get("teaching_role", "core"),
+                    # Provenance must survive approval. The candidate carries an
+                    # evidence_ref, but without these fields the resulting unit
+                    # cannot say which document or section it came from.
+                    chapter_path=list(payload.get("chapter_path", [])),
+                    source_document_id=payload.get("source_document_id"),
+                    page_start=payload.get("page_start"),
+                    page_end=payload.get("page_end"),
+                    source_span=dict(payload.get("source_span", {})),
                     provenance=f"candidate_{candidate.proposed_by}",
                     review_status="verified",
                 )
