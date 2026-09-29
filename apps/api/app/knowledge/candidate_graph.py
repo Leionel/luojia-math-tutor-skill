@@ -106,10 +106,23 @@ class CandidateManager:
         now = datetime.datetime.now().isoformat()
         if candidate_id in self._candidates:
             existing = self._candidates[candidate_id]
-            existing.support_count += 1
-            existing.last_seen = now
+            # support_count counts distinct sources, not extraction runs. The
+            # old unconditional increment made re-running the same document
+            # look like extra corroboration, which is exactly the signal a
+            # teacher is meant to judge on.
             if evidence_ref and evidence_ref not in existing.evidence_refs:
+                existing.support_count += 1
                 existing.evidence_refs.append(evidence_ref)
+            existing.last_seen = now
+            # An improved pipeline can produce a richer payload for the same
+            # content hash (a new field, a corrected type). Refresh only while
+            # unreviewed, so a teacher's edits or deferral are never clobbered.
+            if (
+                payload
+                and payload != existing.payload
+                and existing.status == CandidateStatus.PENDING.value
+            ):
+                existing.payload = payload
             self._persist(existing)
             return existing
 

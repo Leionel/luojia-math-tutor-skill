@@ -132,13 +132,14 @@ def test_candidates_from_document_route(client):
         candidate_ids = [c["candidate_id"] for c in listing["candidates"]]
         assert candidate_ids.count(data["candidates"][0]["candidate_id"]) == 1
 
-        # Re-running the same document increments support instead of duplicating.
+        # Re-running the same document must not create duplicates, and must not
+        # inflate support_count: it is the same source, not a second one.
         rerun = client.post(
             "/api/courses/numerical_analysis/candidates/from-document",
             json={"document_id": document_id},
         ).json()
         assert [c["candidate_id"] for c in rerun["candidates"]] == expected
-        assert all(c["support_count"] == 2 for c in rerun["candidates"])
+        assert all(c["support_count"] == 1 for c in rerun["candidates"])
     finally:
         with repo.connect() as conn:
             conn.execute(
