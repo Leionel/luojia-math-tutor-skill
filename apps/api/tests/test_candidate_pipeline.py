@@ -26,6 +26,14 @@ MARKDOWN = """# 第2章 非线性方程求根
 """
 
 
+def _units(proposals):
+    return [p for p in proposals if p["candidate_type"] == "new_unit"]
+
+
+def _relations(proposals):
+    return [p for p in proposals if p["candidate_type"] == "new_relation"]
+
+
 def test_segment_document_splits_by_heading_and_type_markers():
     sections = segment_document(MARKDOWN)
     titles = [s.title for s in sections]
@@ -33,20 +41,31 @@ def test_segment_document_splits_by_heading_and_type_markers():
     assert any(t.startswith("定义 2.1") for t in titles)
     assert any("牛顿迭代法" in t for t in titles)
 
-    # 证明 and 例 must attach to the preceding unit, not split new ones.
+    # 证明 and 例 are their own units now; the link to the theorem is a typed
+    # relation, not string concatenation inside one blob.
+    by_type = {s.unit_type for s in sections}
+    assert "proof" in by_type
+    assert "example" in by_type
+
     theorem_section = next(s for s in sections if s.title.startswith("定理 2.1"))
-    assert "泰勒展开" in theorem_section.text
-    assert "牛顿法求方程" in theorem_section.text
+    assert "泰勒展开" not in theorem_section.text
+    proof_section = next(s for s in sections if s.unit_type == "proof")
+    assert "泰勒展开" in proof_section.text
+    assert proof_section.anchor_title == theorem_section.title
 
 
 def test_build_candidates_carries_provenance_and_unclassified_scope():
     proposals = build_candidates_from_document("doc123", "教材.pdf", MARKDOWN)
     assert proposals
     for proposal in proposals:
-        assert proposal["candidate_type"] == "new_unit"
         assert proposal["proposed_by"] == "document_pipeline"
         assert proposal["evidence_ref"].startswith("document:doc123:")
-        assert proposal["payload"]["scope_level"] == "unclassified"
+    for unit in _units(proposals):
+        assert unit["payload"]["scope_level"] == "unclassified"
+    for relation in _relations(proposals):
+        payload = relation["payload"]
+        assert payload["source_unit_id"] != payload["target_unit_id"]
+        assert 0 < payload["confidence"] <= 1
     # Stable ids so re-uploading the same document dedupes.
     again = build_candidates_from_document("doc123", "教材.pdf", MARKDOWN)
     assert [p["candidate_id"] for p in again] == [p["candidate_id"] for p in proposals]
@@ -93,7 +112,19 @@ def test_candidates_from_document_route(client):
         assert data["total"] == len(expected)
         assert [c["candidate_id"] for c in data["candidates"]] == expected
         assert all(c["status"] == "pending" for c in data["candidates"])
-        assert all(c["payload"]["scope_level"] == "unclassified" for c in data["candidates"])
+        units = [c for c in data["candidates"] if c["candidate_type"] == "new_unit"]
+        relations = [c for c in data["candidates"] if c["candidate_type"] == "new_relation"]
+        assert units and relations, "textbook markdown must yield units and typed relations"
+        assert all(c["payload"]["scope_level"] == "unclassified" for c in units)
+        for relation in relations:
+            payload = relation["payload"]
+            assert payload["relation_type"] in {
+                "supports_proof",
+                "example_of",
+                "derives_from",
+                "part_of",
+            }
+            assert payload["source_unit_id"] != payload["target_unit_id"]
 
         listing = client.get(
             "/api/courses/numerical_analysis/candidates?status=pending"
@@ -221,19 +252,78 @@ def test_mineru_style_heading_markers_keep_their_unit_type():
     assert by_title["算法 2.1 二分法"] == "algorithm"
     assert by_title["第 1 章 基础知识"] == "concept"
 
-    # 证明 still attaches to the theorem instead of starting its own unit.
+    # 证明 is its own unit now, anchored to the theorem it supports.
     theorem = next(s for s in sections if s.unit_type == "theorem")
-    assert "取得零值" in theorem.text
-    assert not any(s.title.startswith("证明") for s in sections)
+    assert "取得零值" not in theorem.text
+    proof = next(s for s in sections if s.unit_type == "proof")
+    assert "取得零值" in proof.text
+    assert proof.anchor_title == theorem.title
 
 
 def test_candidates_from_mineru_style_markdown_carry_types():
     proposals = build_candidates_from_document("doc-md", "book.pdf", MINERU_SHAPED)
-    types = {p["payload"]["title"]: p["payload"]["type"] for p in proposals}
+    types = {p["payload"]["title"]: p["payload"]["type"] for p in _units(proposals)}
 
     assert types["定义 1.1"] == "definition"
     assert types["定理 2.1（介值定理）"] == "theorem"
     assert types["算法 2.1 二分法"] == "algorithm"
+
+
+def test_relations_link_proof_and_example_to_their_anchor():
+    markdown = (
+        "## 2.2 牛顿迭代法\n\n"
+        "本节介绍牛顿法的基本思想与收敛性质，这些内容是后续误差分析的共同基础。\n\n"
+        "定理 2.2 局部收敛性：设 f 二阶连续可微且 f'(x*) 不为零，则牛顿法局部二阶收敛。\n\n"
+        "证明 由泰勒展开代入迭代格式，保留主导项即得误差递推关系，故收敛性成立。\n\n"
+        "例 2.1 取 f(x)=x²-2，从 x0=1 出发迭代三步即得 1.41421356，与精确值吻合。\n\n"
+        "推论 2.1 若初值足够接近单根，则误差平方级递减，这由上述定理直接推出。\n"
+    )
+
+    proposals = build_candidates_from_document("doc-rel", "book.pdf", markdown)
+    units = {p["payload"]["id"]: p["payload"]["type"] for p in _units(proposals)}
+    edges = {
+        (units[p["payload"]["source_unit_id"]], p["payload"]["relation_type"])
+        for p in _relations(proposals)
+    }
+
+    assert ("proof", "supports_proof") in edges
+    assert ("example", "example_of") in edges
+    assert ("corollary", "derives_from") in edges
+    for relation in _relations(proposals):
+        payload = relation["payload"]
+        assert payload["source_unit_id"] in units
+        assert payload["target_unit_id"] in units
+
+
+def test_part_of_links_atoms_to_their_section():
+    proposals = build_candidates_from_document("doc-md", "book.pdf", MINERU_SHAPED)
+    units = {p["payload"]["id"]: p["payload"]["title"] for p in _units(proposals)}
+    part_of = [
+        (units[p["payload"]["source_unit_id"]], units[p["payload"]["target_unit_id"]])
+        for p in _relations(proposals)
+        if p["payload"]["relation_type"] == "part_of"
+    ]
+
+    assert part_of, "atoms must carry the hierarchy small-to-big retrieval expands along"
+    assert all(source != target for source, target in part_of)
+
+
+def test_relations_do_not_cross_a_section_boundary():
+    """A proof must not attach to a theorem from the previous section."""
+    markdown = (
+        "## 3.1 第一节\n\n"
+        "定理 3.1 介值定理：若 f 连续且端点异号，则区间内至少存在一个零点成立。\n\n"
+        "## 3.2 第二节\n\n"
+        "本节的引言文字，长度足够通过最小长度过滤，用于承载这一节的说明内容。\n\n"
+        "证明 该证明没有前置定理，因此不应该与上一节的定理建立任何关系边。\n"
+    )
+
+    proposals = build_candidates_from_document("doc-cross", "book.pdf", markdown)
+    supports = [
+        p for p in _relations(proposals) if p["payload"]["relation_type"] == "supports_proof"
+    ]
+
+    assert not supports, "a proof with no anchor in its own section must stay unlinked"
 
 
 def test_long_theorem_proof_is_stored_in_full():

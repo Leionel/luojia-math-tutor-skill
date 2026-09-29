@@ -2204,3 +2204,80 @@ Event Store
   - **目标**：将 Course Graph 2.0 机制扩展至《高等数学》《线性代数》等工科核心数学课程，验证图谱架构的通用性与可复用性。
   - **交付文件**：`data/course_packs/linear_algebra_systems.json`
 
+---
+
+# 24. 第二轮：教材切分粒度与检索接线
+
+> 本节基于一次真实运行：吕锡亮《数值分析》讲义 PDF（150 页、7.2 MB）经 MinerU v4 解析得 320,900 字符 markdown，走 `POST /api/uploads` → `documents.markdown` → `candidate_pipeline` → `CandidateManager` 全链路。所有数字为实测。
+
+## 24.0 与 23.1 看板的关系
+
+23.1 看板把 **Phase 1.6 证据链装配** 与 **Phase 1.10 导师对话直连** 标为 ✅ 已完成 (100%)。本节实测表明这两项存在功能性缺陷（`direct_hits` 恒空、图命中分数为常量、注入无排序），因此 §24.4 的 A、B 两阶段属于**对已交付阶段的 P0 修正**，优先级高于 23.3 中列为 P1 的新功能。按本分支「claim 必须有 artifact 支撑」的约定，看板状态应随之修正。
+
+## 24.1 现状诊断
+
+**[项目现状]** 切分层面，`segment_document` 产出 150 个单元，长度中位数 1,437 字符、p90 5,219、最长 9,943；分布为 ≤600 字 34 个、601–2000 字 56 个、2001–5000 字 43 个、>5000 字 17 个。三个具体缺陷：
+
+1. **附着策略把教学单元糊成块。** `_ATTACH_PATTERNS` 让 `证明`/`例`/`例题`/`推论`/`注` 全部并入上一单元。全书有 56 处行内 `证明`、29 处行内 `例`，结果「定理 5.3」成为 8,993 字符单块，内部含自身证明、多个例题与注。**"例题作为定理的佐证"这一教学关系目前由字符串拼接表达，而非图边。**
+2. **类型词表不全。** `_UNIT_TYPE_PATTERNS` 只有 定义/定理/算法，缺 `引理`/`推论`/`注`。实测「引理 2.3 (Sherman-Morrison-Woodbury 公式)」4,352 字符被归为 `concept`。修正标题标记优先级后类型分布为 concept 85 / definition 19 / theorem 46；`algorithm` 为 0 属正常（该书不用 `## 算法 x.y` 标题，「算法」仅出现在散文与目录行）。
+3. **管道产出关系候选 0 条。** `build_candidates_from_document` 只发 `new_unit`，而 `CandidateType.NEW_RELATION` 与 `KnowledgeRelation.relation_type` 词表中的 `supports_proof`/`example_of`/`derives`/`common_mistake_of`/`contrast_with` 早已定义，从未被此流水线使用。
+
+**[项目现状]** 检索层面，仓库中存在**两套检索且未接通**：
+
+- `knowledge/search.py` 是完整的混合检索器：BM25 索引（`:137`）、向量检索（`:208`）、`search_hybrid` + **RRF 融合**（`:191`/`:211`/`:176`）、学科命中加权 `+20000`（`:178`）、按分排序（`:181`）、embedding 缓存 `embeddings.json`（`:123`）。
+- `knowledge/evidence_builder.py`（Course Graph 2.0 路径）：`direct_hits=[]` 恒为空（`:98`），即上述混合检索**从未被调用**；`graph_hits` 全部硬编码 `score=85`（`:94`）；包装为 `KnowledgeItem` 时 `prerequisite=[]`（`:90`）丢掉前置关系。
+- 二者在 `tutor/fast_context.py:103` 以 `hits = pack.direct_hits + pack.graph_hits` **纯拼接、不重排**；`tutor/prompt_builder._hits_text` 再取 `hits[:3]`，每条 `description[:240]`。
+
+结论：**新链路等价于没有检索**——注入模型的是子图中前 3 个节点，与学生提问无关；总注入量约 720 字符，对数学讲解是硬天花板。且 `search.py` 的 RRF 分数量级为数万，常量 85 一旦真正参与合并排序会被完全淹没，目前未被淹没只是因为它根本没参与。
+
+**[项目现状]** 文档入库侧，`routes_uploads.chunk_markdown` 为 500 字符定长窗口 + 50 字符重叠，纯字符偏移、不认结构。实测该重叠使重建文本比原文长 11.3%（357,263 vs 320,900 字符），是候选重复与 `support_count` 虚增的直接原因（已改为读 `documents.markdown` 原文修复）。
+
+## 24.2 可借鉴的做法
+
+**[文献/开源证据]**
+
+- **Graph-aware late chunking**（arXiv 2603.22633）：切分边界由文档结构/图决定，跨边界上下文在**检索期**恢复而非入库期烘死；论文报告可从多至 15.6× 的章节中检索并收窄生成差距。对应 §24.3 第三层。
+- **AutoMathKG**（arXiv 2505.13406）：从数学文本抽取 Definition / Theorem / Problem 三类实体，**先规则抽取、再 LLM 增强**，并把证明切分为带 `premise`/`assumption`/`conclusion` 战术标签的逻辑步。印证"确定性切分 + 模型只做模糊部分"的顺序。
+- **KGGen**（arXiv 2502.09956）：LLM 抽取的节点会"specific 到唯一"，导致 embedding 欠规范；用迭代聚类对齐实体、降低稀疏度，在 MINE 上比基线高 18%。**警示：跨节关系可由模型提议，但必须经既有 `case_matcher`/别名比对给出合并建议，不得自动建节点。**
+- 工程共识：固定长度切分会 "fragment semantic context"，结构感知 + 父子分块 + small-to-big 检索为当前主流组合（Atlan 2026 chunking guide）；RAPTOR 的递归摘要树是可选的更重方案。
+
+## 24.3 方案
+
+**[方案建议]** 三层，逐层可独立验收：
+
+**第一层 · 切细成教学原子。** 类型词表扩为 `definition / theorem / lemma(引理) / corollary(推论) / proof / example / algorithm / remark / section`；`证明`与`例`**不再并入定理**，各自成节点。保持纯规则、可复现、零调用成本，与 §16「抽取必须可审计」一致。
+
+**第二层 · 连贯性用图边表达，不用文本拼接。** 产出 `NEW_RELATION` 候选：`proof --supports_proof--> theorem`、`example --example_of--> theorem|definition`、`corollary --derives--> theorem`、`lemma --supports_proof--> theorem`，并为每个原子挂 `part_of --> 所属小节` 形成层次父子。词表已存在于 `KnowledgeRelation`，仅需新增 `part_of`。
+
+**第三层 · 上下文在检索期组装。** 命中原子（小而准）→ 沿 `supports_proof`/`example_of`/`part_of` 扩展出证明、例题与所属小节引言 → 按 **token 预算**注入，取代 `hits[:3] × 240 字`。每个原子存 `context_header`（章/节路径 + 一行锚点），避免"这段属于哪一节"在检索后丢失。同时接通两套检索：`evidence_builder` 真正调用 `search_evidence_pack` 填 `direct_hits`，`graph_hits` 分数改为「到命中概念的关系距离 + case 匹配置信度」，最后**统一排序一次**。
+
+## 24.4 分期与代价
+
+| 阶段 | 内容 | 量级 | 验收 |
+| :--- | :--- | :--- | :--- |
+| **A** | 补 `引理/推论/注/例` 类型；停止附着合并；产出 `supports_proof`/`example_of`/`derives`/`part_of` 关系候选 | 1 天，纯规则 | 真教材重跑后 relation 候选 > 0；引理归类正确；定理不再吞并证明与例题 |
+| **B** | `evidence_builder` 接 hybrid 检索、去掉 `score=85`、统一排序、注入改 token 预算 | 1 天 | 同一问题的 top-3 与子图遍历顺序无关且可复现 |
+| **C** | 层次父子 + `context_header` + 检索期邻域扩展（small-to-big） | 2–3 天 | 查一个定理能连带取其证明与例题，注入总量受预算约束 |
+| **D** | 结构感知切分替换 500 字定长窗口；FTS5 分块降级为纯检索派生物 | 2–3 天 | 分块无重叠注水、跨块标题不断裂 |
+
+**代价必须写明**：切细后候选数预计由 150 增至 400–600，教师审核量翻倍以上。缓解方式——按小节批量审；`proof`/`example` 这类**逐字来自教材、非模型生成**的原子默认低风险快速通过，人工只审 `definition`/`theorem`/`lemma` 与跨节关系。A、B 不引入新依赖，且 B 的收益可能高于更换任何检索算法，因为它修的是"新链路没有排序"这一结构性缺口。
+
+## 24.5 本轮已修复的前置缺陷
+
+以下四项在 §24 定稿前已修复合入，是 A–D 的地基：
+
+- `documents.markdown` 持久化 + migration 004：候选抽取改读原文，不再从重叠分块重建（消除 11.3% 注水、重复候选与 `support_count` 虚增）；无原文时 409 fail-closed。
+- MinerU v4 端点 `file-urls/bear` → `file-urls/batch`：原拼写错误使教材上传全链路失效，且被 `Response.json()` 报成 `Extra data: line 1 column 5` 而掩盖真因。
+- 标记优先级：MinerU 把 `定义/定理` 渲染为 `## 定义 1.1`，既是标题又是标记，原分支顺序使类型判定失效（4/65 → 65/65）。
+- 取消 `_MAX_CONTENT_CHARS = 600` 写入期截断：原上限丢弃全书 75% 正文、截断 46 个定理中的 44 个且切断 LaTeX；截断下移到展示层 `app/text_preview.truncate_text`（LaTeX 安全边界）。内容保留率 25% → 99.9%。
+
+## 24.6 参考入口
+
+- Graph-Aware Late Chunking for RAG — https://arxiv.org/html/2603.22633v1
+- AutoMathKG: automated mathematical knowledge graph — https://arxiv.org/html/2505.13406v1
+- KGGen: Extracting Knowledge Graphs from Plain Text with LLMs — https://arxiv.org/html/2502.09956v1
+- Chunking Strategies for RAG: A Complete Guide for 2026 — https://atlan.com/know/chunking-strategies-rag/
+- 12 Advanced RAG Techniques: Beyond Naive Retrieval — https://atlan.com/know/advanced-rag-techniques/
+- RAG 文档切分策略全景解析：固定长度 vs 语义切分 — https://blog.csdn.net/bumblebee16/article/details/164758378
+- RAPTOR vs 传统 RAG：树状检索 — https://m.blog.csdn.net/gitblog_00949/article/details/154681514
+
