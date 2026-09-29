@@ -190,6 +190,52 @@ def test_duplicate_headings_do_not_collapse_into_one_candidate():
     assert proposals[0]["payload"]["content"] != proposals[1]["payload"]["content"]
 
 
+# Shaped like real MinerU output, which renders textbook markers as headings.
+MINERU_SHAPED = """## 第 1 章 基础知识
+
+本章介绍误差来源与浮点数系统，这些内容是后续所有数值算法分析的共同基础。
+
+## 定义 1.1
+
+设 f 在区间 [a,b] 上连续，若存在 x* 属于 [a,b] 使得 f(x*)=0，则称 x* 为 f 的一个零点。
+
+## 定理 2.1（介值定理）
+
+若 f 在 [a,b] 上连续且 f(a)·f(b)<0，则至少存在一点 ξ 属于 (a,b) 使得 f(ξ)=0。
+
+证明 由连续函数在闭区间上取得端点之间一切值可知，特别地会取得零值，证毕。
+
+## 算法 2.1 二分法
+
+步骤一：取区间中点；步骤二：判断中点处函数符号；步骤三：保留异号半区间并重复。
+"""
+
+
+def test_mineru_style_heading_markers_keep_their_unit_type():
+    """`## 定义 1.1` is both a heading and a marker; the marker must win."""
+    sections = segment_document(MINERU_SHAPED)
+    by_title = {s.title: s.unit_type for s in sections}
+
+    assert by_title["定义 1.1"] == "definition"
+    assert by_title["定理 2.1（介值定理）"] == "theorem"
+    assert by_title["算法 2.1 二分法"] == "algorithm"
+    assert by_title["第 1 章 基础知识"] == "concept"
+
+    # 证明 still attaches to the theorem instead of starting its own unit.
+    theorem = next(s for s in sections if s.unit_type == "theorem")
+    assert "取得零值" in theorem.text
+    assert not any(s.title.startswith("证明") for s in sections)
+
+
+def test_candidates_from_mineru_style_markdown_carry_types():
+    proposals = build_candidates_from_document("doc-md", "book.pdf", MINERU_SHAPED)
+    types = {p["payload"]["title"]: p["payload"]["type"] for p in proposals}
+
+    assert types["定义 1.1"] == "definition"
+    assert types["定理 2.1（介值定理）"] == "theorem"
+    assert types["算法 2.1 二分法"] == "algorithm"
+
+
 def test_candidates_from_document_requires_existing_document(client):
     res = client.post(
         "/api/courses/numerical_analysis/candidates/from-document",

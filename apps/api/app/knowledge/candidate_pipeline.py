@@ -74,15 +74,21 @@ def segment_document(markdown: str) -> list[DocumentSection]:
         )
         attach = any(pattern.match(line.strip()) for pattern in _ATTACH_PATTERNS)
 
-        if heading and not attach:
-            flush()
-            current_title = heading.group(2)
-            current_type = "concept"
-            buffer = [line]
+        # Order matters. MinerU renders textbook markers as headings, so a line
+        # like "## 定义 1.1" is both a heading and a unit-type marker; checking
+        # `heading` first would classify every definition/theorem/algorithm in
+        # a real textbook as a plain concept and lose the type entirely.
+        if attach:
+            buffer.append(line)
         elif unit_type:
             flush()
             current_title = line.strip().lstrip("#").strip()
             current_type = unit_type
+            buffer = [line]
+        elif heading:
+            flush()
+            current_title = heading.group(2)
+            current_type = "concept"
             buffer = [line]
         else:
             buffer.append(line)
