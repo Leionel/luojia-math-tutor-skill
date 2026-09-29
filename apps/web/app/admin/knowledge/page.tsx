@@ -73,6 +73,12 @@ export interface GraphCandidate {
     source_unit_id?: string;
     target_unit_id?: string;
     relation_type?: string;
+    source_title?: string;
+    target_title?: string;
+    confidence?: number;
+    chapter_path?: string[];
+    context_header?: string;
+    source_document_id?: string;
   };
   evidence_refs: string[];
   proposed_by: "system" | "teacher" | "student_query_cluster";
@@ -83,6 +89,37 @@ export interface GraphCandidate {
   first_seen?: string;
   last_seen?: string;
 }
+
+// Relation types the document pipeline and the review vocabulary produce.
+// Without a label a reviewer sees only "拓扑关系" and cannot tell what edge
+// they are about to approve.
+const RELATION_LABELS: Record<string, string> = {
+  supports_proof: "支撑证明",
+  example_of: "例题佐证",
+  derives_from: "推论来源",
+  part_of: "从属小节",
+  prerequisite: "前置知识",
+  prerequisite_of: "被前置",
+  applies_to: "应用于",
+  exercise_of: "配套习题",
+  common_mistake_of: "常见错误",
+  misconception_of: "误区所属",
+  counterexample_of: "反例",
+  similar_to: "相似",
+  contrast_with: "对比",
+  special_case_of: "特例",
+  algorithm_of: "算法实现",
+  code_task_of: "代码任务",
+  has_error_bound: "误差界",
+  converges_if: "收敛条件",
+  requires: "依赖",
+  implemented_by: "实现方式",
+  uses_stopping_rule: "停止准则",
+  remediated_by: "补救方式",
+};
+
+const relationLabel = (relationType?: string): string =>
+  (relationType && RELATION_LABELS[relationType]) || relationType || "未指定关系";
 
 // Fallback initial candidates if backend server is not running or returns empty
 const FALLBACK_CANDIDATES: GraphCandidate[] = [
@@ -502,7 +539,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
     }
   };
 
-  const getTypeBadge = (type: CandidateType) => {
+  const getTypeBadge = (type: CandidateType, relationType?: string) => {
     switch (type) {
       case "new_unit":
         return <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 font-mono">新增知识元</span>;
@@ -511,10 +548,36 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
       case "new_alias":
         return <span className="text-[11px] px-1.5 py-0.5 rounded bg-teal-100 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300 font-mono">别名归一</span>;
       case "new_relation":
-        return <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-950/70 dark:text-orange-300 font-mono">拓扑关系</span>;
+        return (
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-950/70 dark:text-orange-300 font-mono">
+            拓扑关系 · {relationLabel(relationType)}
+          </span>
+        );
       default:
         return <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono">{type}</span>;
     }
+  };
+
+  // A relation candidate has no content of its own; what a reviewer must see is
+  // which two units it connects and in which direction.
+  const renderRelationEdge = (candidate: GraphCandidate, detailed: boolean) => {
+    const payload = candidate.payload;
+    const source = payload?.source_title || payload?.source_unit_id || "?";
+    const target = payload?.target_title || payload?.target_unit_id || "?";
+    return (
+      <div className={`text-xs leading-relaxed mb-2 ${detailed ? "" : "line-clamp-2"}`}>
+        <span className="text-slate-700 dark:text-slate-300 font-medium">{source}</span>
+        <span className="mx-1.5 text-orange-600 dark:text-orange-400 font-mono">
+          —{relationLabel(payload?.relation_type)}→
+        </span>
+        <span className="text-slate-700 dark:text-slate-300 font-medium">{target}</span>
+        {detailed && typeof payload?.confidence === "number" && (
+          <span className="ml-2 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+            置信度 {payload.confidence.toFixed(2)}
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -650,17 +713,29 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    {getTypeBadge(candidate.candidate_type)}
+                    {getTypeBadge(candidate.candidate_type, candidate.payload?.relation_type)}
                     {getStatusBadge(candidate.status)}
                   </div>
 
-                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1 mb-1">
-                    {title}
-                  </h4>
+                  {candidate.candidate_type === "new_relation" ? (
+                    renderRelationEdge(candidate, false)
+                  ) : (
+                    <>
+                      <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1 mb-1">
+                        {title}
+                      </h4>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-2 font-serif">
-                    {candidate.payload?.content || candidate.payload?.note || "无补充描述"}
-                  </p>
+                      {candidate.payload?.context_header && (
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 mb-1 font-mono">
+                          {candidate.payload.context_header}
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-2 font-serif">
+                        {candidate.payload?.content || candidate.payload?.note || "无补充描述"}
+                      </p>
+                    </>
+                  )}
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
                     <span className="flex items-center gap-1">
@@ -691,9 +766,11 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {selectedCandidate.payload?.title || selectedCandidate.candidate_id}
+                    {selectedCandidate.candidate_type === "new_relation"
+                      ? relationLabel(selectedCandidate.payload?.relation_type)
+                      : selectedCandidate.payload?.title || selectedCandidate.candidate_id}
                   </h2>
-                  {getTypeBadge(selectedCandidate.candidate_type)}
+                  {getTypeBadge(selectedCandidate.candidate_type, selectedCandidate.payload?.relation_type)}
                   {getStatusBadge(selectedCandidate.status)}
                 </div>
                 <div className="text-xs text-slate-400 font-mono">
@@ -807,11 +884,31 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
               <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                  知识内容解析与定义
+                  {selectedCandidate.candidate_type === "new_relation"
+                    ? "关系断言（批准即写入规范图谱）"
+                    : "知识内容解析与定义"}
                 </h3>
-                <div className="prose dark:prose-invert max-w-none text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  <MathMarkdown content={selectedCandidate.payload?.content || selectedCandidate.payload?.note || "暂无文字定义"} />
-                </div>
+                {selectedCandidate.candidate_type === "new_relation" ? (
+                  <div className="space-y-2">
+                    {renderRelationEdge(selectedCandidate, true)}
+                    <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 space-y-0.5 select-all">
+                      <div>source: {selectedCandidate.payload?.source_unit_id || "—"}</div>
+                      <div>target: {selectedCandidate.payload?.target_unit_id || "—"}</div>
+                      <div>relation_type: {selectedCandidate.payload?.relation_type || "—"}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {selectedCandidate.payload?.context_header && (
+                      <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                        出处：{selectedCandidate.payload.context_header}
+                      </div>
+                    )}
+                    <div className="prose dark:prose-invert max-w-none text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <MathMarkdown content={selectedCandidate.payload?.content || selectedCandidate.payload?.note || "暂无文字定义"} />
+                    </div>
+                  </>
+                )}
 
                 {selectedCandidate.payload?.keywords && selectedCandidate.payload.keywords.length > 0 && (
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5 items-center">
