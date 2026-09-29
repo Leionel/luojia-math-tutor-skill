@@ -200,6 +200,60 @@ def test_reviewed_candidate_payload_is_never_overwritten(review_setup):
     assert after.payload["type"] == "algorithm", "reviewed payload must not change"
 
 
+def test_supersede_stale_withdraws_only_unreviewed_same_source(review_setup):
+    """A newer extraction run must clear its own leftovers, and nothing else."""
+    _, candidate_mgr, review_service = review_setup
+
+    def add(candidate_id: str, title: str, evidence_ref: str) -> None:
+        candidate_mgr.add_candidate(
+            candidate_id=candidate_id,
+            candidate_type=CandidateType.NEW_UNIT.value,
+            course_id="numerical_analysis",
+            payload={"id": candidate_id, "title": title, "content": "内容"},
+            proposed_by="document_pipeline",
+            evidence_ref=evidence_ref,
+        )
+
+    add("cand_new", "新标题", "document:doc_1:新标题")
+    add("cand_old", "旧标题", "document:doc_1:旧标题")
+    add("cand_other_doc", "别的文档", "document:doc_2:别的文档")
+    add("cand_reviewed", "已审", "document:doc_1:已审")
+    review_service.review_candidate(
+        candidate_id="cand_reviewed", action="approve", reviewer_id="teacher_wang"
+    )
+
+    stale = candidate_mgr.supersede_stale(
+        "numerical_analysis", "document:doc_1:", {"cand_new"}, "被新一轮抽取取代"
+    )
+
+    assert stale == ["cand_old"]
+    assert candidate_mgr.get_candidate("cand_old").status == CandidateStatus.SUPERSEDED.value
+    assert candidate_mgr.get_candidate("cand_new").status == CandidateStatus.PENDING.value
+    assert candidate_mgr.get_candidate("cand_other_doc").status == CandidateStatus.PENDING.value
+    assert candidate_mgr.get_candidate("cand_reviewed").status == CandidateStatus.APPROVED.value
+
+
+def test_superseded_candidates_leave_the_pending_queue(review_setup):
+    _, candidate_mgr, _ = review_setup
+    candidate_mgr.add_candidate(
+        candidate_id="cand_s",
+        candidate_type=CandidateType.NEW_UNIT.value,
+        course_id="numerical_analysis",
+        payload={"id": "S", "title": "旧", "content": "内容"},
+        proposed_by="document_pipeline",
+        evidence_ref="document:doc_9:旧",
+    )
+
+    candidate_mgr.supersede_stale("numerical_analysis", "document:doc_9:", set(), "note")
+
+    pending = candidate_mgr.list_candidates(
+        course_id="numerical_analysis", status=CandidateStatus.PENDING.value
+    )
+    assert all(c.candidate_id != "cand_s" for c in pending)
+    # Kept, not deleted: an earlier pipeline's proposals stay auditable.
+    assert candidate_mgr.get_candidate("cand_s") is not None
+
+
 def test_merge_candidate_alias_into_existing_unit(review_setup):
     graph_repo, candidate_mgr, review_service = review_setup
     candidate_mgr.add_candidate(

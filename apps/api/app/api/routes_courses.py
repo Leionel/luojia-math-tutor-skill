@@ -236,7 +236,22 @@ def create_candidates_from_document(
             evidence_ref=proposal["evidence_ref"],
         )
         created.append(candidate.to_dict())
-    return {"status": "created", "total": len(created), "candidates": created}
+
+    # Candidate ids hash the extracted title and text, so a pipeline change
+    # mints new ids and the previous run's proposals would otherwise pile up in
+    # the review queue as stale duplicates of the same document.
+    superseded = service.candidate_mgr.supersede_stale(
+        course_id=course_id,
+        evidence_prefix=f"document:{payload.document_id}:",
+        keep_ids={proposal["candidate_id"] for proposal in proposals},
+        note="被同一文档的新一轮抽取取代（抽取管道已更新），非教师决定。",
+    )
+    return {
+        "status": "created",
+        "total": len(created),
+        "superseded": len(superseded),
+        "candidates": created,
+    }
 
 
 @router.post("/{course_id}/candidates/{candidate_id}/review")

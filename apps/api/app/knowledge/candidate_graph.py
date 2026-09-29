@@ -21,6 +21,12 @@ class CandidateStatus(str, Enum):
     MERGED = "merged"
     REJECTED = "rejected"
     DEFERRED = "deferred"
+    # A later extraction run over the same source no longer produces this
+    # candidate (the pipeline changed, so its content-hash id changed). It was
+    # never a teacher's decision, so it must not sit in the review queue
+    # alongside current proposals — but it is kept rather than deleted, so the
+    # history of what an earlier pipeline proposed stays auditable.
+    SUPERSEDED = "superseded"
 
 
 @dataclass
@@ -156,6 +162,40 @@ class CandidateManager:
         if status:
             results = [c for c in results if c.status == status]
         return results
+
+    def supersede_stale(
+        self,
+        course_id: str,
+        evidence_prefix: str,
+        keep_ids: set[str],
+        note: str,
+    ) -> list[str]:
+        """Withdraw pending candidates a newer extraction no longer produces.
+
+        Candidate ids hash the extracted title and text, so improving the
+        pipeline mints new ids and the previous proposals would otherwise
+        accumulate in the review queue forever as stale duplicates of the same
+        source. Only `pending` candidates from this source are touched: once a
+        teacher has approved, merged, rejected or deferred one, that decision
+        stands and the record is left exactly as it is.
+        """
+        stale: list[str] = []
+        now = datetime.datetime.now().isoformat()
+        for candidate in list(self._candidates.values()):
+            if candidate.course_id != course_id:
+                continue
+            if candidate.status != CandidateStatus.PENDING.value:
+                continue
+            if candidate.candidate_id in keep_ids:
+                continue
+            if not any(ref.startswith(evidence_prefix) for ref in candidate.evidence_refs):
+                continue
+            candidate.status = CandidateStatus.SUPERSEDED.value
+            candidate.review_note = note
+            candidate.last_seen = now
+            self._persist(candidate)
+            stale.append(candidate.candidate_id)
+        return stale
 
     def review_candidate(
         self,
