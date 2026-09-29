@@ -236,6 +236,30 @@ def test_candidates_from_mineru_style_markdown_carry_types():
     assert types["算法 2.1 二分法"] == "algorithm"
 
 
+def test_long_theorem_proof_is_stored_in_full():
+    """Content must not be capped at write time.
+
+    On a real 150-page textbook a 600-char cap truncated 77% of units, threw
+    away 75% of the body text, and cut 44 of 46 theorem proofs mid-LaTeX —
+    including the conclusion, which is the entire point of the theorem.
+    """
+    filler = "由泰勒展开逐步推导热误差递推关系，" * 40
+    markdown = (
+        "## 定理 2.4 Newton 法的局部二次收敛性\n\n"
+        f"令 x* 为 f(x) 的单根。证明 {filler}"
+        "于是 $|e_{k+1}| \\leq \\frac{L}{d} |e_k|^2$，二次收敛性得证。\n"
+    )
+
+    proposals = build_candidates_from_document("doc-long", "book.pdf", markdown)
+
+    assert len(proposals) == 1
+    content = proposals[0]["payload"]["content"]
+    assert len(content) > 600, "content must not be capped at write time"
+    assert "二次收敛性得证" in content, "the conclusion must survive"
+    assert content.count("{") == content.count("}")
+    assert content.count("$") % 2 == 0
+
+
 def test_candidates_from_document_requires_existing_document(client):
     res = client.post(
         "/api/courses/numerical_analysis/candidates/from-document",

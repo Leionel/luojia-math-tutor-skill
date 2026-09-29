@@ -36,7 +36,6 @@ _ATTACH_PATTERNS = (
 )
 
 _MIN_SECTION_CHARS = 40
-_MAX_CONTENT_CHARS = 600
 _MAX_TITLE_CHARS = 60
 
 
@@ -133,7 +132,12 @@ def build_candidates_from_document(
                     "id": _stable_id("DOC", document_id, section.title, text),
                     "title": section.title[:_MAX_TITLE_CHARS] or f"{filename} 片段 {section.order + 1}",
                     "type": section.unit_type,
-                    "content": text[:_MAX_CONTENT_CHARS],
+                    # Full text, not a preview. A 600-char cap here discarded
+                    # 75% of a real 150-page textbook's body text and cut 44 of
+                    # 46 theorem proofs mid-LaTeX, leaving unrenderable `\frac{`
+                    # fragments and dropping the conclusions. Presentation and
+                    # prompt layers apply their own limits via app.text_preview.
+                    "content": text,
                     "keywords": _keywords_from_title(section.title),
                     "difficulty": 3,
                     # Teacher decides the scope on review; the pipeline never

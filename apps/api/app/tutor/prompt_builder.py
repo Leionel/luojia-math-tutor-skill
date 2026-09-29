@@ -4,6 +4,7 @@ from typing import Any
 
 from app.knowledge.schema import KnowledgeHit
 from app.math_tools.verifier import VerifyResult
+from app.text_preview import truncate_text
 from app.tutor.hint_policy import HintLevel, hint_level_instruction
 from app.tutor.intent_router import Intent
 from app.tutor.misconception import Mistake
@@ -14,8 +15,8 @@ def _hits_text(hits: list[KnowledgeHit]) -> str:
     for hit in hits[:3]:
         item = hit.item
         lines.append(
-            f"- {item.concept_zh} ({item.source_file}): {item.description[:240]} "
-            f"直观解释: {item.intuitive_explanation[:160]}"
+            f"- {item.concept_zh} ({item.source_file}): {truncate_text(item.description, 240)} "
+            f"直观解释: {truncate_text(item.intuitive_explanation, 160)}"
         )
     return "\n".join(lines) or "未命中本地知识库条目。"
 

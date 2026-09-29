@@ -8,6 +8,7 @@ from app.knowledge.schema import KnowledgeUnit, KnowledgeRelation
 from app.knowledge.boundary import BoundaryChecker, BoundaryPolicy, ScopeLevel
 from app.knowledge.case_schema import TeachingCase
 from app.knowledge.case_repository import TeachingCaseRepository
+from app.text_preview import truncate_text
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +180,7 @@ class CourseGraphRepository:
                             for c in self.case_repo.list_cases(course_id=self.course_id)
                             if unit.id in c.concept_ids
                         ],
-                        "description": unit.content[:80] + ("..." if len(unit.content) > 80 else ""),
+                        "description": truncate_text(unit.content, 80, ellipsis="..."),
                     },
                 })
             y_offset += 140
