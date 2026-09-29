@@ -85,6 +85,11 @@ ALLOWED_MODELS = frozenset(configured_model_catalog())
 # environment variables.
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
+# Set by tests/conftest.py. Without this gate the suite would inherit the
+# developer's real credentials from .env and start issuing live LLM calls,
+# which makes it slow, network-dependent and flaky.
+NO_DOTENV_ENV_VAR = "LUOJIA_NO_DOTENV"
+
 
 def load_env_file(path: Path = ENV_FILE) -> Path | None:
     """Load a dotenv file into ``os.environ``; return the path, or ``None``."""
@@ -94,7 +99,16 @@ def load_env_file(path: Path = ENV_FILE) -> Path | None:
     return path
 
 
-load_env_file()
+def autoload_env_file(path: Path = ENV_FILE, disabled: bool | None = None) -> Path | None:
+    """Import-time ``.env`` load, skipped when explicitly disabled."""
+    if disabled is None:
+        disabled = bool(os.getenv(NO_DOTENV_ENV_VAR))
+    if disabled:
+        return None
+    return load_env_file(path)
+
+
+autoload_env_file()
 
 
 class Settings(BaseModel):
