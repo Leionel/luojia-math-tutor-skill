@@ -10,7 +10,7 @@ import httpx
 # NOTE: the API token is issued with a ~90-day validity window on
 # mineru.net — when uploads start failing with 401, regenerate the token
 # and update MINERU_API_KEY in apps/api/.env.
-FILE_URLS_API = "https://mineru.net/api/v4/file-urls/bear"
+FILE_URLS_API = "https://mineru.net/api/v4/file-urls/batch"
 BATCH_RESULTS_API = "https://mineru.net/api/v4/extract-results/batch/"
 
 POLL_INTERVAL_SECONDS = 2.0
@@ -25,6 +25,41 @@ def _api_token() -> str:
             "https://mineru.net/apiManage (valid for ~90 days) and set it in apps/api/.env."
         )
     return token
+
+
+def _parse_json(res: httpx.Response, step: str) -> dict:
+    """Parse a MinerU JSON reply, or raise something a human can act on.
+
+    MinerU answers an unknown path with plain-text ``404 page not found``,
+    which ``Response.json()`` reports as a baffling
+    ``Extra data: line 1 column 5 (char 4)`` — it parses the leading ``404`` as
+    a number and then chokes on the rest. A wrong endpoint therefore looked
+    like a malformed-response bug and hid the fact that the whole upload path
+    was dead. Report the status, content type and a body snippet instead.
+    """
+    if res.status_code in (401, 403):
+        raise RuntimeError(
+            f"MinerU {step} was rejected with HTTP {res.status_code}. The API token "
+            "is invalid or expired (tokens last ~90 days); regenerate it at "
+            "https://mineru.net/apiManage and update MINERU_API_KEY in apps/api/.env."
+        )
+    if res.status_code >= 400:
+        raise RuntimeError(
+            f"MinerU {step} failed with HTTP {res.status_code}: {res.text[:200].strip()}"
+        )
+    try:
+        data = res.json()
+    except ValueError as exc:
+        raise RuntimeError(
+            f"MinerU {step} returned a non-JSON response "
+            f"(HTTP {res.status_code}, {res.headers.get('content-type', 'unknown type')}): "
+            f"{res.text[:200].strip()}"
+        ) from exc
+    if not isinstance(data, dict):
+        raise RuntimeError(
+            f"MinerU {step} returned unexpected JSON ({type(data).__name__}), expected an object"
+        )
+    return data
 
 
 def _markdown_from_zip(zip_bytes: bytes) -> str:
@@ -61,7 +96,7 @@ async def extract_markdown(filepath: str) -> str:
                 "files": [{"name": filename, "is_ocr": False}],
             },
         )
-        res_data = res.json()
+        res_data = _parse_json(res, "batch creation")
         if res_data.get("code") != 0:
             raise RuntimeError(f"Failed to create MinerU batch: {res_data.get('msg')}")
         batch_id = res_data["data"]["batch_id"]
@@ -82,7 +117,7 @@ async def extract_markdown(filepath: str) -> str:
             task_res = await client.get(
                 f"{BATCH_RESULTS_API}{batch_id}", headers=headers
             )
-            task_data = task_res.json()
+            task_data = _parse_json(task_res, "batch status query")
             if task_data.get("code") != 0:
                 raise RuntimeError(f"MinerU batch query failed: {task_data.get('msg')}")
 
