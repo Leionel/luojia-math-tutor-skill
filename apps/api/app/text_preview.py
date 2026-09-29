@@ -44,9 +44,11 @@ def _back_off_to_safe_boundary(cut: str) -> str:
     return cut
 
 
-def truncate_text(text: str, limit: int, ellipsis: str = "…") -> str:
-    """Truncate for display, preferring a paragraph, line or word boundary.
+def safe_cut(text: str, limit: int) -> str:
+    """Return the longest prefix of `text` within `limit` that ends cleanly.
 
+    Backs off to a paragraph, line or word boundary and refuses to leave an
+    unbalanced math span, an unbalanced brace or a trailing command token.
     Returns `text` unchanged when it already fits.
     """
     if limit <= 0:
@@ -63,4 +65,12 @@ def truncate_text(text: str, limit: int, ellipsis: str = "…") -> str:
             cut = cut[:index]
             break
 
-    return cut.rstrip() + ellipsis
+    return cut.rstrip()
+
+
+def truncate_text(text: str, limit: int, ellipsis: str = "…") -> str:
+    """Truncate for display; returns `text` unchanged when it already fits."""
+    if limit <= 0:
+        return ""
+    cut = safe_cut(text, limit)
+    return text if cut == text else cut + ellipsis

@@ -153,12 +153,21 @@ def test_overlapping_chunks_do_not_change_candidates(client):
     `chunk_markdown` overlaps by 50 chars, so `"\\n".join(chunks)` duplicated
     text at every boundary. That inflated section content and produced repeated
     candidate ids, which made `support_count` read 2 after a single upload.
+    The old fixed-window chunker (500 chars, 50 overlap) is gone from
+    production code; reproduce it here because the regression is about what
+    overlapping chunks did to candidate extraction.
     """
-    from app.api.routes_uploads import chunk_markdown
+
+    def overlapping_chunks(text: str, size: int = 500, overlap: int = 50) -> list[str]:
+        out, start = [], 0
+        while start < len(text):
+            out.append(text[start:start + size])
+            start += size - overlap
+        return out
 
     repo = get_repository()
     document_id = repo.insert_document("overlap.pdf", "demo-user", LONG_MARKDOWN)
-    repo.insert_document_chunks(document_id, chunk_markdown(LONG_MARKDOWN))
+    repo.insert_document_chunks(document_id, overlapping_chunks(LONG_MARKDOWN))
     try:
         chunks = repo.list_document_chunks(document_id)
         assert len(chunks) > 1, "sample must span multiple chunks to be meaningful"

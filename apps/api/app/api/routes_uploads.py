@@ -7,6 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from app.services.mineru_client import extract_markdown_agent_api
+from app.knowledge.document_chunking import chunk_document
 from app.main_deps import get_repository
 from app.memory.repository import Repository
 from app.auth import Principal, get_principal
@@ -75,15 +76,6 @@ def _resolve_uploaded_file(filename: str) -> Path | None:
         return None
     return path
 
-def chunk_markdown(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        start += chunk_size - overlap
-    return chunks
-
 @router.post("")
 async def upload_image(
     file: UploadFile = File(...),
@@ -131,7 +123,7 @@ async def upload_image(
         # Chunks are a derived retrieval artifact. `documents.markdown` is the
         # source of truth for anything needing the whole text, so it must never
         # be reconstructed by re-joining overlapping chunks.
-        repo.insert_document_chunks(document_id, chunk_markdown(extracted_md))
+        repo.insert_document_chunks(document_id, chunk_document(extracted_md))
 
     return {
         "url": f"/api/uploads/{filename}",
