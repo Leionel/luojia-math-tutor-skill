@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from app.agents.code_executor import execute_python_code
+from app.agents.code_executor import (
+    _CHILD_FLAGS,
+    _child_command,
+    _missing_dependency_error,
+    execute_python_code,
+)
 
 
 @pytest.mark.asyncio
@@ -77,3 +82,51 @@ open(r'{marker}', 'w').write('x')
 
     assert "unsafe name" in result or "not allowed" in result
     assert not marker.exists()
+
+
+def test_child_flags_keep_isolation_without_hiding_user_site() -> None:
+    """`-I` implies `-s`, which hides user site-packages and breaks sympy.
+
+    Regression guard for the bug where every `[VERIFY]` round failed on
+    machines whose dependencies were installed with `pip install --user`.
+    """
+    assert "-I" not in _CHILD_FLAGS
+    assert "-s" not in _CHILD_FLAGS
+    # Env-var path injection and script-dir prepending must stay blocked.
+    assert "-E" in _CHILD_FLAGS
+    assert "-P" in _CHILD_FLAGS
+
+
+def test_child_command_targets_current_interpreter_and_script() -> None:
+    import sys
+
+    argv = _child_command("/tmp/probe.py")
+
+    assert argv[0] == sys.executable
+    assert argv[-1] == "/tmp/probe.py"
+    assert argv[1:-1] == list(_CHILD_FLAGS)
+
+
+def test_missing_dependency_error_flags_environment_fault() -> None:
+    stderr = (
+        "Traceback (most recent call last):\n"
+        '  File "probe.py", line 2, in <module>\n'
+        "    from sympy import symbols\n"
+        "ModuleNotFoundError: No module named 'sympy'\n"
+    )
+
+    message = _missing_dependency_error(stderr)
+
+    assert message is not None
+    assert "sandbox environment is missing 'sympy'" in message
+    assert "unavailable" in message
+
+
+def test_missing_dependency_error_ignores_ordinary_student_errors() -> None:
+    stderr = (
+        "Traceback (most recent call last):\n"
+        '  File "probe.py", line 3, in <module>\n'
+        "NameError: name 'y' is not defined\n"
+    )
+
+    assert _missing_dependency_error(stderr) is None

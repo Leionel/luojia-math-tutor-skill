@@ -78,6 +78,41 @@ _DENIED_NODES = (
     ast.With,
 )
 
+# Interpreter flags for the sandboxed child process.
+#
+# ``-I`` must NOT be used here: it implies ``-s``, which drops *user*
+# site-packages. When dependencies are installed with ``pip install --user``
+# (the default on many Windows setups) ``sympy`` then becomes unimportable in
+# the child, so every ``[VERIFY]`` round fails and the symbolic verification
+# path silently degrades. Keep only the two parts of ``-I`` that provide
+# isolation:
+#   ``-E``  ignore PYTHON* environment variables (blocks PYTHONPATH injection)
+#   ``-P``  do not prepend the script's directory or cwd to sys.path
+# Import reachability is already constrained by the AST allowlist above, which
+# permits only ``math`` and ``sympy`` roots.
+_CHILD_FLAGS = ("-E", "-P")
+
+
+def _child_command(script_path: str) -> list[str]:
+    """Build the argv used to run sandboxed code. Exposed for tests."""
+    return [sys.executable, *_CHILD_FLAGS, script_path]
+
+
+def _missing_dependency_error(err_str: str) -> str | None:
+    """Classify a child traceback caused by an unavailable allowed dependency.
+
+    Returns an explicit environment-fault message, or ``None`` when stderr does
+    not indicate a missing ``math``/``sympy`` installation.
+    """
+    for module in sorted(_ALLOWED_IMPORT_ROOTS):
+        if f"No module named '{module}'" in err_str:
+            return (
+                f"Error: sandbox environment is missing '{module}'. "
+                "Symbolic verification is unavailable; install the API "
+                "dependencies into the interpreter that runs the server."
+            )
+    return None
+
 
 def _import_root(name: str) -> str:
     return name.split(".", 1)[0]
@@ -156,7 +191,7 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
         # and to support WindowsSelectorEventLoopPolicy which doesn't support create_subprocess_exec.
         def run_proc():
             return subprocess.run(
-                [sys.executable, "-I", temp_file_path],
+                _child_command(temp_file_path),
                 capture_output=True,
                 timeout=timeout,
                 text=True
@@ -169,7 +204,15 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
             
         out_str = process.stdout.strip()[:_MAX_OUTPUT_CHARS]
         err_str = process.stderr.strip()[:_MAX_OUTPUT_CHARS]
-        
+
+        # A missing interpreter dependency is an environment fault, not a
+        # student-code fault. Surface it distinctly so the verification hard
+        # gate can report "verification unavailable" instead of blaming the
+        # submitted code for something it cannot influence.
+        dependency_error = _missing_dependency_error(err_str)
+        if dependency_error:
+            return dependency_error
+
         result = ""
         if out_str:
             result += f"Output:\n{out_str}\n"
