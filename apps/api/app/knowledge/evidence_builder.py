@@ -7,6 +7,15 @@ from app.knowledge.schema import EvidencePack, KnowledgeHit, KnowledgeItem
 
 logger = logging.getLogger(__name__)
 
+# Positional relevance for course-graph hits, on a 0..1 scale. Only the
+# ordering matters: the fusion layer in fast_context re-ranks by RRF, so these
+# values are never compared against raw BM25/vector scores.
+_ANCHOR_RELEVANCE = 1.0
+_NEIGHBOUR_RELEVANCE = 0.6
+# A subgraph can be returned without a matched case; assume middling confidence
+# rather than treating the hits as certain.
+_NO_CASE_CONFIDENCE = 0.5
+
 
 class CourseEvidenceBuilder:
     """Builds an enriched, boundary-aware EvidencePack linking student query to Teaching Cases and graph anchors."""
@@ -76,6 +85,13 @@ class CourseEvidenceBuilder:
                 })
 
         # 5. Assemble Graph Hits
+        # Relevance is positional: a unit the case matcher anchored on is more
+        # relevant than a 1-hop neighbour pulled in by subgraph expansion. The
+        # previous constant score made every hit tie, so `hits[:3]` downstream
+        # was simply the first three nodes in subgraph traversal order — the
+        # injected knowledge had nothing to do with what the student asked.
+        anchor_ids = set(concept_anchors)
+        case_confidence = match_result.confidence if matched_case else _NO_CASE_CONFIDENCE
         graph_hits = []
         for u in subgraph_units:
             # Wrap as compatible KnowledgeHit
@@ -84,14 +100,22 @@ class CourseEvidenceBuilder:
                 subject=self.course_id,
                 source_file="course_pack",
                 concept_zh=u.title,
-                prerequisite=[],
+                prerequisite=[
+                    ref.get("display_name", "")
+                    for ref in u.expected_prerequisites
+                    if ref.get("display_name")
+                ],
                 description=u.content,
                 intuitive_explanation=u.intuitive_explanation,
                 solution=u.solution,
                 type=u.type,
                 difficulty=u.difficulty,
             )
-            graph_hits.append(KnowledgeHit(item=k_item, score=85))
+            relevance = _ANCHOR_RELEVANCE if u.id in anchor_ids else _NEIGHBOUR_RELEVANCE
+            graph_hits.append(
+                KnowledgeHit(item=k_item, score=int(relevance * case_confidence * 100))
+            )
+        graph_hits.sort(key=lambda hit: (hit.score, hit.item.concept_zh), reverse=True)
 
         return EvidencePack(
             query_scope={"course_id": self.course_id, "task_mode": task_mode or "general"},

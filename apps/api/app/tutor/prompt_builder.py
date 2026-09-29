@@ -10,15 +10,45 @@ from app.tutor.intent_router import Intent
 from app.tutor.misconception import Mistake
 
 
+# Injection budget for retrieved knowledge. Previously a fixed `hits[:3]` with a
+# 240-char cut per hit — about 720 chars no matter how much relevant material
+# was retrieved or how long each unit actually is, which is a hard ceiling for
+# explaining a theorem. Filling by rank under an explicit budget lets one
+# substantive unit use the space three stubs would waste, keeps the total
+# bounded, and makes elision visible instead of silent.
+_HITS_CHAR_BUDGET = 2400
+_HIT_CHAR_CAP = 900
+_HIT_EXPLANATION_CAP = 240
+# Below this a snippet carries no information; stop instead of injecting noise.
+_MIN_USEFUL_CHARS = 80
+
+
 def _hits_text(hits: list[KnowledgeHit]) -> str:
+    if not hits:
+        return "未命中本地知识库条目。"
+
     lines: list[str] = []
-    for hit in hits[:3]:
+    used = 0
+    injected = 0
+    for index, hit in enumerate(hits):
+        remaining = _HITS_CHAR_BUDGET - used
+        cap = _HIT_CHAR_CAP if index == 0 else min(_HIT_CHAR_CAP, remaining)
+        if cap < _MIN_USEFUL_CHARS:
+            break
         item = hit.item
         lines.append(
-            f"- {item.concept_zh} ({item.source_file}): {truncate_text(item.description, 240)} "
-            f"直观解释: {truncate_text(item.intuitive_explanation, 160)}"
+            f"- {item.concept_zh} ({item.source_file}): {truncate_text(item.description, cap)} "
+            f"直观解释: {truncate_text(item.intuitive_explanation, _HIT_EXPLANATION_CAP)}"
         )
-    return "\n".join(lines) or "未命中本地知识库条目。"
+        used += len(lines[-1])
+        injected += 1
+        if used >= _HITS_CHAR_BUDGET:
+            break
+
+    omitted = len(hits) - injected
+    if omitted > 0:
+        lines.append(f"- （另有 {omitted} 条命中因上下文预算未注入）")
+    return "\n".join(lines)
 
 
 def build_messages(

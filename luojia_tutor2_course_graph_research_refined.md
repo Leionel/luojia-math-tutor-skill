@@ -2225,10 +2225,11 @@ Event Store
 **[项目现状]** 检索层面，仓库中存在**两套检索且未接通**：
 
 - `knowledge/search.py` 是完整的混合检索器：BM25 索引（`:137`）、向量检索（`:208`）、`search_hybrid` + **RRF 融合**（`:191`/`:211`/`:176`）、学科命中加权 `+20000`（`:178`）、按分排序（`:181`）、embedding 缓存 `embeddings.json`（`:123`）。
-- `knowledge/evidence_builder.py`（Course Graph 2.0 路径）：`direct_hits=[]` 恒为空（`:98`），即上述混合检索**从未被调用**；`graph_hits` 全部硬编码 `score=85`（`:94`）；包装为 `KnowledgeItem` 时 `prerequisite=[]`（`:90`）丢掉前置关系。
-- 二者在 `tutor/fast_context.py:103` 以 `hits = pack.direct_hits + pack.graph_hits` **纯拼接、不重排**；`tutor/prompt_builder._hits_text` 再取 `hits[:3]`，每条 `description[:240]`。
+- `knowledge/evidence_builder.py`（Course Graph 2.0 路径）：`direct_hits=[]` 恒为空（`:98`）；`graph_hits` 全部硬编码 `score=85`（`:94`），即所有命中同分、无排序信号；包装为 `KnowledgeItem` 时 `prerequisite=[]`（`:90`）丢掉前置关系。
+- 二者在 `tutor/fast_context._collect_local_hits` 中是**互斥二选一**：先试课程图谱，若返回 `matched_case` 或 `concept_anchors` 就直接采用，**混合检索被完全绕过**；只有课程图谱未命中时，混合检索才作为兜底被调用。两条路径从不融合，因此课程图谱命中时丢掉混合检索的排序，未命中时丢掉案例与边界证据。
+- 命中后 `tutor/fast_context.py:103` 以 `hits = pack.direct_hits + pack.graph_hits` **纯拼接、不重排**；`tutor/prompt_builder._hits_text` 再取 `hits[:3]`，每条 `description[:240]`。
 
-结论：**新链路等价于没有检索**——注入模型的是子图中前 3 个节点，与学生提问无关；总注入量约 720 字符，对数学讲解是硬天花板。且 `search.py` 的 RRF 分数量级为数万，常量 85 一旦真正参与合并排序会被完全淹没，目前未被淹没只是因为它根本没参与。
+结论：**课程图谱命中时等价于没有检索**——注入模型的是子图中前 3 个节点，与学生提问无关；总注入量约 720 字符，对数学讲解是硬天花板。且 `search.py` 的 RRF 分数量级为数万，常量 85 一旦真正参与合并排序会被完全淹没，因此融合必须按**排名**而非原始分数进行。
 
 **[项目现状]** 文档入库侧，`routes_uploads.chunk_markdown` 为 500 字符定长窗口 + 50 字符重叠，纯字符偏移、不认结构。实测该重叠使重建文本比原文长 11.3%（357,263 vs 320,900 字符），是候选重复与 `support_count` 虚增的直接原因（已改为读 `documents.markdown` 原文修复）。
 
@@ -2249,7 +2250,7 @@ Event Store
 
 **第二层 · 连贯性用图边表达，不用文本拼接。** 产出 `NEW_RELATION` 候选：`proof --supports_proof--> theorem`、`example --example_of--> theorem|definition`、`corollary --derives--> theorem`、`lemma --supports_proof--> theorem`，并为每个原子挂 `part_of --> 所属小节` 形成层次父子。词表已存在于 `KnowledgeRelation`，仅需新增 `part_of`。
 
-**第三层 · 上下文在检索期组装。** 命中原子（小而准）→ 沿 `supports_proof`/`example_of`/`part_of` 扩展出证明、例题与所属小节引言 → 按 **token 预算**注入，取代 `hits[:3] × 240 字`。每个原子存 `context_header`（章/节路径 + 一行锚点），避免"这段属于哪一节"在检索后丢失。同时接通两套检索：`evidence_builder` 真正调用 `search_evidence_pack` 填 `direct_hits`，`graph_hits` 分数改为「到命中概念的关系距离 + case 匹配置信度」，最后**统一排序一次**。
+**第三层 · 上下文在检索期组装。** 命中原子（小而准）→ 沿 `supports_proof`/`example_of`/`part_of` 扩展出证明、例题与所属小节引言 → 按 **token 预算**注入，取代 `hits[:3] × 240 字`。每个原子存 `context_header`（章/节路径 + 一行锚点），避免"这段属于哪一节"在检索后丢失。同时接通两套检索：因 `build_evidence_pack` 是同步的，融合放在异步的 `fast_context._collect_local_hits`——两套检索**并发**执行，混合检索带独立子预算（200ms），使其慢速 embedding 调用不会连带取消课程图谱结果；再按 **RRF 排名融合**（而非原始分数，两者量纲不可比）产出单一有序列表，课程图谱的 case/boundary/hints 元数据保留不变。
 
 ## 24.4 分期与代价
 

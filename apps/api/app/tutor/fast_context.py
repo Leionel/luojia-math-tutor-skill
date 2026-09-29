@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Awaitable, Callable
 
 from app.config import Settings, get_settings
@@ -24,6 +24,64 @@ LocalSearch = Callable[
     [str, str | None, int],
     Awaitable[EvidencePack],
 ]
+
+# The hybrid retriever may call an embedding API. Give it its own sub-budget so
+# a slow embedding call cannot consume the whole fast-context window and get the
+# course-graph result cancelled along with it.
+_LOCAL_SEARCH_BUDGET_SECONDS = 0.2
+
+_RRF_K = 60
+_FUSED_SCORE_SCALE = 100_000
+
+
+def _richness(hit: KnowledgeHit) -> tuple[int, int]:
+    """Prefer the wrapper carrying more teaching metadata for a given unit."""
+    return (len(hit.item.description or ""), len(hit.item.prerequisite or []))
+
+
+def fuse_hits(*ranked_lists: list[KnowledgeHit]) -> list[KnowledgeHit]:
+    """Reciprocal-rank fusion over independently ranked hit lists.
+
+    Rank-based on purpose. The course graph scores hits 0..100 while the hybrid
+    retriever emits `int(rrf * 100000)` plus a 20000 subject boost, so the raw
+    scores are not comparable and merging on them would let one list dominate
+    regardless of relevance. Fusing on rank yields one ordering over both.
+    """
+    fused: dict[str, float] = {}
+    best: dict[str, KnowledgeHit] = {}
+    for ranked in ranked_lists:
+        for rank, hit in enumerate(ranked):
+            key = hit.item.id
+            fused[key] = fused.get(key, 0.0) + 1.0 / (_RRF_K + rank + 1)
+            current = best.get(key)
+            if current is None or _richness(hit) > _richness(current):
+                best[key] = hit
+
+    ordered = sorted(
+        fused.items(), key=lambda entry: (-entry[1], best[entry[0]].item.concept_zh)
+    )
+    return [
+        KnowledgeHit(item=best[key].item, score=int(score * _FUSED_SCORE_SCALE))
+        for key, score in ordered
+    ]
+
+
+def fuse_evidence_packs(
+    course_pack: EvidencePack | None,
+    local_pack: EvidencePack | None,
+) -> EvidencePack | None:
+    """Merge both retrievers into one ranked pack.
+
+    The course pack keeps its case, boundary, hint and student-history fields —
+    only the hit lists are replaced by the fused ranking.
+    """
+    if course_pack is None and local_pack is None:
+        return None
+
+    base = course_pack or local_pack
+    course_hits = (course_pack.direct_hits + course_pack.graph_hits) if course_pack else []
+    local_hits = (local_pack.direct_hits + local_pack.graph_hits) if local_pack else []
+    return replace(base, direct_hits=fuse_hits(course_hits, local_hits), graph_hits=[])
 
 
 @dataclass
@@ -213,35 +271,57 @@ class FastContextCollector:
         state: dict[str, Any],
     ) -> tuple[EvidencePack | None, float]:
         started = time.perf_counter()
-        pack = None
-        # 1. Try Course Graph 2.0 evidence builder first for Numerical Analysis or general root-finding
+        # Both retrievers run and are then fused. They used to be mutually
+        # exclusive: a course-graph match discarded the hybrid retriever's
+        # ranking entirely, and a course-graph miss discarded the case and
+        # boundary evidence, so neither path could benefit from the other.
+        course_pack, local_pack = await asyncio.gather(
+            self._course_graph_pack(state),
+            self._budgeted_local_pack(state),
+        )
+        pack = fuse_evidence_packs(course_pack, local_pack)
+        return pack, (time.perf_counter() - started) * 1000
+
+    async def _course_graph_pack(self, state: dict[str, Any]) -> EvidencePack | None:
+        """Course Graph 2.0 evidence: cases, anchors, boundary, student history."""
         try:
             from app.knowledge.evidence_builder import CourseEvidenceBuilder
+
             builder = CourseEvidenceBuilder(course_id="numerical_analysis")
-            course_pack = await asyncio.to_thread(
+            pack = await asyncio.to_thread(
                 builder.build_evidence_pack,
                 query=state["message"],
                 student_id=state.get("user_id"),
                 task_mode=state.get("mode"),
                 allow_extension=False,
             )
-            if course_pack and (course_pack.matched_case or course_pack.concept_anchors):
-                pack = course_pack
         except Exception as exc:
             logger.debug("CourseEvidenceBuilder check failed or bypassed: %s", exc)
+            return None
+        if pack and (pack.matched_case or pack.concept_anchors):
+            return pack
+        return None
 
-        # 2. Fallback to standard local search if not matched to Course Graph 2.0
-        if not pack:
-            try:
-                pack = await self.local_search(
+    async def _budgeted_local_pack(self, state: dict[str, Any]) -> EvidencePack | None:
+        """Hybrid BM25+vector retrieval, bounded so it cannot starve the above."""
+        try:
+            return await asyncio.wait_for(
+                self.local_search(
                     state["message"],
                     state.get("detected_subject") or state.get("subject"),
                     5,
-                )
-            except Exception:
-                logger.exception("Local knowledge search failed")
-                pack = None
-        return pack, (time.perf_counter() - started) * 1000
+                ),
+                timeout=_LOCAL_SEARCH_BUDGET_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.debug(
+                "Local hybrid search exceeded %.0fms; fusing course graph only",
+                _LOCAL_SEARCH_BUDGET_SECONDS * 1000,
+            )
+            return None
+        except Exception:
+            logger.exception("Local knowledge search failed")
+            return None
 
     async def _collect_document_chunks(
         self,
