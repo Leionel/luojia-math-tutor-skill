@@ -67,10 +67,10 @@ export default function NotebookPage() {
             onChange={(e) => setFilterSubject(e.target.value)}
             className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#617a55]"
           >
-            <option value="all">所有科目 (All Subjects)</option>
-            <option value="foundations">基础概念 (Foundations)</option>
-            <option value="derivation">深度推导 (Derivation)</option>
-            <option value="problem_solving">解题实践 (Problem Solving)</option>
+            <option value="all">所有科目</option>
+            <option value="foundations">基础概念</option>
+            <option value="derivation">深度推导</option>
+            <option value="problem_solving">解题实践</option>
           </select>
           <DocumentNoteUpload
             description="上传教科书 PDF（<200MB 且 <200 页），MinerU 解析后由 AI 整理成结构化学习笔记。"

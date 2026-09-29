@@ -6,6 +6,7 @@ import { ReviewCard, type ReviewData } from "./review-card";
 import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX, Search, Terminal, Cpu, ListChecks, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme-context";
 
 function cleanMathForSpeech(text: string) {
   return text
@@ -253,6 +254,7 @@ export function MathMessage({
   onRetry?: () => void;
 }) {
   const isUser = role === "user";
+  const { reading } = useTheme();
   const [isChainExpanded, setIsChainExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -340,7 +342,7 @@ export function MathMessage({
           )}
 
           {content && (
-            <div className={cn("prose-sm sm:prose max-w-none prose-neutral dark:prose-invert prose-p:leading-relaxed prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-primary)]", !isUser && "tracking-[0.02em] leading-[1.8]")}>
+            <div className={cn("prose-sm sm:prose max-w-none prose-neutral dark:prose-invert prose-p:leading-relaxed prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-primary)] text-[15px] sm:text-base", reading === "sans" ? "font-ui-sans" : "font-body", !isUser && "tracking-[0.02em] leading-[1.8]")}>
               <LatexRenderer content={content} />
             </div>
           )}

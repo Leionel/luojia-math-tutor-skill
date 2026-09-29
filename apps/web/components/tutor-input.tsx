@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageIcon, X, Loader2, PenTool, Eraser, Check, AlertCircle, Undo2, Redo2, Keyboard, LineChart } from "lucide-react";
+import { Paperclip, X, Loader2, PenTool, Eraser, Check, AlertCircle, Undo2, Redo2, Keyboard, LineChart } from "lucide-react";
 import { DesmosModal } from "./desmos-modal";
 import { getAuthHeaders } from "@/lib/demo-auth";
+import { useTheme } from "@/lib/theme-context";
+import { ModeSwitcher } from "./mode-switcher";
+import type { TutorMode } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -18,6 +22,8 @@ export function TutorInput({
   onHint,
   onSimilar,
   placeholder,
+  mode,
+  onModeChange,
 }: {
   value: string;
   onChange: (val: string) => void;
@@ -27,12 +33,13 @@ export function TutorInput({
   onHint?: () => void;
   onSimilar?: () => void;
   placeholder?: string;
+  mode: TutorMode;
+  onModeChange: (mode: TutorMode) => void;
 }) {
   function insert(text: string) {
     onChange(`${value}${text}`);
   }
 
-  const [isStepMode, setIsStepMode] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -51,6 +58,12 @@ export function TutorInput({
   const [pendingAction, setPendingAction] = useState<"image" | "canvas" | null>(null);
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
   const [showAIAsst, setShowAIAsst] = useState(false);
+  const { reading } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function saveHistoryState() {
     const canvas = canvasRef.current;
@@ -159,13 +172,13 @@ export function TutorInput({
       }
     }
 
-    onSubmit(finalMessage, isStepMode ? "practice" : "socratic");
+    onSubmit(finalMessage);
     onChange("");
   }
 
   return (
-    <div className="bg-transparent p-4 sm:p-6 pb-6 sm:pb-10 transition-colors duration-300">
-      <div className="mx-auto max-w-4xl rounded-[2rem] border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-input)] shadow-input transition-all duration-300 relative group">
+    <div className="bg-transparent p-4 sm:p-6 pb-2 sm:pb-3 transition-colors duration-300">
+      <div className="mx-auto max-w-4xl rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-sm transition-all duration-300 relative group focus-within:border-olive-500/70 focus-within:shadow-md">
         {previewUrl && (
           <div className="relative p-4 pb-0 bg-transparent">
             <div className="relative inline-block border border-[var(--border-subtle)] rounded-md overflow-hidden bg-white/50 dark:bg-black/50">
@@ -180,7 +193,7 @@ export function TutorInput({
           </div>
         )}
         <Textarea
-          className="min-h-[6rem] resize-none overflow-y-auto rounded-none rounded-t-xl border-0 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+          className={`min-h-[6rem] resize-none overflow-y-auto rounded-none rounded-t-xl border-0 bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 ${reading === "sans" ? "font-ui-sans" : "font-body"}`}
           placeholder={placeholder || "上传问题照片或试卷文档 (PDF/Word)，或直接输入...（Enter 发送，Shift+Enter 换行）"}
           value={value}
           onChange={(event) => {
@@ -261,7 +274,7 @@ export function TutorInput({
         )}
 
         {/* PROXY WARNING OVERLAY */}
-        {showProxyWarning && (
+        {mounted && showProxyWarning && createPortal((
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 dark:bg-[#1e1e1b]/95 backdrop-blur-md rounded-[2rem] p-8 animate-in fade-in duration-300">
             <div className="flex items-start max-w-lg w-full mb-6">
               <div className="p-3 bg-amber-500/10 rounded-full text-amber-500 shrink-0 shadow-sm border border-amber-500/20 mr-5">
@@ -283,10 +296,10 @@ export function TutorInput({
               </Button>
             </div>
           </div>
-        )}
+        ), document.body)}
 
         {/* WHITEBOARD OVERLAY */}
-        {isDrawing && (
+        {mounted && isDrawing && createPortal((
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-white dark:bg-[#1e1e1b] w-full max-w-5xl h-[85vh] rounded-[2rem] flex flex-col shadow-2xl overflow-hidden border border-[#d6d0ba] dark:border-[#3e3f36]">
               {/* Toolbar */}
@@ -400,7 +413,7 @@ export function TutorInput({
               </div>
             </div>
           </div>
-        )}
+        ), document.body)}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-transparent p-3 relative z-10">
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -412,7 +425,7 @@ export function TutorInput({
             <div className="w-px h-4 bg-[var(--border-primary)] my-auto mx-1" />
             <input type="file" accept="image/*,application/pdf,.doc,.docx" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
             <Button variant="ghost" size="sm" onClick={() => requestAction("image")} className="h-8 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 font-medium transition-all" title="上传文档/图片识别">
-              <ImageIcon className="w-4 h-4 mr-1" />
+              <Paperclip className="w-4 h-4 mr-1" />
               文件解析
             </Button>
             <Button variant="ghost" size="sm" onClick={() => requestAction("canvas")} className="h-8 rounded-full text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 font-medium transition-all" title="打开草稿板">
@@ -462,35 +475,18 @@ export function TutorInput({
           </div>
 
           <div className="flex items-center justify-end gap-3 shrink-0 ml-auto w-full sm:w-auto">
-            <div className="group relative flex items-center">
-              <button
-                onClick={() => setIsStepMode(!isStepMode)}
-                className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-help"
-              >
-                <div className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none">
-                  <div className={`absolute inset-0 rounded-full transition-colors duration-300 ${isStepMode ? "bg-[var(--accent)]" : "bg-[var(--bg-hover)]"}`} />
-                  <div className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isStepMode ? "translate-x-4" : "translate-x-0"}`} />
-                </div>
-                分步引导
-              </button>
-              
-              {/* Hover Tooltip for Step Mode */}
-              <div className="absolute top-full right-0 mt-2.5 w-56 opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[100] -translate-y-1 group-hover:translate-y-0">
-                <div className="bg-white dark:bg-[#1e1e1b] border border-[var(--border-subtle)] shadow-xl rounded-lg p-3 text-[11px] text-[var(--text-secondary)] leading-relaxed relative text-left">
-                  <div className="absolute -top-1.5 right-5 w-3 h-3 bg-white dark:bg-[#1e1e1b] border-l border-t border-[var(--border-subtle)] rotate-45"></div>
-                  开启后，AI 将不会直接给出完整解答，而是带您一步步拆解运算过程。
-                </div>
-              </div>
-            </div>
-            
-            <Button disabled={disabled || isUploading} onClick={submit} className="h-9 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-md shadow-[var(--accent-light)] px-6 font-semibold transition-all">
+            <ModeSwitcher value={mode} onChange={onModeChange} />
+            <Button disabled={disabled || isUploading} onClick={submit} className="h-10 rounded-full bg-olive-600 hover:bg-olive-700 dark:bg-olive-500 dark:hover:bg-olive-400 text-[#faf7f2] shadow-sm px-7 font-bold tracking-widest transition-all">
               {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {isUploading ? "提取中..." : "发送"}
             </Button>
           </div>
         </div>
       </div>
-      <DesmosModal isOpen={isDesmosOpen} onClose={() => setIsDesmosOpen(false)} onSendImage={handleDesmosImage} />
+      {mounted && createPortal(
+        <DesmosModal isOpen={isDesmosOpen} onClose={() => setIsDesmosOpen(false)} onSendImage={handleDesmosImage} />,
+        document.body
+      )}
     </div>
   );
 }

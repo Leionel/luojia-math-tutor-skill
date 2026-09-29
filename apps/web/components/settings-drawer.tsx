@@ -8,7 +8,7 @@ import { ModelSettings } from "./model-settings";
 export function SettingsDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { theme, lang, toggleTheme, setLang, t } = useTheme();
+  const { theme, lang, reading, toggleTheme, setLang, setReading, t } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -171,6 +171,54 @@ export function SettingsDrawer() {
                       {t("\u591c\u95f4", "Dark")}
                     </button>
                   </div>
+                </div>
+
+                {/* Reading font */}
+                <div>
+                  <label
+                    className="mb-2 block text-sm font-medium"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    阅读字体
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex-1 rounded-lg py-2.5 text-sm font-medium transition-all font-body"
+                      style={{
+                        background:
+                          reading === "serif"
+                            ? "var(--accent)"
+                            : "var(--bg-tertiary)",
+                        color:
+                          reading === "serif" ? "white" : "var(--text-secondary)",
+                        border: `1px solid ${reading === "serif" ? "var(--accent)" : "var(--border-primary)"}`,
+                      }}
+                      onClick={() => setReading("serif")}
+                    >
+                      衬线
+                    </button>
+                    <button
+                      className="flex-1 rounded-lg py-2.5 text-sm font-medium transition-all font-ui-sans"
+                      style={{
+                        background:
+                          reading === "sans"
+                            ? "var(--accent)"
+                            : "var(--bg-tertiary)",
+                        color:
+                          reading === "sans" ? "white" : "var(--text-secondary)",
+                        border: `1px solid ${reading === "sans" ? "var(--accent)" : "var(--border-primary)"}`,
+                      }}
+                      onClick={() => setReading("sans")}
+                    >
+                      无衬线
+                    </button>
+                  </div>
+                  <p
+                    className="mt-2 text-xs leading-relaxed"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    仅影响对话正文与输入框的阅读字体。
+                  </p>
                 </div>
 
                 {/* Language toggle */}

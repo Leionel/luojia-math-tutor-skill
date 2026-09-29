@@ -70,18 +70,18 @@ export default function MistakeBookPage() {
           </button>
           <div className="flex items-center gap-2 font-bold tracking-widest uppercase">
             <BookOpen className="w-4 h-4 text-rose-500" />
-            <span className="hidden sm:inline">错题本 (Mistake Book)</span>
+            <span className="hidden sm:inline">错题本</span>
           </div>
         </div>
       </header>
       
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
         <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold mb-4 font-mono">
-            LOGIC <span className="text-rose-500">DEVIATIONS</span>
+          <h1 className="text-4xl font-bold mb-4 font-title tracking-widest text-[var(--text-primary)]">
+            错题<span className="text-cinnabar-500">册</span>
           </h1>
           <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed mb-8">
-            Every mistake is an opportunity to refine the architecture of your mathematical understanding. Review your past deviations here.
+            每一次谬误都是重构数学理解的契机，在此回顾你的推导偏差。
           </p>
 
           <div className="flex justify-center mb-8">
@@ -122,7 +122,7 @@ export default function MistakeBookPage() {
           </div>
         ) : mistakes.length === 0 ? (
           <div className="text-center p-12 border border-dashed border-[var(--border-primary)] rounded-xl bg-[var(--bg-tertiary)]">
-            <p className="text-[var(--text-muted)]">No recorded deviations yet.</p>
+            <p className="text-[var(--text-muted)]">暂无错题记录，推导中的谬误会自动收录于此。</p>
           </div>
         ) : (
           <div className="relative border-l border-[var(--border-primary)] ml-3 md:ml-6 space-y-8 pb-12">
@@ -185,7 +185,7 @@ export default function MistakeBookPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">场景 (Subject)</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">场景</label>
                 <select 
                   className="w-full bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-md px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-cyan-500"
                   value={formData.subject}
@@ -197,7 +197,7 @@ export default function MistakeBookPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">错误名称 / 代码 (Mistake Code)</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">错误名称 / 代码</label>
                 <input 
                   type="text" 
                   placeholder="例如: 积分常数遗漏"
@@ -207,7 +207,7 @@ export default function MistakeBookPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">关联知识点 (Concept)</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">关联知识点</label>
                 <input 
                   type="text" 
                   placeholder="例如: 不定积分"

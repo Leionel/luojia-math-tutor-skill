@@ -241,6 +241,7 @@ type Block =
   | { type: "h1"; content: string }
   | { type: "h2"; content: string }
   | { type: "h3"; content: string }
+  | { type: "h4"; content: string }
   | { type: "ul"; items: string[] }
   | { type: "ol"; items: string[] }
   | { type: "blockquote"; content: string }
@@ -260,7 +261,10 @@ function parseBlocks(lines: string[]): Block[] {
   while (i < lines.length) {
     const line = lines[i];
 
-    if (line.startsWith("### ")) {
+    if (line.startsWith("#### ")) {
+      blocks.push({ type: "h4", content: line.slice(5) });
+      i++;
+    } else if (line.startsWith("### ")) {
       blocks.push({ type: "h3", content: line.slice(4) });
       i++;
     } else if (line.startsWith("## ")) {
@@ -394,6 +398,7 @@ function parseBlocks(lines: string[]): Block[] {
         !lines[i].startsWith("# ") &&
         !lines[i].startsWith("## ") &&
         !lines[i].startsWith("### ") &&
+        !lines[i].startsWith("#### ") &&
         !lines[i].startsWith("- ") &&
         !lines[i].startsWith("* ") &&
         !/^\d+\.\s/.test(lines[i]) &&
@@ -437,6 +442,12 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
         <h3 key={`h3-${blockIndex}`} className="mt-4 mb-2 text-base font-bold text-[var(--text-primary)]">
           <InlineLatex content={block.content} />
         </h3>
+      );
+    case "h4":
+      return (
+        <h4 key={`h4-${blockIndex}`} className="mt-3 mb-1.5 text-sm font-bold font-title tracking-wider text-olive-600 dark:text-olive-400">
+          <InlineLatex content={block.content} />
+        </h4>
       );
     case "ul":
       return (

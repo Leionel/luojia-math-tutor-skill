@@ -2,24 +2,19 @@
 
 import Link from "next/link";
 
-import type { Subject, TutorMode } from "@/lib/api";
+import type { Subject } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Menu, LayoutPanelLeft, Target, User, LogOut, BookOpen, FileText, Loader2, Network } from "lucide-react";
-import { ModeSwitcher } from "./mode-switcher";
 import { SettingsDrawer } from "./settings-drawer";
 import { ThemeToggle } from "./theme-toggle";
 
 export function AppHeader({
-  mode,
-  onModeChange,
   onNewSession,
   onToggleSidebar,
   onToggleLearning,
   onToggleZenMode,
 }: {
-  mode: TutorMode;
-  onModeChange: (mode: TutorMode) => void;
   onNewSession: () => void;
   onToggleSidebar?: () => void;
   onToggleLearning?: () => void;
@@ -53,11 +48,11 @@ export function AppHeader({
 
         <ThemeToggle />
         {onToggleZenMode && (
-          <Button variant="ghost" size="icon" onClick={onToggleZenMode} className="h-9 w-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-accent)] hover:bg-[var(--accent-light)] transition-colors shadow-sm" title="进入沉浸模式 (Zen Mode)">
+          <Button variant="ghost" size="icon" onClick={onToggleZenMode} className="h-9 w-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-accent)] hover:bg-[var(--accent-light)] transition-colors shadow-sm" title="进入沉浸模式">
             <Target className="w-4 h-4" />
           </Button>
         )}
-        <Link href="/" className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors shadow-sm" title="农场主页 (Home)">
+        <Link href="/" className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors shadow-sm" title="农场主页">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </Link>
       </div>
@@ -74,7 +69,6 @@ export function AppHeader({
           <BookOpen className="w-4 h-4" />
           错题本
         </Link>
-        <ModeSwitcher value={mode} onChange={onModeChange} />
         <Button variant="secondary" size="sm" onClick={onNewSession} className="hidden sm:flex">新会话</Button>
         {onToggleLearning && (
           <Button variant="ghost" size="icon" onClick={onToggleLearning} className="xl:hidden h-9 w-9 -mr-2 text-[var(--text-secondary)]">

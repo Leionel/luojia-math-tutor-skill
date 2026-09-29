@@ -493,8 +493,6 @@ export function TutorChat() {
 
       {!isZenMode && (
         <AppHeader
-          mode={mode}
-          onModeChange={setMode}
           onNewSession={() => {
             // If already on an empty draft (no real session yet), nothing to do.
             if (!sessionId && !messages.some((m) => m.role === "user")) {
@@ -651,6 +649,8 @@ export function TutorChat() {
               value={inputValue}
               onChange={setInputValue}
               disabled={isStreaming}
+              mode={mode}
+              onModeChange={setMode}
               onSubmit={(val, forcedMode) => void submit(val, forcedMode)}
               onDirect={() => void submit("我需要完整的推导过程和最终答案。请直接告诉我怎么做，不要反问我。", "direct")}
               onHint={() => void submit("能不能给我一点提示？", "socratic")}
@@ -725,7 +725,7 @@ export function TutorChat() {
                         </button>
                       </div>
                     ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-[13px] leading-relaxed">
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
                         <LatexRenderer content={noteContent} />
                       </div>
                     )}

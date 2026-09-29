@@ -64,10 +64,10 @@ export default function SplashPage() {
           {isLoggedIn ? (
             <>
               <Link href="/admin/knowledge" className="px-6 py-2 text-sm font-title tracking-widest text-[#4a4d44] dark:text-[#c5c2b6] hover:text-[#c44a3d] transition-colors border border-transparent hover:border-[#c44a3d] rounded-full">
-                审核中心 (Admin)
+                审核中心
               </Link>
               <Link href="/chat" className="px-6 py-2 text-sm font-title tracking-widest bg-[#617a55] text-[#faf7f2] hover:bg-transparent hover:text-[#617a55] dark:hover:text-[#879f7a] border border-[#617a55] rounded-full transition-all shadow-sm">
-                进入学习系统 (Enter)
+                进入学习系统
               </Link>
             </>
           ) : (
@@ -76,13 +76,13 @@ export default function SplashPage() {
                 href="/auth/login"
                 className="text-sm font-title tracking-widest text-[#4a4d44] dark:text-[#c5c2b6] hover:text-[#617a55] dark:hover:text-[#879f7a] transition-colors"
               >
-                登 录 (Login)
+                登录
               </Link>
               <Link
                 href="/auth/register"
                 className="px-6 py-2 text-sm font-title tracking-widest bg-[#617a55] text-[#faf7f2] hover:bg-transparent hover:text-[#617a55] dark:hover:text-[#879f7a] border border-[#617a55] rounded-full transition-all shadow-sm"
               >
-                注 册 (Register)
+                注册
               </Link>
             </>
           )}
@@ -156,7 +156,7 @@ export default function SplashPage() {
                 href="/chat" 
                 className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-transparent px-10 font-title text-xl text-[#617a55] transition-all hover:bg-[#617a55] hover:text-[#faf7f2] rounded-md shadow-sm"
               >
-                <span className="mr-3">进入系统 (Enter)</span>
+                <span className="mr-3">进入系统</span>
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
             ) : (
@@ -164,7 +164,7 @@ export default function SplashPage() {
                 onClick={() => { localStorage.setItem("mock_auth_token", "true"); setIsLoggedIn(true); }}
                 className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-transparent px-10 font-title text-xl text-[#617a55] transition-all hover:bg-[#617a55] hover:text-[#faf7f2] rounded-md shadow-sm"
               >
-                <span className="mr-3">启程 (Initialize)</span>
+                <span className="mr-3">启程</span>
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
             )}
@@ -725,7 +725,7 @@ export default function SplashPage() {
                 href="/chat" 
                 className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-[#617a55] px-12 font-title text-xl text-[#faf7f2] transition-all hover:bg-transparent hover:text-[#617a55] hover:border-[#617a55] rounded-md shadow-md"
               >
-                <span className="mr-3">进入系统 (Enter)</span>
+                <span className="mr-3">进入系统</span>
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
             ) : (
@@ -733,7 +733,7 @@ export default function SplashPage() {
                 onClick={() => { localStorage.setItem("mock_auth_token", "true"); setIsLoggedIn(true); }}
                 className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-[#617a55] px-12 font-title text-xl text-[#faf7f2] transition-all hover:bg-transparent hover:text-[#617a55] hover:border-[#617a55] rounded-md shadow-md"
               >
-                <span className="mr-3">入园 (Initialize)</span>
+                <span className="mr-3">入园</span>
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
             )}

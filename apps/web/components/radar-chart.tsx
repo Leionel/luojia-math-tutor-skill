@@ -98,7 +98,6 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
     );
   }
 
-  const gridStroke = "var(--border-subtle)";
   const accentColor = "var(--accent, #617a55)";
 
   return (
@@ -117,9 +116,9 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
           key={`ring-${ri}`}
           points={pointsString(pts)}
           fill="none"
-          stroke={gridStroke}
+          stroke="var(--border-primary)"
           strokeWidth={ri === rings.length - 1 ? 1.2 : 0.7}
-          strokeOpacity={ri === rings.length - 1 ? 0.5 : 0.3}
+          strokeOpacity={ri === rings.length - 1 ? 0.9 : 0.55}
         />
       ))}
 
@@ -131,11 +130,22 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
           y1={cy}
           x2={pt.x}
           y2={pt.y}
-          stroke={gridStroke}
+          stroke="var(--border-primary)"
           strokeWidth={0.6}
-          strokeOpacity={0.25}
+          strokeOpacity={0.5}
         />
       ))}
+
+      {assessedCount === 0 && (
+        <polygon
+          points={pointsString(polygonVertices(cx, cy, radius * 0.18, n))}
+          fill="none"
+          stroke={accentColor}
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          strokeOpacity={0.55}
+        />
+      )}
 
       {assessedCount >= 3 && (
         <motion.polygon
@@ -213,7 +223,7 @@ export function RadarChart({ data, size = 220, className }: RadarChartProps) {
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--text-secondary)"
-          fontSize={10}
+          fontSize={11}
           fontWeight={500}
           style={{ pointerEvents: "none" }}
         >

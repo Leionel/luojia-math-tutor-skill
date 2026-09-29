@@ -16,6 +16,7 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [mode, setMode] = useState<TutorMode>("socratic");
 
   useEffect(() => {
     setLoading(true);
@@ -167,6 +168,8 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
           }}
           disabled={isStreaming}
           placeholder="围绕这篇笔记进行提问..."
+          mode={mode}
+          onModeChange={setMode}
         />
       </div>
     </div>

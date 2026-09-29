@@ -1,5 +1,4 @@
 @import "katex/dist/katex.min.css";
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=ZCOOL+XiaoWei&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -130,34 +129,6 @@ code, pre {
 body::before, body::after {
   display: none;
 }
-
-.font-display {
-  font-family: "ZCOOL XiaoWei", serif;
-}
-
-.font-title {
-  font-family: "ZCOOL XiaoWei", serif;
-}
-
-.font-body {
-  font-family: "Noto Serif SC", serif;
-}
-
-.bg-noise {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.25;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-html.dark .bg-noise {
-  opacity: 0.15;
-}
-
 
 /* Math blocks */
 .math-block {

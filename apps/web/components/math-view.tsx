@@ -80,22 +80,34 @@ export function MathMarkdown({ content, className = "" }: MathMarkdownProps) {
       }
     });
 
-    // 3. Parse Markdown bold: **text** -> strong
+    // 3. Parse Markdown headings: #..#### at line start -> h1..h4
+    text = text.replace(/^#{1,4}[ \t]+(.+?)(?:\r?\n|$)/gm, (line, title: string) => {
+      const level = line.match(/^#+/)![0].length;
+      const styles: Record<number, string> = {
+        1: "block text-sm font-bold font-title tracking-widest text-[var(--text-primary)] mt-3 mb-1.5",
+        2: "block text-sm font-bold font-title tracking-wider text-[var(--text-primary)] mt-3 mb-1.5",
+        3: "block text-xs font-bold text-[var(--text-primary)] mt-2.5 mb-1",
+        4: "block text-xs font-bold text-olive-600 dark:text-olive-400 mt-2 mb-1",
+      };
+      return `<h${level} class="${styles[level]}">${title}</h${level}>`;
+    });
+
+    // 4. Parse Markdown bold: **text** -> strong
     text = text.replace(
       /\*\*(.+?)\*\*/g,
       '<strong class="font-bold text-slate-900 dark:text-slate-100">$1</strong>'
     );
 
-    // 4. Parse Markdown italics: *text* -> em
+    // 5. Parse Markdown italics: *text* -> em
     text = text.replace(
       /(?<!\*)\*([^*]+?)\*(?!\*)/g,
       '<em class="italic text-slate-800 dark:text-slate-200">$1</em>'
     );
 
-    // 5. Parse line breaks (\n -> <br />)
+    // 6. Parse line breaks (\n -> <br />)
     text = text.replace(/\n/g, '<br />');
 
-    // 6. Restore KaTeX math slots
+    // 7. Restore KaTeX math slots
     text = text.replace(/___MATH_SLOT_(\d+)___/g, (_, idx) => {
       return mathSlots[parseInt(idx, 10)] || "";
     });
@@ -105,7 +117,7 @@ export function MathMarkdown({ content, className = "" }: MathMarkdownProps) {
 
   return (
     <div
-      className={`text-xs text-slate-700 dark:text-slate-200 leading-relaxed break-words ${className}`}
+      className={`text-sm text-slate-700 dark:text-slate-200 leading-relaxed break-words ${className}`}
       dangerouslySetInnerHTML={{ __html: rendered }}
     />
   );

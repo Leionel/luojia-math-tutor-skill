@@ -13,7 +13,8 @@ import {
   Position,
   BackgroundVariant,
   Node,
-  Edge
+  Edge,
+  ReactFlowInstance
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
@@ -37,6 +38,66 @@ export interface KnowledgeGraphProps {
   onSelectNode?: (node: Node) => void;
   highlightNodeIds?: string[];
   selectedNodeId?: string;
+}
+
+// SkillNode renders at a fixed width so the layered layout math never overlaps.
+const NODE_W = 232;
+const GAP_X = 26;
+const LEVEL_H = 170;
+
+// Deterministic per-node jitter so rows read as a hand-laid scroll, not a ruler.
+function jitter(id: string, salt: number, span: number): number {
+  let h = salt;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) | 0;
+  }
+  return ((Math.abs(h) % (span * 2 + 1)) - span);
+}
+
+function relayout(nodes: Node[], edges: Edge[]): Node[] {
+  if (nodes.length === 0) return nodes;
+  const ids = new Set(nodes.map((n) => n.id));
+  const level = new Map<string, number>();
+  nodes.forEach((n) => level.set(n.id, 0));
+  for (let pass = 0; pass < nodes.length; pass++) {
+    let changed = false;
+    edges.forEach((e) => {
+      if (!ids.has(e.source) || !ids.has(e.target) || e.source === e.target) return;
+      const want = (level.get(e.source) ?? 0) + 1;
+      if (want > (level.get(e.target) ?? 0)) {
+        level.set(e.target, want);
+        changed = true;
+      }
+    });
+    if (!changed) break;
+  }
+  const byLevel = new Map<number, Node[]>();
+  nodes.forEach((n) => {
+    const lvl = level.get(n.id) ?? 0;
+    if (!byLevel.has(lvl)) byLevel.set(lvl, []);
+    byLevel.get(lvl)!.push(n);
+  });
+  return nodes.map((n) => {
+    const lvl = level.get(n.id) ?? 0;
+    const siblings = byLevel.get(lvl)!;
+    return {
+      ...n,
+      width: NODE_W,
+      height: 96 + (n.data?.latex ? 42 : 0),
+      position: {
+        x: siblings.indexOf(n) * (NODE_W + GAP_X) + jitter(n.id, 7, 14),
+        y: lvl * LEVEL_H + jitter(n.id, 13, 26),
+      },
+    };
+  });
+}
+
+function softEdges(edges: Edge[]): Edge[] {
+  return edges.map((e) => ({
+    ...e,
+    type: e.type ?? "default",
+    style: { stroke: "var(--border-primary)", strokeWidth: 1.4, ...(e.style || {}) },
+  }));
 }
 
 function generateGraphLayout(items: EvidencePackItem[]) {
@@ -160,7 +221,7 @@ function SkillNode({ data }: { data: any }) {
                     data.unit_type === 'misconception' ? '易错' : null;
 
   return (
-    <div className={`px-4 py-2.5 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 min-w-[160px] cursor-pointer hover:shadow-xl hover:scale-[1.02]
+    <div className={`px-3 py-2.5 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 w-[232px] cursor-pointer hover:shadow-xl hover:scale-[1.02]
       ${isHighlighted ? HIGHLIGHT_CLASS : ''}
       ${isSelected && !isHighlighted ? `ring-2 ${scopeStyle.border} scale-[1.03]` : ''}
       ${!isHighlighted && !isSelected && isLocked ? 'opacity-60 grayscale border-slate-300 dark:border-slate-700' : ''}
@@ -175,7 +236,7 @@ function SkillNode({ data }: { data: any }) {
           {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
           {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-slate-400" />}
 
-          <span className={`font-semibold text-sm ${
+          <span className={`font-semibold text-sm truncate ${
             isHighlighted ? 'text-rose-600 dark:text-rose-400 font-bold' :
             'text-slate-800 dark:text-slate-100'
           }`}>
@@ -200,7 +261,7 @@ function SkillNode({ data }: { data: any }) {
       )}
 
       {data.latex && (
-        <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-200 overflow-x-hidden text-ellipsis max-w-[220px]">
+        <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-200 overflow-hidden max-w-full">
           <MathView math={data.latex} className="text-[11px] text-indigo-900 dark:text-indigo-200" />
         </div>
       )}
@@ -225,20 +286,35 @@ export function KnowledgeGraph({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const flowRef = React.useRef<ReactFlowInstance | null>(null);
+
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    const first = setTimeout(() => {
+      flowRef.current?.fitView({ padding: 0.15 });
+    }, 200);
+    const second = setTimeout(() => {
+      flowRef.current?.fitView({ padding: 0.15 });
+    }, 900);
+    return () => {
+      clearTimeout(first);
+      clearTimeout(second);
+    };
+  }, [nodes]);
 
   const highlightSet = useMemo(() => new Set(highlightNodeIds), [highlightNodeIds]);
   
   useEffect(() => {
     if (items && items.length > 0) {
       const layout = generateGraphLayout(items);
-      setNodes(layout.nodes);
-      setEdges(layout.edges);
+      setNodes(relayout(layout.nodes, layout.edges));
+      setEdges(softEdges(layout.edges));
       return;
     }
     
     if (propNodes && propEdges) {
-      setNodes(propNodes);
-      setEdges(propEdges);
+      setNodes(relayout(propNodes, propEdges));
+      setEdges(softEdges(propEdges));
       return;
     }
 
@@ -265,8 +341,8 @@ export function KnowledgeGraph({
                 isSelected: selectedNodeId === n.id,
               }
             }));
-            setNodes(enriched);
-            setEdges(data.edges || []);
+            setNodes(relayout(enriched, data.edges || []));
+            setEdges(softEdges(data.edges || []));
           }
         })
         .catch(() => {
@@ -308,7 +384,12 @@ export function KnowledgeGraph({
         onConnect={onConnect}
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
+        onInit={(instance) => {
+          flowRef.current = instance;
+          instance.fitView({ padding: 0.15 });
+        }}
         fitView
+        fitViewOptions={{ padding: 0.15 }}
         className="dark:filter dark:invert-[.05]"
       >
         <Controls className="bg-white dark:bg-black border-[var(--border-subtle)] fill-[var(--text-primary)]" />

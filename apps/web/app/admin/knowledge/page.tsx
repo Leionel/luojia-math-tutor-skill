@@ -807,7 +807,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                       onClick={() => handleReviewAction("approve")}
                       disabled={actionLoading}
                     >
-                      <CheckCircle2 className="w-4 h-4" /> 批准入图 (Approve)
+                      <CheckCircle2 className="w-4 h-4" /> 批准入图
                     </Button>
                   </>
                 ) : (
@@ -867,7 +867,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                       <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                      核心数学公式 (LaTeX Formulation)
+                      核心数学公式
                     </h3>
                     <span className="text-[10px] font-mono text-slate-400">KaTeX High-Contrast</span>
                   </div>
@@ -938,7 +938,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   {selectedCandidate.payload.learning_objectives && (
                     <div>
                       <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        目标能力达成 (Learning Objectives):
+                        目标能力达成
                       </h4>
                       <ul className="list-disc list-inside space-y-1 text-xs text-slate-600 dark:text-slate-400">
                         {selectedCandidate.payload.learning_objectives.map((obj, i) => (
@@ -953,7 +953,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   {selectedCandidate.payload.reasoning_signature && (
                     <div>
                       <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        诊断探针与推理签名 (Reasoning Signature):
+                        诊断探针与推理签名
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedCandidate.payload.reasoning_signature.map((sig, i) => (
@@ -971,7 +971,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   {selectedCandidate.payload.accepted_variants && (
                     <div>
                       <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        学情高频提问变体 (Accepted Student Variants):
+                        学情高频提问变体
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {selectedCandidate.payload.accepted_variants.map((v, i) => (
@@ -1024,7 +1024,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
 
                 {selectedCandidate.evidence_refs && selectedCandidate.evidence_refs.length > 0 && (
                   <div className="pt-2">
-                    <div className="text-xs text-slate-400 mb-1.5">关联证据链 (Evidence References):</div>
+                    <div className="text-xs text-slate-400 mb-1.5">关联证据链</div>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedCandidate.evidence_refs.map((ref, i) => (
                         <span
@@ -1079,7 +1079,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  选择目标概念节点 (Target Unit ID):
+                  选择目标概念节点
                 </label>
                 <select
                   className="w-full px-3 py-2 border rounded-md text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
@@ -1117,7 +1117,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                 onClick={() => handleReviewAction("merge", mergeTargetId)}
                 disabled={actionLoading}
               >
-                确认合并 (Merge)
+                确认合并
               </Button>
             </div>
           </div>
@@ -1131,7 +1131,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Plus className="w-5 h-5 text-blue-500" />
-                提议图谱演化新候选 (Propose Candidate)
+                提议图谱演化新候选
               </h3>
               <button
                 onClick={() => setIsProposeModalOpen(false)}
@@ -1162,7 +1162,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    候选唯一ID (Candidate ID):
+                    候选唯一 ID
                   </label>
                   <input
                     type="text"
@@ -1223,7 +1223,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    大纲范畴 (Scope Level):
+                    大纲范畴
                   </label>
                   <select
                     className="w-full px-3 py-2 border rounded-md text-xs bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
@@ -1341,10 +1341,10 @@ function KnowledgeReviewEditor({
             </Button>
           )}
           <Button variant="danger" size="sm" onClick={() => handleUpdate("rejected")} disabled={isSubmitting}>
-            {isSubmitting ? "处理中..." : "驳回 (Reject)"}
+            {isSubmitting ? "处理中..." : "驳回"}
           </Button>
           <Button variant="success" size="sm" onClick={() => handleUpdate("active")} disabled={isSubmitting}>
-            {isSubmitting ? "处理中..." : "核准通过 (Approve)"}
+            {isSubmitting ? "处理中..." : "核准通过"}
           </Button>
         </div>
       </div>
@@ -1693,7 +1693,7 @@ export default function AdminKnowledgePage() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>图谱动态演化候选 (Graph Candidates)</span>
+              <span>图谱动态演化候选</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono">
                 5
               </span>
@@ -1708,7 +1708,7 @@ export default function AdminKnowledgePage() {
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-blue-500" />
-              <span>基础知识分块条目 (Legacy Chunks)</span>
+              <span>基础知识分块条目</span>
             </button>
           </div>
         </div>
@@ -1720,7 +1720,7 @@ export default function AdminKnowledgePage() {
             className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
           >
             <Network className="w-3.5 h-3.5" />
-            查看全景图谱 (Canvas View)
+            查看全景图谱
           </Link>
           <Link
             href="/"
