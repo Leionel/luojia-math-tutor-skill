@@ -2346,17 +2346,21 @@ Event Store
 2. **SQLite 默认分词器切不动中文**：整段 CJK 落成一个 token，「牛顿迭代法」匹配不到「牛顿迭代」。新增 migration 005 建 `document_chunks_index`（CJK bigram 索引），`insert/clear/search` 三路同步（`app/memory/text_index.py`）。
 3. **问句脚手架毒化 AND 查询**：「…里的定义 1.1讲了什么？」整句 AND 后 gold 被排除。`cjk_query_groups` 现在剥离问句框架（属于哪一节/是什么/讲了…）并按功能字切分再取 bigram。
 
-### 25.3 结果（430 chunks，244 cases，gold 244/244 解析成功）
+### 25.3 结果（430 chunks，244 cases，gold 244/244 解析成功；2026-09-30 第二轮补齐）
 
-| 配置 | Recall@3 | Recall@5 | MRR@10 |
-| --- | --- | --- | --- |
-| BM25（bigram FTS，生产同路径） | **0.752** | **0.798** | **0.708** |
-| vector（text-embedding-v3） | — | — | — |
-| hybrid（RRF） | — | — | — |
+| 配置 | 口径 | Recall@3 | Recall@5 | MRR@10 |
+| --- | --- | --- | --- | --- |
+| BM25（bigram FTS，生产同路径） | chunk | **0.752** | 0.798 | **0.708** |
+| vector（本地 TF-IDF+LSA k=256，无 API 降级臂） | chunk | 0.581 | 0.685 | 0.498 |
+| hybrid（BM25 ⊕ vector 的 RRF） | chunk | 0.688 | **0.805** | 0.657 |
+| 图层（候选单元级，**审核前 dry-run**，加权 IDF + 标题×3/关键词×2/正文×1 + sqrt 长度归一） | unit | 0.725 | 0.820 | 0.625 |
 
-分风格（BM25）：title 0.864 / colloquial 0.900 / scoped_marker 0.857 / howto 0.574 / definition 0.447 / relation 0.250 / **hierarchy 0.133**。结论与下一步：
+分风格（BM25 chunk 级）：title 0.864 / colloquial 0.900 / scoped_marker 0.857 / howto 0.574 / definition 0.447 / relation 0.250 / hierarchy 0.133。
+分风格（图层 unit 级）：colloquial 1.000 / title 0.988 / scoped_marker 0.582 / definition 0.500 / howto 0.500 / relation 0.500 / **hierarchy 0.267，且「top1 命中单元 + part_of 父节点即正确节」的 hierarchy@1 = 0.867**。
 
-- 问句框架剥离一项改动就把整体 R@3 从 0.379 拉到 0.752，是本轮收益最大的单点。
-- **hierarchy 是明确短板**：gold 解析没问题，是「X 属于哪一节」需要图层作答（part_of 边 + 候选层级），chunk 检索天然不擅长——这正是 Course Graph 2.0 该接管的问法，待把 `fast_context` 的课程图 evidence pack 纳入评测口径后重测。
-- **vector / hybrid 两行待补**：`LLM_API_KEY` 是 DeepSeek 的，DeepSeek 不提供 embedding 端点；vector 臂需要单独的 embedding key（DashScope text-embedding-v3 已验证可连通，代码就绪、向量已落盘缓存），拿到 key 重跑 `scripts/eval_retrieval.py` 即可补齐。
-- 自出题偏「贴标题」，指标整体偏乐观；colloquial/hierarchy/relation 三类用于对冲。definition 0.447 与 howto 0.574 是下一轮检索改进的主攻区间。
+结论与下一步：
+
+- 问句框架剥离一项改动就把 chunk 级整体 R@3 从 0.379 拉到 0.752，是本轮收益最大的单点。
+- **hierarchy 短板被图层解决**：chunk 检索答不了「X 属于哪一节」（0.133），但同一评测里图层 dry-run 的 hierarchy@1 = 0.867——前提是把 495 条候选真正审核入图；当前是拿 pending 集代理测的。**审核量是解锁这个数字的前提。**
+- vector 臂目前是本地 LSA 降级（无 neural embedding key），R@3 0.581 低于 BM25 属预期；`DASHSCOPE_API_KEY` 一到（读环境变量即可，代码无需改），重跑就能得到真神经向量与 hybrid 的真实水位——hybrid 的 R@5 0.805 已经是全场最高，说明融合方向正确，换强向量臂后 R@3/MRR 大概率跟涨。
+- 自出题偏「贴标题」，指标整体偏乐观；colloquial/hierarchy/relation 三类用于对冲。definition 0.447 与 howto 0.574 是下一轮 chunk 检索改进的主攻区间。

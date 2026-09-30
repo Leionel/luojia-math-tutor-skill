@@ -22,19 +22,19 @@
 ## 3. 当前状态（截至交接）
 
 - 教材链路（上传 → MinerU 解析 → 结构感知切分 → 候选抽取 → 审核台）端到端可用；`apps/api/luojia_tutor.db` 存 1 本教材（`doc_656067dd6720`，32 万字，430 chunks，CJK bigram 索引）。
-- 检索基线（BM25 bigram FTS，生产同路径）：**Recall@3 0.752 / Recall@5 0.798 / MRR@10 0.708**，244 条评测集（`scripts/build_retrieval_eval.py` 生成，`scripts/eval_retrieval.py` 跑）。
+- 检索基线（`scripts/eval_retrieval.py`，244 条评测集）：chunk 级 BM25 **R@3 0.752 / R@5 0.798 / MRR 0.708**，vector（本地 LSA 降级臂）0.581/0.685/0.498，hybrid(RRF) 0.688/**0.805**/0.657；**图层 unit 级 dry-run R@3 0.725，hierarchy@1 = 0.867**（详见 research doc §25.3）。
 - 前端已统一到「农场水墨」设计令牌（`apps/web/tailwind.config.ts` 重映射了 slate/indigo 等默认色名——**改 UI 时注意类名颜色≠视觉颜色**）；阅读字体（衬线/无衬线）与主题（light/dark，存储键 `luojia-theme`/`luojia-reading`）持久化已修好。
 - API 256 项 pytest 全绿；前端 `npm test` 通过。
 
 ## 4. 明确的未完成项（按优先级）
 
-1. **vector / hybrid 评测两行是空的**：现在的 `LLM_API_KEY` 是 DeepSeek 的，没有 embedding 端点。需要一个 DashScope key（`text-embedding-v3` 已验证可连通），填进 `apps/api/.env` 后重跑 `scripts/eval_retrieval.py` 即可补齐（向量缓存机制已就绪）。
-2. **hierarchy 问法 R@3 只有 0.133**：`X 属于哪一节` 需要图层作答（part_of 边），不是 chunk 检索能解决的——要把 `fast_context` 的课程图 evidence pack 纳入评测口径。
+1. ~~vector/hybrid 评测两行空~~ **已补（2026-09-30）**：无 key 时用本地 TF-IDF+LSA(k=256) 降级臂出数；拿到 `DASHSCOPE_API_KEY`（写进 `apps/api/.env`）重跑 `scripts/eval_retrieval.py` 即得真神经向量水位——hybrid R@5 已是全场最高（0.805），换强向量臂后 R@3/MRR 大概率跟涨。
+2. ~~hierarchy 要走图层~~ **已补（2026-09-30）**：评测加了图层 dry-run 臂（加权 IDF + 标题×3/关键词×2 + sqrt 归一），**hierarchy@1 = 0.867**。注意这是拿 495 条 pending 当 approved 代理测的；生产里 `CourseEvidenceBuilder` 只认已审核单元，所以**审核入图是把 0.867 变现的前提**。
 3. **LLM 答题质量 baseline 缺失**：README 的 `90.0% (18/20)` 没有裸模型参照系（branch log §6.1）。
-4. **495 条候选待人工审核**（`data/course_store.db` 的 `graph_candidates`）；建议批量审 + 低风险快速通道。
-5. **无 CI / 无部署**：服务只在本机跑过，没有任何东西把它推出去。
+4. **495 条候选待人工审核**（`data/course_store.db` 的 `graph_candidates`）：审核不只是清库存，直接解锁 hierarchy 0.867。建议批量审 + 低风险快速通道。
+5. ~~无 CI~~ **已加（2026-09-30）**：`.github/workflows/ci.yml` 三 job（api pytest / knowledge JSON 校验 / web tsc+单测+build）。**部署仍无**。
 6. 浏览器「上传」按钮的真实点击从未测过（链路其余环节都是 curl/API 实测的）。
-7. Desmos 用的还是 trial key（现从 `NEXT_PUBLIC_DESMOS_API_KEY` 注入，缺 key 时模态框有空态提示）；正式 key 需自己去 desmos.com/api 申请。
+7. **Desmos 正式 key 无法代办**：需要你自己的 Desmos 账号去 desmos.com/api 申请（免费、非商用），填进 `apps/web/.env.local` 的 `NEXT_PUBLIC_DESMOS_API_KEY` 重启前端即可；缺 key 时模态框已有可读空态。
 
 ## 5. 关于最近两个提交的诚实声明
 
