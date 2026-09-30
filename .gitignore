@@ -26,3 +26,7 @@ tests_temp/
 apps/api/data/uploads/
 .worktrees/
 data/snapshots/
+
+# Generated artifacts (eval reruns, embedding caches, brainstorm scratch)
+results/
+.superpowers/
