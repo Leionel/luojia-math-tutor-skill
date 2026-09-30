@@ -2323,3 +2323,40 @@ Event Store
 - RAG 文档切分策略全景解析：固定长度 vs 语义切分 — https://blog.csdn.net/bumblebee16/article/details/164758378
 - RAPTOR vs 传统 RAG：树状检索 — https://m.blog.csdn.net/gitblog_00949/article/details/154681514
 
+
+## 25. 检索评测基线（2026-09-30 实测）
+
+### 25.1 评测集
+
+`evaluation/retrieval_eval.json` 由 `scripts/build_retrieval_eval.py` 从 229 个 pending 教学单元 + 260 条类型化关系确定性生成，共 **244 条不重复 query，覆盖 57 个小节，gold 零悬挂**，不依赖人工标注，且每条带 `expected_marker / subject_marker / expected_section`，重切分后仍可解析 gold。七种问法：
+
+| style | 条数 | 示例 |
+| --- | --- | --- |
+| title | 81 | `Romberg 算法` |
+| scoped_marker | 79 | `Newton 法里的定义 2.1讲了什么？` |
+| colloquial | 25 | `三次样条插值这块我没听懂，能讲讲吗` |
+| definition | 22 | `什么是机器精度？`（术语抽自单元正文的「称为/叫做」句式） |
+| howto | 18 | `Jacobi矩阵是怎么算的？` |
+| hierarchy | 15 | `介值定理属于哪一节？`（经 part_of 反查） |
+| relation | 4 | `二分法的误差估计有哪些例题？`（example_of，双 gold） |
+
+### 25.2 评测暴露并修掉的缺陷
+
+1. **`Repository.search_document_chunks` 不存在**：`fast_context._collect_document_chunks` 一直在调一个没有的方法，异常被 `logger.exception` 吞掉——教材 chunk 检索在运行时**从未生效过**。已实现（FTS5 MATCH + LIKE 兜底）。
+2. **SQLite 默认分词器切不动中文**：整段 CJK 落成一个 token，「牛顿迭代法」匹配不到「牛顿迭代」。新增 migration 005 建 `document_chunks_index`（CJK bigram 索引），`insert/clear/search` 三路同步（`app/memory/text_index.py`）。
+3. **问句脚手架毒化 AND 查询**：「…里的定义 1.1讲了什么？」整句 AND 后 gold 被排除。`cjk_query_groups` 现在剥离问句框架（属于哪一节/是什么/讲了…）并按功能字切分再取 bigram。
+
+### 25.3 结果（430 chunks，244 cases，gold 244/244 解析成功）
+
+| 配置 | Recall@3 | Recall@5 | MRR@10 |
+| --- | --- | --- | --- |
+| BM25（bigram FTS，生产同路径） | **0.752** | **0.798** | **0.708** |
+| vector（text-embedding-v3） | — | — | — |
+| hybrid（RRF） | — | — | — |
+
+分风格（BM25）：title 0.864 / colloquial 0.900 / scoped_marker 0.857 / howto 0.574 / definition 0.447 / relation 0.250 / **hierarchy 0.133**。结论与下一步：
+
+- 问句框架剥离一项改动就把整体 R@3 从 0.379 拉到 0.752，是本轮收益最大的单点。
+- **hierarchy 是明确短板**：gold 解析没问题，是「X 属于哪一节」需要图层作答（part_of 边 + 候选层级），chunk 检索天然不擅长——这正是 Course Graph 2.0 该接管的问法，待把 `fast_context` 的课程图 evidence pack 纳入评测口径后重测。
+- **vector / hybrid 两行待补**：`LLM_API_KEY` 是 DeepSeek 的，DeepSeek 不提供 embedding 端点；vector 臂需要单独的 embedding key（DashScope text-embedding-v3 已验证可连通，代码就绪、向量已落盘缓存），拿到 key 重跑 `scripts/eval_retrieval.py` 即可补齐。
+- 自出题偏「贴标题」，指标整体偏乐观；colloquial/hierarchy/relation 三类用于对冲。definition 0.447 与 howto 0.574 是下一轮检索改进的主攻区间。

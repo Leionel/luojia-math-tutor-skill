@@ -1,0 +1,144 @@
+{
+  "generated_at": "2026-09-30T03:48:10Z",
+  "chunks": 430,
+  "cases": 244,
+  "gold_unresolved": 0,
+  "overall": {
+    "bm25": {
+      "recall@3": 0.7516,
+      "recall@5": 0.7975,
+      "mrr@10": 0.7081
+    },
+    "vector": {
+      "recall@3": 0.0,
+      "recall@5": 0.0,
+      "mrr@10": 0.0
+    },
+    "hybrid": {
+      "recall@3": 0.7516,
+      "recall@5": 0.7975,
+      "mrr@10": 0.7081
+    }
+  },
+  "by_style": {
+    "colloquial": {
+      "bm25": {
+        "recall@3": 0.9,
+        "recall@5": 0.94,
+        "mrr@10": 0.7567
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.9,
+        "recall@5": 0.94,
+        "mrr@10": 0.7567
+      }
+    },
+    "definition": {
+      "bm25": {
+        "recall@3": 0.447,
+        "recall@5": 0.447,
+        "mrr@10": 0.5727
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.447,
+        "recall@5": 0.447,
+        "mrr@10": 0.5727
+      }
+    },
+    "hierarchy": {
+      "bm25": {
+        "recall@3": 0.1333,
+        "recall@5": 0.2667,
+        "mrr@10": 0.1017
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.1333,
+        "recall@5": 0.2667,
+        "mrr@10": 0.1017
+      }
+    },
+    "howto": {
+      "bm25": {
+        "recall@3": 0.5741,
+        "recall@5": 0.5741,
+        "mrr@10": 0.663
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.5741,
+        "recall@5": 0.5741,
+        "mrr@10": 0.663
+      }
+    },
+    "relation": {
+      "bm25": {
+        "recall@3": 0.25,
+        "recall@5": 0.25,
+        "mrr@10": 0.4107
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.25,
+        "recall@5": 0.25,
+        "mrr@10": 0.4107
+      }
+    },
+    "scoped_marker": {
+      "bm25": {
+        "recall@3": 0.8574,
+        "recall@5": 0.8916,
+        "mrr@10": 0.7982
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.8574,
+        "recall@5": 0.8916,
+        "mrr@10": 0.7982
+      }
+    },
+    "title": {
+      "bm25": {
+        "recall@3": 0.8642,
+        "recall@5": 0.9321,
+        "mrr@10": 0.7791
+      },
+      "vector": {
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "mrr@10": 0.0
+      },
+      "hybrid": {
+        "recall@3": 0.8642,
+        "recall@5": 0.9321,
+        "mrr@10": 0.7791
+      }
+    }
+  }
+}

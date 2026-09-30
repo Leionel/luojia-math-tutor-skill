@@ -13,6 +13,7 @@ from app.knowledge.concepts import extract_explicit_concepts
 from app.knowledge.schema import KnowledgeHit, KnowledgeItem
 from app.memory.migrations import apply_migrations
 from app.memory.models import new_id, now_iso
+from app.memory.text_index import cjk_bigram_text, cjk_query_groups
 
 
 def _sqlite_path(database_url: str) -> Path:
@@ -117,6 +118,11 @@ class Repository:
                   id unindexed,
                   document_id unindexed,
                   content
+                );
+
+                create virtual table if not exists document_chunks_index using fts5(
+                  chunk_rowid unindexed,
+                  text
                 );
 
                 create table if not exists notes (
@@ -419,13 +425,18 @@ class Repository:
 
     def insert_document_chunks(self, document_id: str, chunks: list[str]) -> None:
         with self.connect() as conn:
-            conn.executemany(
-                """
-                insert into document_chunks(id, document_id, content)
-                values (?, ?, ?)
-                """,
-                [(new_id("chunk"), document_id, chunk) for chunk in chunks],
-            )
+            for chunk in chunks:
+                cursor = conn.execute(
+                    """
+                    insert into document_chunks(id, document_id, content)
+                    values (?, ?, ?)
+                    """,
+                    (new_id("chunk"), document_id, chunk),
+                )
+                conn.execute(
+                    "insert into document_chunks_index(chunk_rowid, text) values (?, ?)",
+                    (cursor.lastrowid, cjk_bigram_text(chunk)),
+                )
 
     def list_document_chunks(self, document_id: str) -> list[str]:
         with self.connect() as conn:
@@ -437,6 +448,56 @@ class Repository:
                 """,
                 (document_id,),
             ).fetchall()
+        return [row["content"] for row in rows]
+
+    def clear_document_chunks(self, document_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                delete from document_chunks_index
+                where chunk_rowid in (
+                  select rowid from document_chunks where document_id = ?
+                )
+                """,
+                (document_id,),
+            )
+            conn.execute("delete from document_chunks where document_id = ?", (document_id,))
+
+    def search_document_chunks(
+        self,
+        document_id: str,
+        query: str,
+        limit: int = 3,
+    ) -> list[str]:
+        groups = cjk_query_groups(query)
+        if not groups:
+            return []
+        match = " AND ".join(
+            "(" + " OR ".join(f'"{gram}"' for gram in group) + ")" for group in groups
+        )
+        with self.connect() as conn:
+            try:
+                rows = conn.execute(
+                    """
+                    select dc.content as content
+                    from document_chunks_index idx
+                    join document_chunks dc on dc.rowid = idx.chunk_rowid
+                    where dc.document_id = ? and document_chunks_index match ?
+                    order by bm25(document_chunks_index)
+                    limit ?
+                    """,
+                    (document_id, match, limit),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                like = f"%{re.sub(r'[\\s%_]+', '%', query.strip())[:80]}%"
+                rows = conn.execute(
+                    """
+                    select content from document_chunks
+                    where document_id = ? and content like ?
+                    limit ?
+                    """,
+                    (document_id, like, limit),
+                ).fetchall()
         return [row["content"] for row in rows]
 
     def get_document(self, document_id: str, user_id: str) -> dict[str, Any] | None:

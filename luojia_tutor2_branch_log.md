@@ -131,13 +131,13 @@ cd apps/web; npm run build
 
 1. **baseline 两行仍无数据。** GPT-4o / DeepSeek 裸模型同批 20 条、同 rubric 的结果不存在，所以 README 的 `90.0% (18/20)` **没有参照系**。约两小时 + API 费用，是含金量最高的一块。
 2. **交付面为零。** 无 `.github/`、无 CI、无 Dockerfile / docker-compose。服务能起（`app/main.py`，`/health`），但没有任何东西把它推出去，§2 那 12 条约定也没有任何机制强制。
-3. **`MathMarkdown` 与 `LatexRenderer` 定界符不一致。** 前者（审核台、对话页）只认 `$$…$$` 和 `$…$`；后者（笔记本）认四种，含 `\[…\]` 和 `\(…\)`。目前不发作（MinerU 输出用 `$$`，模型生成的笔记走 `LatexRenderer`），但任何产出 `\[ \]` 的来源进审核台就会显示裸源码。
+3. ~~`MathMarkdown` 与 `LatexRenderer` 定界符不一致。~~ **已修（2026-09-30）**：`MathMarkdown` 改为 `LatexRenderer` 的薄封装，审核台/对话页与笔记本共用一条解析路径，四种定界符全支持。
 4. **浏览器「上传」按钮点击未实测。** 上传→解析→落库→笔记→渲染→候选→审核台整条链已验证，但上传那一步是用 curl 直传 API 走的，UI 的文件提交动作没点过。
 5. **495 条候选待审，审核量是真成本。** 需要按小节批量审 + `proof`/`example` 这类逐字来自教材、非模型生成的原子走低风险快速通道，人工只审 `definition`/`theorem`/`lemma` 与跨节关系。
 6. **`prerequisite` 拓扑排序的语义未决。** `KnowledgeRelation` 带类型化前置边，对其做拓扑排序就会生成强制学习路径，与本分支反对的「越俎代庖」相冲。对照仓库的明确判断是「不通过拓扑排序生成强制顺序、不因环删真实关系」。
-7. **21/150 个单元的 LaTeX 括号本身不配平**，来自 MinerU 输出（全文 `{` 12,974 vs `}` 12,923，而 `\begin{array}`/`\end{array}` 是 312/312 配平的）。渲染层已有 `throwOnError: false` + try/catch 兜底不会崩，但内容质量受损，需要在抽取或审核阶段标记出来。
+7. ~~21/150 个单元的 LaTeX 括号本身不配平~~ **渲染层已修（2026-09-30）**：新增 `lib/latex-balance.ts` 的 `balancedLatex`（丢弃多余 `}`、补齐缺失 `}`、配平 `\left/\right`），`LatexRenderer` 与 `MathView` 渲染前统一修复；抽取层数据保持原样，待审核流程标记。
 8. **前端测试面薄**：`apps/web` 只有 12 个 Node 测试，无 e2e、无视觉回归。
-9. **`apps/api/test_mineru.py` 是孤儿脚本**：import 一个不存在的 `mineru` 包，不被 pytest 收集（`testpaths=["tests"]`）、无任何引用。建议删除。
+9. ~~`apps/api/test_mineru.py` 是孤儿脚本~~ **已删除（2026-09-30）**。
 10. **`opening < 150ms` 只是测试断言**，运行时没有任何 deadline（对比 `fast_context` 的 350ms 是真的，`fast_context.py:51` 硬编码 `asyncio.wait` + 取消）。
 
 ## 7. 阶段 5 的实测终态（同一本 150 页教材）
@@ -159,3 +159,9 @@ cd apps/web; npm run build
 | 笔记渲染 | — | 页面 **225 个 KaTeX 节点，裸定界符 0** |
 | 审核台 | 关系候选不可审 | 类型 + 两端标题 + 端点 id + 置信度全部可见 |
 | 测试 | 167 passed / **1 failed** | **256 passed / 0 failed**，离线 |
+
+## 附：检索评测基线（2026-09-30）
+
+- 评测集 244 条（`scripts/build_retrieval_eval.py` 从教材图谱确定性生成），gold 244/244 解析成功。
+- 顺带修了三个真缺陷：`search_document_chunks` 方法缺失（chunk 检索运行时从未生效）、SQLite 默认分词器切不动中文（新增 CJK bigram 索引，migration 005）、问句脚手架毒化 AND 查询（`cjk_query_groups` 剥离问句框架）。
+- BM25（生产同路径）Recall@3 **0.752** / Recall@5 **0.798** / MRR@10 **0.708**；vector/hybrid 两行待 embedding key（DeepSeek 无 embedding 端点）。详见研究文档 §25。

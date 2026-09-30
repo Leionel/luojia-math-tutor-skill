@@ -81,11 +81,49 @@ def _migration_004_document_markdown(conn: sqlite3.Connection) -> None:
     _add_column(conn, "documents", "markdown", "text not null default ''")
 
 
+def _cjk_bigram_text(text: str) -> str:
+    # SQLite's default tokenizer cannot split long CJK runs, so the index
+    # stores whitespace-separated bigrams; queries are transformed the same way.
+    from app.memory.text_index import cjk_bigram_text
+
+    return cjk_bigram_text(text)
+
+
+def _migration_005_document_chunk_bigram_index(conn: sqlite3.Connection) -> None:
+    from app.memory.text_index import cjk_bigram_text
+
+    conn.execute(
+        """
+        create virtual table if not exists document_chunks_index using fts5(
+          chunk_rowid unindexed,
+          text
+        )
+        """
+    )
+    tables = {
+        str(row[0]) for row in conn.execute("select name from sqlite_master where type='table'")
+    }
+    if "document_chunks" not in tables:
+        return
+    indexed = {
+        int(row[0])
+        for row in conn.execute("select chunk_rowid from document_chunks_index")
+    }
+    for row in conn.execute("select rowid, content from document_chunks"):
+        if row[0] in indexed:
+            continue
+        conn.execute(
+            "insert into document_chunks_index(chunk_rowid, text) values (?, ?)",
+            (row[0], cjk_bigram_text(row[1])),
+        )
+
+
 MIGRATIONS: tuple[tuple[int, str, Callable[[sqlite3.Connection], None]], ...] = (
     (1, "message_metadata", _migration_001_message_metadata),
     (2, "auth_credentials", _migration_002_auth_credentials),
     (3, "shared_runtime_state", _migration_003_shared_runtime_state),
     (4, "document_markdown", _migration_004_document_markdown),
+    (5, "document_chunk_bigram_index", _migration_005_document_chunk_bigram_index),
 )
 
 

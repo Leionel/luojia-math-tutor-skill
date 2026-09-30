@@ -121,7 +121,7 @@ def build_cases(units: list[dict], relations: list[dict]) -> list[dict]:
     cases: list[dict] = []
     seen: set[str] = set()
 
-    def add(query: str, style: str, expected: list[str], payload: dict) -> None:
+    def add(query: str, style: str, expected: list[str], payload: dict, extra_marker: str = "") -> None:
         query = re.sub(r"\s+", " ", query).strip()
         key = query.lower()
         if len(query) < 4 or key in seen or not expected:
@@ -134,6 +134,7 @@ def build_cases(units: list[dict], relations: list[dict]) -> list[dict]:
                 "style": style,
                 "expected_unit_ids": expected,
                 "expected_marker": payload.get("title"),
+                "subject_marker": extra_marker or "",
                 "expected_section": (payload.get("chapter_path") or [])[-1] if payload.get("chapter_path") else "",
                 "source_document_id": payload.get("source_document_id"),
                 "difficulty": payload.get("difficulty", 3),
@@ -186,7 +187,7 @@ def build_cases(units: list[dict], relations: list[dict]) -> list[dict]:
             name = short_name(source["title"])
             if not usable_name(name) or is_sentence_fragment(name):
                 continue
-            add(f"{name}属于哪一节？", "hierarchy", [rel["target_unit_id"]], target)
+            add(f"{name}属于哪一节？", "hierarchy", [rel["target_unit_id"]], target, extra_marker=source["title"])
         # F. typed relations: ask from whichever side actually carries a name
         elif rel.get("relation_type") in {"derives_from", "example_of"}:
             a, b = short_name(source["title"]), short_name(target["title"])
@@ -196,10 +197,10 @@ def build_cases(units: list[dict], relations: list[dict]) -> list[dict]:
                 continue
             if rel.get("relation_type") == "example_of":
                 subject = b if b_ok else a
-                add(f"{subject}有哪些例题？", "relation", [source["id"], target["id"]], target)
+                add(f"{subject}有哪些例题？", "relation", [source["id"], target["id"]], target, extra_marker=source["title"])
             else:
                 subject = b if b_ok else a
-                add(f"{subject}能推出哪些结论？", "relation", [source["id"], target["id"]], target)
+                add(f"{subject}能推出哪些结论？", "relation", [source["id"], target["id"]], target, extra_marker=source["title"])
 
     return cases
 
