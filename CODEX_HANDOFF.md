@@ -34,7 +34,7 @@
 4. **495 条候选待人工审核**（`data/course_store.db` 的 `graph_candidates`）：审核不只是清库存，直接解锁 hierarchy 0.867。建议批量审 + 低风险快速通道。
 5. ~~无 CI~~ **已加（2026-09-30）**：`.github/workflows/ci.yml` 三 job（api pytest / knowledge JSON 校验 / web tsc+单测+build）。**部署仍无**。
 6. 浏览器「上传」按钮的真实点击从未测过（链路其余环节都是 curl/API 实测的）。
-7. **Desmos 正式 key 无法代办**：需要你自己的 Desmos 账号去 desmos.com/api 申请（免费、非商用），填进 `apps/web/.env.local` 的 `NEXT_PUBLIC_DESMOS_API_KEY` 重启前端即可；缺 key 时模态框已有可读空态。
+7. ~~Desmos 正式 key~~ **已配置（2026-09-30）**：正式 key 在 gitignored 的 `apps/web/.env.local`（`NEXT_PUBLIC_DESMOS_API_KEY`），勿提交；缺 key 时模态框有空态兜底。
 
 ## 5. 关于最近两个提交的诚实声明
 
