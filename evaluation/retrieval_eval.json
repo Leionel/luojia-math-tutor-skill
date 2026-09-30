@@ -1,43 +1,2934 @@
 [
   {
-    "id": "test_001",
-    "query": "为什么可数集的测度为 0？",
-    "expected_knowledge_ids": [
-      "measure_countable_additivity",
-      "measure_zero_set"
-    ]
+    "id": "rev_0001",
+    "query": "第 1 章 基础知识",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_6877220699"
+    ],
+    "expected_marker": "第 1 章 基础知识",
+    "expected_section": "第 1 章 基础知识",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
   },
   {
-    "id": "test_002",
-    "query": "行列式求导的公式是什么？",
-    "expected_knowledge_ids": [
-      "determinant_derivative",
-      "jacobi_formula"
-    ]
+    "id": "rev_0002",
+    "query": "数值分析的对象和特点",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_34DBCFE7FC"
+    ],
+    "expected_marker": "1.1 数值分析的对象和特点",
+    "expected_section": "1.1 数值分析的对象和特点",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
   },
   {
-    "id": "test_003",
-    "query": "微积分基本定理的直观含义是什么？",
-    "expected_knowledge_ids": [
-      "fundamental_theorem_of_calculus",
-      "newton_leibniz_formula"
-    ]
+    "id": "rev_0003",
+    "query": "数值分析的对象和特点这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_34DBCFE7FC"
+    ],
+    "expected_marker": "1.1 数值分析的对象和特点",
+    "expected_section": "1.1 数值分析的对象和特点",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
   },
   {
-    "id": "test_004",
-    "query": "特征值和特征向量有什么几何意义？",
-    "expected_knowledge_ids": [
-      "eigenvalue_eigenvector_geometric",
-      "linear_transformation_invariant_subspace"
-    ]
+    "id": "rev_0004",
+    "query": "数值计算的误差",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_64C66D6F8F"
+    ],
+    "expected_marker": "1.2 数值计算的误差",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
   },
   {
-    "id": "test_005",
-    "query": "大数定律和中心极限定理有什么区别？",
-    "expected_knowledge_ids": [
-      "law_of_large_numbers",
-      "central_limit_theorem",
-      "probability_convergence"
-    ]
+    "id": "rev_0005",
+    "query": "什么是截断误差或方法误差？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_64C66D6F8F"
+    ],
+    "expected_marker": "1.2 数值计算的误差",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0006",
+    "query": "截断误差或方法误差是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_64C66D6F8F"
+    ],
+    "expected_marker": "1.2 数值计算的误差",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0007",
+    "query": "什么是计算解？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_34659921B3"
+    ],
+    "expected_marker": "定义 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0008",
+    "query": "计算解是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_34659921B3"
+    ],
+    "expected_marker": "定义 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0009",
+    "query": "数值计算的误差里的定义 1.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_34659921B3"
+    ],
+    "expected_marker": "定义 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0010",
+    "query": "数值计算的误差里的定义 1.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_6DE0CD15C9"
+    ],
+    "expected_marker": "定义 1.2",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0011",
+    "query": "IEEE 浮点数系统",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_B5779D1488"
+    ],
+    "expected_marker": "1.3 IEEE 浮点数系统",
+    "expected_section": "1.3 IEEE 浮点数系统",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0012",
+    "query": "什么是机器精度？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_B5779D1488"
+    ],
+    "expected_marker": "1.3 IEEE 浮点数系统",
+    "expected_section": "1.3 IEEE 浮点数系统",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0013",
+    "query": "机器精度是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_B5779D1488"
+    ],
+    "expected_marker": "1.3 IEEE 浮点数系统",
+    "expected_section": "1.3 IEEE 浮点数系统",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0014",
+    "query": "计算复杂性和收敛速度",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_8C7E525977"
+    ],
+    "expected_marker": "1.4 计算复杂性和收敛速度",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0015",
+    "query": "计算复杂性和收敛速度这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_8C7E525977"
+    ],
+    "expected_marker": "1.4 计算复杂性和收敛速度",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0016",
+    "query": "什么是线性收敛？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_80A6696956"
+    ],
+    "expected_marker": "定义 1.3",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0017",
+    "query": "什么是次线性收敛？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_80A6696956"
+    ],
+    "expected_marker": "定义 1.3",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0018",
+    "query": "线性收敛是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_80A6696956"
+    ],
+    "expected_marker": "定义 1.3",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0019",
+    "query": "计算复杂性和收敛速度里的定义 1.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_80A6696956"
+    ],
+    "expected_marker": "定义 1.3",
+    "expected_section": "1.4 计算复杂性和收敛速度",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0020",
+    "query": "第 2 章 非线性方程（组）的数值求解",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_C75AE5BE89"
+    ],
+    "expected_marker": "第 2 章 非线性方程（组）的数值求解",
+    "expected_section": "第 2 章 非线性方程（组）的数值求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0021",
+    "query": "不动点迭代",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_E8EBCB8E05"
+    ],
+    "expected_marker": "2.1.2 不动点迭代",
+    "expected_section": "2.1.2 不动点迭代",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0022",
+    "query": "Newton 法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_74F312FC19"
+    ],
+    "expected_marker": "2.1.3 Newton 法",
+    "expected_section": "2.1.3 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0023",
+    "query": "非线性方程组求解",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_194C16E441"
+    ],
+    "expected_marker": "2.2 非线性方程组求解",
+    "expected_section": "2.2 非线性方程组求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0024",
+    "query": "不动点迭代这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_E0AE306B99"
+    ],
+    "expected_marker": "2.2.1 不动点迭代",
+    "expected_section": "2.2.1 不动点迭代",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0025",
+    "query": "什么是Jacobi矩阵？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_67CF1AE9C2"
+    ],
+    "expected_marker": "定义 2.1",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0026",
+    "query": "Jacobi矩阵是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_67CF1AE9C2"
+    ],
+    "expected_marker": "定义 2.1",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0027",
+    "query": "Newton 法里的定义 2.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_67CF1AE9C2"
+    ],
+    "expected_marker": "定义 2.1",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0028",
+    "query": "例题 2.6 考虑如下非线性方程组",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_2FA1031E52"
+    ],
+    "expected_marker": "例题 2.6 考虑如下非线性方程组",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0029",
+    "query": "拟牛顿法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_A42B6E6906"
+    ],
+    "expected_marker": "2.2.3 拟牛顿法",
+    "expected_section": "2.2.3 拟牛顿法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0030",
+    "query": "拟牛顿法里的引理 2.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_600F174AD4"
+    ],
+    "expected_marker": "引理 2.1",
+    "expected_section": "2.2.3 拟牛顿法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0031",
+    "query": "知识拓展",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_51D7205D20"
+    ],
+    "expected_marker": "2.3 知识拓展",
+    "expected_section": "2.3 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0032",
+    "query": "第 3 章 多项式插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_2D77F7D931"
+    ],
+    "expected_marker": "第 3 章 多项式插值",
+    "expected_section": "第 3 章 多项式插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0033",
+    "query": "Lagrange 插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_B4517E88BD"
+    ],
+    "expected_marker": "3.1 Lagrange 插值",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0034",
+    "query": "Lagrange 插值里的定义 3.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_708C3A9B1F"
+    ],
+    "expected_marker": "定义 3.1",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0035",
+    "query": "Lagrange 插值里的定理 3.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_1051FB1962"
+    ],
+    "expected_marker": "定理 3.1",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0036",
+    "query": "Lagrange 插值里的定理 3.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_5195B15141"
+    ],
+    "expected_marker": "定理 3.2",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0037",
+    "query": "Lagrange 插值里的定理 3.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_94FF6B3E18"
+    ],
+    "expected_marker": "定理 3.3",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0038",
+    "query": "等距节点高阶多项式插值的不稳定性",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_5AD14F6596"
+    ],
+    "expected_marker": "3.2 等距节点高阶多项式插值的不稳定性",
+    "expected_section": "3.2 等距节点高阶多项式插值的不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0039",
+    "query": "等距节点高阶多项式插值的不稳定性这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_5AD14F6596"
+    ],
+    "expected_marker": "3.2 等距节点高阶多项式插值的不稳定性",
+    "expected_section": "3.2 等距节点高阶多项式插值的不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0040",
+    "query": "龙格现象",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_6E0C908F29"
+    ],
+    "expected_marker": "3.2.1 龙格现象",
+    "expected_section": "3.2.1 龙格现象",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0041",
+    "query": "什么是龙格现象？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_6E0C908F29"
+    ],
+    "expected_marker": "3.2.1 龙格现象",
+    "expected_section": "3.2.1 龙格现象",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0042",
+    "query": "龙格现象是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_6E0C908F29"
+    ],
+    "expected_marker": "3.2.1 龙格现象",
+    "expected_section": "3.2.1 龙格现象",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0043",
+    "query": "数值不稳定性",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D6508B3C14"
+    ],
+    "expected_marker": "3.2.2 数值不稳定性",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0044",
+    "query": "数值不稳定性这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_D6508B3C14"
+    ],
+    "expected_marker": "3.2.2 数值不稳定性",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0045",
+    "query": "数值不稳定性里的定义 3.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_B074CEEFED"
+    ],
+    "expected_marker": "定义 3.4",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0046",
+    "query": "数值不稳定性里的定理 3.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_9F93219D94"
+    ],
+    "expected_marker": "定理 3.5",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0047",
+    "query": "数值不稳定性里的定理 3.6讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_D8C8F837D8"
+    ],
+    "expected_marker": "定理 3.6",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0048",
+    "query": "Chebyshev 节点的 Lagrange 插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_00564EBCD4"
+    ],
+    "expected_marker": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0049",
+    "query": "Chebyshev 节点的 Lagrange 插值里的定义 3.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_8357C52C4F"
+    ],
+    "expected_marker": "定义 3.5",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0050",
+    "query": "Chebyshev 节点的 Lagrange 插值里的命题 3.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_F3DF263EC0"
+    ],
+    "expected_marker": "命题 3.1",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0051",
+    "query": "Chebyshev 节点的 Lagrange 插值里的定理 3.8讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_3F4F7908A0"
+    ],
+    "expected_marker": "定理 3.8",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0052",
+    "query": "Chebyshev 节点的 Lagrange 插值里的定理 3.9讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_3C0A3EC356"
+    ],
+    "expected_marker": "定理 3.9",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0053",
+    "query": "Chebyshev 节点的 Lagrange 插值里的命题 3.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C3F83EEE9F"
+    ],
+    "expected_marker": "命题 3.2",
+    "expected_section": "3.2.3 Chebyshev 节点的 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0054",
+    "query": "Hermite 插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_DE9E591D25"
+    ],
+    "expected_marker": "3.3 Hermite 插值",
+    "expected_section": "3.3 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0055",
+    "query": "Hermite 插值里的定理 3.10讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_0484AA6069"
+    ],
+    "expected_marker": "定理 3.10",
+    "expected_section": "3.3 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0056",
+    "query": "分片线性和分片三次 Hermite 插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_4CE0E672F4"
+    ],
+    "expected_marker": "3.4 分片线性和分片三次 Hermite 插值",
+    "expected_section": "3.4 分片线性和分片三次 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0057",
+    "query": "分片线性和分片三次 Hermite 插值里的定理 3.12讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_944B7B9D0B"
+    ],
+    "expected_marker": "定理 3.12",
+    "expected_section": "3.4 分片线性和分片三次 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0058",
+    "query": "分片线性和分片三次 Hermite 插值里的定理 3.13讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_8FBA2CEF03"
+    ],
+    "expected_marker": "定理 3.13",
+    "expected_section": "3.4 分片线性和分片三次 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0059",
+    "query": "分片线性和分片三次 Hermite 插值里的定理 3.14讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_7B54C85E8A"
+    ],
+    "expected_marker": "定理 3.14",
+    "expected_section": "3.4 分片线性和分片三次 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0060",
+    "query": "三次样条插值",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_9ACCEFB8B6"
+    ],
+    "expected_marker": "3.5 三次样条插值",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0061",
+    "query": "三次样条插值这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_9ACCEFB8B6"
+    ],
+    "expected_marker": "3.5 三次样条插值",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0062",
+    "query": "三次样条插值里的定义 3.6讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_473BFC2C9D"
+    ],
+    "expected_marker": "定义 3.6",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0063",
+    "query": "三次样条插值里的命题 3.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_457F369EE6"
+    ],
+    "expected_marker": "命题 3.3",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0064",
+    "query": "三次样条插值里的命题 3.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_37CE0EDAAF"
+    ],
+    "expected_marker": "命题 3.4",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0065",
+    "query": "三次样条插值里的命题 3.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C40FDB0743"
+    ],
+    "expected_marker": "命题 3.5",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0066",
+    "query": "三次样条插值里的定理 3.15讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_78A941D9D6"
+    ],
+    "expected_marker": "定理 3.15",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0067",
+    "query": "三次样条插值里的引理 3.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_169C10EAEA"
+    ],
+    "expected_marker": "引理 3.1",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0068",
+    "query": "三次样条插值里的定理 3.16讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_01E94421DF"
+    ],
+    "expected_marker": "定理 3.16",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0069",
+    "query": "三次样条插值里的定理 3.17讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_71C510D452"
+    ],
+    "expected_marker": "定理 3.17",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0070",
+    "query": "B 样条",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_F88E69FB39"
+    ],
+    "expected_marker": "3.6 B 样条",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0071",
+    "query": "B 样条这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_F88E69FB39"
+    ],
+    "expected_marker": "3.6 B 样条",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0072",
+    "query": "B 样条里的定理 3.18讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_FF871444DE"
+    ],
+    "expected_marker": "定理 3.18",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0073",
+    "query": "B 样条里的引理 3.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_915525A541"
+    ],
+    "expected_marker": "引理 3.2",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0074",
+    "query": "B 样条里的引理 3.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_134024BEF0"
+    ],
+    "expected_marker": "引理 3.3",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0075",
+    "query": "证明 由引理3.2可知",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_875FD5F71C"
+    ],
+    "expected_marker": "证明 由引理3.2可知",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0076",
+    "query": "B 样条里的定理 3.19讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_746F2439E9"
+    ],
+    "expected_marker": "定理 3.19",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0077",
+    "query": "B 样条里的定理 3.21讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_3C212A15C6"
+    ],
+    "expected_marker": "定理 3.21",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0078",
+    "query": "B 样条里的推论 3.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_7BAF50E8DD"
+    ],
+    "expected_marker": "推论 3.2",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0079",
+    "query": "知识拓展这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_13BE280DEB"
+    ],
+    "expected_marker": "3.7 知识拓展",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0080",
+    "query": "第4 章 多项式逼近",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_1823ECC1A2"
+    ],
+    "expected_marker": "第4 章 多项式逼近",
+    "expected_section": "第4 章 多项式逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0081",
+    "query": "什么是最佳一致逼近？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_1823ECC1A2"
+    ],
+    "expected_marker": "第4 章 多项式逼近",
+    "expected_section": "第4 章 多项式逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0082",
+    "query": "什么是最佳平方逼近？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_1823ECC1A2"
+    ],
+    "expected_marker": "第4 章 多项式逼近",
+    "expected_section": "第4 章 多项式逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0083",
+    "query": "最佳一致逼近是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_1823ECC1A2"
+    ],
+    "expected_marker": "第4 章 多项式逼近",
+    "expected_section": "第4 章 多项式逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0084",
+    "query": "正交多项式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_993DA20291"
+    ],
+    "expected_marker": "4.1 正交多项式",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0085",
+    "query": "正交多项式里的定义 4.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_3F5470E269"
+    ],
+    "expected_marker": "定义 4.1",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0086",
+    "query": "正交多项式里的定义 4.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_F0DBC2DAF9"
+    ],
+    "expected_marker": "定义 4.2",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0087",
+    "query": "正交多项式里的定义 4.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_D7F1CF7C64"
+    ],
+    "expected_marker": "定义 4.3",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0088",
+    "query": "正交多项式里的定义 4.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_1E218807A3"
+    ],
+    "expected_marker": "定义 4.4",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0089",
+    "query": "正交多项式里的定理 4.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_9BBB534206"
+    ],
+    "expected_marker": "定理 4.1",
+    "expected_section": "4.1 正交多项式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0090",
+    "query": "最佳一致逼近",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_A280C6DABE"
+    ],
+    "expected_marker": "4.2 最佳一致逼近",
+    "expected_section": "4.2 最佳一致逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0091",
+    "query": "最佳一致逼近的存在唯一性",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_64A4E3EC90"
+    ],
+    "expected_marker": "4.2.1 最佳一致逼近的存在唯一性",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0092",
+    "query": "最佳一致逼近的存在唯一性里的引理 4.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_B87C43B891"
+    ],
+    "expected_marker": "引理 4.1",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0093",
+    "query": "最佳一致逼近的存在唯一性里的推论 4.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_A015F3F8BC"
+    ],
+    "expected_marker": "推论 4.1",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0094",
+    "query": "最佳一致逼近的存在唯一性里的推论 4.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_2FAD7DE4C3"
+    ],
+    "expected_marker": "推论 4.3",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0095",
+    "query": "最佳一致逼近的存在唯一性里的定理 4.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_7CF74A7C72"
+    ],
+    "expected_marker": "定理 4.3",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0096",
+    "query": "最佳一致逼近的存在唯一性里的定理 4.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_A05AE0B78D"
+    ],
+    "expected_marker": "定理 4.4",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0097",
+    "query": "最佳平方逼近",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_1482917A29"
+    ],
+    "expected_marker": "4.3 最佳平方逼近",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0098",
+    "query": "什么是Gibbs现象？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_1482917A29"
+    ],
+    "expected_marker": "4.3 最佳平方逼近",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0099",
+    "query": "Gibbs现象是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_1482917A29"
+    ],
+    "expected_marker": "4.3 最佳平方逼近",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0100",
+    "query": "最佳平方逼近里的定理 4.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C17B6884D1"
+    ],
+    "expected_marker": "定理 4.5",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0101",
+    "query": "最佳平方逼近里的定理 4.6讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_275BE17F95"
+    ],
+    "expected_marker": "定理 4.6",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0102",
+    "query": "最佳平方逼近里的定理 4.7讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_0D98B1F07B"
+    ],
+    "expected_marker": "定理 4.7",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0103",
+    "query": "离散最佳平方逼近",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_EE06A761DB"
+    ],
+    "expected_marker": "4.3.1 离散最佳平方逼近",
+    "expected_section": "4.3.1 离散最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0104",
+    "query": "第 5 章 数值微分与数值积分",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_1A6D46AD06"
+    ],
+    "expected_marker": "第 5 章 数值微分与数值积分",
+    "expected_section": "第 5 章 数值微分与数值积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0105",
+    "query": "第 5 章 数值微分与数值积分这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_1A6D46AD06"
+    ],
+    "expected_marker": "第 5 章 数值微分与数值积分",
+    "expected_section": "第 5 章 数值微分与数值积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0106",
+    "query": "数值微分",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_507CB477B3"
+    ],
+    "expected_marker": "5.1 数值微分",
+    "expected_section": "5.1 数值微分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0107",
+    "query": "一阶导数的差分格式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_8C416056F9"
+    ],
+    "expected_marker": "5.1.1 一阶导数的差分格式",
+    "expected_section": "5.1.1 一阶导数的差分格式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0108",
+    "query": "一阶导数的差分格式里的定理 5.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_374D91AD46"
+    ],
+    "expected_marker": "定理 5.1",
+    "expected_section": "5.1.1 一阶导数的差分格式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0109",
+    "query": "数值微分的不适定性",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_BB6130D1A0"
+    ],
+    "expected_marker": "5.1.2 数值微分的不适定性",
+    "expected_section": "5.1.2 数值微分的不适定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0110",
+    "query": "什么是传播误差？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_BB6130D1A0"
+    ],
+    "expected_marker": "5.1.2 数值微分的不适定性",
+    "expected_section": "5.1.2 数值微分的不适定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0111",
+    "query": "传播误差是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_BB6130D1A0"
+    ],
+    "expected_marker": "5.1.2 数值微分的不适定性",
+    "expected_section": "5.1.2 数值微分的不适定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0112",
+    "query": "差分模板方法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_C7ED630030"
+    ],
+    "expected_marker": "5.1.3 差分模板方法",
+    "expected_section": "5.1.3 差分模板方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0113",
+    "query": "差分模板方法里的命题 5.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_D31F317E3A"
+    ],
+    "expected_marker": "命题 5.1",
+    "expected_section": "5.1.3 差分模板方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0114",
+    "query": "差分模板方法里的推论 5.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_E54B5F8C86"
+    ],
+    "expected_marker": "推论 5.1",
+    "expected_section": "5.1.3 差分模板方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0115",
+    "query": "数值微分的整体估计方法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D9C40969F8"
+    ],
+    "expected_marker": "5.1.4 数值微分的整体估计方法",
+    "expected_section": "5.1.4 数值微分的整体估计方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0116",
+    "query": "数值微分的整体估计方法这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_D9C40969F8"
+    ],
+    "expected_marker": "5.1.4 数值微分的整体估计方法",
+    "expected_section": "5.1.4 数值微分的整体估计方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0117",
+    "query": "Richardson 外推法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_CD14B3AE63"
+    ],
+    "expected_marker": "5.1.5 Richardson 外推法",
+    "expected_section": "5.1.5 Richardson 外推法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0118",
+    "query": "Newton 求积公式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_05B80A08C1"
+    ],
+    "expected_marker": "5.2 Newton 求积公式",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0119",
+    "query": "什么是插值型求积公式？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_C9C0DB1BCD"
+    ],
+    "expected_marker": "定义 5.1",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0120",
+    "query": "插值型求积公式是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_C9C0DB1BCD"
+    ],
+    "expected_marker": "定义 5.1",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0121",
+    "query": "Newton 求积公式里的定义 5.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C9C0DB1BCD"
+    ],
+    "expected_marker": "定义 5.1",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0122",
+    "query": "Newton 求积公式里的定理 5.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_6D937D2887"
+    ],
+    "expected_marker": "定理 5.2",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0123",
+    "query": "例题 5.3 验证求积公式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_93C5629962"
+    ],
+    "expected_marker": "例题 5.3 验证求积公式",
+    "expected_section": "5.2 Newton 求积公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0124",
+    "query": "Newton-Cotes 公式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_016739124D"
+    ],
+    "expected_marker": "5.2.1 Newton-Cotes 公式",
+    "expected_section": "5.2.1 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0125",
+    "query": "Newton-Cotes 公式这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_016739124D"
+    ],
+    "expected_marker": "5.2.1 Newton-Cotes 公式",
+    "expected_section": "5.2.1 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0126",
+    "query": "Newton-Cotes 公式里的定理 5.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_4C017907BF"
+    ],
+    "expected_marker": "定理 5.3",
+    "expected_section": "5.2.1 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0127",
+    "query": "Newton-Cotes 公式里的推论 5.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C5D6893B6C"
+    ],
+    "expected_marker": "推论 5.2",
+    "expected_section": "5.2.1 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0128",
+    "query": "复化 Newton-Cotes 公式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_3C8488EF9E"
+    ],
+    "expected_marker": "5.2.2 复化 Newton-Cotes 公式",
+    "expected_section": "5.2.2 复化 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0129",
+    "query": "复化 Newton-Cotes 公式这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_3C8488EF9E"
+    ],
+    "expected_marker": "5.2.2 复化 Newton-Cotes 公式",
+    "expected_section": "5.2.2 复化 Newton-Cotes 公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0130",
+    "query": "复化梯形公式",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_9038DB3D8C"
+    ],
+    "expected_marker": "(1) 复化梯形公式",
+    "expected_section": "(1) 复化梯形公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0131",
+    "query": "复化梯形公式这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_9038DB3D8C"
+    ],
+    "expected_marker": "(1) 复化梯形公式",
+    "expected_section": "(1) 复化梯形公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0132",
+    "query": "Romberg 算法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_8F58873C7D"
+    ],
+    "expected_marker": "5.2.3 Romberg 算法",
+    "expected_section": "5.2.3 Romberg 算法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0133",
+    "query": "Romberg 算法这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_8F58873C7D"
+    ],
+    "expected_marker": "5.2.3 Romberg 算法",
+    "expected_section": "5.2.3 Romberg 算法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0134",
+    "query": "Gauss 型积分",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_6A285EF79B"
+    ],
+    "expected_marker": "5.3 Gauss 型积分",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0135",
+    "query": "什么是Gauss积分格式？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_6A285EF79B"
+    ],
+    "expected_marker": "5.3 Gauss 型积分",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0136",
+    "query": "Gauss积分格式是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_6A285EF79B"
+    ],
+    "expected_marker": "5.3 Gauss 型积分",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0137",
+    "query": "Gauss 型积分这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_6A285EF79B"
+    ],
+    "expected_marker": "5.3 Gauss 型积分",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0138",
+    "query": "Gauss 型积分里的定理 5.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_56C980EE2A"
+    ],
+    "expected_marker": "定理 5.5",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0139",
+    "query": "Gauss 型积分里的推论 5.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_270ED4ED0E"
+    ],
+    "expected_marker": "推论 5.3",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0140",
+    "query": "第 6 章 常微分方程数值解",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_C1446A4CB3"
+    ],
+    "expected_marker": "第 6 章 常微分方程数值解",
+    "expected_section": "第 6 章 常微分方程数值解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0141",
+    "query": "初值问题的数值方法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_F5D8216820"
+    ],
+    "expected_marker": "6.1 初值问题的数值方法",
+    "expected_section": "6.1 初值问题的数值方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0142",
+    "query": "Euler 方法和 Crank-Nicolson 方法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_274DC1DBC2"
+    ],
+    "expected_marker": "6.1.1 Euler 方法和 Crank-Nicolson 方法",
+    "expected_section": "6.1.1 Euler 方法和 Crank-Nicolson 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0143",
+    "query": "Euler 方法和 Crank-Nicolson 方法里的定理 6.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_6F4ECEBEE7"
+    ],
+    "expected_marker": "定理 6.1",
+    "expected_section": "6.1.1 Euler 方法和 Crank-Nicolson 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0144",
+    "query": "相容性、收敛性、稳定性",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_40F7378480"
+    ],
+    "expected_marker": "6.1.2 相容性、收敛性、稳定性",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0145",
+    "query": "什么是局部截断误差？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_40F7378480"
+    ],
+    "expected_marker": "6.1.2 相容性、收敛性、稳定性",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0146",
+    "query": "局部截断误差是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_40F7378480"
+    ],
+    "expected_marker": "6.1.2 相容性、收敛性、稳定性",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0147",
+    "query": "相容性、收敛性、稳定性这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_40F7378480"
+    ],
+    "expected_marker": "6.1.2 相容性、收敛性、稳定性",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0148",
+    "query": "相容性、收敛性、稳定性里的引理 6.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C38A1F8441"
+    ],
+    "expected_marker": "引理 6.1",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0149",
+    "query": "相容性、收敛性、稳定性里的定理 6.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_470395C62D"
+    ],
+    "expected_marker": "定理 6.2",
+    "expected_section": "6.1.2 相容性、收敛性、稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0150",
+    "query": "Runge-Kutta 法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_345A2C3955"
+    ],
+    "expected_marker": "6.1.3 Runge-Kutta 法",
+    "expected_section": "6.1.3 Runge-Kutta 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0151",
+    "query": "什么是改进的Euler方法？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_345A2C3955"
+    ],
+    "expected_marker": "6.1.3 Runge-Kutta 法",
+    "expected_section": "6.1.3 Runge-Kutta 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0152",
+    "query": "什么是改进？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_345A2C3955"
+    ],
+    "expected_marker": "6.1.3 Runge-Kutta 法",
+    "expected_section": "6.1.3 Runge-Kutta 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0153",
+    "query": "改进的Euler方法是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_345A2C3955"
+    ],
+    "expected_marker": "6.1.3 Runge-Kutta 法",
+    "expected_section": "6.1.3 Runge-Kutta 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0154",
+    "query": "刚性问题求解",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_7FE1B5A8A1"
+    ],
+    "expected_marker": "6.1.4 刚性问题求解",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0155",
+    "query": "边值问题求解",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_4D0BB5776C"
+    ],
+    "expected_marker": "6.2 边值问题求解",
+    "expected_section": "6.2 边值问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0156",
+    "query": "边值问题求解里的定理 6.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_6949EBE794"
+    ],
+    "expected_marker": "定理 6.3",
+    "expected_section": "6.2 边值问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0157",
+    "query": "边值问题求解里的推论 6.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_9E06AC0E11"
+    ],
+    "expected_marker": "推论 6.1",
+    "expected_section": "6.2 边值问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0158",
+    "query": "打靶法这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_22BFC76E14"
+    ],
+    "expected_marker": "6.2.1 打靶法",
+    "expected_section": "6.2.1 打靶法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0159",
+    "query": "1. 线性边值问题",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D4F54D35F4"
+    ],
+    "expected_marker": "1. 线性边值问题",
+    "expected_section": "1. 线性边值问题",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0160",
+    "query": "有限差分法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_2E419BFFA2"
+    ],
+    "expected_marker": "6.2.2 有限差分法",
+    "expected_section": "6.2.2 有限差分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0161",
+    "query": "有限差分法这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_2E419BFFA2"
+    ],
+    "expected_marker": "6.2.2 有限差分法",
+    "expected_section": "6.2.2 有限差分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0162",
+    "query": "Galerkin 方法",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D4F878DEE0"
+    ],
+    "expected_marker": "6.2.3 Galerkin 方法",
+    "expected_section": "6.2.3 Galerkin 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0163",
+    "query": "Galerkin 方法这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_D4F878DEE0"
+    ],
+    "expected_marker": "6.2.3 Galerkin 方法",
+    "expected_section": "6.2.3 Galerkin 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0164",
+    "query": "Galerkin 方法里的定理 6.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_3F5C61125C"
+    ],
+    "expected_marker": "定理 6.4",
+    "expected_section": "6.2.3 Galerkin 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0165",
+    "query": "Galerkin 方法里的推论 6.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_CC1351333C"
+    ],
+    "expected_marker": "推论 6.2",
+    "expected_section": "6.2.3 Galerkin 方法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0166",
+    "query": "什么是真实解记作？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_7EB820E8BB"
+    ],
+    "expected_marker": "例题 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0167",
+    "query": "真实解记作是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_7EB820E8BB"
+    ],
+    "expected_marker": "例题 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0168",
+    "query": "数值计算的误差里的例题 1.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_7EB820E8BB"
+    ],
+    "expected_marker": "例题 1.1",
+    "expected_section": "1.2 数值计算的误差",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0169",
+    "query": "定理 2.1（介值定理）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_544AA56FC0"
+    ],
+    "expected_marker": "定理 2.1（介值定理）",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0170",
+    "query": "Algorithm 1",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_FF1841B52A"
+    ],
+    "expected_marker": "Algorithm 1",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0171",
+    "query": "定理 2.2（二分法的误差估计）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_9FA2B36244"
+    ],
+    "expected_marker": "定理 2.2（二分法的误差估计）",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0172",
+    "query": "二分法里的例题 2.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_518D24CBBF"
+    ],
+    "expected_marker": "例题 2.1",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0173",
+    "query": "二分法里的例题 2.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_8521208666"
+    ],
+    "expected_marker": "例题 2.2",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0174",
+    "query": "定理 2.3（压缩映射原理）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_CE34906A83"
+    ],
+    "expected_marker": "定理 2.3（压缩映射原理）",
+    "expected_section": "2.1.2 不动点迭代",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0175",
+    "query": "Algorithm 2",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_656CB32D32"
+    ],
+    "expected_marker": "Algorithm 2",
+    "expected_section": "2.1.3 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0176",
+    "query": "Newton 法里的例题 2.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_F92AC08C2B"
+    ],
+    "expected_marker": "例题 2.3",
+    "expected_section": "2.1.3 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0177",
+    "query": "定理 2.4（Newton 法的局部二次收敛性）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_1347BE648C"
+    ],
+    "expected_marker": "定理 2.4（Newton 法的局部二次收敛性）",
+    "expected_section": "2.1.3 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0178",
+    "query": "Algorithm 3",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_AE270DAD15"
+    ],
+    "expected_marker": "Algorithm 3",
+    "expected_section": "2.1.4 割线法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0179",
+    "query": "定理 2.5（割线法的局部超线性收敛）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D0BCD76E1C"
+    ],
+    "expected_marker": "定理 2.5（割线法的局部超线性收敛）",
+    "expected_section": "2.1.4 割线法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0180",
+    "query": "Algorithm 4",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_9BBFCD93AA"
+    ],
+    "expected_marker": "Algorithm 4",
+    "expected_section": "2.1.5 试错法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0181",
+    "query": "定理 2.6（试错法的线性收敛性）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_EBF0FE9A7D"
+    ],
+    "expected_marker": "定理 2.6（试错法的线性收敛性）",
+    "expected_section": "2.1.5 试错法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0182",
+    "query": "试错法的线性收敛性这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_EBF0FE9A7D"
+    ],
+    "expected_marker": "定理 2.6（试错法的线性收敛性）",
+    "expected_section": "2.1.5 试错法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0183",
+    "query": "定理 2.7（压缩映射原理）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_A588741D56"
+    ],
+    "expected_marker": "定理 2.7（压缩映射原理）",
+    "expected_section": "2.2.1 不动点迭代",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0184",
+    "query": "定理 2.8（局部二次收敛性）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_DC8B0F50F9"
+    ],
+    "expected_marker": "定理 2.8（局部二次收敛性）",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0185",
+    "query": "局部二次收敛性这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_DC8B0F50F9"
+    ],
+    "expected_marker": "定理 2.8（局部二次收敛性）",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0186",
+    "query": "Newton 法里的例题 2.7讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_6E86F37583"
+    ],
+    "expected_marker": "例题 2.7",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0187",
+    "query": "引理 2.2（Sherman-Morrison 公式）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_5B764444B0"
+    ],
+    "expected_marker": "引理 2.2（Sherman-Morrison 公式）",
+    "expected_section": "2.2.3 拟牛顿法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0188",
+    "query": "引理 2.3（Sherman-Morrison-Woodbury 公式）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_807A2D5706"
+    ],
+    "expected_marker": "引理 2.3（Sherman-Morrison-Woodbury 公式）",
+    "expected_section": "2.2.3 拟牛顿法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0189",
+    "query": "拟牛顿法里的例题 2.8讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C7D400EBC6"
+    ],
+    "expected_marker": "例题 2.8",
+    "expected_section": "2.2.3 拟牛顿法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0190",
+    "query": "Lagrange 插值里的例题 3.1讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_999CEBB19F"
+    ],
+    "expected_marker": "例题 3.1",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0191",
+    "query": "定义 3.2（Lagrange 基函数）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_6F8B6CD60C"
+    ],
+    "expected_marker": "定义 3.2（Lagrange 基函数）",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0192",
+    "query": "Lagrange 基函数这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_6F8B6CD60C"
+    ],
+    "expected_marker": "定义 3.2（Lagrange 基函数）",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0193",
+    "query": "定义 3.3（差商）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_F37A051B3F"
+    ],
+    "expected_marker": "定义 3.3（差商）",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0194",
+    "query": "什么是重心公式？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_62A3B5986B"
+    ],
+    "expected_marker": "例题 3.2",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0195",
+    "query": "重心公式是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_62A3B5986B"
+    ],
+    "expected_marker": "例题 3.2",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0196",
+    "query": "Lagrange 插值里的例题 3.2讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_62A3B5986B"
+    ],
+    "expected_marker": "例题 3.2",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0197",
+    "query": "Lagrange 插值里的例题 3.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_A8B0A43074"
+    ],
+    "expected_marker": "例题 3.3",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0198",
+    "query": "数值不稳定性里的定理 3.7讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_D017D249EA"
+    ],
+    "expected_marker": "定理 3.7",
+    "expected_section": "3.2.2 数值不稳定性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0199",
+    "query": "定理 3.11（Hermite 插值的误差估计）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_645649C8D4"
+    ],
+    "expected_marker": "定理 3.11（Hermite 插值的误差估计）",
+    "expected_section": "3.3 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0200",
+    "query": "Hermite 插值里的例题 3.4讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_0542154F00"
+    ],
+    "expected_marker": "例题 3.4",
+    "expected_section": "3.3 Hermite 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0201",
+    "query": "三次样条插值里的例题 3.5讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_242C7E1D7F"
+    ],
+    "expected_marker": "例题 3.5",
+    "expected_section": "3.5 三次样条插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0202",
+    "query": "推论 3.1（分片线性插值的能量模不等式）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_CD0ED69A84"
+    ],
+    "expected_marker": "推论 3.1（分片线性插值的能量模不等式）",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0203",
+    "query": "定理 3.22（Weierstrass 第一逼近定理）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_B5939C0ADD"
+    ],
+    "expected_marker": "定理 3.22（Weierstrass 第一逼近定理）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0204",
+    "query": "推论 3.3（Marcinkiewicz）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_253DF639F8"
+    ],
+    "expected_marker": "推论 3.3（Marcinkiewicz）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0205",
+    "query": "定理 3.23（Faber）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_EE2870909F"
+    ],
+    "expected_marker": "定理 3.23（Faber）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0206",
+    "query": "定理 3.24（Lebesgue 常数的估计）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_5982756748"
+    ],
+    "expected_marker": "定理 3.24（Lebesgue 常数的估计）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0207",
+    "query": "Lebesgue 常数的估计这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_5982756748"
+    ],
+    "expected_marker": "定理 3.24（Lebesgue 常数的估计）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0208",
+    "query": "定理 4.2（Chebyshev 震荡定理）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_682A208C94"
+    ],
+    "expected_marker": "定理 4.2（Chebyshev 震荡定理）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0209",
+    "query": "什么是交错点组或？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_682A208C94"
+    ],
+    "expected_marker": "定理 4.2（Chebyshev 震荡定理）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0210",
+    "query": "交错点组或是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_682A208C94"
+    ],
+    "expected_marker": "定理 4.2（Chebyshev 震荡定理）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0211",
+    "query": "推论 4.2（Marcinkiewicz）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_43F5A9C91D"
+    ],
+    "expected_marker": "推论 4.2（Marcinkiewicz）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0212",
+    "query": "Marcinkiewicz这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_43F5A9C91D"
+    ],
+    "expected_marker": "推论 4.2（Marcinkiewicz）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0213",
+    "query": "命题 4.1（Remez 算法第二步适定性）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_1E3F945926"
+    ],
+    "expected_marker": "命题 4.1（Remez 算法第二步适定性）",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0214",
+    "query": "什么是投影系数？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_CE58FF0FDA"
+    ],
+    "expected_marker": "注",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0215",
+    "query": "投影系数是什么意思？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_CE58FF0FDA"
+    ],
+    "expected_marker": "注",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0216",
+    "query": "最佳平方逼近里的例题 4.3讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_C907228F0E"
+    ],
+    "expected_marker": "例题 4.3",
+    "expected_section": "4.3 最佳平方逼近",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0217",
+    "query": "定理 5.4（Euler-MacLaurin 公式。）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_DE53697D08"
+    ],
+    "expected_marker": "定理 5.4（Euler-MacLaurin 公式。）",
+    "expected_section": "(1) 复化梯形公式",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0218",
+    "query": "Romberg 算法里的例题 5.6讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_AE7C0035C9"
+    ],
+    "expected_marker": "例题 5.6",
+    "expected_section": "5.2.3 Romberg 算法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0219",
+    "query": "Gauss 型积分里的例题 5.7讲了什么？",
+    "style": "scoped_marker",
+    "expected_unit_ids": [
+      "DOC_D2B3006ECB"
+    ],
+    "expected_marker": "例题 5.7",
+    "expected_section": "5.3 Gauss 型积分",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0220",
+    "query": "定义 6.1（绝对稳定）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_D3D204252E"
+    ],
+    "expected_marker": "定义 6.1（绝对稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0221",
+    "query": "什么是该方法对模型问题？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_D3D204252E"
+    ],
+    "expected_marker": "定义 6.1（绝对稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0222",
+    "query": "什么是计算不稳定？",
+    "style": "definition",
+    "expected_unit_ids": [
+      "DOC_D3D204252E"
+    ],
+    "expected_marker": "定义 6.1（绝对稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0223",
+    "query": "该方法对模型问题是怎么算的？",
+    "style": "howto",
+    "expected_unit_ids": [
+      "DOC_D3D204252E"
+    ],
+    "expected_marker": "定义 6.1（绝对稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0224",
+    "query": "定义 6.2（A− 稳定）",
+    "style": "title",
+    "expected_unit_ids": [
+      "DOC_C08E7D70DD"
+    ],
+    "expected_marker": "定义 6.2（A− 稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0225",
+    "query": "A− 稳定这块我没听懂，能讲讲吗",
+    "style": "colloquial",
+    "expected_unit_ids": [
+      "DOC_C08E7D70DD"
+    ],
+    "expected_marker": "定义 6.2（A− 稳定）",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0226",
+    "query": "介值定理属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_5EBED485CE"
+    ],
+    "expected_marker": "2.1.1 二分法",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0227",
+    "query": "二分法的误差估计属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_5EBED485CE"
+    ],
+    "expected_marker": "2.1.1 二分法",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0228",
+    "query": "二分法的误差估计有哪些例题？",
+    "style": "relation",
+    "expected_unit_ids": [
+      "DOC_518D24CBBF",
+      "DOC_9FA2B36244"
+    ],
+    "expected_marker": "定理 2.2（二分法的误差估计）",
+    "expected_section": "2.1.1 二分法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0229",
+    "query": "压缩映射原理属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_E8EBCB8E05"
+    ],
+    "expected_marker": "2.1.2 不动点迭代",
+    "expected_section": "2.1.2 不动点迭代",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0230",
+    "query": "割线法的局部超线性收敛属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_CD355BD47E"
+    ],
+    "expected_marker": "2.1.4 割线法",
+    "expected_section": "2.1.4 割线法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0231",
+    "query": "试错法的线性收敛性属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_83A5A6613C"
+    ],
+    "expected_marker": "2.1.5 试错法",
+    "expected_section": "2.1.5 试错法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0232",
+    "query": "局部二次收敛性属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_1CF9DD0CC4"
+    ],
+    "expected_marker": "2.2.2 Newton 法",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0233",
+    "query": "局部二次收敛性有哪些例题？",
+    "style": "relation",
+    "expected_unit_ids": [
+      "DOC_2FA1031E52",
+      "DOC_DC8B0F50F9"
+    ],
+    "expected_marker": "定理 2.8（局部二次收敛性）",
+    "expected_section": "2.2.2 Newton 法",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0234",
+    "query": "Lagrange 基函数属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_B4517E88BD"
+    ],
+    "expected_marker": "3.1 Lagrange 插值",
+    "expected_section": "3.1 Lagrange 插值",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0235",
+    "query": "分片线性插值的能量模不等式能推出哪些结论？",
+    "style": "relation",
+    "expected_unit_ids": [
+      "DOC_CD0ED69A84",
+      "DOC_915525A541"
+    ],
+    "expected_marker": "引理 3.2",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0236",
+    "query": "分片线性插值的能量模不等式属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_F88E69FB39"
+    ],
+    "expected_marker": "3.6 B 样条",
+    "expected_section": "3.6 B 样条",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0237",
+    "query": "Marcinkiewicz能推出哪些结论？",
+    "style": "relation",
+    "expected_unit_ids": [
+      "DOC_253DF639F8",
+      "DOC_B5939C0ADD"
+    ],
+    "expected_marker": "定理 3.22（Weierstrass 第一逼近定理）",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0238",
+    "query": "Marcinkiewicz属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_13BE280DEB"
+    ],
+    "expected_marker": "3.7 知识拓展",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0239",
+    "query": "Faber属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_13BE280DEB"
+    ],
+    "expected_marker": "3.7 知识拓展",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0240",
+    "query": "Lebesgue 常数的估计属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_13BE280DEB"
+    ],
+    "expected_marker": "3.7 知识拓展",
+    "expected_section": "3.7 知识拓展",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0241",
+    "query": "Chebyshev 震荡定理属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_64A4E3EC90"
+    ],
+    "expected_marker": "4.2.1 最佳一致逼近的存在唯一性",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0242",
+    "query": "Remez 算法第二步适定性属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_64A4E3EC90"
+    ],
+    "expected_marker": "4.2.1 最佳一致逼近的存在唯一性",
+    "expected_section": "4.2.1 最佳一致逼近的存在唯一性",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0243",
+    "query": "绝对稳定属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_7FE1B5A8A1"
+    ],
+    "expected_marker": "6.1.4 刚性问题求解",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_0244",
+    "query": "A− 稳定属于哪一节？",
+    "style": "hierarchy",
+    "expected_unit_ids": [
+      "DOC_7FE1B5A8A1"
+    ],
+    "expected_marker": "6.1.4 刚性问题求解",
+    "expected_section": "6.1.4 刚性问题求解",
+    "source_document_id": "doc_656067dd6720",
+    "difficulty": 3
   }
 ]
