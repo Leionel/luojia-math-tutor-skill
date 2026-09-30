@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
 import { sanitizeHtmlBlock } from "@/lib/html-sanitize";
+import { balancedLatex } from "@/lib/latex-balance";
 import { SourceSpanCard } from "./source-span-card";
 
 function CodeBlock({ language, content }: { language: string; content: string }) {
@@ -57,10 +58,41 @@ function CodeBlock({ language, content }: { language: string; content: string })
 
 function renderLatex(value: string, displayMode = false) {
   try {
-    return katex.renderToString(value, { displayMode, throwOnError: false });
+    return katex.renderToString(balancedLatex(value), { displayMode, throwOnError: false });
   } catch {
     return value;
   }
+}
+
+function MathDisplayBlock({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="group relative math-block my-3 px-4 py-3 rounded-xl border border-olive-500/15 dark:border-olive-400/15 bg-olive-500/[0.03] dark:bg-olive-400/[0.03] overflow-x-auto transition-all hover:border-olive-500/30 shadow-xs">
+      <div dangerouslySetInnerHTML={{ __html: renderLatex(content, true) }} />
+      <button
+        onClick={handleCopy}
+        title="复制 LaTeX 源码"
+        className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 px-2 py-1 rounded-md bg-[var(--bg-card)]/90 backdrop-blur-sm border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] shadow-xs text-xs flex items-center gap-1 cursor-pointer"
+      >
+        {copied ? (
+          <>
+            <Check className="w-3 h-3 text-emerald-500" />
+            <span className="text-[10px] text-emerald-500 font-mono">已复制</span>
+          </>
+        ) : (
+          <>
+            <Copy className="w-3 h-3" />
+            <span className="text-[10px] font-mono">LaTeX</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
 }
 
 type Segment =
@@ -223,13 +255,7 @@ function InlineLatex({ content }: { content: string }) {
           );
         }
         if (segment.type === "display-math") {
-          return (
-            <div
-              key={index}
-              className="math-block my-2"
-              dangerouslySetInnerHTML={{ __html: renderLatex(segment.content, true) }}
-            />
-          );
+          return <MathDisplayBlock key={index} content={segment.content} />;
         }
         return <span key={index}>{renderMarkdownInline(segment.content)}</span>;
       })}
@@ -480,13 +506,7 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
     case "br":
       return <br key={`br-${blockIndex}`} />;
     case "display-math":
-      return (
-        <div
-          key={`dm-${blockIndex}`}
-          className="math-block my-3 overflow-x-auto"
-          dangerouslySetInnerHTML={{ __html: renderLatex(block.content, true) }}
-        />
-      );
+      return <MathDisplayBlock key={`dm-${blockIndex}`} content={block.content} />;
     case "code-block":
       return <CodeBlock key={`cb-${blockIndex}`} language={block.language} content={block.content} />;
     case "plot":

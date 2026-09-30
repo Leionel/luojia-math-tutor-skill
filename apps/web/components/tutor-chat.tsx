@@ -60,6 +60,37 @@ const welcome = `### 欢迎来到珞珈数智助教
 准备好了吗？试试发送：
 > 我算 $\\int x^2 dx = x^3$，对吗？`;
 
+const PROMPT_SUGGESTIONS = [
+  {
+    category: "高等数学",
+    icon: "∫",
+    title: "极限与可导性辨析",
+    desc: "函数在某点可导与极限存在之间的深层充要条件？",
+    prompt: "请问函数在某点极限存在、连续与可导这三者之间有什么本质关系与典型反例？",
+  },
+  {
+    category: "高等数学",
+    icon: "dx",
+    title: "不定积分错因探究",
+    desc: "我算 ∫x²dx = x³，请帮我分析哪一步有问题？",
+    prompt: "我算 \\int x^2 dx = x^3，对吗？请引导我找出问题所在。",
+  },
+  {
+    category: "线性代数",
+    icon: "A·x",
+    title: "特征值与几何变换",
+    desc: "如何从几何拉伸与旋转的角度理解矩阵特征向量？",
+    prompt: "请用几何变换与空间拉伸的直观语言，帮我理解矩阵的特征值与特征向量是什么意义？",
+  },
+  {
+    category: "概率统计",
+    icon: "P(A)",
+    title: "贝叶斯逆向推断",
+    desc: "为什么先验概率与后验概率常颠覆我们的直觉？",
+    prompt: "请通过一个生动直观的经典例子（如罕见病筛查），引导我理解贝叶斯公式与逆向推断思维。",
+  },
+];
+
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 600;
 const DEFAULT_SIDEBAR_WIDTH = 260;
@@ -630,6 +661,40 @@ export function TutorChat() {
                   />
                 ));
               })()}
+              {messages.length === 1 && messages[0].id === "welcome" && (
+                <div className="mt-8 pt-6 border-t border-[var(--border-subtle)] animate-in fade-in slide-in-from-bottom-3 duration-500">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="w-1.5 h-4 rounded-full bg-olive-500" />
+                    <span className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+                      启发式探究推荐 · 点击即刻开启探讨
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {PROMPT_SUGGESTIONS.map((item, pIdx) => (
+                      <button
+                        key={pIdx}
+                        onClick={() => void submit(item.prompt)}
+                        className="group text-left p-3.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] hover:border-olive-500/40 hover:bg-olive-500/[0.03] transition-all duration-200 shadow-xs hover:shadow-card flex flex-col justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-olive-500/10 text-olive-700 dark:text-olive-300">
+                            {item.category}
+                          </span>
+                          <span className="font-mono text-xs text-[var(--text-muted)] group-hover:text-olive-600 transition-colors">
+                            {item.icon}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-[var(--text-primary)] group-hover:text-olive-700 dark:group-hover:text-olive-300 transition-colors mb-1">
+                          {item.title}
+                        </h4>
+                        <p className="text-[11px] text-[var(--text-secondary)] line-clamp-1">
+                          {item.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>

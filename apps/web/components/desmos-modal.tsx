@@ -23,9 +23,10 @@ export function DesmosModal({
   const containerRef = useRef<HTMLDivElement>(null);
   const calculatorRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const hasKey = Boolean(process.env.NEXT_PUBLIC_DESMOS_API_KEY);
 
   useEffect(() => {
-    if (!isOpen || !containerRef.current) return;
+    if (!isOpen || !containerRef.current || !hasKey) return;
 
     let checkInterval: NodeJS.Timeout;
 
@@ -101,11 +102,22 @@ export function DesmosModal({
 
         {/* Desmos Container */}
         <div className="flex-1 w-full bg-white relative">
-          {!isReady && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] z-10">
-              <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4" />
-              <p className="text-sm font-medium">引擎初始化中...</p>
+          {!hasKey ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] z-10 p-8 text-center">
+              <p className="text-sm font-medium mb-2">尚未配置 Desmos API Key</p>
+              <p className="text-xs leading-relaxed max-w-md text-[var(--text-muted)]">
+                在 <code className="font-mono">apps/web/.env.local</code> 中设置{" "}
+                <code className="font-mono">NEXT_PUBLIC_DESMOS_API_KEY</code> 并重启前端。个人非商用 key 可在
+                desmos.com/api 免费申请。
+              </p>
             </div>
+          ) : (
+            !isReady && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] z-10">
+                <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4" />
+                <p className="text-sm font-medium">引擎初始化中...</p>
+              </div>
+            )
           )}
           <div ref={containerRef} className="w-full h-full" style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }} />
         </div>
