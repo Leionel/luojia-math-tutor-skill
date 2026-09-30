@@ -111,41 +111,41 @@ export default function SplashPage() {
             探寻数理的本源，开启智慧的启迪。
           </motion.p>
 
-          <motion.div variants={fadeUpVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-16 max-w-4xl w-full text-left">
+          <motion.div variants={fadeUpVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-14 max-w-4xl w-full text-left">
             {/* Feature 1 */}
-            <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
-              <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">壹</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">启发式教学</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Socratic Heuristics</p>
-              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                不直接提供答案，而是以苏格拉底式的提问引导思考。在问答之间，培养真正的数学直觉与逻辑深度。
+            <div className="relative group flex flex-col space-y-2.5 border border-[#d6d0ba]/80 dark:border-[#3e3f36]/80 bg-white/60 dark:bg-[#22231f]/70 p-7 hover:border-olive-500 dark:hover:border-olive-400 transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="absolute top-4 right-5 text-4xl text-[#617a55] opacity-15 font-title select-none">壹</div>
+              <h3 className="text-[#617a55] dark:text-[#879f7a] font-title font-bold text-2xl tracking-wide">启发式教学</h3>
+              <p className="text-[11px] font-mono text-[#757a6b] dark:text-[#8d8a7d] tracking-wider uppercase">Socratic Heuristics</p>
+              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-2 leading-relaxed">
+                不直接提供终点答案，而是以苏格拉底式的提问引导步步推导。在问答之间，培养真正的数学直觉与逻辑深度。
               </p>
             </div>
             {/* Feature 2 */}
-            <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
-              <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">贰</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">自动错题本</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Auto Mistake Book</p>
-              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                在可识别的步骤错误出现时记录对应知识点与错因，方便回看并进行针对性练习。
+            <div className="relative group flex flex-col space-y-2.5 border border-[#d6d0ba]/80 dark:border-[#3e3f36]/80 bg-white/60 dark:bg-[#22231f]/70 p-7 hover:border-olive-500 dark:hover:border-olive-400 transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="absolute top-4 right-5 text-4xl text-[#617a55] opacity-15 font-title select-none">贰</div>
+              <h3 className="text-[#617a55] dark:text-[#879f7a] font-title font-bold text-2xl tracking-wide">自动错题本</h3>
+              <p className="text-[11px] font-mono text-[#757a6b] dark:text-[#8d8a7d] tracking-wider uppercase">Auto Mistake Book</p>
+              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-2 leading-relaxed">
+                在可识别的步骤偏差出现时自动归因与定格知识点，一键生成迁移训练题，温故而知新。
               </p>
             </div>
             {/* Feature 3 */}
-            <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
-              <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">叁</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">公式与图像</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Math Rendering</p>
-              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                规范渲染 LaTeX 公式，并可按题目需要生成函数、统计等数学图像，帮助理解抽象结构。
+            <div className="relative group flex flex-col space-y-2.5 border border-[#d6d0ba]/80 dark:border-[#3e3f36]/80 bg-white/60 dark:bg-[#22231f]/70 p-7 hover:border-olive-500 dark:hover:border-olive-400 transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="absolute top-4 right-5 text-4xl text-[#617a55] opacity-15 font-title select-none">叁</div>
+              <h3 className="text-[#617a55] dark:text-[#879f7a] font-title font-bold text-2xl tracking-wide">公式与图像</h3>
+              <p className="text-[11px] font-mono text-[#757a6b] dark:text-[#8d8a7d] tracking-wider uppercase">Math Rendering & Desmos</p>
+              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-2 leading-relaxed">
+                规范渲染 LaTeX 公式与几何直观，内嵌 Desmos 动态图像引擎与函数推导，洞悉抽象代数之美。
               </p>
             </div>
             {/* Feature 4 */}
-            <div className="relative group flex flex-col space-y-3 border border-[#d6d0ba] dark:border-[#3e3f36] bg-white/40 dark:bg-[#242421]/60 p-8 hover:border-[#617a55] transition-all rounded-lg overflow-hidden backdrop-blur-md">
-              <div className="absolute top-4 right-4 text-4xl text-[#617a55] opacity-10 font-title">肆</div>
-              <h3 className="text-[#617a55] font-title font-bold text-2xl tracking-wide">模型接入配置</h3>
-              <p className="text-xs text-[#757a6b] dark:text-[#8d8a7d] font-body tracking-widest">Model Configuration</p>
-              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-4 leading-relaxed font-body">
-                支持配置兼容接口、模型名称与访问密钥，在不同服务之间切换，并沿用同一套助教流程。
+            <div className="relative group flex flex-col space-y-2.5 border border-[#d6d0ba]/80 dark:border-[#3e3f36]/80 bg-white/60 dark:bg-[#22231f]/70 p-7 hover:border-olive-500 dark:hover:border-olive-400 transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="absolute top-4 right-5 text-4xl text-[#617a55] opacity-15 font-title select-none">肆</div>
+              <h3 className="text-[#617a55] dark:text-[#879f7a] font-title font-bold text-2xl tracking-wide">模型接入与沙箱</h3>
+              <p className="text-[11px] font-mono text-[#757a6b] dark:text-[#8d8a7d] tracking-wider uppercase">Model & Code Sandbox</p>
+              <p className="text-sm text-[#4a4d44] dark:text-[#c5c2b6] mt-2 leading-relaxed">
+                支持通用兼容接口与模型名称自由切换，后台配备严谨数学代码沙箱实时验算，求真求确。
               </p>
             </div>
           </motion.div>
@@ -154,18 +154,18 @@ export default function SplashPage() {
             {isLoggedIn ? (
               <Link 
                 href="/chat" 
-                className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-transparent px-10 font-title text-xl text-[#617a55] transition-all hover:bg-[#617a55] hover:text-[#faf7f2] rounded-md shadow-sm"
+                className="group relative inline-flex h-13 items-center justify-center overflow-hidden border border-[#617a55] bg-[#617a55] px-9 font-title text-lg text-[#faf7f2] transition-all hover:bg-[#4e6344] hover:shadow-glow-olive rounded-full shadow-md active:scale-95"
               >
-                <span className="mr-3">进入系统</span>
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                <span className="mr-2.5 tracking-widest font-bold">进入学习系统</span>
+                <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-1" />
               </Link>
             ) : (
               <button 
                 onClick={() => { localStorage.setItem("mock_auth_token", "true"); setIsLoggedIn(true); }}
-                className="group relative inline-flex h-14 items-center justify-center overflow-hidden border border-[#617a55] bg-transparent px-10 font-title text-xl text-[#617a55] transition-all hover:bg-[#617a55] hover:text-[#faf7f2] rounded-md shadow-sm"
+                className="group relative inline-flex h-13 items-center justify-center overflow-hidden border border-[#617a55] bg-[#617a55] px-9 font-title text-lg text-[#faf7f2] transition-all hover:bg-[#4e6344] hover:shadow-glow-olive rounded-full shadow-md active:scale-95"
               >
-                <span className="mr-3">启程</span>
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                <span className="mr-2.5 tracking-widest font-bold">启程探索</span>
+                <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-1" />
               </button>
             )}
           </motion.div>
@@ -218,52 +218,64 @@ export default function SplashPage() {
             className="grid grid-cols-1 md:grid-cols-2 gap-8 relative"
           >
             {/* Upgrade 1 */}
-            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#617a55] transition-all backdrop-blur-sm">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-[#617a55]/10 flex items-center justify-center">
-                <Video className="w-6 h-6 text-[#617a55]" />
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4.5 p-6 bg-white/70 dark:bg-[#22231f]/75 border border-[#d6d0ba]/70 dark:border-[#3e3f36]/70 rounded-2xl hover:border-olive-500/60 dark:hover:border-olive-400/60 transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-olive-500/10 dark:bg-olive-400/15 flex items-center justify-center border border-olive-500/20 group-hover:scale-105 transition-transform">
+                <Video className="w-5 h-5 text-olive-600 dark:text-olive-400" />
               </div>
               <div>
-                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">语音伴读 (Voice TTS)</h3>
-                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                <h3 className="text-lg font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-1.5 flex items-center gap-2">
+                  <span>语音伴读</span>
+                  <span className="text-[10px] font-mono font-medium text-olive-700 dark:text-olive-300 bg-olive-500/10 px-2 py-0.5 rounded-full">Voice TTS</span>
+                </h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] text-sm leading-relaxed">
                   通过正则表达式无损过滤数学公式代码，调用原生接口带来沉浸式的女声流利朗读，让枯燥的推导变得生动。
                 </p>
               </div>
             </motion.div>
 
             {/* Upgrade 2 */}
-            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#c44a3d] transition-all backdrop-blur-sm">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-[#c44a3d]/10 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-[#c44a3d]" />
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4.5 p-6 bg-white/70 dark:bg-[#22231f]/75 border border-[#d6d0ba]/70 dark:border-[#3e3f36]/70 rounded-2xl hover:border-[#c44a3d]/60 dark:hover:border-[#c44a3d]/60 transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-[#c44a3d]/10 flex items-center justify-center border border-[#c44a3d]/20 group-hover:scale-105 transition-transform">
+                <FileText className="w-5 h-5 text-[#c44a3d]" />
               </div>
               <div>
-                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">随堂笔记 (Notes Agent)</h3>
-                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                <h3 className="text-lg font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-1.5 flex items-center gap-2">
+                  <span>随堂笔记</span>
+                  <span className="text-[10px] font-mono font-medium text-[#c44a3d] bg-[#c44a3d]/10 px-2 py-0.5 rounded-full">Notes Agent</span>
+                </h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] text-sm leading-relaxed">
                   一键从散乱的对话中提炼出结构化的核心考点、推导过程与易错陷阱，并支持原生排版打印与PDF导出。
                 </p>
               </div>
             </motion.div>
 
             {/* Upgrade 3 */}
-            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#617a55] transition-all backdrop-blur-sm">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-[#617a55]/10 flex items-center justify-center">
-                <Quote className="w-6 h-6 text-[#617a55]" />
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4.5 p-6 bg-white/70 dark:bg-[#22231f]/75 border border-[#d6d0ba]/70 dark:border-[#3e3f36]/70 rounded-2xl hover:border-sky-500/60 dark:hover:border-sky-400/60 transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 group-hover:scale-105 transition-transform">
+                <Quote className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <div>
-                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">理科键盘 (Math Keyboard)</h3>
-                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                <h3 className="text-lg font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-1.5 flex items-center gap-2">
+                  <span>理科键盘</span>
+                  <span className="text-[10px] font-mono font-medium text-sky-700 dark:text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-full">Math Keyboard</span>
+                </h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] text-sm leading-relaxed">
                   全面进化的虚拟符号面板，微积分、希腊字母一应俱全。告别复杂的代码输入，实现所见即所得的极客输入体验。
                 </p>
               </div>
             </motion.div>
 
             {/* Upgrade 4 */}
-            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4 p-6 bg-white/40 dark:bg-[#242421]/60 border border-[#d6d0ba]/50 dark:border-[#3e3f36]/50 rounded-lg hover:border-[#c44a3d] transition-all backdrop-blur-sm">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-[#c44a3d]/10 flex items-center justify-center">
-                <BrainCircuit className="w-6 h-6 text-[#c44a3d]" />
+            <motion.div variants={fadeUpVariants} className="group flex items-start gap-4.5 p-6 bg-white/70 dark:bg-[#22231f]/75 border border-[#d6d0ba]/70 dark:border-[#3e3f36]/70 rounded-2xl hover:border-olive-500/60 dark:hover:border-olive-400/60 transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow-card hover:-translate-y-0.5">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-olive-500/10 dark:bg-olive-400/15 flex items-center justify-center border border-olive-500/20 group-hover:scale-105 transition-transform">
+                <BrainCircuit className="w-5 h-5 text-olive-600 dark:text-olive-400" />
               </div>
               <div>
-                <h3 className="text-xl font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-2">课程知识图谱 (Course Graph 2.0)</h3>
-                <p className="text-[#4a4d44] dark:text-[#c5c2b6] font-body text-sm leading-relaxed">
+                <h3 className="text-lg font-title font-bold text-[#2a2b26] dark:text-[#e6e4dc] mb-1.5 flex items-center gap-2">
+                  <span>课程知识图谱</span>
+                  <span className="text-[10px] font-mono font-medium text-olive-700 dark:text-olive-300 bg-olive-500/10 px-2 py-0.5 rounded-full">Course Graph 2.0</span>
+                </h3>
+                <p className="text-[#4a4d44] dark:text-[#c5c2b6] text-sm leading-relaxed">
                   以《数值分析》求根单元为起点的课程知识图谱：27 个节点按“核心 / 前置 / 拓展”边界语义着色，教学案例匹配与知识点审核全流程可视化，学生进程独立叠加于图谱之上。
                 </p>
               </div>

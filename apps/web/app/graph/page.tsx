@@ -74,41 +74,41 @@ export default function GraphPage() {
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden">
       {/* Top Navigation */}
-      <header className="flex-shrink-0 h-16 px-6 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-header)] backdrop-blur-md relative z-20">
-        <div className="flex items-center gap-4">
+      <header className="flex-shrink-0 h-16 px-4 sm:px-6 flex items-center justify-between glass-header relative z-30">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link 
             href="/chat"
-            className="flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            返回对话
+            <span>返回对话</span>
           </Link>
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
-          <div className="flex items-center gap-2 text-olive-600 dark:text-olive-400">
-            <Network className="w-5 h-5" />
-            <h1 className="text-lg font-bold font-title tracking-wider">课程知识图谱</h1>
+          <div className="h-4 w-px bg-[var(--border-subtle)]" />
+          <div className="flex items-center gap-2 text-olive-700 dark:text-olive-300">
+            <Network className="w-4.5 h-4.5 text-olive-600 dark:text-olive-400" />
+            <h1 className="text-base font-bold font-title tracking-wide">课程知识图谱</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Course select badge */}
-          <div className="flex items-center gap-1.5 bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)]">
-            <BookOpen className="w-3.5 h-3.5 text-olive-500" />
+          <div className="hidden md:flex items-center gap-1.5 bg-[var(--bg-tertiary)]/70 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+            <BookOpen className="w-3.5 h-3.5 text-olive-600 dark:text-olive-400" />
             <span>《数值分析》求根单元 (27 节点 / 21 关系)</span>
           </div>
 
-          {/* Scope Filters — each filter tinted with its scope color */}
-          <div className="flex items-center gap-1 bg-[var(--bg-tertiary)] p-1 rounded-lg">
+          {/* Scope Filters */}
+          <div className="flex items-center gap-1 bg-[var(--bg-tertiary)]/80 p-1 rounded-full border border-[var(--border-subtle)] shadow-xs">
             {[
-              { label: "全部", value: undefined, active: "bg-white dark:bg-slate-900 text-olive-600 dark:text-olive-400 shadow-sm" },
-              { label: "核心", value: "core", active: "bg-olive-600 text-[#faf7f2] shadow-sm" },
-              { label: "前置", value: "prerequisite", active: "bg-ochre-500 text-[#faf7f2] shadow-sm" },
-              { label: "拓展", value: "extension", active: "bg-dai-500 text-[#faf7f2] shadow-sm" },
+              { label: "全部", value: undefined, active: "bg-white dark:bg-[#22231f] text-olive-700 dark:text-olive-300 shadow-xs" },
+              { label: "核心", value: "core", active: "bg-olive-600 text-[#faf7f2] shadow-xs" },
+              { label: "前置", value: "prerequisite", active: "bg-ochre-600 text-[#faf7f2] shadow-xs" },
+              { label: "拓展", value: "extension", active: "bg-dai-600 text-[#faf7f2] shadow-xs" },
             ].map((btn) => (
               <button
                 key={btn.label}
                 onClick={() => setScopeFilter(btn.value)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                   scopeFilter === btn.value
                     ? btn.active
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"

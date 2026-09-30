@@ -145,10 +145,10 @@ export function Sidebar({
         {visibleSessions.map((session) => (
           <div
             key={session.id}
-            className={`group relative flex w-full flex-col rounded-xl px-4 py-3 text-left text-[13px] transition-all duration-300 cursor-pointer ${
+            className={`group relative flex w-full flex-col rounded-xl p-3 text-left text-[13px] transition-all duration-200 cursor-pointer ${
               activeSessionId === session.id 
-                ? "bg-gradient-to-r from-[#617a55]/15 to-transparent text-[var(--text-primary)] border-l-[3px] border-[#617a55] shadow-sm font-bold" 
-                : "text-[var(--text-secondary)] hover:bg-white/40 dark:hover:bg-black/10 border-l-[3px] border-transparent font-medium hover:border-[var(--border-subtle)]"
+                ? "bg-white dark:bg-[#252622] text-[var(--text-primary)] border border-olive-500/35 shadow-sm font-semibold ring-1 ring-olive-500/10" 
+                : "text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 border border-transparent hover:border-[var(--border-subtle)] font-medium"
             }`}
             onClick={() => {
               if (editingId === session.id) return;
@@ -160,7 +160,7 @@ export function Sidebar({
               <div className="flex items-center gap-2 w-full" onClick={(e) => e.stopPropagation()}>
                 <input 
                   autoFocus
-                  className="flex-1 bg-white/50 dark:bg-black/20 border-b border-[#617a55] outline-none text-[13px] px-1 py-0.5 rounded-sm"
+                  className="flex-1 bg-white dark:bg-black/40 border border-[#617a55] outline-none text-[13px] px-2 py-1 rounded-lg"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   onKeyDown={(e) => {
@@ -173,28 +173,31 @@ export function Sidebar({
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between">
-                  <div className="truncate pr-2 font-title text-[14px]">{session.title}</div>
-                  <div className="flex items-center gap-0.5 shrink-0 opacity-60 lg:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <div className="flex items-center justify-between gap-1">
+                  <div className="truncate pr-1 text-[13.5px] leading-snug">{session.title}</div>
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditingId(session.id); setEditTitle(session.title); }}
                       aria-label="重命名会话"
-                      className="text-[var(--text-muted)] hover:text-[#617a55] p-2 rounded-md hover:bg-[#617a55]/10 transition-colors touch-manipulation"
+                      className="text-[var(--text-muted)] hover:text-[#617a55] p-1 rounded-md hover:bg-[#617a55]/10 transition-colors"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-3 h-3" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
                       aria-label="删除会话"
-                      className="text-[var(--text-muted)] hover:text-[#c44a3d] p-2 rounded-md hover:bg-[#c44a3d]/10 transition-colors touch-manipulation"
+                      className="text-[var(--text-muted)] hover:text-[#c44a3d] p-1 rounded-md hover:bg-[#c44a3d]/10 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-                <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] tracking-widest font-medium border border-[#617a55]/20 bg-[#617a55]/5 text-[#617a55] dark:border-[#8da47e]/30 dark:bg-[#8da47e]/10 dark:text-[#8da47e]">
+                <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] tracking-wider font-semibold border border-olive-500/20 bg-olive-500/10 text-olive-700 dark:text-olive-300">
                     {SUBJECT_MAP[session.subject] || session.subject}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                    {new Date(session.updated_at || session.created_at).toLocaleDateString([], { month: 'numeric', day: 'numeric' })}
                   </span>
                 </div>
               </>

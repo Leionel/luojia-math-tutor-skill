@@ -177,15 +177,16 @@ export function TutorInput({
   }
 
   return (
-    <div className="bg-transparent p-4 sm:p-6 pb-2 sm:pb-3 transition-colors duration-300">
-      <div className="mx-auto max-w-4xl rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-sm transition-all duration-300 relative group focus-within:border-olive-500/70 focus-within:shadow-md">
+    <div className="bg-transparent p-3 sm:p-5 pb-2 sm:pb-3 transition-colors duration-300">
+      <div className="mx-auto max-w-4xl rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)]/90 backdrop-blur-xl shadow-input transition-all duration-300 relative group focus-within:border-olive-500/60 focus-within:ring-2 focus-within:ring-olive-500/15">
         {previewUrl && (
           <div className="relative p-4 pb-0 bg-transparent">
-            <div className="relative inline-block border border-[var(--border-subtle)] rounded-md overflow-hidden bg-white/50 dark:bg-black/50">
-              <img src={previewUrl} alt="Preview" className="h-20 w-auto object-cover opacity-90" />
+            <div className="relative inline-block border border-[var(--border-subtle)] rounded-xl overflow-hidden bg-white/60 dark:bg-black/40 shadow-xs">
+              <img src={previewUrl} alt="Preview" className="h-20 w-auto object-cover opacity-95" />
               <button
                 onClick={removeFile}
-                className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-0.5 transition-colors"
+                className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+                title="移除附加文件"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -193,8 +194,8 @@ export function TutorInput({
           </div>
         )}
         <Textarea
-          className={`min-h-[6rem] resize-none overflow-y-auto rounded-none rounded-t-xl border-0 bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 ${reading === "sans" ? "font-ui-sans" : "font-body"}`}
-          placeholder={placeholder || "上传问题照片或试卷文档 (PDF/Word)，或直接输入...（Enter 发送，Shift+Enter 换行）"}
+          className={`min-h-[5.5rem] resize-none overflow-y-auto rounded-none rounded-t-2xl border-0 bg-transparent px-4 sm:px-5 py-3.5 text-[15px] sm:text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/70 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 leading-relaxed ${reading === "sans" ? "font-ui-sans" : "font-body"}`}
+          placeholder={placeholder || "输入数学推导、上传草稿图片或试卷文档 (PDF/Word)...（Enter 发送，Shift+Enter 换行）"}
           value={value}
           onChange={(event) => {
             onChange(event.target.value);
@@ -415,55 +416,98 @@ export function TutorInput({
           </div>
         ), document.body)}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-transparent p-3 relative z-10">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <Button variant="ghost" size="sm" onClick={() => setShowKeyboard(!showKeyboard)} className={`h-8 rounded-full font-medium transition-all ${showKeyboard ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"}`}>
-              <Keyboard className="w-4 h-4 mr-1" />
-              公式键盘
-            </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/50 p-2.5 sm:p-3 relative z-10 rounded-b-2xl">
+          {/* Tool actions on the left */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setShowKeyboard(!showKeyboard)}
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all ${
+                showKeyboard 
+                  ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 shadow-xs" 
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-transparent"
+              }`}
+              title="切换数学符号输入键盘"
+            >
+              <Keyboard className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              <span>公式键盘</span>
+            </button>
             
-            <div className="w-px h-4 bg-[var(--border-primary)] my-auto mx-1" />
             <input type="file" accept="image/*,application/pdf,.doc,.docx" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-            <Button variant="ghost" size="sm" onClick={() => requestAction("image")} className="h-8 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 font-medium transition-all" title="上传文档/图片识别">
-              <Paperclip className="w-4 h-4 mr-1" />
-              文件解析
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => requestAction("canvas")} className="h-8 rounded-full text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 font-medium transition-all" title="打开草稿板">
-              <PenTool className="w-4 h-4 mr-1" />
-              草稿板
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setIsDesmosOpen(true)} className="h-8 rounded-full text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-medium transition-all" title="打开动态图形引擎">
-              <LineChart className="w-4 h-4 mr-1" />
-              图形引擎
-            </Button>
+            <button
+              type="button"
+              onClick={() => requestAction("image")}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 transition-all border border-transparent"
+              title="上传文档/草稿照片多模态识别"
+            >
+              <Paperclip className="w-3.5 h-3.5 text-indigo-500" />
+              <span>文件解析</span>
+            </button>
 
-                      {onDirect && onHint && onSimilar && (
+            <button
+              type="button"
+              onClick={() => requestAction("canvas")}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10 transition-all border border-transparent"
+              title="打开全屏手写草稿白板"
+            >
+              <PenTool className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>智能草稿板</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsDesmosOpen(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-transparent"
+              title="打开 Desmos 动态数学画板"
+            >
+              <LineChart className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>图形引擎</span>
+            </button>
+
+            {onDirect && onHint && onSimilar && (
               <>
-                <div className="w-px h-4 bg-[var(--border-primary)] my-auto mx-1" />
+                <div className="w-px h-3.5 bg-[var(--border-subtle)] mx-0.5" />
 
                 {/* AI 辅助二级菜单 */}
                 <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <button 
+                    type="button"
                     onClick={() => setShowAIAsst(!showAIAsst)} 
-                    className={`h-8 rounded-full font-medium transition-all ${showAIAsst ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 hover:bg-[var(--bg-hover)]"}`}
+                    className={`inline-flex items-center gap-1 h-8 px-3 rounded-full text-xs font-semibold transition-all ${
+                      showAIAsst 
+                        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30" 
+                        : "text-[var(--text-secondary)] hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-500/10 border border-transparent"
+                    }`}
                   >
-                    解题锦囊
-                    <svg className={`w-3.5 h-3.5 ml-1 transition-transform ${showAIAsst ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                  </Button>
+                    <span>解题锦囊</span>
+                    <svg className={`w-3.5 h-3.5 ml-0.5 transition-transform duration-200 ${showAIAsst ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                   {showAIAsst && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowAIAsst(false)} />
-                      <div className="absolute bottom-full left-0 mb-2 w-36 bg-white dark:bg-[#1a1a18] border border-[var(--border-subtle)] shadow-xl rounded-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <button className="text-left px-3 py-2 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onHint && onHint(); setShowAIAsst(false); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>获取提示
+                      <div className="absolute bottom-full left-0 mb-2 w-44 bg-[var(--bg-card)]/95 backdrop-blur-xl border border-[var(--border-subtle)] shadow-xl rounded-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <button 
+                          className="text-left px-3 py-2 hover:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs rounded-xl transition-colors font-medium flex items-center gap-2" 
+                          onClick={() => { onHint && onHint(); setShowAIAsst(false); }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                          <span>求取下一步提示</span>
                         </button>
-                        <button className="text-left px-3 py-2 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onDirect && onDirect(); setShowAIAsst(false); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>看完整解答
+                        <button 
+                          className="text-left px-3 py-2 hover:bg-sky-500/10 text-sky-700 dark:text-sky-300 text-xs rounded-xl transition-colors font-medium flex items-center gap-2" 
+                          onClick={() => { onDirect && onDirect(); setShowAIAsst(false); }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+                          <span>查看完整证明</span>
                         </button>
-                        <button className="text-left px-3 py-2 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded-md transition-colors font-medium flex items-center gap-2" onClick={() => { onSimilar && onSimilar(); setShowAIAsst(false); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>生成类似题
+                        <button 
+                          className="text-left px-3 py-2 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl transition-colors font-medium flex items-center gap-2" 
+                          onClick={() => { onSimilar && onSimilar(); setShowAIAsst(false); }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                          <span>生成同类迁移练习</span>
                         </button>
                       </div>
                     </>
@@ -471,14 +515,18 @@ export function TutorInput({
                 </div>
               </>
             )}
-
           </div>
 
-          <div className="flex items-center justify-end gap-3 shrink-0 ml-auto w-full sm:w-auto">
+          {/* Mode & Submit on the right */}
+          <div className="flex items-center justify-end gap-2.5 shrink-0 ml-auto w-full sm:w-auto">
             <ModeSwitcher value={mode} onChange={onModeChange} />
-            <Button disabled={disabled || isUploading} onClick={submit} className="h-10 rounded-full bg-olive-600 hover:bg-olive-700 dark:bg-olive-500 dark:hover:bg-olive-400 text-[#faf7f2] shadow-sm px-7 font-bold tracking-widest transition-all">
-              {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {isUploading ? "提取中..." : "发送"}
+            <Button 
+              disabled={disabled || isUploading} 
+              onClick={submit} 
+              className="h-9 rounded-full bg-olive-600 hover:bg-olive-700 dark:bg-olive-500 dark:hover:bg-olive-400 text-[#faf7f2] shadow-sm px-6 font-bold tracking-wider text-xs active:scale-95 transition-all"
+            >
+              {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              <span>{isUploading ? "解析中..." : "发送"}</span>
             </Button>
           </div>
         </div>

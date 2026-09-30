@@ -56,20 +56,27 @@ export default function MistakeBookPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
-      <header className="sticky top-0 z-10 flex h-16 items-center border-b border-[var(--border-primary)] bg-[var(--bg-header)] px-4 sm:px-6 backdrop-blur-md">
-        <Link href="/" className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+      <header className="sticky top-0 z-40 flex h-16 items-center glass-header px-4 sm:px-6">
+        <Link href="/chat" className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          返回学习
+          <span>返回对话</span>
         </Link>
-        <div className="ml-auto flex items-center gap-4">
-          <button onClick={() => window.print()} className="print:hidden flex items-center gap-1.5 text-xs font-bold bg-[#faf7f2] dark:bg-[#2a2b26] hover:bg-[#e3dec9] dark:hover:bg-[#33342d] border border-[#d6d0ba] dark:border-[#3e3f36] px-3 py-1.5 rounded-md transition-colors text-[#2a2b26] dark:text-[#e6e4dc]">
+        <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
+          <button 
+            onClick={() => window.print()} 
+            className="print:hidden inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]/80 hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs"
+          >
             <Printer className="w-3.5 h-3.5" /> 导出/打印
           </button>
-          <button onClick={() => setIsAdding(true)} className="print:hidden flex items-center gap-1.5 text-xs font-bold bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] px-3 py-1.5 rounded-md transition-colors text-[var(--text-primary)]">
-            <Plus className="w-3.5 h-3.5" /> 手动添加
+          <button 
+            onClick={() => setIsAdding(true)} 
+            className="print:hidden inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-olive-600 hover:bg-olive-700 text-[#faf7f2] shadow-xs transition-all active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" /> 手动收录
           </button>
-          <div className="flex items-center gap-2 font-bold tracking-widest uppercase">
-            <BookOpen className="w-4 h-4 text-rose-500" />
+          <div className="h-4 w-px bg-[var(--border-subtle)] mx-1" />
+          <div className="flex items-center gap-1.5 font-bold tracking-wider text-xs text-[#c44a3d]">
+            <BookOpen className="w-4 h-4" />
             <span className="hidden sm:inline">错题本</span>
           </div>
         </div>
@@ -77,24 +84,24 @@ export default function MistakeBookPage() {
       
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold mb-4 font-title tracking-widest text-[var(--text-primary)]">
-            错题<span className="text-cinnabar-500">册</span>
+          <h1 className="text-4xl font-bold mb-3 font-title tracking-widest text-[var(--text-primary)]">
+            错题<span className="text-cinnabar-500">归真册</span>
           </h1>
-          <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed mb-8">
-            每一次谬误都是重构数学理解的契机，在此回顾你的推导偏差。
+          <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed mb-7">
+            每一次偏差都是重构数学洞察的契机，在此复盘推导节点，生成针对性迁移试题。
           </p>
 
           <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-1 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-subtle)]">
+            <div className="inline-flex items-center gap-1 bg-[var(--bg-tertiary)]/80 p-1 rounded-full border border-[var(--border-subtle)] shadow-xs">
               <button 
                 onClick={() => setActiveTab("list")}
-                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "list" ? "bg-[var(--bg-card)] shadow-sm text-rose-500" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === "list" ? "bg-white dark:bg-[#22231f] shadow-sm text-cinnabar-600 dark:text-cinnabar-400" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
               >
                 错题追踪
               </button>
               <button 
                 onClick={() => setActiveTab("tree")}
-                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "tree" ? "bg-[var(--bg-card)] shadow-sm text-cyan-500" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === "tree" ? "bg-white dark:bg-[#22231f] shadow-sm text-olive-600 dark:text-olive-400" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
               >
                 技能树谱
               </button>

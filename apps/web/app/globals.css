@@ -4,103 +4,103 @@
 @tailwind utilities;
 
 :root {
-  /* FARM CHINESE STYLE: LIGHT MODE */
+  /* FARM CHINESE STYLE: LIGHT MODE (PAPER & JADE) */
   --bg-primary: #faf7f2;
   --bg-gradient: none;
   --bg-secondary: #f2efe9;
   --bg-tertiary: #ebe7e0;
   --bg-hover: #e3dec9;
   --bg-active: #d6d0ba;
-  --bg-input: #faf7f2;
-  --bg-card: #faf7f2;
-  --bg-overlay: rgba(250, 247, 242, 0.9);
+  --bg-input: #ffffff;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(250, 247, 242, 0.82);
   --bg-chat: transparent;
   
   --bg-user-bubble: #617a55;
-  --bg-assistant-bubble: #fdfaf6;
+  --bg-assistant-bubble: #ffffff;
   
-  --bg-header: rgba(250, 247, 242, 0.95);
+  --bg-header: rgba(250, 247, 242, 0.85);
   --bg-sidebar: #f2efe9;
   --bg-sidebar-hover: #e3dec9;
   --bg-sidebar-active: #617a55;
 
-  --text-primary: #2a2b26;
-  --text-secondary: #4a4d44;
-  --text-muted: #757a6b;
+  --text-primary: #22231e;
+  --text-secondary: #484b42;
+  --text-muted: #747869;
   --text-inverse: #faf7f2;
   
-  --text-sidebar: #2a2b26;
-  --text-sidebar-muted: #757a6b;
+  --text-sidebar: #22231e;
+  --text-sidebar-muted: #747869;
   --text-sidebar-active: #ffffff;
   
-  --text-accent: #617a55;
+  --text-accent: #556f4a;
 
-  --border-primary: #d6d0ba;
-  --border-subtle: #ebe7e0;
-  --border-sidebar: #d6d0ba;
+  --border-primary: #dcd6c4;
+  --border-subtle: #eae5da;
+  --border-sidebar: #dcd6c4;
   --border-accent: #617a55;
 
   --accent: #617a55;
   --accent-hover: #4e6344;
-  --accent-light: rgba(97, 122, 85, 0.1);
+  --accent-light: rgba(97, 122, 85, 0.08);
 
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-bubble: none;
-  --shadow-input: none;
+  --shadow-sm: 0 1px 3px rgba(42, 43, 38, 0.05), 0 1px 2px rgba(42, 43, 38, 0.03);
+  --shadow-md: 0 4px 16px -2px rgba(42, 43, 38, 0.06), 0 2px 6px -1px rgba(42, 43, 38, 0.03);
+  --shadow-lg: 0 12px 36px -4px rgba(42, 43, 38, 0.08), 0 4px 12px -2px rgba(42, 43, 38, 0.04);
+  --shadow-bubble: 0 2px 14px -2px rgba(97, 122, 85, 0.06), 0 1px 4px rgba(42, 43, 38, 0.03);
+  --shadow-input: 0 8px 32px -4px rgba(42, 43, 38, 0.08), 0 2px 8px -2px rgba(42, 43, 38, 0.04);
 
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-lg: 12px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
 }
 
 html.dark {
-  /* FARM CHINESE STYLE: NIGHT TIME AT THE FARM */
-  --bg-primary: #1e1e1b;
+  /* FARM CHINESE STYLE: NIGHT TIME (INK & JADE) */
+  --bg-primary: #191917;
   --bg-gradient: none;
-  --bg-secondary: #242421;
-  --bg-tertiary: #2a2b26;
-  --bg-hover: #33342d;
-  --bg-active: #3e3f36;
+  --bg-secondary: #20211d;
+  --bg-tertiary: #272824;
+  --bg-hover: #31332c;
+  --bg-active: #3c3e35;
   --bg-input: #1e1e1b;
-  --bg-card: #242421;
-  --bg-overlay: rgba(30, 30, 27, 0.9);
+  --bg-card: #22231f;
+  --bg-overlay: rgba(25, 25, 23, 0.85);
   --bg-chat: transparent;
   
   --bg-user-bubble: #4e6344;
-  --bg-assistant-bubble: #33342d;
+  --bg-assistant-bubble: #252622;
   
-  --bg-header: rgba(30, 30, 27, 0.95);
-  --bg-sidebar: #242421;
-  --bg-sidebar-hover: #2a2b26;
+  --bg-header: rgba(25, 25, 23, 0.85);
+  --bg-sidebar: #20211d;
+  --bg-sidebar-hover: #272824;
   --bg-sidebar-active: #617a55;
 
-  --text-primary: #e6e4dc;
-  --text-secondary: #c5c2b6;
+  --text-primary: #e8e6df;
+  --text-secondary: #c7c5b9;
   --text-muted: #8d8a7d;
-  --text-inverse: #1e1e1b;
+  --text-inverse: #191917;
   
-  --text-sidebar: #e6e4dc;
+  --text-sidebar: #e8e6df;
   --text-sidebar-muted: #8d8a7d;
   --text-sidebar-active: #ffffff;
   
-  --text-accent: #879f7a;
+  --text-accent: #92ab84;
 
-  --border-primary: #3e3f36;
-  --border-subtle: #2a2b26;
-  --border-sidebar: #3e3f36;
+  --border-primary: #3b3d34;
+  --border-subtle: #2d2e29;
+  --border-sidebar: #3b3d34;
   --border-accent: #617a55;
 
   --accent: #879f7a;
   --accent-hover: #9db590;
   --accent-light: rgba(135, 159, 122, 0.15);
   
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-bubble: none;
-  --shadow-input: none;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.55);
+  --shadow-bubble: 0 2px 14px -2px rgba(0, 0, 0, 0.4);
+  --shadow-input: 0 8px 32px -4px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -109,12 +109,12 @@ html.dark {
 
 body {
   margin: 0;
-  font-family:
-    "Noto Serif SC",
-    serif;
+  font-family: "Noto Sans SC", system-ui, -apple-system, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.4s ease, color 0.4s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code, pre {
@@ -133,19 +133,62 @@ body::before, body::after {
 /* Math blocks */
 .math-block {
   overflow-x: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  padding: 14px;
-  margin: 0.5rem 0;
+  padding: 14px 18px;
+  margin: 0.75rem 0;
+  box-shadow: inset 0 1px 2px rgba(42, 43, 38, 0.04);
 }
 
-.message-prose p { margin: 0.5rem 0; }
+html.dark .math-block {
+  background: rgba(36, 36, 33, 0.7);
+  border-color: rgba(62, 63, 54, 0.7);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+::selection {
+  background-color: rgba(97, 122, 85, 0.25);
+  color: inherit;
+}
+
+/* Glassmorphism utility classes */
+.glass-header {
+  background-color: var(--bg-header);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-panel {
+  background-color: var(--bg-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+.glass-pill {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-pill:hover {
+  transform: translateY(-1px);
+}
+
+.message-prose p { 
+  margin: 0.6rem 0; 
+  line-height: 1.75;
+}
 .message-prose h3 {
-  margin-top: 1rem;
+  margin-top: 1.1rem;
   margin-bottom: 0.4rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* Scrollbar styling */
