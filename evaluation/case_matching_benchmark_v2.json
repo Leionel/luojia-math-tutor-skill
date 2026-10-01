@@ -1,0 +1,3464 @@
+[
+  {
+    "id": "V2-001",
+    "query": "二分法要保证有根，连续性和端点异号分别起什么作用？",
+    "gold_reason": "本题问“二分法要保证有根，连续性和端点异号分别起什么作用？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-002",
+    "query": "端点异号但函数在区间内有跳跃，能用零点定理吗？",
+    "gold_reason": "本题问“端点异号但函数在区间内有跳跃，能用零点定理吗？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-003",
+    "query": "Does bisection require continuity throughout the bracket?",
+    "gold_reason": "本题问“Does bisection require continuity throughout the bracket?”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-004",
+    "query": "f(x)=1/x在[-1,1]端点异号，为什么并不能推出区间有根？",
+    "gold_reason": "本题问“f(x)=1/x在[-1,1]端点异号，为什么并不能推出区间有根？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-005",
+    "query": "二分法要求端点函数值乘积小于零还是小于等于零？",
+    "gold_reason": "本题问“二分法要求端点函数值乘积小于零还是小于等于零？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-006",
+    "query": "若其中一个端点恰是根，如何处理二分法的初始化？",
+    "gold_reason": "本题问“若其中一个端点恰是根，如何处理二分法的初始化？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-007",
+    "query": "区间内有不连续点时，端点异号的结论还成立吗？",
+    "gold_reason": "本题问“区间内有不连续点时，端点异号的结论还成立吗？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-008",
+    "query": "Explain why opposite signs alone are insufficient without continuity.",
+    "gold_reason": "本题问“Explain why opposite signs alone are insufficient without continuity.”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-009",
+    "query": "二分法是找到一个根还是能保证枚举区间内全部根？",
+    "gold_reason": "本题问“二分法是找到一个根还是能保证枚举区间内全部根？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-010",
+    "query": "零点存在条件和二分迭代更新不变式有什么关系？",
+    "gold_reason": "本题问“零点存在条件和二分迭代更新不变式有什么关系？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-011",
+    "query": "中点与左端同号，二分下一步该替换哪一个端点？",
+    "gold_reason": "本题问“中点与左端同号，二分下一步该替换哪一个端点？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-012",
+    "query": "端点乘积为负，中点与右端同号，应保留哪半段？",
+    "gold_reason": "本题问“端点乘积为负，中点与右端同号，应保留哪半段？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-013",
+    "query": "If f(a)f(c)>0 in bisection, which endpoint changes?",
+    "gold_reason": "本题问“If f(a)f(c)>0 in bisection, which endpoint changes?”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-014",
+    "query": "代码把 a=c 和 b=c 两端都执行了，括区间为何失效？",
+    "gold_reason": "本题问“代码把 a=c 和 b=c 两端都执行了，括区间为何失效？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-015",
+    "query": "二分中点恰好使函数为零时应如何结束？",
+    "gold_reason": "本题问“二分中点恰好使函数为零时应如何结束？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-016",
+    "query": "每一步怎么证明根仍被新的区间包住？",
+    "gold_reason": "本题问“每一步怎么证明根仍被新的区间包住？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-017",
+    "query": "我的二分区间更新后两端变成同号，可能是哪类分支错误？",
+    "gold_reason": "本题问“我的二分区间更新后两端变成同号，可能是哪类分支错误？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-018",
+    "query": "How do I preserve the bracket invariant in the update branch?",
+    "gold_reason": "本题问“How do I preserve the bracket invariant in the update branch?”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-019",
+    "query": "请检查 if f(a)*f(c)<0: a=c 这段代码的逻辑。",
+    "gold_reason": "本题问“请检查 if f(a)*f(c)<0: a=c 这段代码的逻辑。”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-020",
+    "query": "二分法中点函数值和左端符号相反时，为什么保留左半区间？",
+    "gold_reason": "本题问“二分法中点函数值和左端符号相反时，为什么保留左半区间？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-021",
+    "query": "初始区间宽度L，做n次二分后根的误差如何上界？",
+    "gold_reason": "本题问“初始区间宽度L，做n次二分后根的误差如何上界？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-022",
+    "query": "要求根误差小于ε，如何推导二分最少迭代步数？",
+    "gold_reason": "本题问“要求根误差小于ε，如何推导二分最少迭代步数？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-023",
+    "query": "How many bisections guarantee midpoint error below a tolerance?",
+    "gold_reason": "本题问“How many bisections guarantee midpoint error below a tolerance?”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-024",
+    "query": "区间长度界与中点误差界相差因子2，怎么区分？",
+    "gold_reason": "本题问“区间长度界与中点误差界相差因子2，怎么区分？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-025",
+    "query": "为什么先验步数公式的对数结果要向上取整？",
+    "gold_reason": "本题问“为什么先验步数公式的对数结果要向上取整？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-026",
+    "query": "二分迭代次数能否在不知道真根时预先估计？",
+    "gold_reason": "本题问“二分迭代次数能否在不知道真根时预先估计？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-027",
+    "query": "给定区间[2,5]，第k步的近似根误差最多多大？",
+    "gold_reason": "本题问“给定区间[2,5]，第k步的近似根误差最多多大？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-028",
+    "query": "Derive the a priori bisection count from bracket width and tolerance.",
+    "gold_reason": "本题问“Derive the a priori bisection count from bracket width and tolerance.”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-029",
+    "query": "若要求误差小于δ，停机时区间宽度应控制在什么范围？",
+    "gold_reason": "本题问“若要求误差小于δ，停机时区间宽度应控制在什么范围？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-030",
+    "query": "误差估计公式里的初始长度是b-a还是半长？",
+    "gold_reason": "本题问“误差估计公式里的初始长度是b-a还是半长？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-031",
+    "query": "不动点迭代的压缩映射充分条件有哪些？",
+    "gold_reason": "本题问“不动点迭代的压缩映射充分条件有哪些？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-032",
+    "query": "|g′|<1但g没有把区间映回自身，还能推出收敛吗？",
+    "gold_reason": "本题问“|g′|<1但g没有把区间映回自身，还能推出收敛吗？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-033",
+    "query": "State a sufficient condition for convergence of fixed-point iteration.",
+    "gold_reason": "本题问“State a sufficient condition for convergence of fixed-point iteration.”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-034",
+    "query": "闭区间自映射和Lipschitz常数小于1共同保证什么？",
+    "gold_reason": "本题问“闭区间自映射和Lipschitz常数小于1共同保证什么？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-035",
+    "query": "为什么压缩映射的不动点是唯一的？",
+    "gold_reason": "本题问“为什么压缩映射的不动点是唯一的？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-036",
+    "query": "局部导数绝对值小于1能否说明整个区间都收敛？",
+    "gold_reason": "本题问“局部导数绝对值小于1能否说明整个区间都收敛？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-037",
+    "query": "g(x)=cos(x)如何借助压缩条件分析迭代？",
+    "gold_reason": "本题问“g(x)=cos(x)如何借助压缩条件分析迭代？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-038",
+    "query": "Does a contraction guarantee convergence from every point in the interval?",
+    "gold_reason": "本题问“Does a contraction guarantee convergence from every point in the interval?”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-039",
+    "query": "导数上界为0.7但像集超出区间，定理缺少哪一项？",
+    "gold_reason": "本题问“导数上界为0.7但像集超出区间，定理缺少哪一项？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-040",
+    "query": "压缩映射定理是必要条件还是充分条件？",
+    "gold_reason": "本题问“压缩映射定理是必要条件还是充分条件？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-041",
+    "query": "同一个方程换成另一种x=g(x)形式后，迭代为什么发散？",
+    "gold_reason": "本题问“同一个方程换成另一种x=g(x)形式后，迭代为什么发散？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-042",
+    "query": "若|g′(x*)|>1，局部误差会怎样变化？",
+    "gold_reason": "本题问“若|g′(x*)|>1，局部误差会怎样变化？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-043",
+    "query": "Fixed-point iteration oscillates with an expanding amplitude; diagnose it.",
+    "gold_reason": "本题问“Fixed-point iteration oscillates with an expanding amplitude; diagnose it.”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-044",
+    "query": "初值远离解且局部收缩，为什么依然不能保证这次迭代收敛？",
+    "gold_reason": "本题问“初值远离解且局部收缩，为什么依然不能保证这次迭代收敛？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-045",
+    "query": "迭代序列交替且振幅增大，是何种稳定性信号？",
+    "gold_reason": "本题问“迭代序列交替且振幅增大，是何种稳定性信号？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-046",
+    "query": "不动点格式发散时，重新构造g有什么依据？",
+    "gold_reason": "本题问“不动点格式发散时，重新构造g有什么依据？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-047",
+    "query": "|g′|=1时压缩映射判据能下结论吗？",
+    "gold_reason": "本题问“|g′|=1时压缩映射判据能下结论吗？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-048",
+    "query": "g把迭代点推出计算区间，哪项假设失效？",
+    "gold_reason": "本题问“g把迭代点推出计算区间，哪项假设失效？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-049",
+    "query": "How can an algebraically equivalent rearrangement change convergence?",
+    "gold_reason": "本题问“How can an algebraically equivalent rearrangement change convergence?”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-050",
+    "query": "区分不动点迭代收敛慢与真正发散。",
+    "gold_reason": "本题问“区分不动点迭代收敛慢与真正发散。”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-051",
+    "query": "从切线与x轴交点推导牛顿更新公式。",
+    "gold_reason": "本题问“从切线与x轴交点推导牛顿更新公式。”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-052",
+    "query": "一阶Taylor展开如何得到x_next=x-f(x)/f′(x)？",
+    "gold_reason": "本题问“一阶Taylor展开如何得到x_next=x-f(x)/f′(x)？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-053",
+    "query": "Derive Newton-Raphson from the tangent at the current iterate.",
+    "gold_reason": "本题问“Derive Newton-Raphson from the tangent at the current iterate.”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-054",
+    "query": "牛顿法几何解释中，切线交点为什么是下一近似？",
+    "gold_reason": "本题问“牛顿法几何解释中，切线交点为什么是下一近似？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-055",
+    "query": "令一阶Taylor多项式等于零，整理后得到哪个迭代式？",
+    "gold_reason": "本题问“令一阶Taylor多项式等于零，整理后得到哪个迭代式？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-056",
+    "query": "Why does the Newton update subtract f divided by f prime?",
+    "gold_reason": "本题问“Why does the Newton update subtract f divided by f prime?”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-057",
+    "query": "牛顿迭代步Δx=-f/f′的符号怎么确定？",
+    "gold_reason": "本题问“牛顿迭代步Δx=-f/f′的符号怎么确定？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-058",
+    "query": "从切线方程求横轴交点，推导中用了什么局部近似？",
+    "gold_reason": "本题问“从切线方程求横轴交点，推导中用了什么局部近似？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-059",
+    "query": "牛顿法与割线法推导所需的信息有什么差别？",
+    "gold_reason": "本题问“牛顿法与割线法推导所需的信息有什么差别？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-060",
+    "query": "Explain the linearization behind a Newton step.",
+    "gold_reason": "本题问“Explain the linearization behind a Newton step.”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-061",
+    "query": "牛顿法局部二阶收敛需要根满足什么条件？",
+    "gold_reason": "本题问“牛顿法局部二阶收敛需要根满足什么条件？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-062",
+    "query": "单根、二阶连续可微和初值充分接近各自起什么作用？",
+    "gold_reason": "本题问“单根、二阶连续可微和初值充分接近各自起什么作用？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-063",
+    "query": "State the assumptions for quadratic Newton convergence near a simple root.",
+    "gold_reason": "本题问“State the assumptions for quadratic Newton convergence near a simple root.”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-064",
+    "query": "局部收敛定理能否保证任意初值都收敛？",
+    "gold_reason": "本题问“局部收敛定理能否保证任意初值都收敛？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-065",
+    "query": "重根时标准牛顿法的二阶收敛结论为何失效？",
+    "gold_reason": "本题问“重根时标准牛顿法的二阶收敛结论为何失效？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-066",
+    "query": "初值在收敛邻域外，局部定理能预测轨迹吗？",
+    "gold_reason": "本题问“初值在收敛邻域外，局部定理能预测轨迹吗？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-067",
+    "query": "How should local convergence be distinguished from global convergence?",
+    "gold_reason": "本题问“How should local convergence be distinguished from global convergence?”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-068",
+    "query": "初值邻域半径未知时，“充分接近”该如何理解？",
+    "gold_reason": "本题问“初值邻域半径未知时，“充分接近”该如何理解？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-069",
+    "query": "远处初值导致发散，是否和局部收敛定理矛盾？",
+    "gold_reason": "本题问“远处初值导致发散，是否和局部收敛定理矛盾？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-070",
+    "query": "牛顿法二阶收敛证明对函数光滑性有什么要求？",
+    "gold_reason": "本题问“牛顿法二阶收敛证明对函数光滑性有什么要求？”；主要目标是局部二阶收敛的适用条件。必要判据：单根f'(x*)!=0、足够光滑、初值在充分小邻域。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为单根定理不覆盖重根。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-071",
+    "query": "牛顿法从远处初值出发跳到另一个根，如何排查？",
+    "gold_reason": "本题问“牛顿法从远处初值出发跳到另一个根，如何排查？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-072",
+    "query": "初值不当引起周期振荡，应检查迭代轨迹的哪些特征？",
+    "gold_reason": "本题问“初值不当引起周期振荡，应检查迭代轨迹的哪些特征？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-073",
+    "query": "Newton converges to an unintended root from a different starting guess; explain.",
+    "gold_reason": "本题问“Newton converges to an unintended root from a different starting guess; explain.”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-074",
+    "query": "局部二阶收敛很快，为什么牛顿法仍可能失败？",
+    "gold_reason": "本题问“局部二阶收敛很快，为什么牛顿法仍可能失败？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-075",
+    "query": "初值落在切线斜率很小的地方后数值爆炸，是哪个风险？",
+    "gold_reason": "本题问“初值落在切线斜率很小的地方后数值爆炸，是哪个风险？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-076",
+    "query": "改变初始猜测后结果大幅改变，反映了什么收敛边界？",
+    "gold_reason": "本题问“改变初始猜测后结果大幅改变，反映了什么收敛边界？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-077",
+    "query": "迭代在两个点间循环属于哪种初值敏感性表现？",
+    "gold_reason": "本题问“迭代在两个点间循环属于哪种初值敏感性表现？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-078",
+    "query": "为什么不能说牛顿法总会找到最近的根？",
+    "gold_reason": "本题问“为什么不能说牛顿法总会找到最近的根？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-079",
+    "query": "怎样用二分法给Newton初值提供保护？",
+    "gold_reason": "本题问“怎样用二分法给Newton初值提供保护？”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-080",
+    "query": "The initial value may lie outside the convergence basin; what can happen?",
+    "gold_reason": "本题问“The initial value may lie outside the convergence basin; what can happen?”；主要目标是初值与全局失败诊断。必要判据：Newton结论是局部的；需迭代轨迹和初值证据才能归因。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为未给出当前分母为零的证据。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-081",
+    "query": "当前迭代点f′(x_k)=0，牛顿公式为什么无法更新？",
+    "gold_reason": "本题问“当前迭代点f′(x_k)=0，牛顿公式为什么无法更新？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-082",
+    "query": "导数很小但非零时，Newton步长会有什么风险？",
+    "gold_reason": "本题问“导数很小但非零时，Newton步长会有什么风险？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-083",
+    "query": "Newton code divides by a near-zero derivative; identify the direct failure.",
+    "gold_reason": "本题问“Newton code divides by a near-zero derivative; identify the direct failure.”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-084",
+    "query": "迭代点处切线水平，标准更新式发生了什么？",
+    "gold_reason": "本题问“迭代点处切线水平，标准更新式发生了什么？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-085",
+    "query": "区分重根造成根处导数为零与某步偶然导数为零。",
+    "gold_reason": "本题问“区分重根造成根处导数为零与某步偶然导数为零。”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-086",
+    "query": "程序报ZeroDivisionError，首先应检查哪个计算值？",
+    "gold_reason": "本题问“程序报ZeroDivisionError，首先应检查哪个计算值？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-087",
+    "query": "如何在牛顿代码中加入导数阈值保护？",
+    "gold_reason": "本题问“如何在牛顿代码中加入导数阈值保护？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-088",
+    "query": "导数估计因下溢为0时应怎样处理？",
+    "gold_reason": "本题问“导数估计因下溢为0时应怎样处理？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-089",
+    "query": "没有函数和导数值，能确定报错一定由零导数造成吗？",
+    "gold_reason": "本题问“没有函数和导数值，能确定报错一定由零导数造成吗？”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-090",
+    "query": "A tiny derivative produces an enormous Newton step; why?",
+    "gold_reason": "本题问“A tiny derivative produces an enormous Newton step; why?”；主要目标是单步分母失效。必要判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。排除近邻Case CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-091",
+    "query": "m重根处标准Newton迭代渐近收敛阶是多少？",
+    "gold_reason": "本题问“m重根处标准Newton迭代渐近收敛阶是多少？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-092",
+    "query": "对(x-1)^2使用牛顿法为何只有线性收敛？",
+    "gold_reason": "本题问“对(x-1)^2使用牛顿法为何只有线性收敛？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-093",
+    "query": "Derive the error factor 1-1/m for a root of multiplicity m.",
+    "gold_reason": "本题问“Derive the error factor 1-1/m for a root of multiplicity m.”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-094",
+    "query": "带重数m的修正Newton公式为何能恢复二阶收敛？",
+    "gold_reason": "本题问“带重数m的修正Newton公式为何能恢复二阶收敛？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-095",
+    "query": "f(x*)=f′(x*)=0时还能使用单根二阶定理吗？",
+    "gold_reason": "本题问“f(x*)=f′(x*)=0时还能使用单根二阶定理吗？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-096",
+    "query": "重根降阶和中间迭代点分母为零是同一个问题吗？",
+    "gold_reason": "本题问“重根降阶和中间迭代点分母为零是同一个问题吗？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-097",
+    "query": "二重根误差每步约减半，说明收敛阶是多少？",
+    "gold_reason": "本题问“二重根误差每步约减半，说明收敛阶是多少？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-098",
+    "query": "不知道重数时能直接套用修正Newton格式吗？",
+    "gold_reason": "本题问“不知道重数时能直接套用修正Newton格式吗？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-099",
+    "query": "Why does multiplicity reduce Newton's order?",
+    "gold_reason": "本题问“Why does multiplicity reduce Newton's order?”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-100",
+    "query": "重根使牛顿法变慢是否等同于发散？",
+    "gold_reason": "本题问“重根使牛顿法变慢是否等同于发散？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-101",
+    "query": "如何从连续误差值估计数值迭代的收敛阶p？",
+    "gold_reason": "本题问“如何从连续误差值估计数值迭代的收敛阶p？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-102",
+    "query": "用误差表检验牛顿法是否进入二阶收敛阶段。",
+    "gold_reason": "本题问“用误差表检验牛顿法是否进入二阶收敛阶段。”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-103",
+    "query": "Estimate p from three successive errors.",
+    "gold_reason": "本题问“Estimate p from three successive errors.”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-104",
+    "query": "真根未知时，能否用真实误差直接验证收敛阶？",
+    "gold_reason": "本题问“真根未知时，能否用真实误差直接验证收敛阶？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-105",
+    "query": "双对数拟合的斜率怎样解释为收敛阶？",
+    "gold_reason": "本题问“双对数拟合的斜率怎样解释为收敛阶？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-106",
+    "query": "收敛早期估得p不接近2，可能尚未进入渐近区吗？",
+    "gold_reason": "本题问“收敛早期估得p不接近2，可能尚未进入渐近区吗？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-107",
+    "query": "误差接近浮点精度时阶数估计为何不稳定？",
+    "gold_reason": "本题问“误差接近浮点精度时阶数估计为何不稳定？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-108",
+    "query": "怎样从误差比区分线性收敛与二次收敛？",
+    "gold_reason": "本题问“怎样从误差比区分线性收敛与二次收敛？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-109",
+    "query": "Newton order estimation from a computed error table?",
+    "gold_reason": "本题问“Newton order estimation from a computed error table?”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-110",
+    "query": "只有残差序列时能可靠算真实误差的收敛阶吗？",
+    "gold_reason": "本题问“只有残差序列时能可靠算真实误差的收敛阶吗？”；主要目标是由误差序列估渐近阶。必要判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。排除近邻Case CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-111",
+    "query": "残差很小是否足以证明近似根的真实误差很小？",
+    "gold_reason": "本题问“残差很小是否足以证明近似根的真实误差很小？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-112",
+    "query": "平坦函数处残差小但离真根远，如何理解？",
+    "gold_reason": "本题问“平坦函数处残差小但离真根远，如何理解？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-113",
+    "query": "Does a tiny residual imply small forward error for an ill-conditioned root?",
+    "gold_reason": "本题问“Does a tiny residual imply small forward error for an ill-conditioned root?”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-114",
+    "query": "定义残差和真实误差，并说明二者为何不等同。",
+    "gold_reason": "本题问“定义残差和真实误差，并说明二者为何不等同。”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-115",
+    "query": "|f′|很小时，从残差估计误差会有什么困难？",
+    "gold_reason": "本题问“|f′|很小时，从残差估计误差会有什么困难？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-116",
+    "query": "只用残差停机可能产生什么误判？",
+    "gold_reason": "本题问“只用残差停机可能产生什么误判？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-117",
+    "query": "真根未知时为何不能将残差直接当作误差？",
+    "gold_reason": "本题问“真根未知时为何不能将残差直接当作误差？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-118",
+    "query": "函数斜率不同，相同残差对应的误差是否相同？",
+    "gold_reason": "本题问“函数斜率不同，相同残差对应的误差是否相同？”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-119",
+    "query": "A residual of 1e-10 is reported; can accuracy be certified from that alone?",
+    "gold_reason": "本题问“A residual of 1e-10 is reported; can accuracy be certified from that alone?”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-120",
+    "query": "区分后向误差和求根问题的前向误差。",
+    "gold_reason": "本题问“区分后向误差和求根问题的前向误差。”；主要目标是区分残差和根的真实误差。必要判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。排除近邻Case CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-121",
+    "query": "为什么求根停机应兼看步长、残差和最大步数？",
+    "gold_reason": "本题问“为什么求根停机应兼看步长、残差和最大步数？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-122",
+    "query": "只用相邻迭代步长很小作为成功标准有什么风险？",
+    "gold_reason": "本题问“只用相邻迭代步长很小作为成功标准有什么风险？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-123",
+    "query": "Design a stopping rule using residual, step size, and an iteration cap.",
+    "gold_reason": "本题问“Design a stopping rule using residual, step size, and an iteration cap.”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-124",
+    "query": "步长已小但残差仍大，是否应报告收敛？",
+    "gold_reason": "本题问“步长已小但残差仍大，是否应报告收敛？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-125",
+    "query": "达到最大迭代次数但容差未满足时应返回什么状态？",
+    "gold_reason": "本题问“达到最大迭代次数但容差未满足时应返回什么状态？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-126",
+    "query": "相对步长和绝对步长分别适合什么情况？",
+    "gold_reason": "本题问“相对步长和绝对步长分别适合什么情况？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-127",
+    "query": "停机判据中的残差和步长条件如何组合？",
+    "gold_reason": "本题问“停机判据中的残差和步长条件如何组合？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-128",
+    "query": "循环保护应怎样避免求根代码无限运行？",
+    "gold_reason": "本题问“循环保护应怎样避免求根代码无限运行？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-129",
+    "query": "Why is an iteration cap needed in addition to a residual test?",
+    "gold_reason": "本题问“Why is an iteration cap needed in addition to a residual test?”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-130",
+    "query": "浮点下步长为零能否单独说明找到了根？",
+    "gold_reason": "本题问“浮点下步长为零能否单独说明找到了根？”；主要目标是设计安全停机判据。必要判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。排除近邻Case CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-131",
+    "query": "写一个带导数接近零保护的Newton单步更新函数。",
+    "gold_reason": "本题问“写一个带导数接近零保护的Newton单步更新函数。”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-132",
+    "query": "Python中计算牛顿步时怎样检查f′(x)再相除？",
+    "gold_reason": "本题问“Python中计算牛顿步时怎样检查f′(x)再相除？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-133",
+    "query": "Implement x_next=x-f(x)/df(x) with denominator validation.",
+    "gold_reason": "本题问“Implement x_next=x-f(x)/df(x) with denominator validation.”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-134",
+    "query": "牛顿代码把更新写成x+f/df，错误在哪里？",
+    "gold_reason": "本题问“牛顿代码把更新写成x+f/df，错误在哪里？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-135",
+    "query": "调用f和df函数时Newton更新核心逻辑是什么？",
+    "gold_reason": "本题问“调用f和df函数时Newton更新核心逻辑是什么？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-136",
+    "query": "导数非零时如何记录本次更新量Δx？",
+    "gold_reason": "本题问“导数非零时如何记录本次更新量Δx？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-137",
+    "query": "Give a robust Newton update with a near-zero derivative guard.",
+    "gold_reason": "本题问“Give a robust Newton update with a near-zero derivative guard.”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-138",
+    "query": "怎样区分分母异常与达到最大迭代次数？",
+    "gold_reason": "本题问“怎样区分分母异常与达到最大迭代次数？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-139",
+    "query": "Newton function should validate the derivative before division; explain.",
+    "gold_reason": "本题问“Newton function should validate the derivative before division; explain.”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-140",
+    "query": "实现牛顿更新应使用当前迭代点的函数值还是旧值？",
+    "gold_reason": "本题问“实现牛顿更新应使用当前迭代点的函数值还是旧值？”；主要目标是实现Newton单步。必要判据：先评估并保护当前df，再计算x-f/df。排除近邻Case CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-141",
+    "query": "Newton循环达到max_iter仍未满足容差，应怎样返回？",
+    "gold_reason": "本题问“Newton循环达到max_iter仍未满足容差，应怎样返回？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。 The explicit task_mode=code_task context is supplied to match(); it does not add unsupplied dialogue history.",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-142",
+    "query": "给牛顿代码加上迭代上限和明确的未收敛错误。",
+    "gold_reason": "本题问“给牛顿代码加上迭代上限和明确的未收敛错误。”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-143",
+    "query": "Add a loop guard and explicit non-convergence outcome to Newton code.",
+    "gold_reason": "本题问“Add a loop guard and explicit non-convergence outcome to Newton code.”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-144",
+    "query": "停机条件放在更新前后会影响检查哪个残差？",
+    "gold_reason": "本题问“停机条件放在更新前后会影响检查哪个残差？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-145",
+    "query": "只检查步长就break而不检查残差有什么风险？",
+    "gold_reason": "本题问“只检查步长就break而不检查残差有什么风险？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-146",
+    "query": "用k<max_iter怎样防止Newton循环无限运行？",
+    "gold_reason": "本题问“用k<max_iter怎样防止Newton循环无限运行？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-147",
+    "query": "如何同时记录每步残差、步长并安全终止？",
+    "gold_reason": "本题问“如何同时记录每步残差、步长并安全终止？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-148",
+    "query": "Should exhausting the iteration cap be reported as convergence?",
+    "gold_reason": "本题问“Should exhausting the iteration cap be reported as convergence?”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-149",
+    "query": "Newton应在何时抛出异常表示未收敛？",
+    "gold_reason": "本题问“Newton应在何时抛出异常表示未收敛？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-150",
+    "query": "循环上限为零时应该如何处理输入边界？",
+    "gold_reason": "本题问“循环上限为零时应该如何处理输入边界？”；主要目标是控制Newton循环终止。必要判据：容差判据之外必须有迭代上限和未收敛状态。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-151",
+    "query": "Newton does not converge.",
+    "gold_reason": "可定位Newton失败/初值排查入口，但没有函数、初值和轨迹，无法确定具体根因。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-152",
+    "query": "残差为1e-9，真根和导数界均未知，能保证误差小于1e-6吗？",
+    "gold_reason": "可定位残差与真实误差辨析；现有信息不能推出误差上界。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-153",
+    "query": "二分程序结果不对，但没提供代码或端点值。",
+    "gold_reason": "能定位区间更新排查，缺少代码和符号数据，不能确定哪一分支错。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-154",
+    "query": "迭代发散，函数、初值和g(x)都没有。",
+    "gold_reason": "可定位不动点发散诊断，不能判断映射区间或导数条件哪项失效。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-155",
+    "query": "我还没算当前导数，程序报错能确定是除零吗？",
+    "gold_reason": "可定位分母异常检查，但缺少导数证据，不能确认根因。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-156",
+    "query": "迭代变慢了，但没有重数或误差表。",
+    "gold_reason": "可定位重根降阶假设检查，但不能据此认定是重根。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-157",
+    "query": "Please diagnose the previous Newton run using our earlier chat.",
+    "gold_reason": "benchmark不含历史对话；仅可泛化定位Newton诊断，不能声称用到了上下文。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-158",
+    "query": "当前是代码调试任务，请检查二分中点同号时端点更新。",
+    "gold_reason": "明确任务上下文为代码调试，目标是二分端点分支。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "error_debugging"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-159",
+    "query": "Task mode is code_task; add a maximum-iteration guard to Newton.",
+    "gold_reason": "任务模式与目标都指向Newton代码停机。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-160",
+    "query": "先解释Newton公式，再给带导数保护的Python实现。",
+    "gold_reason": "请求同时包含Newton公式推导和带导数保护的Python实现，分别对应推导与代码更新两个Case；接受集合保留两项目标，单标签评测不计严格决策。",
+    "family": "MIXED_NEWTON_DERIVATION_CODE",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION",
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "two independent intents map to separate Cases"
+  },
+  {
+    "id": "V2-161",
+    "query": "解释重根降阶，并写出已知m时的修正公式。",
+    "gold_reason": "问题聚焦重根下标准Newton降阶及已知重数时的修正格式，两部分属于同一个Case的解释和方法目标。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-162",
+    "query": "请推导Newton并证明它对任意初值全局二阶收敛。",
+    "gold_reason": "核心问题是Newton局部收敛条件，但“任意初值全局二阶”是错误加强；标为条件变化的VARIANT，答案必须指出单根、光滑性和局部初值前提。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-163",
+    "query": "求抛物型PDE的有限元稳定性条件。",
+    "gold_reason": "PDE有限元不属于当前求根课程Case本体。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-164",
+    "query": "求矩阵特征值QR迭代的收敛速度。",
+    "gold_reason": "特征值算法在当前冻结的15个root-finding Case之外。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-165",
+    "query": "Explain the residue theorem for contour integration.",
+    "gold_reason": "复分析围道积分不属于数值求根主题。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-166",
+    "query": "强化学习PPO的clip目标函数是什么？",
+    "gold_reason": "强化学习主题在当前课程Case本体之外。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-167",
+    "query": "单根、初值充分接近时Newton局部二阶收敛条件是什么？",
+    "gold_reason": "目标是Newton局部二阶收敛条件，单根与充分接近的初值正是该Case的原有前提；没有改变条件、表示或任务目标。依研究文档§4.5标SAME_CASE；排除重根降阶Case。仍须检查光滑性条件是否满足。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-168",
+    "query": "二重根处导数为零，和中间迭代点偶然导数为零有何不同？",
+    "gold_reason": "问句比较根的重数性质和某一步分母失效：前者影响渐近阶，后者导致单步除法失败，是两个不同目标，故保留双Case集合。",
+    "family": "MIXED_MULTIPLE_ROOT_AND_DERIVATIVE",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT",
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "comparative query spans two Cases"
+  },
+  {
+    "id": "V2-169",
+    "query": "根是单根，但本次迭代点f′恰为零。",
+    "gold_reason": "目标是诊断当前迭代点分母为零，这正是导数失效Case的原有条件。根是单根只排除重根误归因，没有改变该Case的任务或分母前提；依研究文档§4.5标SAME_CASE。不能把当前点误当成已求得的根。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-170",
+    "query": "端点异号但函数不连续，零点存在结论成立吗？",
+    "gold_reason": "本题问“端点异号但函数不连续，零点存在结论成立吗？”；目标为二分法可用性。关键判据：函数在闭区间连续且端点异号；只变号不能替代连续性。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新，不能推断未给出的根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-171",
+    "query": "区间长度4，要求误差小于1e-5，二分要几步？",
+    "gold_reason": "本题问“区间长度4，要求误差小于1e-5，二分要几步？”；目标为先验误差/步数界。关键判据：区间宽度每轮减半，中点误差至多半个当前区间。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向，不能推断未给出的根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-172",
+    "query": "步长小但残差仍大，可以宣布停止吗？",
+    "gold_reason": "本题问“步长小但残差仍大，可以宣布停止吗？”；目标为设计安全停机判据。关键判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析，不能推断未给出的根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-173",
+    "query": "|g′|=0.3但g不映回区间，压缩定理条件齐全吗？",
+    "gold_reason": "本题问“|g′|=0.3但g不映回区间，压缩定理条件齐全吗？”；目标为不动点收敛充分条件。关键判据：闭区间自映射并且sup|g'|<1。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象，不能推断未给出的根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-174",
+    "query": "牛顿残差极小但函数很平，能认证前向误差吗？",
+    "gold_reason": "本题问“牛顿残差极小但函数很平，能认证前向误差吗？”；目标为区分残差和根的真实误差。关键判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计，不能推断未给出的根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-175",
+    "query": "循环没停但Newton更新正确，最需要补什么保护？",
+    "gold_reason": "本题问“循环没停但Newton更新正确，最需要补什么保护？”；目标为控制Newton循环终止。关键判据：容差判据之外必须有迭代上限和未收敛状态。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_NEWTON_CODE_UPDATE，因为问题聚焦循环退出而非分母计算，不能推断未给出的根因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-176",
+    "query": "只说‘数值分析作业有问题’，能确定是哪种Newton错误吗？",
+    "gold_reason": "问句没有指出算法、错误现象或目标；不支持选择任何现有Case，应显式返回UNCERTAIN并请求具体题目/轨迹，而非臆定Newton或停机主题。",
+    "family": "UNROUTABLE_INSUFFICIENT",
+    "split": "unroutable",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "UNCERTAIN"
+    ],
+    "context": {},
+    "ontology_limit": "gold uses UNCERTAIN as proxy for insufficient routing evidence; matcher API has no explicit ask-for-evidence decision"
+  },
+  {
+    "id": "V2-177",
+    "query": "Tell me the exact Newton bug; there is no code or output.",
+    "gold_reason": "可识别Newton诊断主题，但缺少证据，不能确认具体bug；需教师复核本体表达边界。 有明确主题时仍可定位Case，但缺少材料不能确定事实或根因；决策gold仅为UNCERTAIN。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "uncertainty",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "UNCERTAIN"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-178",
+    "query": "请结合我刚上传的历史记录判断根的重数。",
+    "gold_reason": "没有历史附件输入，不能假装上下文已用；提到重数不构成重根证据。 有明确主题时仍可定位Case，但缺少材料不能确定事实或根因；决策gold仅为UNCERTAIN。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "uncertainty",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "UNCERTAIN"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-179",
+    "query": "讲解所有迭代算法并给出完整运行程序。",
+    "gold_reason": "问句没有指出算法、错误现象或目标；不支持选择任何现有Case，应显式返回UNCERTAIN并请求具体题目/轨迹，而非臆定Newton或停机主题。",
+    "family": "UNROUTABLE_INSUFFICIENT",
+    "split": "unroutable",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "UNCERTAIN"
+    ],
+    "context": {},
+    "ontology_limit": "gold uses UNCERTAIN as proxy for insufficient routing evidence; matcher API has no explicit ask-for-evidence decision"
+  },
+  {
+    "id": "V2-180",
+    "query": "How do I stop Newton and estimate its order from the same run?",
+    "gold_reason": "同一运行中的停机设计与收敛阶估计是两个目标，分别对应两个Case；需多意图本体才能严格单标签评估。",
+    "family": "MIXED_NEWTON_STOP_ORDER",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION",
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "two independent intents map to separate Cases"
+  },
+  {
+    "id": "V2-181",
+    "query": "残差和误差区别是什么？另外只给我Python停机代码。",
+    "gold_reason": "前半问残差/真实误差概念，后半要求Python停机代码；两者分别映射残差辨析和停机准则。",
+    "family": "MIXED_RESIDUAL_AND_STOPPING",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR",
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "two independent intents map to separate Cases"
+  },
+  {
+    "id": "V2-182",
+    "query": "端点异号且函数连续，介值定理能保证根的唯一性吗？",
+    "gold_reason": "本题问“端点异号且函数连续，介值定理能保证根的唯一性吗？”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-183",
+    "query": "二分区间长度已足够小，但我更新错了端点，最终误差界还可信吗？",
+    "gold_reason": "本题问“二分区间长度已足够小，但我更新错了端点，最终误差界还可信吗？”；主要目标是保留含根子区间。必要判据：比较端点与中点符号并保持端点异号不变式。排除近邻Case CASE_BISECTION_REQUIREMENTS，因为问题聚焦迭代分支而非初始适用条件。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-184",
+    "query": "二分停止时返回区间中点，绝对误差为何不超过区间半长？",
+    "gold_reason": "本题问“二分停止时返回区间中点，绝对误差为何不超过区间半长？”；主要目标是先验误差/步数界。必要判据：区间宽度每轮减半，中点误差至多半个当前区间。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题目标是精度估计而非更新方向。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_ERROR_BOUND",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-185",
+    "query": "g在区间上Lipschitz常数恰等于1，压缩映射定理能保证唯一解吗？",
+    "gold_reason": "本题问“g在区间上Lipschitz常数恰等于1，压缩映射定理能保证唯一解吗？”；主要目标是不动点收敛充分条件。必要判据：闭区间自映射并且sup|g'|<1。排除近邻Case CASE_FIXED_POINT_DIVERGENCE，因为询问的是定理正条件而非失稳现象。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_CONTRACTION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_CONTRACTION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-186",
+    "query": "不动点迭代数值有界但不趋于单点，是否可据此称收敛？",
+    "gold_reason": "本题问“不动点迭代数值有界但不趋于单点，是否可据此称收敛？”；主要目标是不动点格式稳定性/失败。必要判据：分析|g'|、自映射和初值，不能从等价代数变形推出同样收敛。排除近邻Case CASE_FIXED_POINT_CONTRACTION，因为问句描述失败而非满足条件时的定理结论。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_FIXED_POINT_DIVERGENCE",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_FIXED_POINT_DIVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-187",
+    "query": "由Taylor余项推导Newton公式时忽略二阶项，近似发生在哪一步？",
+    "gold_reason": "本题问“由Taylor余项推导Newton公式时忽略二阶项，近似发生在哪一步？”；主要目标是推导单步更新。必要判据：在当前点作一阶线性化并令近似函数值为零。排除近邻Case CASE_NEWTON_CODE_UPDATE，因为目标是公式来源，不是程序防护。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_DERIVATION",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-188",
+    "query": "f二阶连续且x*为单根，但初值距离根多远才能用定理？",
+    "gold_reason": "可定位局部定理条件，未给函数/邻域不能给出具体数值半径。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_LOCAL_CONVERGENCE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-189",
+    "query": "Newton迭代初值不变却每次结果不同，是否还需要检查随机性或并发？",
+    "gold_reason": "可定位初值与运行轨迹诊断，但证据不足以断定初值是唯一根因。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "insufficient_information",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-190",
+    "query": "f′非常小但程序没报除零，应该把它按零处理吗？",
+    "gold_reason": "本题问“f′非常小但程序没报除零，应该把它按零处理吗？”；目标为单步分母失效。关键判据：检查当前迭代点|f'(x_k)|是否为零或相对尺度上过小。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_NEWTON_MULTIPLE_ROOT，因为中间点分母故障不等价于根具有重数，不能推断未给出的根因。",
+    "family": "CASE_NEWTON_DERIVATIVE_ZERO",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-191",
+    "query": "已知三重根，标准Newton误差约按什么比例线性缩小？",
+    "gold_reason": "本题问“已知三重根，标准Newton误差约按什么比例线性缩小？”；主要目标是重根下Newton阶数/修正。必要判据：m重根标准Newton渐近因子1-1/m；只有问收敛阶/乘子修正时才用此标签。排除近邻Case CASE_NEWTON_DERIVATIVE_ZERO，因为若只问当前点无法除法则应归分母故障。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_NEWTON_MULTIPLE_ROOT",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-192",
+    "query": "误差比公式算出p为负数，先检查收敛阶还是数据假设？",
+    "gold_reason": "本题问“误差比公式算出p为负数，先检查收敛阶还是数据假设？”；目标为由误差序列估渐近阶。关键判据：需有效、趋零的连续误差数据；舍入/非渐近阶段会误导。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_NEWTON_LOCAL_CONVERGENCE，因为问题问观测阶估计而非定理条件，不能推断未给出的根因。",
+    "family": "CASE_NEWTON_CONVERGENCE_ORDER",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_CONVERGENCE_ORDER"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-193",
+    "query": "函数值量纲和根误差量纲不同，残差阈值能直接当精度阈值吗？",
+    "gold_reason": "本题问“函数值量纲和根误差量纲不同，残差阈值能直接当精度阈值吗？”；目标为区分残差和根的真实误差。关键判据：r=f(x_k)，e=x_k-x*；斜率/条件性决定二者不能直接等同。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_STOPPING_CRITERION，因为问题若只问阈值组合才属于停机设计，不能推断未给出的根因。",
+    "family": "CASE_RESIDUAL_VS_ERROR",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_RESIDUAL_VS_ERROR"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-194",
+    "query": "停止条件把小步长当成功，即使迭代因舍入停滞也会误判吗？",
+    "gold_reason": "本题问“停止条件把小步长当成功，即使迭代因舍入停滞也会误判吗？”；目标为设计安全停机判据。关键判据：联合检查残差、步长并用max_iter兜底；小步长不等价于找到根。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_RESIDUAL_VS_ERROR，因为目标是迭代退出逻辑而非术语辨析，不能推断未给出的根因。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-195",
+    "query": "Newton更新公式正确，但没有检查df接近浮点零，补在哪里？",
+    "gold_reason": "本题问“Newton更新公式正确，但没有检查df接近浮点零，补在哪里？”；目标为实现Newton单步。关键判据：先评估并保护当前df，再计算x-f/df。相对常规Case条件，本题明确对照了题干中的条件变化，因此是VARIANT_OF_CASE；排除近邻CASE_NEWTON_CODE_STOPPING，因为问题聚焦单步更新，不是循环退出，不能推断未给出的根因。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "near_neighbor",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "VARIANT_OF_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-196",
+    "query": "请在每轮打印Newton步数，超限后返回未收敛状态。",
+    "gold_reason": "代码任务目标明确是循环计数和超限状态。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-197",
+    "query": "A discontinuous function changes sign across the bracket; is a root guaranteed?",
+    "gold_reason": "本题问“A discontinuous function changes sign across the bracket; is a root guaranteed?”；主要目标是二分法可用性。必要判据：函数在闭区间连续且端点异号；只变号不能替代连续性。排除近邻Case CASE_BISECTION_BRACKET_UPDATE，因为问题问定理前提，不是某一步更新。此标签依据教材条件和问题目标确定，不代表matcher已证明学生根因。",
+    "family": "CASE_BISECTION_REQUIREMENTS",
+    "split": "in_domain",
+    "expected_case_id": [
+      "CASE_BISECTION_REQUIREMENTS"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-198",
+    "query": "请讲椭圆曲线上的数论算法。",
+    "gold_reason": "数论主题不属于数值分析求根课程包。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-199",
+    "query": "历史记录显示的初值是多少？",
+    "gold_reason": "样例无历史记录，不能声称知道具体初值；仅能定位初值主题。 有明确主题时仍可定位Case，但缺少材料不能确定事实或根因；决策gold仅为UNCERTAIN。",
+    "family": "CASE_NEWTON_INITIAL_VALUE",
+    "split": "uncertainty",
+    "expected_case_id": [
+      "CASE_NEWTON_INITIAL_VALUE"
+    ],
+    "expected_decision": [
+      "UNCERTAIN"
+    ],
+    "context": {},
+    "ontology_limit": "single-label ontology lacks explicit evidence-sufficiency or multi-intent representation"
+  },
+  {
+    "id": "V2-200",
+    "query": "Context says task_mode=code_task: fix Newton's missing derivative guard.",
+    "gold_reason": "明确代码任务，故障目标是更新过程的分母保护。 可按明确算法/任务定位Case；缺少函数、轨迹或代码时不应声称已确定故障原因。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "context_task",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {
+      "task_mode": "code_task"
+    },
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-201",
+    "query": "先给二分误差推导，再解释端点更新。",
+    "gold_reason": "同时要误差上界推导和端点更新解释，对应两个独立Case；以可接受集合记录，不臆定主意图。",
+    "family": "MIXED_BISECTION_BOUND_UPDATE",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_BISECTION_ERROR_BOUND",
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "two independent intents map to separate Cases"
+  },
+  {
+    "id": "V2-202",
+    "query": "Newton has a double root and a zero derivative at the current iterate; discuss both order and runtime failure.",
+    "gold_reason": "问句比较根的重数性质和某一步分母失效：前者影响渐近阶，后者导致单步除法失败，是两个不同目标，故保留双Case集合。",
+    "family": "MIXED_MULTIPLE_ROOT_AND_DERIVATIVE",
+    "split": "mixed_intent",
+    "expected_case_id": [
+      "CASE_NEWTON_MULTIPLE_ROOT",
+      "CASE_NEWTON_DERIVATIVE_ZERO"
+    ],
+    "expected_decision": [
+      "UNCERTAIN",
+      "RELATED_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "comparative query spans two Cases"
+  },
+  {
+    "id": "V2-203",
+    "query": "def newton(f, df, x):\n    return x + f(x) / df(x)\n\n这段更新的符号哪里错？",
+    "gold_reason": "代码片段把Newton减号写成加号；目标是单步更新公式。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-204",
+    "query": "if df(x) == 0: pass\nx = x - f(x) / df(x)\n这段零导数保护为什么没有效果？",
+    "gold_reason": "保护分支没有退出/阻止后续除法，问题在更新代码防除零。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-205",
+    "query": "while abs(f(x)) > tol:\n    x = x - f(x)/df(x)\n循环可能无限运行，缺什么？",
+    "gold_reason": "循环只有残差条件，缺最大迭代数和未收敛出口。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-206",
+    "query": "if abs(x_new-x) < tol: return x_new\n残差很大也返回成功，判据哪里不足？",
+    "gold_reason": "小步长不能单独认证根，停机应检查残差并定义状态。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-207",
+    "query": "if f(a)*f(c) < 0:\n    a = c\n二分法这段端点赋值对吗？",
+    "gold_reason": "中点与左端异号时应保留[a,c]，赋a=c会丢掉变号区间。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-208",
+    "query": "if f(a)*f(c) > 0:\n    b = c\n判断这一支保留的区间是否正确。",
+    "gold_reason": "若a与中点同号则根在[c,b]，应更新a而非b。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-209",
+    "query": "for k in range(max_iter):\n    x = x - f(x)/df(x)\n若跑满循环，函数应怎样报告？",
+    "gold_reason": "代码已有上限，缺少耗尽上限后的显式未收敛状态。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-210",
+    "query": "x = x - f(x)/df(x)\n没有检查df接近0，加入检查应放在哪里？",
+    "gold_reason": "分母检查必须先于除法，目标是更新实现防护。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-211",
+    "query": "while abs(dx)>tol:\n    ...\n没有max_iter时有什么失效风险？",
+    "gold_reason": "循环可能永不终止，目标是循环上限设计。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-212",
+    "query": "if abs(f(x)) < tol: break\n是否还应限制迭代次数？",
+    "gold_reason": "只按残差break而无安全上限不能防止条件永不满足。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_STOPPING_CRITERION",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_STOPPING_CRITERION"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-213",
+    "query": "c=(a+b)/2\nif f(a)*f(c)<0: b=c\n说明区间不变式如何维持。",
+    "gold_reason": "该分支保留左侧异号区间[a,c]，目标是验证端点更新。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_BISECTION_BRACKET_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_BISECTION_BRACKET_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-214",
+    "query": "dfx = derivative(x)\nstep = fx / dfx\nx -= step\n哪里应处理浮点近零？",
+    "gold_reason": "需在除法前检查dfx是否相对尺度上近零。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_UPDATE",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_UPDATE"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-215",
+    "query": "while k < max_iter:\n    ...\nelse: raise RuntimeError('not converged')\n这个else代表什么状态？",
+    "gold_reason": "循环耗尽后的else应报告未收敛，目标是终止状态语义。 代码只作为静态文本匹配输入，不会执行。",
+    "family": "CASE_NEWTON_CODE_STOPPING",
+    "split": "code_snippet",
+    "expected_case_id": [
+      "CASE_NEWTON_CODE_STOPPING"
+    ],
+    "expected_decision": [
+      "SAME_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-216",
+    "query": "如何用Romberg积分提高复合梯形公式精度？",
+    "gold_reason": "数值积分，不是当前求根课程范围。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-217",
+    "query": "QR算法计算矩阵特征值的移位策略怎么选？",
+    "gold_reason": "矩阵特征值属于其他数值分析专题，不在此Case包。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-218",
+    "query": "有限元求二维Poisson方程如何处理边界条件？",
+    "gold_reason": "偏微分方程有限元不属于求根范围。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-219",
+    "query": "复变函数留数定理怎样计算围道积分？",
+    "gold_reason": "复分析积分不属于当前课程包。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-220",
+    "query": "用梯度下降训练神经网络时学习率如何调整？",
+    "gold_reason": "机器学习优化不属于非线性方程求根。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-221",
+    "query": "有限差分解热方程时如何做稳定性分析？",
+    "gold_reason": "PDE时间推进稳定性不是此求根Case集的主题。",
+    "family": "OUT_OF_DOMAIN",
+    "split": "out_of_domain",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": null
+  },
+  {
+    "id": "V2-222",
+    "query": "请推导弦截法并诊断割线斜率为零的情形。",
+    "gold_reason": "弦截法是求根主题内需求，但当前15个Case没有其独立算法/退化斜率诊断。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-223",
+    "query": "False position法端点长期不动时如何加速？",
+    "gold_reason": "假位法属于求根，但当前Case本体没有端点停滞及加速专题。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-224",
+    "query": "Brent方法怎样在二分与插值间切换？",
+    "gold_reason": "Brent混合算法的切换规则不在现有二分/Newton/fixed-point Case内。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-225",
+    "query": "给Newton加阻尼因子并选择线搜索步长。",
+    "gold_reason": "阻尼Newton和线搜索控制是域内新算法需求，当前Case未覆盖。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-226",
+    "query": "怎样隔离多项式的全部实根并证明没有遗漏？",
+    "gold_reason": "多项式全根隔离不同于单根Newton收敛或二分单区间误差界。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-227",
+    "query": "复平面上的Newton迭代盆地边界如何可视化？",
+    "gold_reason": "复根与复平面吸引域超出现有实数求根Case。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  },
+  {
+    "id": "V2-228",
+    "query": "求解F(x,y)=0的非线性方程组Newton雅可比更新。",
+    "gold_reason": "多变量Newton需要Jacobian和方程组Case，当前本体是一元求根。",
+    "family": "NEW_CASE_REQUIRED",
+    "split": "new_case",
+    "expected_case_id": [
+      null
+    ],
+    "expected_decision": [
+      "NEW_CASE"
+    ],
+    "context": {},
+    "ontology_limit": "new_case is in course domain but absent from the frozen Case ontology"
+  }
+]
