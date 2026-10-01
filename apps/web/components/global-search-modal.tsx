@@ -119,7 +119,7 @@ export function GlobalSearchModal({ isOpen, onClose, onSelectResult }: GlobalSea
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-20 px-4 bg-stone-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
+      <div
         className="w-full max-w-2xl bg-[var(--bg-card,#fff)] text-[var(--text-primary,#262626)] border border-[var(--border-subtle,#e5e5e5)] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >

@@ -222,4 +222,3 @@ export function parseBlocks(lines: string[]): Block[] {
 
   return blocks;
 }
-

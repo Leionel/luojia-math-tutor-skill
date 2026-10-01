@@ -129,6 +129,16 @@ cd apps/web; npm run build
 
 ## 6. 尚未处理的问题
 
+> **2026-09-30 接手复核补充（研究文档 §26）：** 新的最高优先级是正式图跨重启恢复：临时SQLite验证 approve 后有单元，重建CourseService后候选保持approved但单元丢失。另需补生产教材单元召回；eval里的加权图检索并非EvidenceBuilder路径，不能把pending dry-run的13/15 hierarchy@1当成生产验收。实际种子包27 units / 21 relations / 15 Cases。Overlay为过程证据计数，不是已验收的掌握度/遗忘模型；聊天工作流尚未自动写入课程events。
+
+> 本轮只核查并更新记录：`npm test`知识JSON通过、API256通过（5 warnings）、前端12通过；旧Case benchmark16/16域内、20/20决策、4/4域外，未跑build/浏览器验收/在线模型评测。用户随后授权AGY Staff（Gemini 3.8 Flash High）更新约200题离线v2 benchmark，保留原20题与生产matcher。文档§26记录推荐四轮顺序；未修改真实教材库或审核决定。
+
+> AGY实施最终未交付：直连Google端点超时；为AGY进程沿用本地HTTP代理后仍出现`stream reading error: unexpected EOF`（job `implement-muo1j7ha-6625291f`，error）。没有benchmark变更。扩充200题为已授权但未完成事项，已请用户选择Codex接手或AGY网络恢复后继续；系统代理配置保持原样。
+
+> 用户随后指定Luna：已启动GPT-6 Luna子代理实施相同范围，主代理复核；交付前不登记200题为完成。
+
+> **本轮最终交付：** Luna新增228题独立v2（原20题保留）、13条静态代码片段、15条任务上下文、11条域外、7条域内新Case、2条不可确定路由。主代理发现并要求修复`[None]`域外计分和宽松决策口径，随后按研究§4.5纠正两条未改变Case前提的标签；gold不是从matcher预测生成。最终Case11/208、严格决策34/222、可接受集合34/228、域外10/11、新Case7/7；204题至少一项不匹配、异常0。题集hash `0c263dfc9c8646bcd43f0a77987439f8e97776e45d5efa94edf3e0903ab9e6a0`；原题集/种子包/matcher hash保持。生成器逐字节复现，npm test知识JSON通过、API265通过（含9项评分回归）、前端12通过。协议在 `evaluation/CASE_BENCHMARK_V2.md`，结果在gitignored的`results/case_benchmark_v2.json`。尚无教师标注审核/LLM对照/学生学习效果证据；生产代码、正式教材库与审核状态未改，未commit/push。
+
 1. **baseline 两行仍无数据。** GPT-4o / DeepSeek 裸模型同批 20 条、同 rubric 的结果不存在，所以 README 的 `90.0% (18/20)` **没有参照系**。约两小时 + API 费用，是含金量最高的一块。
 2. **交付面为零。** 无 `.github/`、无 CI、无 Dockerfile / docker-compose。服务能起（`app/main.py`，`/health`），但没有任何东西把它推出去，§2 那 12 条约定也没有任何机制强制。
 3. ~~`MathMarkdown` 与 `LatexRenderer` 定界符不一致。~~ **已修（2026-09-30）**：`MathMarkdown` 改为 `LatexRenderer` 的薄封装，审核台/对话页与笔记本共用一条解析路径，四种定界符全支持。
@@ -165,3 +175,63 @@ cd apps/web; npm run build
 - 评测集 244 条（`scripts/build_retrieval_eval.py` 从教材图谱确定性生成），gold 244/244 解析成功。
 - 顺带修了三个真缺陷：`search_document_chunks` 方法缺失（chunk 检索运行时从未生效）、SQLite 默认分词器切不动中文（新增 CJK bigram 索引，migration 005）、问句脚手架毒化 AND 查询（`cjk_query_groups` 剥离问句框架）。
 - BM25（生产同路径）Recall@3 **0.752** / Recall@5 **0.798** / MRR@10 **0.708**；vector/hybrid 两行待 embedding key（DeepSeek 无 embedding 端点）。详见研究文档 §25。
+
+## 8. 界面与交互体验演进（2026-09-30）
+
+- **九章草堂混合体上线**：落地方案 A「宣纸手稿演算台」作为主脊柱，融合方案 C「双栏对照错因复盘卡」与方案 B「按需调阅数理仪器」，彻底区分学子立论与珞珈师说身份印章。
+- **模型设置鉴权与容错**：在 `apps/api/.env` 启用 `ALLOW_USER_API_KEY=true`，前端 `ModelSettings` 补充 `try...catch` 与状态透传，杜绝红屏崩溃。
+- **推导等待体验重构**：消除原本强行全屏铺开的 4 个空旷大白方框，重塑为极简收拢的手稿墨绿徽标（高度仅 28px，可按需展开细腻时间轴），并在开场白后加入墨润呼吸光标，极大改善等待节奏。
+
+## 9. 联网检索与多厂商运思强度切换（2026-09-30）
+
+- **多厂商运思强度映射适配**：
+  - 在 `apps/api/app/llm/openai_compatible.py` 实现 `build_request_payload`，支持 4 档推演深度（`off` 直答 / `low` 轻敏 / `medium` 深思 / `max` 格物）。
+  - 精准映射主流模型：DeepSeek 官方 API（`reasoning_effort: low/high/max` 及 `thinking.type: enabled/disabled`）、OpenAI（`reasoning_effort`）、Anthropic（`output_config.effort` 与 `thinking_budget`）、Qwen 通义千问（`enable_thinking`, `thinking_budget`）、智谱 GLM（`reasoning_effort`）。
+- **双轨全域网络检索系统**：
+  - 针对原生支持联网的模型（Qwen `enable_search: true`、GLM `web_search`、Kimi `$web_search`）开启 Native 参数；
+  - 针对纯推理模型（DeepSeek 等）研发高可用外部检索适配器 `apps/api/app/search/web_search.py`（Tavily + DuckDuckGo 双引擎，1.8s 严格超时与降级容错），在 Agent Fast Context 层自动化注入 `[WEB-N]` 不可信提示摘要防模型幻觉。
+- **藏书阁全局站内检索（Ctrl+K）**：
+  - 新增后端接口 `GET /api/search/global`，跨教材定理（知识图谱 200+ 单元）、学子错题本与随堂笔记三维并行检索。
+  - 前端开发 `GlobalSearchModal` 弹窗（支持 KaTeX 实时公式预览与「带入草堂研讨」一键装载），并在落笔台底部提供 `[🌐 联网探微]` 微光按钮与 `[🧠 运思强度]` 浮动切换器。
+- **质量与回归**：新增 `test_web_search.py`、`test_reasoning_effort.py`、`test_tutor_search_integration.py`、`test_global_search.py` 全部 9 个离线用例绿灯通过；前端 `npm run lint` 0 错误。
+
+
+
+## 2026-09-30 Prompt全面重塑（teaching-v2.1）
+
+用户授权将prompt审查所列问题全部实施。主规范与三份参考指南已统一并真正加载，新增prompt_policy唯一策略入口，明确完整答案/direct优先。后台策略与不可信资料分开，Case条件/推理要点/匹配决策/来源进入prompt，探针不注入答案键。证明先审查，Verifier严格schema；工具执行成功与数学命题成立分开，失败降级。图片识别后真暂停，前端确认/编辑，草稿通过learning_meta持久化恢复。公开文案区分LLM意见与本步检查，错题卡不再使用硬编码的错误原因或正解。
+
+详见 PROMPT_ARCHITECTURE_V2.md（按文件整改与证据范围）。最终离线npm test：API294、前端12、知识JSON通过；tsc通过；lint退出0、保留现有告警。测试进程使用SYMPY_GROUND_TYPES=python、MPMATH_NOGMPY=1绕开本机gmpy2本地扩展错误，conftest离线门控未变。新增20项prompt/流程回归。没有真实模型A/B、教师验收、真实浏览器上传或学习效果实验；v2题集/课程包/matcher哈希未变。已有服务需重启加载新prompt。未commit/push/deploy。
+
+
+## 2026-10-01 — 响应式聊天 UI 与公式渲染修复
+
+- 修复窄屏左右空白抽屉：Sidebar/LearningPanel 只渲染内容，由 MobileDrawer 统一控制显示、遮罩、关闭、焦点循环及跨断点恢复；桌面断点为 1024/1280px。
+- 学习抽屉复用桌面状态/笔记内容，补齐移动端随堂笔记入口。顶部品牌/新会话避免换行，次要导航收进“更多”；输入区移动端取消常驻算子滚动条，简化工具文案，保持 16px 输入字体与底部安全区。中文 IME 确认不提交，粗指针设备 Enter 保留换行。
+- 提取 message-parser.ts，修复同一行 $$…$$ 和 \[ … \] 的闭合处理，未闭合公式不吞后续空行/标题，保留代码与转义美元符号；加入 Markdown 表格渲染。原“膜振动方程”会话现已正常显示全部公式与后续标题，DOM 中 KaTeX 错误为 0。
+- 学习面板取消未检查/无知识点时的默认 50% 展示，区分模型复核与本步检查；掌握度明确为估计。
+- 验证：npm test（API 294、前端 17、知识 JSON 均通过）；tsc --noEmit 通过；lint 0 errors，原有 10 warnings。浏览器检查 320/390/768/1100/1440px、390x480 短视口，无整页横向溢出；Esc/关闭按钮/遮罩、Tab 焦点循环、跨断点关闭、移动端笔记切换与“更多”菜单通过。截图：results/ui-2026-10-01/mobile.jpg。
+- 边界：未进行真实手机软键盘验证；开发服务器继续运行，因此未运行 next build；未提交/推送。框架仍为 Next.js 14.2.35。官方支持政策已将 14.x 列为不支持，建议后续独立迁移到 16.x 稳定补丁版，核对 React/API/lint 后再构建，不在本轮混入升级。
+
+## 2026-10-01 Next.js 16 升级
+
+Next.js 14.2.35 → 16.3.8，React/React DOM 与类型依赖同步19.3.0，`eslint-config-next` 同步16.3.8；`next lint` 改为 ESLint flat config，使用 ESLint9.39.5，保留既有 effect/ref 用法兼容规则。Next自动更新 `jsx=react-jsx` 与 `.next/dev/types`；固定Turbopack根目录，关闭自动生成AGENTS/CLAUDE。新增typecheck先生成路由类型；CI独立lint并加入message-parser测试，README/AGENTS同步。
+
+停Web dev后生产构建通过；完整离线npm test（API294、前端17、知识JSON）通过；typecheck通过，lint 0 errors/10已有warnings。定向更新browserslist/baseline-browser-mapping/postcss-selector-parser；含开发依赖的npm audit与生产依赖audit均0漏洞，最终安装树无peer invalid。开发服务恢复于127.0.0.1:3000；API8000健康、chat/graph页面均200。浏览器原会话48处公式、0 KaTeX错误；390×844无横向溢出，左右抽屉可用；图谱27节点/21关系，控制台0 error。截图：results/ui-2026-10-01/next16-react19-mobile.png。未真实手机软键盘/线上模型验收，未远端CI/commit/push/deploy。
+
+## 2026-10-01 — 六个月详细计划与一年展望
+
+按用户要求仅规划后续业务，写入研究文档§27，保留“可验证诊断闭环”的原判断全文。2026/10–2027/03按G0–G8推进：正式图持久化/审核原子性 → 生产Case召回 → Newton错误定位/提示/修订再验/最小事件 → 完整求根家族/Overlay → 教师gold/独立集 → 小规模试用 → 协议冻结 → 有对照的无AI跨表示迁移与延迟保持 → 复现/扩展决策；2027/04–09只作条件性滚动展望。每周约3开发日为估算，教师合作、招募与研究流程未确认。
+
+本日离线复跑228题，Case Recall@1仍11/208，严格单标签34/222，可接受决策34/228，域外10/11，新Case7/7，matcher异常0；输出results/case_benchmark_2026-10-01_plan.json，三项冻结哈希不变。执行成功不等于检索能力通过。下一轮从M0开始，先用临时库验证重启恢复和故障原子性；本轮未修改正式图数据/审核状态、matcher或Gold。
+
+## 2026-10-01：M0 / M1 实施与分批提交
+
+详细实现、哈希、恢复命令与边界见 `COURSE_GRAPH_M0_M1.md`，研究时间线更新 §27.8，交接文档新增最新状态优先段。
+
+- M0：完整 canonical_graphs 快照、种子首次初始化、正式数据优先、SQLite原子审核与完整revision、CAS、幂等回执、恢复工具。修改前两个库各自 backup/integrity=ok，真实API库pending495/superseded283；无历史approved/merged，无自动重审。测试仅临时库，浏览器启动时初始化正式快照，未批量审核。
+- M1：生产与离线同一Case/单元召回，双语BM25+任务重排、仅verified与允许范围、缺信息追问，EvidencePack保留not_checked条件及retrieval_trace。图谱页不将排序分数展示成正确率，不展示探针答案，补充未知/信息不足反馈与异步旧响应保护。
+- 冻结228题开发集：R@1=162/208（77.9%），R@3=200/208（96.2%）；单gold决策200/222，可接受决策200/228，域外11/11，新Case7/7。61题至少一项失败（Case46/决策28，有交集），0工具异常；原20题strict通过（Case16/16/集合20/20/域外4/4）。题集/种子哈希保持，不修改gold。教师审核与独立泛化尚未验证。
+- 验收：npm test API329 / Web17 / 知识JSON通过；Next16.3.8构建、typecheck通过；lint0错误/10已有警告。真实浏览器核验匹配与追问，截图results/m0-m1/graph-match.png。日志results/m0-m1-full-test.log、m0-m1-web-check.log。开发服务3000/8000恢复，未远端CI或部署。
+- 提交：e23da77 M0；1db7739 M1+前轮Prompt/搜索；27dd51a 228题基准；923ab3a 移动/公式与匹配UI；dee8c24 Next/React工具链；最终文档与格式收尾另批。未push；密钥、DB、results、egg-info与public原型不提交。
+- 尚未完成：教师抽查61失败与歧义gold、材料少量审核、M2受控诊断Oracle/修订重验、事件链。图谱种子二分法公式已有孤立right定界符；本轮保持种子哈希，不能称全部图谱公式已修复。公开Case接口答案字段权限需M2前梳理，UI隐藏不等于接口隔离。

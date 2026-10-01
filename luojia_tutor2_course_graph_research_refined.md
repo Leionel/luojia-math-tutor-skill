@@ -1,8 +1,8 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
-> **项目仓库**：`Leionel/luojia-math-tutor-skill`  
-> **试点课程**：《数值分析》  
-> **首单元建议**：非线性方程求根（Bisection / Fixed Point / Newton）  
+> **项目仓库**：`Leionel/luojia-math-tutor-skill`
+> **试点课程**：《数值分析》
+> **首单元建议**：非线性方程求根（Bisection / Fixed Point / Newton）
 > **调研目的**：不是重新设计一个 AI Tutor，而是在现有 Tutor 2.0 与已有研究基础上，回答“课程知识应该如何组织、学生问题如何归并、知识图谱如何动态演化、学生状态如何叠加、这些结构如何服务 Tutor 与后续研究”。
 >
 > 本文将严格区分：
@@ -10,6 +10,8 @@
 > - **[项目现状]**：当前公开仓库或此前代码审查中已经存在的能力；
 > - **[文献/开源证据]**：已有论文或官方 GitHub 能支持的设计经验；
 > - **[方案建议]**：针对珞珈数智助教 2.0 的新增设计，不把工程选择包装成已有研究结论。
+
+> **执行入口（2026-10-01 更新）**：下一阶段排期与验收以本文 [§27 六个月推进时间线](#27-六个月推进时间线2026-10-01--2027-03-31) 为准，§27.7 给出至2027年9月的一年滚动展望。§16、§23、§26 保留为设计与历史基线；“模块已存在”不等于诊断闭环或学习效果已验收。
 
 ---
 
@@ -2049,52 +2051,52 @@ Event Store
 
 ## AI Tutor / Evaluation
 
-- Mačina et al. **MathTutorBench: A Benchmark for Measuring Open-ended Pedagogical Capabilities of LLM Tutors.** EMNLP 2025.  
-  https://aclanthology.org/2025.emnlp-main.11/  
+- Mačina et al. **MathTutorBench: A Benchmark for Measuring Open-ended Pedagogical Capabilities of LLM Tutors.** EMNLP 2025.
+  https://aclanthology.org/2025.emnlp-main.11/
   https://github.com/eth-lre/mathtutorbench
 
-- Pardos et al. **OATutor: An Open-source Adaptive Tutoring System and Curated Content Library for Learning Sciences Research.** CHI 2023.  
-  https://doi.org/10.1145/3544548.3581574  
-  https://github.com/CAHLR/OATutor  
+- Pardos et al. **OATutor: An Open-source Adaptive Tutoring System and Curated Content Library for Learning Sciences Research.** CHI 2023.
+  https://doi.org/10.1145/3544548.3581574
+  https://github.com/CAHLR/OATutor
   https://github.com/CAHLR/OATutor-Content
 
 ## Student Modeling
 
-- Park et al. **Tracing Mathematical Proficiency Through Problem-Solving Processes.** Findings ACL 2026.  
-  https://aclanthology.org/2026.findings-acl.961/  
+- Park et al. **Tracing Mathematical Proficiency Through Problem-Solving Processes.** Findings ACL 2026.
+  https://aclanthology.org/2026.findings-acl.961/
   https://github.com/jungyangpark/KT-PSP-25
 
-- Li et al. **LongTutor: Benchmarking Large Language Models for Long-term Personalized Tutoring.** ACL 2026.  
-  https://aclanthology.org/2026.acl-long.1371/  
+- Li et al. **LongTutor: Benchmarking Large Language Models for Long-term Personalized Tutoring.** ACL 2026.
+  https://aclanthology.org/2026.acl-long.1371/
   https://github.com/liano3/LongTutor
 
 ## Misconception / Process Diagnosis
 
-- Mitton et al. **Misconception Diagnosis From Student-Tutor Dialogue: Generate, Retrieve, Rerank.** 2026.  
+- Mitton et al. **Misconception Diagnosis From Student-Tutor Dialogue: Generate, Retrieve, Rerank.** 2026.
   https://doi.org/10.1145/3774398.3811609
 
-- Chen et al. **MalruleLib: Large-Scale Executable Misconception Reasoning with Step Traces for Modeling Student Thinking in Mathematics.** 2026.  
+- Chen et al. **MalruleLib: Large-Scale Executable Misconception Reasoning with Step Traces for Modeling Student Thinking in Mathematics.** 2026.
   https://arxiv.org/abs/2601.03217
 
-- Yasir et al. **Confirming Correct, Missing the Rest: LLM Tutoring Agents Struggle Where Feedback Matters Most.** BEA 2026.  
+- Yasir et al. **Confirming Correct, Missing the Rest: LLM Tutoring Agents Struggle Where Feedback Matters Most.** BEA 2026.
   https://aclanthology.org/2026.bea-1.56/
 
 ## Pedagogical Policy
 
-- Puech et al. **Towards the Pedagogical Steering of Large Language Models for Tutoring.** Findings ACL 2025.  
-  https://aclanthology.org/2025.findings-acl.1348/  
+- Puech et al. **Towards the Pedagogical Steering of Large Language Models for Tutoring.** Findings ACL 2025.
+  https://aclanthology.org/2025.findings-acl.1348/
   https://github.com/RomainPuech/StratL-Pedagogical-Steering-of-LLMs-for-Tutoring
 
-- Cohn et al. **Evidence-Decision-Feedback: Theory-Driven Adaptive Scaffolding for LLM Agents.** AIED 2026.  
+- Cohn et al. **Evidence-Decision-Feedback: Theory-Driven Adaptive Scaffolding for LLM Agents.** AIED 2026.
   https://doi.org/10.1007/978-3-032-29744-0_1
 
 ## Scientific / Numerical / Code Evaluation
 
-- Tian et al. **SciCode: A Research Coding Benchmark Curated by Scientists.** NeurIPS 2024.  
-  https://arxiv.org/abs/2407.13168  
+- Tian et al. **SciCode: A Research Coding Benchmark Curated by Scientists.** NeurIPS 2024.
+  https://arxiv.org/abs/2407.13168
   https://github.com/scicode-bench/SciCode
 
-- Hu et al. **SciCode-Verified: How Benchmark Defects Underestimated the Scientific-Coding Ability of Language Models.** 2026.  
+- Hu et al. **SciCode-Verified: How Benchmark Defects Underestimated the Scientific-Coding Ability of Language Models.** 2026.
   https://arxiv.org/abs/2608.04975
 
 ## 已有本项目增量调研中建议继续关注
@@ -2364,3 +2366,232 @@ Event Store
 - **hierarchy 短板被图层解决**：chunk 检索答不了「X 属于哪一节」（0.133），但同一评测里图层 dry-run 的 hierarchy@1 = 0.867——前提是把 495 条候选真正审核入图；当前是拿 pending 集代理测的。**审核量是解锁这个数字的前提。**
 - vector 臂目前是本地 LSA 降级（无 neural embedding key），R@3 0.581 低于 BM25 属预期；`DASHSCOPE_API_KEY` 一到（读环境变量即可，代码无需改），重跑就能得到真神经向量与 hybrid 的真实水位——hybrid 的 R@5 0.805 已经是全场最高，说明融合方向正确，换强向量臂后 R@3/MRR 大概率跟涨。
 - 自出题偏「贴标题」，指标整体偏乐观；colloquial/hierarchy/relation 三类用于对冲。definition 0.447 与 howto 0.574 是下一轮 chunk 检索改进的主攻区间。
+
+# 26. 接手核查与下一轮推进计划（2026-09-30）
+
+> 本节补充 §23 的工程完成声明与 §25 的检索结论。以下区分本轮核实结果和待实施任务；本轮未修改生产代码、教材数据库或教师审核状态。
+
+## 26.1 当前证据与必须纠正的口径
+
+- 当前分支为 `feature/course-graph-2.0`。`npm test` 本轮通过：知识 JSON 校验、API **256 passed**、前端 **12 passed**；未运行生产 build、浏览器上传验收或在线模型评测。
+- 求根种子包实际含 **27 units / 21 relations / 15 Teaching Cases**。§23 的“25+ 真实 Teaching Case”不成立；这些是课程设计案例，不能等同于真实学生交互案例。
+- 教材候选数据库实际位于 `apps/api/data/course_store.db`：**495 pending = 235 units + 260 relations**，另有 283 superseded。评测脚本采用其中筛选后的 229 个单元，不能把这两个分母混用。
+- `StudentOverlayStore` 存过程证据计数，`mastery_estimate=None`；掌握度归 BKT。§23 的“掌握度与遗忘衰减 Overlay 已完成”需理解为接口/证据层存在，不能理解为完整学生模型已验收。当前聊天路径没有自动调用 `record_process_event`，该方法的生产调用点为课程 events API。
+- 旧 Case benchmark 本轮离线重跑：域内 Recall@1 **16/16**、可接受决策集合命中率 **20/20**、域外检测 **4/4**。旧报告称第二项为 Decision Accuracy，但20题 gold 均接受多个决策，不能当作严格单标签准确率。20 个 query 均不与种子包 `accepted_variants` 完全相同，但样本小，不足以验证复杂条件、近邻 Case 或不确定性的泛化。
+- 当前 `TeachingCaseMatcher` 是 token 重叠与条件规则基线，schema 中的 `reasoning_signature` 尚未用于匹配；§23 的“语义与推理签名排序器已完成”不能理解为已获得语义判别能力。扩充集将用于定位其真实召回与决策缺口，不能与 LLM 答题正确率直接比较。
+- 现有检索 JSON：BM25 R@3/MRR 为 **0.752/0.708**，hybrid 为 **0.688/0.657**；hybrid 仅 R@5 略高（0.805 vs 0.798）。不能据此声称融合整体优于 BM25，也不能预断强 embedding 必然改善。
+
+**阻塞 A：正式图的审核结果不能完整跨重启恢复（已复现）。** `CourseStore` 持久化候选、事件和 revision；`GraphReviewService` 把批准的实体写入内存 `graph_repo`。`CourseService` 启动仅加载种子包，没有恢复审核后的正式图。使用临时 SQLite、无 dotenv，批准测试单元后重新创建服务，输出如下；未触碰真实教材库：
+
+```text
+approved_unit_before_restart True
+candidate_after_restart approved
+approved_unit_after_restart False
+```
+
+同轮纯内存复现还发现审核事务顺序问题：缺 `target_unit_id` 的关系候选批准时抛出 `KeyError('target_unit_id')`，但候选已变为 `approved`。因此第一轮不仅要补恢复，还须先验证 payload/端点，再原子提交实体、候选状态与 revision。
+
+**阻塞 B：图层 dry-run 不是生产检索结果（代码核查）。** `scripts/eval_retrieval.py` 自行对 pending 单元执行加权 IDF 排序；`CourseEvidenceBuilder` 当前从 Case matcher 的 `concept_anchor_ids` 扩子图，没有等价的教材单元召回。因此 hierarchy@1=0.867 是 **13/15 个合成问题的代理结果**，审核入图是必要环节，但不足以保证生产复现该指标。
+
+## 26.2 建议拆成四轮，按依赖推进
+
+| 轮次 | 范围与主要文件 | 完成条件 |
+| --- | --- | --- |
+| **第一轮：审核结果可恢复** | `course_store.py`、`course_service.py`、`graph_review.py`；明确种子包初始化与正式图权威状态，持久化 units/relations/cases/boundaries，审核与 revision 同事务提交 | approve/merge 后重建服务，实体、别名、Case 变体、来源、边界均保留；重复请求不重复入图；无效端点/merge target 不留下已批准状态；提交失败不造成内存与 DB 分歧 |
+| **第二轮：Case 召回与求根小节正式检索** | `case_matcher.py`、`graph_repository.py`、`evidence_builder.py`、`fast_context.py` 和检索 evaluator；用新 benchmark 定位词面变体/条件混淆，复用现有中文索引/召回工具，为正式单元提供 Query 召回，与 Case 锚点和 typed relations 合并 | 教师只试审求根小节所需节点与关系，不先清空495条库存；未审候选不作正式证据；无 Case 命中也能找到相关正式单元；旧20题不退化，新增冻结题集分层报告改进与失败；关系端点可追溯；生产 Evidence Pack 与评测走同一检索入口 |
+| **第三轮：数值证据改变教学** | 首先复用 `math_tools/verifier.py`、现有 Case 和 `hint_policy.py`，新增必要的求根数值 Oracle 与诊断接线 | 二分区间不变量、Newton 导数近零/循环/重根、残差与误差区分均有可审 reference 和容差；结果区分 supported/contradicted/inconclusive/tool_error；同一表面错误有不同证据时产生不同 probe/action |
+| **第四轮：过程事件与对照评测** | 聊天工作流接 `StudentOverlayStore`，补实际帮助暴露和修订事件；在冻结题集上对照裸模型、普通 RAG、Case+Graph、Case+Graph+Oracle/Policy | event 带 unit/case/revision、实际 help level、验证来源，幂等且可重放；独立作答与受助成功分开；单次独立成功不能直接宣称迁移能力；回答质量与真实学生独立迁移/延迟保持分别报告 |
+
+前两轮是下一次实施的推荐范围，第三、四轮仍是后续路线，不能一次全部标为“已完成”。第一轮优先于大批人工审核，否则教师审核会产生不可恢复的正式图改动。第二轮先用小范围教师确认的材料和已有15个Case验证链路，再根据失败家族补案例。
+
+## 26.3 本轮授权的 benchmark 扩充
+
+用户要求扩充 benchmark，最初指定 **AGY Staff / Gemini 3.8 Flash High**，网络阻塞后明确改用 **GPT-6 Luna 子代理**。交付保留旧20题回归，新增 **228题 v2**，覆盖15个现有Case family、条件最小对、13条静态代码片段、15条任务上下文、口语/英文、信息不足、11条课程域外与7条域内新Case需求；另有2条无法确定路由的样本，Case Recall分母明确排除这两条。
+
+- gold 按数学前提、学习目标和允许教学行为设计，带理由与可接受集合；不以当前 matcher 输出反推标注，不改生产 matcher 来迎合本轮评测。
+- 输出分层结果、错误样本、分母、版本/哈希、context 与能力限制；不支持的多轮信息须显式标注，不假装模型使用了历史。
+- 普通运行可报告能力失败；评测器自身的计分/context/失败处理测试必须通过。真实 baseline 的付费模型调用另行安排，本轮保持离线。
+- 244条检索集保留，pending dry-run 与正式图生产评测分别呈现，chunk/unit Recall 与 hierarchy accuracy 保持各自口径。
+
+benchmark 的价值是确定下一轮该修哪些失败家族，而非通过增加题量证明教学效果。标注仍需要教师抽查；该条件未满足前，只称开发评测集。
+
+**本轮已交付并复核。** AGY 因 Google 端点超时、代理续跑 `unexpected EOF` 未交付；未修改系统代理。Luna完成数据、评测器、评分测试与协议文档，主代理修复评测口径并按§4.5纠正两条未改变Case前提的标签。最终数据：`evaluation/case_matching_benchmark_v2.json`；协议与运行命令：`evaluation/CASE_BENCHMARK_V2.md`；生成器：`evaluation/build_case_v2.py`。数据哈希 `0c263dfc9c8646bcd43f0a77987439f8e97776e45d5efa94edf3e0903ab9e6a0`，生成器逐字节复现。原20题、种子包和生产matcher的SHA256保持一致，244条检索集未修改。
+
+最终离线结果：Case Recall@1 **11/208 (5.3%)**；严格单标签决策 **34/222 (15.3%)**，6条多标签题不进此分母；全228题可接受决策集合命中 **34/228 (14.9%)**；域外检测 **10/11**，域内新Case需求检测 **7/7**。204题至少一项不匹配，198项Case不匹配、194项决策不匹配（有重叠），matcher异常0。输出保留所有失败样本、分层结果、题集/课程包/matcher源码哈希，异常仍计失败，严格模式可返回非零。缺失gold、空集合、未知Case或决策标签在匹配前报输入错误；评测不实例化CourseService、不读.env、不打开正式库、不执行题目代码。
+
+最终 `npm test`：知识JSON校验通过、API **265 passed**（含新增9项评分回归）、前端 **12 passed**。低分说明该冻结开发集暴露了词面变体与条件路由的缺口，不是LLM数学答题质量评估；标注尚未经教师审核，不能直接作为正式教学验收门槛。第二轮因此需要同时改进Case召回与生产图检索，再进入Oracle/教学事件联动。
+
+## 26.4 验证、范围和实施记录
+
+第一轮使用临时数据库验证审核恢复、事务失败、重复审核、关系端点和 seed/revision 一致性；第二轮使用固定求根 fixture 验证正式图召回及来源，禁止直接拿真实 pending 候选自动批准。回归入口：
+
+```powershell
+npm test
+$env:LUOJIA_NO_DOTENV='1'
+python evaluation/evaluate_case_benchmark.py
+python evaluation/evaluate_case_benchmark.py --benchmark evaluation/case_matching_benchmark_v2.json --output results/case_benchmark_v2.json
+```
+
+本阶段不扩跨课程、不做自动 curriculum planning、RL/StudentSim、全量自动审批或 Python/C++ 通用调试器；现有 `agents/code_executor.py` 禁止循环/函数定义，不能简单放开 AST 后就宣称已获得安全学生程序运行环境。先做受控 reference runner，学生任意代码执行另设隔离与资源限制任务。
+
+实施遇到教材身份/来源不明、gold 无法确认、数据库迁移无可恢复备份或权限边界不满足时，停止对应写入并记录事实，不默认批准。每轮偏离计划及实测验收记录回写 `luojia_tutor2_branch_log.md`，复核后的优先级更新到 `CODEX_HANDOFF.md`。
+
+## 2026-09-30 Prompt全面重塑（teaching-v2.1）
+
+用户授权将prompt审查所列问题全部实施。主规范与三份参考指南已统一并真正加载，新增prompt_policy唯一策略入口，明确完整答案/direct优先。后台策略与不可信资料分开，Case条件/推理要点/匹配决策/来源进入prompt，探针不注入答案键。证明先审查，Verifier严格schema；工具执行成功与数学命题成立分开，失败降级。图片识别后真暂停，前端确认/编辑，草稿通过learning_meta持久化恢复。公开文案区分LLM意见与本步检查，错题卡不再使用硬编码的错误原因或正解。
+
+详见 PROMPT_ARCHITECTURE_V2.md（按文件整改与证据范围）。最终离线npm test：API294、前端12、知识JSON通过；tsc通过；lint退出0、保留现有告警。测试进程使用SYMPY_GROUND_TYPES=python、MPMATH_NOGMPY=1绕开本机gmpy2本地扩展错误，conftest离线门控未变。新增20项prompt/流程回归。没有真实模型A/B、教师验收、真实浏览器上传或学习效果实验；v2题集/课程包/matcher哈希未变。已有服务需重启加载新prompt。未commit/push/deploy。
+
+
+## 2026-10-01 — 响应式聊天 UI 与公式渲染修复
+
+- 修复窄屏左右空白抽屉：Sidebar/LearningPanel 只渲染内容，由 MobileDrawer 统一控制显示、遮罩、关闭、焦点循环及跨断点恢复；桌面断点为 1024/1280px。
+- 学习抽屉复用桌面状态/笔记内容，补齐移动端随堂笔记入口。顶部品牌/新会话避免换行，次要导航收进“更多”；输入区移动端取消常驻算子滚动条，简化工具文案，保持 16px 输入字体与底部安全区。中文 IME 确认不提交，粗指针设备 Enter 保留换行。
+- 提取 message-parser.ts，修复同一行 $$…$$ 和 \[ … \] 的闭合处理，未闭合公式不吞后续空行/标题，保留代码与转义美元符号；加入 Markdown 表格渲染。原“膜振动方程”会话现已正常显示全部公式与后续标题，DOM 中 KaTeX 错误为 0。
+- 学习面板取消未检查/无知识点时的默认 50% 展示，区分模型复核与本步检查；掌握度明确为估计。
+- 验证：npm test（API 294、前端 17、知识 JSON 均通过）；tsc --noEmit 通过；lint 0 errors，原有 10 warnings。浏览器检查 320/390/768/1100/1440px、390x480 短视口，无整页横向溢出；Esc/关闭按钮/遮罩、Tab 焦点循环、跨断点关闭、移动端笔记切换与“更多”菜单通过。截图：results/ui-2026-10-01/mobile.jpg。
+- 边界：未进行真实手机软键盘验证；开发服务器继续运行，因此未运行 next build；未提交/推送。框架仍为 Next.js 14.2.35。官方支持政策已将 14.x 列为不支持，建议后续独立迁移到 16.x 稳定补丁版，核对 React/API/lint 后再构建，不在本轮混入升级。
+
+## 2026-10-01 Next.js 16 升级记录
+
+前端已升级到 Next.js 16.3.8，React/React DOM 与类型依赖对齐19.3.0，`eslint-config-next`同步16.3.8。Next16移除`next lint`，改为flat config与ESLint9.39.5；增加`next typegen && tsc --noEmit`及CI独立lint。停Web dev后生产构建通过，完整离线npm test（API294、前端17、知识JSON）、typecheck通过，lint为0 errors/10已有warnings，前端全依赖npm audit为0漏洞。服务已恢复于`http://127.0.0.1:3000`；浏览器原会话48处公式0 KaTeX错误，390px抽屉可用且无横向溢出，图谱27节点/21关系，控制台0 error。业务API、正式图数据和matcher未在升级中改变；真实手机软键盘、线上模型及远端CI未验收，未提交/推送/部署。
+
+
+# 27. 六个月推进时间线（2026-10-01 → 2027-03-31）
+
+> **本轮交付**：完成前端框架升级，制定长期实施计划；本节中的课程图持久化、生产 Case 检索、数值 Oracle 和教学事件联动仍为待实施。保留既有研究与历史指标，不把计划写成完成声明。
+>
+> **计划口径**：日期是目标窗口，不是交付承诺。前半段以约每周 3 个集中开发日估算，首次闭环约需 14–19 个开发日；未确认团队产能、教师时间和学生招募。若产能不足或某道门槛未通过，移动后续日期，保持下列依赖顺序。2027 年的真人实验必须以教师合作、知情同意和适用的研究审查流程落实为前提。
+
+## 27.1 本轮确认的主线与第一条可交付体验
+
+按用户要求保留此前判断，作为未来六个月的优先级依据：
+
+> 我觉得现在最缺的是 **“能根据学生的解题过程，定位错误并给出可验证反馈”的诊断闭环**。这是 Tutor 2.0 最值得优先做的功能。
+>
+> 结合这轮检查，建议按下面顺序推进：
+>
+> 1. **先让审核后的课程图真正保存下来。** 当前批准的节点重启后会消失，审核失败还可能留下“已批准”状态。这是后续功能的基础，优先修。
+> 2. **让真实提问能找到正确的教学 Case。** 新增的 228 题里，当前规则 matcher 的 Case Recall@1 只有 **11/208**。学生换一种表述、贴代码或带任务上下文，就容易匹配失败。应接入实际生产检索，再判断对应哪个 Case、是否需要追问。
+> 3. **做一个求根章节的过程诊断闭环。** 学生提交公式、迭代结果或代码片段，系统通过受控数值验证，区分“条件不满足、公式错误、停止准则错误、数值异常”，再给一个针对性提示，并检查学生修改后是否解决。
+>
+> 最后补上 **聊天过程事件记录**，才能回答“学生是在提示帮助下完成，还是已经能独立完成”，为学习效果评估提供依据。
+>
+> 如果只选下一轮的功能目标，我会选：**学生提交一次错误的求根过程 → 系统找到对应 Case → 验证并定位错误 → 给提示 → 验证修改结果。** 先把这一条做通，比继续扩大题库或课程范围更有价值。
+
+实施顺序保留上述判断，但最小事件链随第一条诊断闭环一起接入；后续再完善状态归约和研究数据质量。否则闭环完成后仍不能复核提示是否展示、修订如何发生、一次成功是否受帮助。
+
+第一条贯穿前后端的体验优先选 **Newton 更新公式错误**：学生提供 `f(x)`、初值及一个错误迭代步骤 → 召回 Case 和已审核条件 → 受控 runner 计算可核对的差异 → 给一条不越过当前帮助预算的提示 → 学生改写 → 再验算。缺导数、函数定义或任务目标时先追问；只根据一次数值执行描述该次轨迹，不宣称一般收敛定理被证明。
+
+## 27.2 重新核实的起点与计划假设
+
+| 项目 | 2026-10-01 证据 | 对排期的影响 |
+| --- | --- | --- |
+| 前端底座 | Next.js 16.3.8；React/React DOM 19.3.0；ESLint 9 flat config；升级验收见本轮交接记录 | 只做必要维护，不继续重做 UI |
+| 审核结果 | `course_store.py` 没有正式 units/relations/cases/boundaries 表；`course_service.py` 只载入种子包；`graph_review.py` 先更新候选状态再验证/写实体 | 持久化与审核原子性为 G0，暂缓批量真实审核 |
+| 课程起点 | 冻结种子包 27 units、21 relations、15 Cases；候选数量 495 是 9 月 30 日快照，不能当成本日库存 | 围绕求根小节少量教师核对，不要求清空候选库 |
+| Case 匹配 | 本日离线复跑：228 题，Case Recall@1 11/208，严格单标签决策 34/222；0 matcher 异常；三项哈希与 §26 相同 | 先定位召回、条件判别和追问问题；不得用旧 20 题满分证明泛化 |
+| 图检索 | `evidence_builder.py` 仍依赖 Case 锚点扩子图，未提供独立的正式单元 Query 召回 | pending 图层 dry-run 不是生产基线，需统一生产评测入口 |
+| 过程数据 | `student_overlay.py` 和课程 events API 已存在；聊天未调用 `record_process_event`。现实现先 append event 再检查必填 outcome，事件与状态更新分开提交 | 先验证再提交，修复重复/失败语义；原始 attempt 可为未知结果，不能为适配 reducer 捏造失败 |
+| 数值执行 | `code_executor.py` 仍禁止循环/函数定义；没有求根专用数值轨迹 verifier | 首版用受控 reference runner；学生代码先作静态证据或要求补轨迹 |
+| 评测与合作 | 228 题为开发者标注，未教师复核；本轮无正式模型 A/B、真人试验和教师评审 | 教师 gold、独立测试集及合作窗口是后续外部依赖，不能由时间表替代 |
+
+复跑输出：`results/case_benchmark_2026-10-01_plan.json`。历史 244 题 retrieval eval 与新 228 题 Case eval 测的是不同对象，保持两个分母与数据文件独立。
+
+## 27.3 六个月里程碑与阶段门槛
+
+| 目标窗口 | 阶段与交付 | 主要依赖 / 估算投入 | 退出门槛 |
+| --- | --- | --- | --- |
+| **10/01–10/07** | **M0 正式图可恢复**：正式图持久化、seed/version 初始化契约、审核事务、幂等及恢复说明；少量临时 fixture 验证 | 3–4 开发日；不操作真实候选批量审核 | **G0**：approve/merge → 重建服务后 units、relation、Case、alias、来源和 boundary 均保留；无效 payload/端点、不存在的 merge target、注入提交失败不改变已审状态；重复请求不重复 revision/实体；备份可恢复 |
+| **10/08–10/21** | **M1 能找到教学 Case**：Query 对已审核 Case/units 的真实召回，条件与任务模式判别、UNCERTAIN 追问、生产 EvidencePack 一致评测 | G0；5–7 开发日；教师确认求根最小材料包与少量 Case | **G1**：生产与 evaluator 走同一入口；教材节点来源/版本明确，pending 不入教学证据；冻结开发集分层改进，建议目标 R@1≥70%、Case R@3≥90%，阈值须在教师 gold 校准前确认；旧 20 题兼容集合全过，OOD 至少维持 10/11且关键域外反例不误路由 |
+| **10/22–11/11** | **M2 第一条可验证诊断闭环**：先做 Newton 公式错误，再纳入停止准则/数值异常；公式或轨迹输入、受控 Oracle、证据驱动提示、修订再验证、最小事件链、聊天反馈卡 | G1；6–8 开发日；可信函数表达式与容差 fixture | **G2**：10 条固定端到端 episode（含至少 3 条合法正确/替代路径）全部通过；错误可定位到具体步骤和证据；修订重验；缺条件追问；工具失败降级；合法替代路径不被误拒绝；无条件泄露 protected solution 的关键用例 0 失败 |
+| **11/12–11/25** | **M3 求根单元完整化**：二分法/不动点/Newton，共 8–12 个可执行错误家族；事件与 Overlay 正式联动，提示暴露、帮助预算、独立探针；教师逐条核对输出 | G2；4–6 开发日；复用已有 CourseStore/Overlay，而非另建事件平台 | **G3**：同一 episode 可重放，重复、取消、流式失败和服务重启不重复记成功；有提示的修订只记 assisted；独立探针成功才记独立证据；用户与课程隔离测试通过；每个错误家族含错误、修订及合法路径控制例 |
+| **11/26–12/16** | **M4 教师复核与冻结评测**：开发集标注校对；独立未见题/跨表示/合法替代路径集；Oracle 审计、版本 manifest、诊断/追问/披露分层评测与小型审阅台 | G3；4–6 开发日 + 2–3 次教师审阅；教师档期未确认 | **G4**：真实 gold 审核记录、分歧裁决、模板/函数/措辞族隔离、哈希冻结；只在开发集调阈值；独立集仅在候选版本冻结后运行，失败结果保留；可复现一整次评测，不以 R@1 单指标验收 |
+| **12/17–2027/01/13** | **M5 小规模学生试用**：建议 10–20 名自愿参与者做可用性/误诊发现；记录真实设备、输入形式、延迟、失败、人工纠正和退出体验；准备评估协议 | G4；招募/教师许可/数据告知先落实；此规模只是试用目标，不是功效计算 | **G5**：阻断级误诊、用户数据混淆、不可解释验证全部清零或关闭相应功能；界面可区分证据/模型意见；跨表示与延迟测验流程可执行；只报告试用结果，不声称学习收益 |
+| **2027/01/14–02/10** | **M6 冻结研究协议与系统版本**：确定对照、分配方式、主终点、样本量估算、缺失数据处理、教师盲评、成本/延迟预算；建立实验导出及版本锁定 | G5；用试用方差/可招募人数决定设计；假期和课程安排为缓冲条件 | **G6**：合作与适用研究流程落实；协议和分析计划先冻结再采数；对照条件可复现，保护任务难度与可用帮助量的可比性；缺样本时明确改为可行性研究 |
+| **2027/02/11–03/17** | **M7 有对照的学习效果评估**：求根任务中的错误修订、无 AI 跨表示迁移、延迟保持；完成事先指定的消融与成本评测 | G6；招募与课程时间允许才开始；不在主试验中途调 matcher/Oracle/prompt | **G7**：主要结果按冻结协议报告效应与区间、退出与缺失；模型复核/数值证据/Case 路由版本可追溯；反面结果同样保留；教师评分分歧有记录 |
+| **2027/03/18–03/31** | **M8 复核与扩展决策**：复现包、失败样例、贡献边界、研究报告/论文草稿；决定继续求根、扩一章或暂停学习收益主张 | G7；没有真人证据时交付工程/可行性报告，实验排期顺延 | **G8**：结论与证据匹配；不能把 BKT 上升、满意度或提示后成功当成学习效果；只有 G0–G4 稳定且教师资源落实才批准下一章节 |
+
+G1 的数值目标是工程建议，不是既得结果，也不是保证真实学习收益的标准。独立集未建好前，70%/90% 只用于开发观察；不能反复看测试集并继续调参后仍称其为独立验证。若召回达不到目标，优先修代表性失败/任务条件/缺失输入；不通过把所有低置信度样本硬判为 SAME_CASE 来提高表面成绩。
+
+## 27.4 接下来三轮具体任务（仅规划，未在本轮实施）
+
+### 第一轮：持久化 + 审核一致性
+
+改动边界：`apps/api/app/knowledge/{course_store,course_service,graph_review,graph_repository}.py`，必要迁移与 `tests/test_candidate_graph.py`、`tests/test_course_routes.py` 的回归。正式图保留 stable ID 和 course/version；种子包只用于初始化，不得每次重启覆盖教师已审核内容。第一轮明确“数据库是权威状态”，事务成功后再更新/重载内存；审核校验先于候选状态变化。revision 保留完整变更/来源，不能只保存实体 ID 就称可回滚。
+
+实施前用 SQLite backup API 备份真实 course store 并检查 integrity；首轮开发和故障注入全部用临时数据库。校验 course_id/引用端点/教师权限、冲突审核和幂等键，测试单位/关系/Case/alias/boundary、失败提交及 seed 升级。现有 approved 但实体缺失的历史候选须先 dry-run 列表和来源检查，再做受控恢复；不能批量重置或再次审批。无可靠备份、来源不可确认或跨课程冲突时停止该数据库写入，保留异常报告。
+
+### 第二轮：生产召回 + 条件判别
+
+改动边界：`knowledge/case_matcher.py`、`case_repository.py`、`graph_repository.py`、`evidence_builder.py`、`tutor/fast_context.py`、`evaluation/evaluate_case_benchmark.py`。先复用现有 BM25/中文索引与元数据，再按结果决定是否用 embedding 或 reranker；没 key 时保留可复现的离线基线。把“召回候选”与“判 SAME/VARIANT/RELATED/NEW/UNCERTAIN”分开，记录 top-K、条件差异、任务上下文与追问原因。
+
+让 Case 与正式单元检索共享明确课程/版本边界；将返回来源、Case 锚点、条件、typed relations 和 boundary decision 合成 EvidencePack。诊断所需的数据缺失只触发追问，不从 prompt 想象学生代码执行结果。以静态代码片段测试路由，不执行题目中的代码。生产评测同入口，case/top-K、unit recall、来源与边界分别报；保留未见 family/表述的失败样例，禁改冻结 gold 迎合 matcher。
+
+### 第三轮：最小诊断闭环 + 最小事件链
+
+建议新增求根专用受控 Oracle 模块（实施时确定路径，例如 `app/math_tools/root_finding.py`），复用安全表达式解析、已有 verifier 返回契约和当前 TutorWorkflow；不要另建多 Agent 框架。记录 `k, x_k, f(x_k), step_size, bracket, stop_reason, finite_flag`，Oracle/ToleranceSpec 显式带版本。至少覆盖 Newton 0↔1 循环、近零导数、残差小但根误差未证实、二分端点/变号与区间更新、不动点收敛条件、NaN/Inf/迭代上限和合法替代停止条件。用解析特例/高精度或独立参考算法交叉核对容差；不把 Python 运行成功等同命题成立。
+
+诊断输出保留观察错误、候选假设、支持/反证、缺失条件、定位步骤、下一步 probe、建议行动；至少区分 `supported/contradicted/inconclusive/tool_error`。当前 runner 的 AST 限制保持，学生任意代码执行另设进程/文件系统/网络隔离与资源限制验收；没有隔离条件时只解析允许的参数/公式和已提交轨迹，不扩大执行权限。
+
+最小原始事件：`attempt → verifier_evidence → diagnosis → hint_exposed → revision → verifier_evidence → outcome`；每条关联 `user/session/task/episode/attempt_id`、graph revision、Case/Oracle/prompt/model version、帮助等级、证据引用及原始输入摘要/受控存储引用。outcome 初始为未知，成功由 verifier evidence 产生；实际响应交付/展示后才确认 hint exposure。浏览器中断不能被当成已独立完成；直接讲解请求应按现有 policy 允许披露并记录帮助，研究测验的任务边界另行明确。
+
+将观察事件与 Overlay 归约分开，验证通过后同事务存事件与状态，幂等按 episode/attempt/event；先验证必填字段再 append，失败不能“留下事件却没有更新，重试又被跳过”。用户身份来自认证 principal，不信前端 user_id 或 is_independent/is_success 自报；试用前补齐事件读写、Overlay、消息和证据导出的权限/租户隔离测试。
+
+## 27.5 学习效果评估与后续扩展规则
+
+工程指标：Case Recall@1/@3、条件区分、缺输入追问、边界违规、Oracle 正确性、错误定位、合法路径误拒绝、提示泄露、事件完整性、延迟和成本。过程结果：提示后的修订成功率、帮助量、重复同类错误与独立 probe 表现。主要学习结果：**无 AI 的跨表示迁移**；延迟保持作为预先指定的次要结果。三个层面分别报告，不能互相替代。
+
+优先比较同一底座的普通课程 RAG 与“Case + verifier 证据 + 诊断反馈”版本；任务、底层模型版本和可用帮助量尽量一致，随机/分层分配或其他设计在 M6 说明理由。先用离线消融分析 Case 和数值证据各自改变了什么，再决定真实试验是否有足够样本做多个实验组；不预先承诺三四组同时上线。教师评分尽量不显示系统组别，评分规范与合法路径控制例先冻结。样本量按主要终点与试用方差估算，不预编显著性或效应大小。
+
+下一章节以“同样可以验证算法过程”作为选择依据，候选为线性方程迭代法或数值积分；最多增加一章，先有教师材料/课程边界/Oracle/错误家族再排期。没有达到 G4/G5 时，继续修求根失败样例，不扩大题库与课程范围。复杂 KT、跨课程图、RL/StudentSim、30 天自动模拟、Lean 和完整运营后台暂不进入这六个月的承诺。
+
+## 27.6 回归命令、记录与停止条件
+
+本轮实际升级/离线复跑证据与未来验收命令分开；下列全量回归在每次实施轮结束执行：
+
+```powershell
+# 仓库根目录；测试继续离线，本机扩展兼容变量只设在测试进程
+$env:SYMPY_GROUND_TYPES='python'
+$env:MPMATH_NOGMPY='1'
+npm test
+npm --prefix apps/web run typecheck
+npm --prefix apps/web run lint
+# 停掉 web dev server 后再构建，完成后恢复服务
+npm run build:web
+$env:LUOJIA_NO_DOTENV='1'
+python evaluation/evaluate_case_benchmark.py --benchmark evaluation/case_matching_benchmark_v2.json --output results/case_benchmark_v2.json
+```
+
+新增恢复/事务测试必须从 `apps/api` 跑，使用临时 SQLite；缺陷、Oracle、episode 重放、取消/重试、权限和教师 gold 回归随阶段补入全量 suite。Case evaluator 的非 strict 模式退出 0 表示运行完成，不表示所有能力样本通过；正式验收需检查结果和阶段门槛，必要时用 `--strict`，但不能要求尚未改进的基线全绿而删掉失败样本。
+
+每轮记录到 `luojia_tutor2_branch_log.md`，同时更新 `CODEX_HANDOFF.md` 与本节状态表：实测、未验证、计划偏离和下个阻塞。新增模块的位置以实现时的最小改动为准，偏离方案须说明原因。生产数据库恢复不可靠、材料许可/来源未知、跨用户泄漏或任意代码隔离不足时停对应功能；未有招募/审查条件时不采真人研究数据。每两周复核日期与投入，每月复核错误家族/课程范围；不自动增加每周工时来追赶排期。
+
+**计划复核**：覆盖用户要求、保留原判断、按依赖分期、列出失败/恢复和回归入口；功能扩展门槛与真实学习主终点明确。可行性仍受教师、标注与招募依赖影响，这些是未确认项，不能称所有研究阶段已就绪。本轮未实施 M0–M8 的业务改动；下一轮执行起点为 M0，首个检查为临时库重启恢复与审核失败原子性。
+
+## 27.7 一年滚动展望（2027/04–09，暂不锁定开发任务）
+
+前六个月集中验证求根闭环；后六个月根据G8结论选择方向，每月滚动修订。以下是条件性目标，不是与M0–M8并行实施的新增承诺。
+
+| 目标窗口 | 条件性方向 | 启动条件与验收 |
+| --- | --- | --- |
+| **2027/04–05** | 若系统与教师gold稳定，最多迁移到线性方程迭代法或数值积分中的一章；若学习实验未完成，优先补完实验和求根失败家族 | 不降低G0–G5门槛；有教师材料、课程边界、独立Oracle与合法路径控制例。记录哪些诊断契约可复用、哪些必须重写，以迁移成本和诊断质量评估通用性 |
+| **2027/06–07** | 对冻结求根版本做另一批次/课程的复核，或在新章做独立未见任务验收；完善教师审阅、材料版本更新和脱敏导出 | 合作与数据使用条件落实；保留课程/批次差异，不把不同终点直接合并。确认更新材料不会覆盖已审内容，旧episode可按原版本重放 |
+| **2027/08–09** | 形成可复现研究包、教学演示和可维护的小范围试运行；根据证据决定论文投稿、课程合作或继续工程验证 | 汇总系统失败、学习结果、成本、延迟、教师投入和权限/恢复证据。是否提供公开服务另做容量、隐私、任意代码隔离与运维验收；此计划不等于授权上线。没有学习证据时只报告诊断/工程结果 |
+
+一年后的成功标准是“教师能核对诊断、学生能完成可验证修订、研究能区分受帮助与独立表现、维护者能复现证据”。章节数量、题库规模和模型数量不作为主目标；未见收益或误诊风险持续时收缩范围并报告负面结果。
+
+## 27.8 M0 / M1 工程实施记录（2026-10-01）
+
+本节是最新执行状态，27.6 中“本轮未实施 M0–M8”指之前的规划轮。完整证据与恢复命令见 [M0/M1 实施记录](COURSE_GRAPH_M0_M1.md)。
+
+| 阶段 | 本轮状态 | 剩余门槛与计划影响 |
+| --- | --- | --- |
+| M0 | 正式图完整 SQLite 保存、审核原子事务、CAS、重复回执、来源恢复与备份副本演练已完成，临时库回归通过 | 真实库未大批审核；已备份并初始化正式快照，候选计数保持。历史已批准丢失实体需人工核对，不自动重审 |
+| M1 | 同一生产 matcher 接 API / EvidenceBuilder / evaluator；verified 单元召回、范围过滤、上下文任务重排与缺信息追问已完成 | 开发集参考门槛达标；教师 gold、独立未见任务验收和真实教学效果仍待完成，不能宣称 G1 全部通过 |
+| M2 | 尚未实施 | 教师抽查失败家族及少量来源材料；随后建立受控数值 Oracle、诊断输入契约与提示后修订重验 |
+| M3–M8 | 仍按 27.4–27.7 的长期计划滚动推进 | 保留每周投入与教师/标注/招募依赖，不因工程提前完成自动扩大范围 |
+
+228题冻结开发集：Case R@1 从11/208提升至162/208（77.9%），R@3=200/208（96.2%），单gold决策200/222，域外11/11，新Case7/7；仍保留61题至少一项失败、0工具异常。原20题的Case16/16、可接受决策集合20/20，不能称多标签严格决策全对。题集和种子包哈希未改；此集已用于开发，不是独立泛化/学习效果证据。
+
+本轮 npm test 为 API329、前端17、知识JSON通过；生产构建/typecheck通过，lint0错误/10已有警告。分批提交M0、M1+Prompt、基准、UI、框架和交接文档；未push、未部署。下一轮优先完成“错误求根过程 → Case → 数值验证定位 → 提示 → 修改后重验”，随后补事件链以区分受帮助与独立表现。
