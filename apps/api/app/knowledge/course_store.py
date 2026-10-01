@@ -9,6 +9,12 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS canonical_graphs (
+    course_id TEXT PRIMARY KEY,
+    generation INTEGER NOT NULL DEFAULT 0,
+    seed_checksum TEXT NOT NULL,
+    data TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS graph_candidates (
     candidate_id TEXT PRIMARY KEY,
     course_id TEXT NOT NULL,
@@ -64,12 +70,13 @@ class CourseStore:
     """
 
     def __init__(self, path: Optional[str] = None):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._conn: Optional[sqlite3.Connection] = None
         # In-memory fallbacks keep event idempotency and revision history
         # working in demo/test mode (no COURSE_STORE_PATH configured).
         self._memory_events: set[str] = set()
         self._memory_revisions: list[dict[str, Any]] = []
+        self._memory_graphs: dict[str, dict[str, Any]] = {}
         if path:
             Path(path).parent.mkdir(parents=True, exist_ok=True)
             self._conn = sqlite3.connect(path, check_same_thread=False)
@@ -80,6 +87,55 @@ class CourseStore:
     @property
     def persistent(self) -> bool:
         return self._conn is not None
+
+    def close(self) -> None:
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+    def load_graph(self, course_id: str) -> Optional[dict[str, Any]]:
+        if not self._conn:
+            record = self._memory_graphs.get(course_id)
+            return json.loads(json.dumps(record)) if record else None
+        rows = self._query("SELECT generation, seed_checksum, data FROM canonical_graphs WHERE course_id=?", (course_id,))
+        return {"generation": rows[0][0], "seed_checksum": rows[0][1], "data": json.loads(rows[0][2])} if rows else None
+
+    def initialize_graph(self, course_id: str, data: dict[str, Any], seed_checksum: str) -> dict[str, Any]:
+        """Seed once. Changing a seed file never overwrites reviewed database state."""
+        with self._lock:
+            if self._conn:
+                self._execute("INSERT OR IGNORE INTO canonical_graphs(course_id,seed_checksum,data) VALUES(?,?,?)",
+                              (course_id, seed_checksum, json.dumps(data, ensure_ascii=False)))
+            elif course_id not in self._memory_graphs:
+                self._memory_graphs[course_id] = {"generation": 0, "seed_checksum": seed_checksum, "data": json.loads(json.dumps(data))}
+            return self.load_graph(course_id)
+
+    def commit_review(self, candidate_before: dict[str, Any], candidate_after: dict[str, Any],
+                      graph: dict[str, Any], generation: int, revision: dict[str, Any]) -> None:
+        """One CAS transaction for candidate, canonical graph and complete audit record."""
+        course_id = candidate_before["course_id"]
+        with self._lock:
+            if not self._conn:
+                current = self._memory_graphs[course_id]
+                if current["generation"] != generation:
+                    raise ValueError("Graph changed; reload before reviewing")
+                self._memory_graphs[course_id] = {**current, "generation": generation + 1, "data": json.loads(json.dumps(graph))}
+                self._memory_revisions.append(revision)
+                return
+            with self._conn:
+                self._conn.execute("BEGIN IMMEDIATE")
+                row = self._conn.execute("SELECT data FROM graph_candidates WHERE candidate_id=? AND course_id=?",
+                                         (candidate_before["candidate_id"], course_id)).fetchone()
+                if not row or json.loads(row[0]) != candidate_before:
+                    raise ValueError("Candidate changed; reload before reviewing")
+                cursor = self._conn.execute("UPDATE canonical_graphs SET data=?, generation=generation+1 WHERE course_id=? AND generation=?",
+                                            (json.dumps(graph, ensure_ascii=False), course_id, generation))
+                if cursor.rowcount != 1:
+                    raise ValueError("Graph changed; reload before reviewing")
+                self._conn.execute("UPDATE graph_candidates SET data=?, updated_at=datetime('now') WHERE candidate_id=? AND course_id=?",
+                                   (json.dumps(candidate_after, ensure_ascii=False), candidate_before["candidate_id"], course_id))
+                self._conn.execute("INSERT INTO graph_revisions(revision_id,parent_revision_id,course_id,candidate_id,action,changed_entities,reviewer_id,reason) VALUES(?,?,?,?,?,?,?,?)",
+                                   (revision["revision_id"], revision["parent_revision_id"], course_id, revision["candidate_id"], revision["action"], json.dumps(revision["changed_entities"], ensure_ascii=False), revision["reviewer_id"], revision["reason"]))
 
     def _execute(self, sql: str, params: tuple = ()) -> None:
         if not self._conn:
@@ -221,7 +277,7 @@ class CourseStore:
             return course_revisions[-1]["revision_id"] if course_revisions else None
         rows = self._query(
             "SELECT revision_id FROM graph_revisions WHERE course_id = ? "
-            "ORDER BY created_at DESC LIMIT 1",
+            "ORDER BY rowid DESC LIMIT 1",
             (course_id,),
         )
         return rows[0][0] if rows else None
@@ -232,7 +288,7 @@ class CourseStore:
         rows = self._query(
             "SELECT revision_id, parent_revision_id, candidate_id, action, changed_entities, "
             "reviewer_id, reason, created_at FROM graph_revisions WHERE course_id = ? "
-            "ORDER BY created_at ASC",
+            "ORDER BY rowid ASC",
             (course_id,),
         )
         return [

@@ -1,4 +1,5 @@
 import datetime
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
@@ -111,7 +112,9 @@ class CandidateManager:
     ) -> GraphCandidate:
         now = datetime.datetime.now().isoformat()
         if candidate_id in self._candidates:
-            existing = self._candidates[candidate_id]
+            existing = deepcopy(self._candidates[candidate_id])
+            if existing.course_id != course_id:
+                raise ValueError("Candidate id already belongs to another course")
             # support_count counts distinct sources, not extraction runs. The
             # old unconditional increment made re-running the same document
             # look like extra corroboration, which is exactly the signal a
@@ -130,6 +133,7 @@ class CandidateManager:
             ):
                 existing.payload = payload
             self._persist(existing)
+            self._candidates[candidate_id] = existing
             return existing
 
         c = GraphCandidate(
@@ -144,8 +148,8 @@ class CandidateManager:
             first_seen=now,
             last_seen=now
         )
-        self._candidates[candidate_id] = c
         self._persist(c)
+        self._candidates[candidate_id] = c
         return c
 
     def get_candidate(self, candidate_id: str) -> Optional[GraphCandidate]:

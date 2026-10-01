@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from dataclasses import asdict, fields
 import json
 import logging
 from pathlib import Path
@@ -37,6 +38,7 @@ class CourseGraphRepository:
 
     def __init__(self, course_id: str = "numerical_analysis"):
         self.course_id = course_id
+        self.course_version = "v1.0"
         self.units: dict[str, KnowledgeUnit] = {}
         self.relations: list[KnowledgeRelation] = []
         self.boundary_checker = BoundaryChecker()
@@ -60,6 +62,8 @@ class CourseGraphRepository:
             )
 
     def add_relation(self, relation: KnowledgeRelation) -> None:
+        if relation in self.relations:
+            return
         self.relations.append(relation)
         self._out_edges[relation.source_unit_id].append(relation)
         self._in_edges[relation.target_unit_id].append(relation)
@@ -69,6 +73,7 @@ class CourseGraphRepository:
 
     def get_unit(self, unit_id: str) -> Optional[KnowledgeUnit]:
         return self.units.get(unit_id)
+
 
     def get_subgraph(
         self,
@@ -207,6 +212,7 @@ class CourseGraphRepository:
     def load_from_course_pack(self, course_pack_data: dict[str, Any]) -> None:
         """Load course pack containing units, relations, boundaries, and cases."""
         self.course_id = course_pack_data.get("course_id", self.course_id)
+        self.course_version = course_pack_data.get("course_version", "v1.0")
 
         # 1. Load boundaries
         for b_dict in course_pack_data.get("boundaries", []):
@@ -231,6 +237,10 @@ class CourseGraphRepository:
                 provenance=u_dict.get("provenance", "curated"),
                 review_status=u_dict.get("review_status", "verified"),
             )
+            # Preserve every schema field, including source spans and reviewer.
+            for f in fields(KnowledgeUnit):
+                if f.name in u_dict:
+                    setattr(unit, f.name, u_dict[f.name])
             boundary = self.boundary_checker.get_policy(unit.id)
             self.add_unit(unit, boundary=boundary)
 
@@ -255,3 +265,19 @@ class CourseGraphRepository:
             f"Loaded course pack for {self.course_id}: {len(self.units)} units, "
             f"{len(self.relations)} relations, {self.case_repo.count()} teaching cases."
         )
+
+    def to_course_pack(self) -> dict[str, Any]:
+        return {"course_id": self.course_id, "course_version": self.course_version, "schema_version": "v1",
+                "units": [asdict(u) for u in self.units.values()],
+                "relations": [asdict(r) for r in self.relations],
+                "boundaries": [p.to_dict() for p in self.boundary_checker.policies.values()],
+                "teaching_cases": [c.to_dict() for c in self.case_repo.list_cases(course_id=self.course_id)]}
+
+    def replace_from_course_pack(self, data: dict[str, Any]) -> None:
+        replacement = CourseGraphRepository(self.course_id)
+        replacement.load_from_course_pack(data)
+        # Retain the repository identity used by the production matcher.
+        case_repo = self.case_repo
+        case_repo.__dict__.update(replacement.case_repo.__dict__)
+        replacement.case_repo = case_repo
+        self.__dict__.update(replacement.__dict__)

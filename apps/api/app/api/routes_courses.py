@@ -184,14 +184,17 @@ def create_candidate(
 ):
     require_role(principal, ("teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
-    candidate = service.candidate_mgr.add_candidate(
-        candidate_id=payload.candidate_id,
-        candidate_type=payload.candidate_type,
-        course_id=course_id,
-        payload=payload.payload,
-        proposed_by=payload.proposed_by,
-        evidence_ref=payload.evidence_ref,
-    )
+    try:
+        candidate = service.candidate_mgr.add_candidate(
+            candidate_id=payload.candidate_id,
+            candidate_type=payload.candidate_type,
+            course_id=course_id,
+            payload=payload.payload,
+            proposed_by=payload.proposed_by,
+            evidence_ref=payload.evidence_ref,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "created", "candidate": candidate.to_dict()}
 
 

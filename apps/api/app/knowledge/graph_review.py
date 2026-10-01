@@ -1,170 +1,159 @@
 import datetime
-import logging
+import threading
+import uuid
+from copy import deepcopy
+from dataclasses import fields
 from typing import Any, Optional
+from pydantic import TypeAdapter
 
-from app.knowledge.candidate_graph import (
-    CandidateManager,
-    CandidateStatus,
-    CandidateType,
-    GraphCandidate,
-)
+from app.knowledge.candidate_graph import CandidateManager, CandidateStatus, CandidateType, GraphCandidate
 from app.knowledge.course_store import CourseStore
-from app.knowledge.graph_repository import CourseGraphRepository
+from app.knowledge.graph_repository import CourseGraphRepository, TASK_TYPE_RELATIONS
 from app.knowledge.schema import KnowledgeRelation, KnowledgeUnit
-from app.knowledge.case_schema import TeachingCase
+from app.knowledge.case_schema import TeachingCase, TaskType, DisclosurePolicy
 from app.knowledge.boundary import BoundaryPolicy, ScopeLevel
-
-logger = logging.getLogger(__name__)
 
 
 class GraphReviewService:
-    """Manages the teacher review cycle for dynamic candidate evolution.
+    """Validate on a private graph; publish only after the SQLite CAS commit."""
 
-    Every approve/merge produces an immutable graph revision record so the
-    canonical graph can be audited, rolled back, and pinned in benchmarks.
-    """
+    def __init__(self, graph_repo: CourseGraphRepository, candidate_mgr: CandidateManager,
+                 store: Optional[CourseStore] = None):
+        self.graph_repo, self.candidate_mgr, self.store = graph_repo, candidate_mgr, store
+        self._lock = store._lock if store else threading.RLock()
+        self._receipts: dict[str, dict[str, Any]] = {}
+        if store:
+            saved = store.initialize_graph(graph_repo.course_id, graph_repo.to_course_pack(), "manual_initialization")
+            graph_repo.replace_from_course_pack(saved["data"])
 
-    def __init__(
-        self,
-        graph_repo: CourseGraphRepository,
-        candidate_mgr: CandidateManager,
-        store: Optional[CourseStore] = None,
-    ):
-        self.graph_repo = graph_repo
-        self.candidate_mgr = candidate_mgr
-        self.store = store
+    def _apply(self, graph: CourseGraphRepository, c: GraphCandidate, action: str,
+               target: Optional[str], note: str, reviewer: str) -> dict[str, Any]:
+        p = deepcopy(c.payload)
+        changes: dict[str, Any] = {"candidate_id": c.candidate_id, "action": action}
+        if p.get("course_id", c.course_id) != c.course_id:
+            raise ValueError("Payload course differs from candidate course")
+        if action in ("reject", "defer"):
+            return changes
+        if action == "merge" or c.candidate_type == CandidateType.NEW_ALIAS.value:
+            target = target or p.get("target_id")
+            unit, case = graph.get_unit(target), graph.case_repo.get_case(target)
+            if not unit and not case:
+                raise ValueError("Merge target does not exist in this course")
+            value = p.get("alias") or p.get("variant") or p.get("title")
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError("Non-empty alias/variant required")
+            values = unit.aliases if unit else case.accepted_variants
+            if value not in values:
+                values.append(value)
+            return {**changes, "merged_into_unit" if unit else "merged_into_case": target,
+                    "added_alias" if unit else "added_variant": value}
+        if c.candidate_type == CandidateType.NEW_UNIT.value:
+            uid = p.get("id", c.candidate_id)
+            if not isinstance(uid, str) or not uid.strip() or uid in graph.units:
+                raise ValueError("Unit id is empty or already exists; use merge")
+            if not isinstance(p.get("title"), str) or not p["title"].strip():
+                raise ValueError("Unit title required")
+            for key in ("keywords", "aliases", "chapter_path"):
+                if not isinstance(p.get(key, []), list) or any(not isinstance(v, str) for v in p.get(key, [])):
+                    raise ValueError(f"{key} must be a list of strings")
+            difficulty = p.get("difficulty", 3)
+            if not isinstance(difficulty, int) or isinstance(difficulty, bool) or not 1 <= difficulty <= 5:
+                raise ValueError("difficulty must be an integer in 1..5")
+            scope = ScopeLevel(p.get("scope_level", "core")).value
+            kwargs = {f.name: p[f.name] for f in fields(KnowledgeUnit) if f.name in p}
+            kwargs.update(id=uid, course_id=c.course_id, provenance=f"candidate_{c.proposed_by}",
+                          review_status="verified", reviewer_id=reviewer)
+            graph.add_unit(TypeAdapter(KnowledgeUnit).validate_python(kwargs), BoundaryPolicy(c.course_id, uid, scope_level=scope, teacher_note=note))
+            return {**changes, "entity_type": "unit", "entity_id": uid}
+        if c.candidate_type == CandidateType.NEW_RELATION.value:
+            for key in ("source_unit_id", "target_unit_id", "relation_type"):
+                if not isinstance(p.get(key), str) or not p[key].strip():
+                    raise ValueError(f"{key} required")
+            if any(graph.get_unit(p[key]) is None for key in ("source_unit_id", "target_unit_id")):
+                raise ValueError("Relation endpoints must exist in this course")
+            supported_relations = set().union(*TASK_TYPE_RELATIONS.values()) | {
+                "prerequisite", "supports_proof", "derives", "applies_to", "algorithm_of", "code_task_of", "contrast_with"}
+            if p["relation_type"] not in supported_relations:
+                raise ValueError("Unknown relation type")
+            confidence = float(p.get("confidence", 1))
+            if not 0 <= confidence <= 1:
+                raise ValueError("Invalid relation confidence")
+            graph.add_relation(KnowledgeRelation(p["source_unit_id"], p["target_unit_id"], p["relation_type"],
+                                                confidence, f"candidate_{c.proposed_by}", "verified"))
+            return {**changes, "entity_type": "relation", "relation": f'{p["source_unit_id"]}->{p["target_unit_id"]}'}
+        if c.candidate_type == CandidateType.NEW_CASE.value:
+            if not isinstance(p.get("case_id"), str) or not p["case_id"] or graph.case_repo.get_case(p["case_id"]):
+                raise ValueError("Case id required and must not already exist")
+            if not isinstance(p.get("title"), str) or not p["title"].strip():
+                raise ValueError("Case title required")
+            TaskType(p.get("task_type", "concept_explanation"))
+            DisclosurePolicy(p.get("disclosure_policy", "scaffolded"))
+            for key in ("concept_ids", "required_condition_ids"):
+                if not isinstance(p.get(key, []), list) or any(not isinstance(uid, str) or uid not in graph.units for uid in p.get(key, [])):
+                    raise ValueError(f"{key} must reference existing course units")
+            case = TypeAdapter(TeachingCase).validate_python(TeachingCase.from_dict({**p, "course_id": c.course_id}).to_dict())
+            case.review_status, case.provenance = "verified", f"candidate_{c.proposed_by}"
+            graph.add_case(case)
+            return {**changes, "entity_type": "case", "entity_id": case.case_id}
+        if c.candidate_type == CandidateType.SCOPE_CHANGE.value:
+            uid = p.get("unit_id") or p.get("target_id")
+            if uid not in graph.units:
+                raise ValueError("Boundary target not found")
+            scope = ScopeLevel(p.get("scope_level")).value
+            policy = graph.boundary_checker.get_policy(uid) or BoundaryPolicy(c.course_id, uid)
+            policy.scope_level, policy.teacher_note = scope, note
+            graph.boundary_checker.set_policy(policy)
+            return {**changes, "entity_type": "boundary", "entity_id": uid}
+        raise ValueError(f"Unsupported approve type: {c.candidate_type}")
 
-    def _record_revision(
-        self,
-        candidate: GraphCandidate,
-        action: str,
-        applied_changes: dict[str, Any],
-        reviewer_id: str,
-        review_note: str,
-    ) -> Optional[str]:
-        if not self.store:
-            return None
-        revision_id = f"rev_{candidate.course_id}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}"
-        parent = self.store.latest_revision_id(candidate.course_id)
-        self.store.append_revision(
-            revision_id=revision_id,
-            parent_revision_id=parent,
-            course_id=candidate.course_id,
-            candidate_id=candidate.candidate_id,
-            action=action,
-            changed_entities=applied_changes,
-            reviewer_id=reviewer_id,
-            reason=review_note,
-        )
-        return revision_id
-
-    def review_candidate(
-        self,
-        candidate_id: str,
-        action: str,  # "approve" | "merge" | "reject" | "defer"
-        reviewer_id: str = "teacher",
-        review_note: str = "",
-        merge_target_id: Optional[str] = None
-    ) -> dict[str, Any]:
-        candidate = self.candidate_mgr.get_candidate(candidate_id)
-        if not candidate:
-            raise KeyError(f"Candidate {candidate_id} not found")
-
-        # Update candidate status
-        updated_candidate = self.candidate_mgr.review_candidate(
-            candidate_id=candidate_id,
-            action=action,
-            reviewer_id=reviewer_id,
-            review_note=review_note,
-        )
-
-        applied_changes: dict[str, Any] = {"candidate_id": candidate_id, "action": action}
-
-        if action == "approve":
-            c_type = candidate.candidate_type
-            payload = candidate.payload
-
-            if c_type == CandidateType.NEW_UNIT.value:
-                unit = KnowledgeUnit(
-                    id=payload.get("id", candidate_id),
-                    course_id=candidate.course_id,
-                    title=payload.get("title", ""),
-                    type=payload.get("type", "concept"),
-                    content=payload.get("content", ""),
-                    latex=payload.get("latex", ""),
-                    intuitive_explanation=payload.get("intuitive_explanation", ""),
-                    solution=payload.get("solution", ""),
-                    keywords=payload.get("keywords", []),
-                    aliases=payload.get("aliases", []),
-                    difficulty=int(payload.get("difficulty", 3)),
-                    teaching_role=payload.get("teaching_role", "core"),
-                    # Provenance must survive approval. The candidate carries an
-                    # evidence_ref, but without these fields the resulting unit
-                    # cannot say which document or section it came from.
-                    chapter_path=list(payload.get("chapter_path", [])),
-                    source_document_id=payload.get("source_document_id"),
-                    page_start=payload.get("page_start"),
-                    page_end=payload.get("page_end"),
-                    source_span=dict(payload.get("source_span", {})),
-                    provenance=f"candidate_{candidate.proposed_by}",
-                    review_status="verified",
-                )
-                scope = payload.get("scope_level", ScopeLevel.CORE.value)
-                boundary = BoundaryPolicy(
-                    course_id=candidate.course_id,
-                    unit_id=unit.id,
-                    scope_level=scope,
-                    teacher_note=review_note,
-                )
-                self.graph_repo.add_unit(unit, boundary=boundary)
-                applied_changes["entity_type"] = "unit"
-                applied_changes["entity_id"] = unit.id
-
-            elif c_type == CandidateType.NEW_RELATION.value:
-                rel = KnowledgeRelation(
-                    source_unit_id=payload["source_unit_id"],
-                    target_unit_id=payload["target_unit_id"],
-                    relation_type=payload["relation_type"],
-                    confidence=float(payload.get("confidence", 1.0)),
-                    provenance=f"candidate_{candidate.proposed_by}",
-                    review_status="verified",
-                )
-                self.graph_repo.add_relation(rel)
-                applied_changes["entity_type"] = "relation"
-                applied_changes["relation"] = f"{rel.source_unit_id}->{rel.target_unit_id}"
-
-            elif c_type == CandidateType.NEW_CASE.value:
-                case = TeachingCase.from_dict(payload)
-                case.review_status = "verified"
-                case.provenance = f"candidate_{candidate.proposed_by}"
-                self.graph_repo.add_case(case)
-                applied_changes["entity_type"] = "case"
-                applied_changes["entity_id"] = case.case_id
-
-        elif action == "merge":
-            target_id = merge_target_id or candidate.payload.get("target_id")
-            if not target_id:
-                raise ValueError("merge_target_id required for merge action")
-
-            target_unit = self.graph_repo.get_unit(target_id)
-            if target_unit:
-                alias = candidate.payload.get("alias") or candidate.payload.get("title")
-                if alias and alias not in target_unit.aliases:
-                    target_unit.aliases.append(alias)
-                    applied_changes["merged_into_unit"] = target_id
-                    applied_changes["added_alias"] = alias
-            else:
-                target_case = self.graph_repo.case_repo.get_case(target_id)
-                if target_case:
-                    variant = candidate.payload.get("variant") or candidate.payload.get("title")
-                    if variant and variant not in target_case.accepted_variants:
-                        target_case.accepted_variants.append(variant)
-                        applied_changes["merged_into_case"] = target_id
-                        applied_changes["added_variant"] = variant
-
-        return {
-            "status": "success",
-            "candidate": updated_candidate.to_dict(),
-            "applied_changes": applied_changes,
-            "revision_id": self._record_revision(candidate, action, applied_changes, reviewer_id, review_note),
-        }
+    def review_candidate(self, candidate_id: str, action: str, reviewer_id: str = "teacher",
+                         review_note: str = "", merge_target_id: Optional[str] = None) -> dict[str, Any]:
+        status_map = {"approve": "approved", "merge": "merged", "reject": "rejected", "defer": "deferred"}
+        if action not in status_map:
+            raise ValueError("Invalid review action")
+        with self._lock:
+            candidate = self.candidate_mgr.get_candidate(candidate_id)
+            if self.store and self.store.persistent:
+                saved_candidates = self.store.load_candidates(self.graph_repo.course_id)
+                data = next((d for d in saved_candidates if d["candidate_id"] == candidate_id), None)
+                candidate = GraphCandidate.from_dict(data) if data else None
+            if not candidate or candidate.course_id != self.graph_repo.course_id:
+                raise KeyError(candidate_id)
+            request = {"action": action, "merge_target_id": merge_target_id}
+            revisions = self.store.list_revisions(candidate.course_id) if self.store else []
+            previous = next((r for r in reversed(revisions) if r["candidate_id"] == candidate_id), None)
+            receipt = self._receipts.get(candidate_id)
+            if previous and previous["changed_entities"].get("review_request") == request and candidate.status == status_map[action]:
+                saved = self.store.load_graph(candidate.course_id)
+                self.graph_repo.replace_from_course_pack(saved["data"])
+                self.candidate_mgr._candidates[candidate_id] = candidate
+                return {"status": "success", "duplicate": True, "candidate": candidate.to_dict(),
+                        "revision_id": previous["revision_id"], "applied_changes": previous["changed_entities"]}
+            if receipt and receipt["request"] == request and candidate.status == status_map[action]:
+                return {**receipt["result"], "duplicate": True}
+            if candidate.status not in (CandidateStatus.PENDING.value, CandidateStatus.DEFERRED.value):
+                raise ValueError("Candidate already reviewed; conflicting request or legacy recovery required")
+            saved = self.store.load_graph(candidate.course_id) if self.store else None
+            before = saved["data"] if saved else self.graph_repo.to_course_pack()
+            private = CourseGraphRepository(candidate.course_id)
+            private.load_from_course_pack(deepcopy(before))
+            try:
+                changes = self._apply(private, candidate, action, merge_target_id, review_note, reviewer_id)
+            except (TypeError, KeyError) as exc:
+                raise ValueError(f"Invalid candidate payload: {exc}") from exc
+            after = private.to_course_pack()
+            updated = deepcopy(candidate)
+            updated.status, updated.reviewer_id, updated.review_note = status_map[action], reviewer_id, review_note
+            updated.last_seen = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            changes.update(review_request=request, before=before, after=after, evidence_refs=candidate.evidence_refs)
+            revision = {"revision_id": f"rev_{uuid.uuid4().hex}", "parent_revision_id": self.store.latest_revision_id(candidate.course_id) if self.store else None,
+                        "course_id": candidate.course_id, "candidate_id": candidate_id, "action": action,
+                        "changed_entities": changes, "reviewer_id": reviewer_id, "reason": review_note,
+                        "created_at": updated.last_seen}
+            if self.store:
+                self.store.commit_review(candidate.to_dict(), updated.to_dict(), after, saved["generation"], revision)
+            self.graph_repo.replace_from_course_pack(after)
+            self.candidate_mgr._candidates[candidate_id] = updated
+            result = {"status": "success", "candidate": updated.to_dict(), "applied_changes": changes, "revision_id": revision["revision_id"]}
+            self._receipts[candidate_id] = {"request": request, "result": result}
+            return result

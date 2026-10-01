@@ -19,6 +19,11 @@ class TeachingCaseRepository:
                 self.add_case(case)
 
     def add_case(self, case: TeachingCase) -> None:
+        previous = self._cases.get(case.case_id)
+        if previous:
+            self._course_index[previous.course_id] = [cid for cid in self._course_index.get(previous.course_id, []) if cid != case.case_id]
+            for cid in previous.concept_ids:
+                self._concept_index[cid] = [key for key in self._concept_index.get(cid, []) if key != case.case_id]
         self._cases[case.case_id] = case
 
         # Course index
@@ -42,8 +47,8 @@ class TeachingCaseRepository:
         course_id: Optional[str] = None,
         task_type: Optional[str] = None
     ) -> list[TeachingCase]:
-        if course_id and course_id in self._course_index:
-            case_ids = self._course_index[course_id]
+        if course_id:
+            case_ids = self._course_index.get(course_id, [])
             results = [self._cases[cid] for cid in case_ids if cid in self._cases]
         else:
             results = list(self._cases.values())
