@@ -92,3 +92,15 @@ Next.js 14.2.35 → 16.3.8，React/React DOM 与类型依赖对齐 19.3.0，`esl
 研究文档 §27 已保留用户引用的“可验证诊断闭环”判断全文，制定2026/10–2027/03详细时间线与2027/04–09条件性展望：G0恢复与审核事务 → G1生产召回 → G2 Newton错误/提示/修订重验与最小事件 → G3求根家族与Overlay → G4教师gold及冻结独立集 → G5试用 → G6协议 → G7学习效果 → G8复现与扩展决策。日期按约每周3个集中开发日估算，不是已确认产能；教师、招募及适用研究流程尚未落实。
 
 228题已离线复跑：Recall@1 11/208、严格单标签决策34/222、可接受决策34/228、OOD10/11、域内新Case7/7、异常0；输出 `results/case_benchmark_2026-10-01_plan.json`，benchmark/种子/matcher哈希不变，执行退出0不表示基线通过。未实施计划中的业务改动。下一轮只先做M0：临时库重启恢复与审核失败原子性，正式库写入前备份与来源核对。
+
+## 联网检索修复（2026-10-01）
+
+用户实测“OpenAI证明Navier–Stokes的思路”没有联网资料，且新闻提问错误进入证明审查。旧实现默认手动关闭，DDG非200/解析空/超时统一丢成空列表，1.8秒HTTP预算与2秒上下文窗口不足，逐轮无搜索状态。
+
+本轮加入auto/on/off（显式关闭优先，设置本机保存）、时效/明确搜索/机构证明声称及猜想状态路由、常见Navier拼写归一化；新闻解释不进证明审查或无关课程检索/异步embedding。应用统一负责检索，不依赖未实现工具执行循环的模型原生搜索。Tavily可选优先，DDG失败或空结果转Bing RSS；公共通道仅尽力而为。总预算10秒，本地0.35秒窗口独立；取消请求清理全部检索任务。
+
+success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提示词→SSE→learning_meta.web_search持久化。成功仅表示拿到摘要，不核验全文、日期、证明或用户前提；失败不得转成“已查证不存在”。来源文本视为不可信资料，过滤非http(s)/带凭据链接。回答框显示状态与来源链接，旧历史不补造搜索记录，无数据库schema变化。
+
+验证：npm test API345/Web20/知识JSON通过；build/typecheck通过；lint0错误/10原有警告。离线回归覆盖DDG202转RSS、Tavily空转备用、超时/取消、链接过滤、失败敏感信息隔离、显式off、普通证明保留审查、新闻不进审查、提示词/SSE/数据库状态一致。独立联网烟测同主题返回3条摘要（含OpenAI链接）；这不等于已核验网页内容或证明。未调用真实模型做本轮答复验收。浏览器验证三档、刷新保存、390px无横向溢出/控件48px；截图results/search-repair-{desktop,mobile}.png；日志results/search-repair-*.log。前端服务http://127.0.0.1:3000/chat，API8000已恢复。分批本地提交，未push/部署。
+
+界面使用ui-design Build模式，读取SKILL、aesthetic-direction、design-guidelines、colors、form-controls、surfaces、responsive-design。下一任务：只读审查代码生成图标/HTML/图表嵌入回答框的触发、隔离、移动端及失败状态；M2受控数值诊断计划不变。

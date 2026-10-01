@@ -241,3 +241,15 @@ Next.js 14.2.35 → 16.3.8，React/React DOM 与类型依赖同步19.3.0，`esli
 用户对原长带图谱与随后卡片网格均不满意，最终改为圆点/细线、确定性有界力导向布局、关联数量映射大小、悬停/选中突出邻域；不改课程数据与语义，不伪装学习路径或掌握度。去掉网格背景/缩略图/编辑连线，将内容与公式收进侧栏，问题定位默认折叠。修复高亮/选中重载图与拖动回位，取消旧范围请求，尺寸变化自动适配。官方参考 https://obsidian.md/help/plugins/graph；执行UI Design技能的Build模式。
 
 最新npm test API329/Web20/知识JSON通过；新增3项验证节点有限且分离、顺序稳定、环路/缺失端点容错。构建/typecheck通过，lint0错误/10已有警告。桌面/390px移动端与节点详情/问题定位浏览器验收见results/m0-m1/graph-obsidian-*.png，测试日志results/graph-ui-*.log。此UI另批提交，未push；公开Case答案接口隔离、教师gold与M2仍待推进。
+
+## 联网检索修复（2026-10-01）
+
+用户实测“OpenAI证明Navier–Stokes的思路”没有联网资料，且新闻提问错误进入证明审查。旧实现默认手动关闭，DDG非200/解析空/超时统一丢成空列表，1.8秒HTTP预算与2秒上下文窗口不足，逐轮无搜索状态。
+
+本轮加入auto/on/off（显式关闭优先，设置本机保存）、时效/明确搜索/机构证明声称及猜想状态路由、常见Navier拼写归一化；新闻解释不进证明审查或无关课程检索/异步embedding。应用统一负责检索，不依赖未实现工具执行循环的模型原生搜索。Tavily可选优先，DDG失败或空结果转Bing RSS；公共通道仅尽力而为。总预算10秒，本地0.35秒窗口独立；取消请求清理全部检索任务。
+
+success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提示词→SSE→learning_meta.web_search持久化。成功仅表示拿到摘要，不核验全文、日期、证明或用户前提；失败不得转成“已查证不存在”。来源文本视为不可信资料，过滤非http(s)/带凭据链接。回答框显示状态与来源链接，旧历史不补造搜索记录，无数据库schema变化。
+
+验证：npm test API345/Web20/知识JSON通过；build/typecheck通过；lint0错误/10原有警告。离线回归覆盖DDG202转RSS、Tavily空转备用、超时/取消、链接过滤、失败敏感信息隔离、显式off、普通证明保留审查、新闻不进审查、提示词/SSE/数据库状态一致。独立联网烟测同主题返回3条摘要（含OpenAI链接）；这不等于已核验网页内容或证明。未调用真实模型做本轮答复验收。浏览器验证三档、刷新保存、390px无横向溢出/控件48px；截图results/search-repair-{desktop,mobile}.png；日志results/search-repair-*.log。前端服务http://127.0.0.1:3000/chat，API8000已恢复。分批本地提交，未push/部署。
+
+界面使用ui-design Build模式，读取SKILL、aesthetic-direction、design-guidelines、colors、form-controls、surfaces、responsive-design。下一任务：只读审查代码生成图标/HTML/图表嵌入回答框的触发、隔离、移动端及失败状态；M2受控数值诊断计划不变。

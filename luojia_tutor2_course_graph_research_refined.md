@@ -2601,3 +2601,15 @@ python evaluation/evaluate_case_benchmark.py --benchmark evaluation/case_matchin
 按用户指定的 Obsidian 设计语言，图谱采用圆点、细线、按关系数量调整大小、悬停/选中聚焦邻域，详细公式/教学内容留在侧栏。有界确定性力导向布局替代旧长带；卡片网格中间方案未提交。完整真实关系保留，布局表示关联而非教材学习顺序，节点大小不是掌握度。此轮不改变M0/M1数据、冻结基准或M2时间线。
 
 修复选择触发重载、拖动回位、窄屏画布不居中与过滤旧请求；前端新增3项布局回归。最新全量离线API329/Web20/知识JSON通过，构建/typecheck通过，lint0错误/10已有警告；浏览器检查桌面、移动端、节点详情和问题定位。UI改动另批提交；证据见COURSE_GRAPH_M0_M1.md追加段。下一业务目标仍是教师复核、受控数值诊断与修改重验，不能以视觉改善替代阶段门槛。
+
+## 27.10 联网检索修复（2026-10-01）
+
+用户实测“OpenAI证明Navier–Stokes的思路”没有联网资料，且新闻提问错误进入证明审查。旧实现默认手动关闭，DDG非200/解析空/超时统一丢成空列表，1.8秒HTTP预算与2秒上下文窗口不足，逐轮无搜索状态。
+
+本轮加入auto/on/off（显式关闭优先，设置本机保存）、时效/明确搜索/机构证明声称及猜想状态路由、常见Navier拼写归一化；新闻解释不进证明审查或无关课程检索/异步embedding。应用统一负责检索，不依赖未实现工具执行循环的模型原生搜索。Tavily可选优先，DDG失败或空结果转Bing RSS；公共通道仅尽力而为。总预算10秒，本地0.35秒窗口独立；取消请求清理全部检索任务。
+
+success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提示词→SSE→learning_meta.web_search持久化。成功仅表示拿到摘要，不核验全文、日期、证明或用户前提；失败不得转成“已查证不存在”。来源文本视为不可信资料，过滤非http(s)/带凭据链接。回答框显示状态与来源链接，旧历史不补造搜索记录，无数据库schema变化。
+
+验证：npm test API345/Web20/知识JSON通过；build/typecheck通过；lint0错误/10原有警告。离线回归覆盖DDG202转RSS、Tavily空转备用、超时/取消、链接过滤、失败敏感信息隔离、显式off、普通证明保留审查、新闻不进审查、提示词/SSE/数据库状态一致。独立联网烟测同主题返回3条摘要（含OpenAI链接）；这不等于已核验网页内容或证明。未调用真实模型做本轮答复验收。浏览器验证三档、刷新保存、390px无横向溢出/控件48px；截图results/search-repair-{desktop,mobile}.png；日志results/search-repair-*.log。前端服务http://127.0.0.1:3000/chat，API8000已恢复。分批本地提交，未push/部署。
+
+界面使用ui-design Build模式，读取SKILL、aesthetic-direction、design-guidelines、colors、form-controls、surfaces、responsive-design。下一任务：只读审查代码生成图标/HTML/图表嵌入回答框的触发、隔离、移动端及失败状态；M2受控数值诊断计划不变。

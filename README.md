@@ -302,3 +302,9 @@ npm run build:web
 
 *   本项目核心代码、脚本及 Skill 配置遵循 [MIT License](LICENSE)。
 *   `luojia-math-tutor/references/textbook/` 下的教材 PDF 仅供本地科研与学习参考，请在遵守法律的前提下合规使用。
+
+### 联网检索
+
+聊天输入区提供“自动 / 开启 / 关闭”，设置保存在本机。自动模式在新闻、明确搜索请求、机构宣称的证明与猜想进展问题上检索；关闭优先，不触发任何搜索。API 可传 `web_search_mode=auto|on|off`；兼容旧 `web_search=true`（强制开启）。
+
+服务端可在忽略的 `apps/api/.env` 配置 `TAVILY_API_KEY`，优先使用 Tavily；未配置或失败时尝试 DuckDuckGo HTML、Bing RSS。后两者是尽力而为的公共通道，可能限流、改版或返回不相关结果。每轮检索总预算10秒，不延长本地检索子预算。**搜索摘要不等于全文核实或证明验证**；失败、超时、无结果均明确呈现，不能由此断言某项成果不存在。逐轮状态、来源、提供方尝试和耗时保存到回答的 `learning_meta.web_search`，历史无状态的旧回答不补造记录。
