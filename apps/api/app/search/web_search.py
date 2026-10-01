@@ -14,13 +14,15 @@ import logging
 import os
 import re
 import urllib.parse
+import xml.etree.ElementTree as ET
+from dataclasses import field
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TIMEOUT_SECONDS = 1.8
+DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_MAX_RESULTS = 3
 
 
@@ -90,7 +92,8 @@ async def _search_duckduckgo(
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
         resp = await client.get(url, headers=headers)
         if resp.status_code != 200:
-            return []
+            resp.raise_for_status()
+            raise RuntimeError("search_unavailable")
 
         text = resp.text
         # Parse duckduckgo html results: class="result__body" containing class="result__snippet"
@@ -121,7 +124,7 @@ async def _search_duckduckgo(
                 title_match = re.search(r'<a class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', block, flags=re.DOTALL)
 
             if title_match:
-                raw_url = title_match.group(1).strip()
+                raw_url = html.unescape(title_match.group(1)).strip()
                 # Duckduckgo redirects look like /l/?kh=-1&uddg=https%3A%2F%2F...
                 if "uddg=" in raw_url:
                     parsed_uddg = urllib.parse.parse_qs(urllib.parse.urlparse(raw_url).query)
@@ -147,33 +150,95 @@ async def _search_duckduckgo(
         return results
 
 
-async def search_web(
-    query: str,
-    max_results: int = DEFAULT_MAX_RESULTS,
-    timeout: float = DEFAULT_TIMEOUT_SECONDS,
-) -> list[SearchResult]:
-    """Execute asynchronous web search with strict timeout and fallback."""
-    clean_query = query.strip()
-    if not clean_query:
-        return []
+@dataclass
+class WebSearchReport:
+    status: str
+    results: list[SearchResult] = field(default_factory=list)
+    attempts: list[dict[str, str]] = field(default_factory=list)
 
-    # 1. If TAVILY_API_KEY is configured, prioritize Tavily
-    tavily_key = os.getenv("TAVILY_API_KEY", "").strip()
-    if tavily_key:
-        try:
-            return await _search_tavily(clean_query, tavily_key, max_results, timeout)
-        except Exception as exc:
-            logger.warning("Tavily search failed, falling back to DuckDuckGo: %s", exc)
+    def to_dict(self) -> dict[str, Any]:
+        return {"status": self.status, "result_count": len(self.results),
+                "sources": [{"id": f"WEB-{i}", "title": r.title, "url": r.url,
+                             "provider": r.source} for i, r in enumerate(self.results, 1)],
+                "attempts": self.attempts}
 
-    # 2. DuckDuckGo fallback
+
+async def _search_bing_rss(query: str, max_results: int, timeout: float) -> list[SearchResult]:
+    # Public RSS is a best-effort fallback, not a guaranteed search API.
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        resp = await client.get("https://www.bing.com/search", params={"q": query, "format": "rss"})
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text[:1_000_000])
+    return [SearchResult(_clean_html_snippet(item.findtext("title", "")),
+                         _clean_html_snippet(item.findtext("description", "")),
+                         item.findtext("link", ""), "bing_rss")
+            for item in root.findall("./channel/item")][:max_results]
+
+
+def _usable(results: list[SearchResult], limit: int) -> list[SearchResult]:
+    clean = []
+    seen: set[str] = set()
+    for r in results:
+        parsed = urllib.parse.urlparse(r.url)
+        if parsed.scheme not in {"https", "http"} or not parsed.hostname or parsed.username or parsed.password:
+            continue
+        if not r.title.strip() or r.url in seen:
+            continue
+        seen.add(r.url)
+        clean.append(SearchResult(r.title[:240], r.snippet[:1200], r.url, r.source))
+    return clean[:limit]
+
+
+async def search_web_report(query: str, max_results: int = DEFAULT_MAX_RESULTS,
+                            timeout: float = DEFAULT_TIMEOUT_SECONDS) -> WebSearchReport:
+    """Keep an observable result for every failure, under one total deadline."""
+    query = query.strip()[:400]
+    if not query:
+        return WebSearchReport("empty")
+    attempts: list[dict[str, str]] = []
+    providers = []
+    key = os.getenv("TAVILY_API_KEY", "").strip()
+    if key:
+        providers.append(("tavily", lambda: _search_tavily(query, key, max_results, 4.0)))
+    providers.extend([("duckduckgo", lambda: _search_duckduckgo(query, max_results, 4.0)),
+                      ("bing_rss", lambda: _search_bing_rss(query, max_results, 4.0))])
+
+    async def run() -> WebSearchReport:
+        for name, search in providers:
+            try:
+                results = _usable(await search(), max_results)
+                attempts.append({"provider": name, "status": "success" if results else "empty"})
+                if results:
+                    return WebSearchReport("success", results, attempts)
+            except (asyncio.TimeoutError, httpx.TimeoutException):
+                attempts.append({"provider": name, "status": "timeout"})
+            except Exception:
+                # Never include provider response bodies or keys in a public report/log.
+                attempts.append({"provider": name, "status": "error"})
+        status = "empty" if all(a["status"] == "empty" for a in attempts) else "error"
+        return WebSearchReport(status, attempts=attempts)
     try:
-        return await _search_duckduckgo(clean_query, max_results, timeout)
-    except (asyncio.TimeoutError, httpx.TimeoutException):
-        logger.info("Web search timed out for query: %s", clean_query)
-        return []
-    except Exception as exc:
-        logger.warning("Web search failed gracefully: %s", exc)
-        return []
+        return await asyncio.wait_for(run(), timeout=timeout)
+    except asyncio.TimeoutError:
+        attempts.append({"provider": "pipeline", "status": "timeout"})
+        return WebSearchReport("timeout", attempts=attempts)
+
+
+async def search_web(query: str, max_results: int = DEFAULT_MAX_RESULTS,
+                     timeout: float = DEFAULT_TIMEOUT_SECONDS) -> list[SearchResult]:
+    """Compatibility entry point; tutoring uses the structured report."""
+    return (await search_web_report(query, max_results, timeout)).results
+
+
+def search_status_text(report: dict[str, Any]) -> str:
+    status = report.get("status", "disabled")
+    if status == "success":
+        return f"联网检索返回 {report.get('result_count', 0)} 条摘要；尚未核验全文、发布日期或是否支持该说法。"
+    if status == "disabled":
+        return "本轮未联网。" if report.get("reason") != "explicit_off" else "本轮已按设置关闭联网。"
+    if status == "empty":
+        return "联网检索未返回可用结果，本轮未完成事实核实；不能据此断言相关记录不存在。"
+    return "联网检索超时，本轮未完成事实核实。" if status == "timeout" else "联网检索服务未能返回可用资料，本轮未完成事实核实。"
 
 
 def format_web_results_for_prompt(results: list[SearchResult]) -> str:

@@ -18,6 +18,7 @@ from app.llm.openai_compatible import OpenAICompatibleClient
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
+from app.search.web_search import search_status_text
 from app.tutor.fast_path import (
     VerificationMode,
     learning_objective_for_intent,
@@ -55,6 +56,9 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    web_search_report: dict[str, Any]
+    web_search_reason: str
+    external_fact_question: bool
     web_search: bool
     reasoning_effort: str
     awaiting_vision_confirmation: bool
@@ -309,18 +313,21 @@ class TutorWorkflow:
         config: RunnableConfig,
     ) -> dict:
         context = await self.context_collector.collect(state)
-        hits = self._merge_hits(
-            context.hits,
-            await asyncio.to_thread(
-                self.repository.get_semantic_cache,
-                str(state.get("detected_subject") or state.get("subject") or "auto"),
-                state["message"],
-                self.settings.semantic_cache_ttl_seconds,
-            ),
-        )
+        hits = []
+        if not state.get("external_fact_question"):
+            hits = self._merge_hits(
+                context.hits,
+                await asyncio.to_thread(
+                    self.repository.get_semantic_cache,
+                    str(state.get("detected_subject") or state.get("subject") or "auto"),
+                    state["message"],
+                    self.settings.semantic_cache_ttl_seconds,
+                ),
+            )
         state_with_context = {
             **state,
             "prerequisite_hints": context.prerequisite_hints,
+            "web_search_report": context.web_search_report,
         }
         messages = self._build_base_messages(
             state_with_context,
@@ -382,6 +389,7 @@ class TutorWorkflow:
                         ],
                         "route": metrics["route"],
                         "fast_context_ms": metrics["fast_context_ms"],
+                        "web_search": context.web_search_report,
                     },
                 )
             )
@@ -400,8 +408,9 @@ class TutorWorkflow:
             rag_items.append("已载入会话历史与当前掌握度评估")
             if context.document_chunks:
                 rag_items.append(
-                    f"已参考用户绑定文档（{len(context.document_chunks)} 个片段）"
+                    f"已参考文档与外部资料（{len(context.document_chunks)} 个片段）"
                 )
+            rag_items.append(search_status_text(context.web_search_report))
             await on_progress(f"[隐式 RAG]\n{'；'.join(rag_items)}。")
 
             verifier_result = context.verifier_result
@@ -421,6 +430,7 @@ class TutorWorkflow:
             "learning_objective": state["learning_objective"],
             "hits": hits,
             "document_chunks": context.document_chunks,
+            "web_search_report": context.web_search_report,
             "concepts": context.concepts,
             "concept_items": context.concept_items,
             "verifier_result": context.verifier_result,
@@ -695,7 +705,7 @@ class TutorWorkflow:
                     state.get("user_api_key"),
                     state.get("model"),
                     effort=state.get("reasoning_effort", "medium"),
-                    enable_search=state.get("web_search", False),
+                    enable_search=False,
                 )
                 metrics["llm_call_count"] = (
                     int(metrics.get("llm_call_count", 0)) + 1
@@ -892,6 +902,7 @@ class TutorWorkflow:
             pedagogical_action=pedagogical_action,
             prerequisite_hints=state.get("prerequisite_hints"),
             evidence_pack=evidence_pack,
+            web_search_report=state.get("web_search_report"),
         )
 
     @staticmethod

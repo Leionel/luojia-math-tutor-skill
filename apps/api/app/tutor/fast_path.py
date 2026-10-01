@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from app.knowledge.search import detect_subject
+from app.search.policy import is_external_fact_question
 from app.tutor.intent_router import ACTION_BY_INTENT, Intent, route_intent_decision
 
 
@@ -63,7 +64,11 @@ def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
     intent = intent_decision.intent
     detected_subject = detect_subject(message, subject) or subject
 
-    if any(marker in message.lower() for marker in _PROOF_MARKERS):
+    factual = is_external_fact_question(message)
+    if factual:
+        intent = Intent.CONCEPT
+        verification_mode = VerificationMode.NONE
+    elif any(marker in message.lower() for marker in _PROOF_MARKERS):
         verification_mode = VerificationMode.LLM
     elif intent is Intent.CHECK_STUDENT_STEP and any(
         marker in message for marker in _SYMBOLIC_MARKERS
@@ -78,8 +83,8 @@ def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
         pedagogical_action=ACTION_BY_INTENT[intent].value,
         learning_objective=learning_objective_for_intent(intent),
         verification_mode=verification_mode,
-        confidence=intent_decision.confidence,
-        requires_policy_fallback=intent_decision.uncertain,
+        confidence=0.95 if factual else intent_decision.confidence,
+        requires_policy_fallback=False if factual else intent_decision.uncertain,
     )
 
 

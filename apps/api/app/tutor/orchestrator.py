@@ -5,6 +5,8 @@ import time
 from collections.abc import AsyncIterator
 
 from app.config import Settings
+from app.search.policy import decide_search
+from app.search.web_search import search_status_text
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.verifier import VerifyResult
@@ -84,8 +86,10 @@ class TutorOrchestrator:
             )
         rag_items.append("已参考会话历史；掌握度估计可能包含初始默认值")
         if document_chunks:
-            rag_items.append(f"已参考用户绑定文档（{len(document_chunks)} 个片段）")
+            rag_items.append(f"已参考文档与外部资料（{len(document_chunks)} 个片段）")
 
+        if state.get("web_search_report"):
+            rag_items.append(search_status_text(state["web_search_report"]))
         parts.append(f"[隐式 RAG]\n{'；'.join(rag_items)}。")
 
         # ── VERIFY ──
@@ -195,6 +199,7 @@ class TutorOrchestrator:
             concept_items.append(item)
         return {
             "intent": intent,
+            "web_search": state.get("web_search_report"),
             "subject": state.get("detected_subject")
             or state.get("subject")
             or "auto",
@@ -226,6 +231,7 @@ class TutorOrchestrator:
         requested_hint: bool = False,
         image_urls: list[str] | None = None,
         web_search: bool = False,
+        web_search_mode: str = "auto",
         reasoning_effort: str = "medium",
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
@@ -236,6 +242,7 @@ class TutorOrchestrator:
             0.5,
         )
         route = route_fast_path(message, mode, subject)
+        search = decide_search(message, web_search_mode, web_search)
         opening = "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
@@ -261,7 +268,9 @@ class TutorOrchestrator:
             "model": model,
             "requested_hint": requested_hint,
             "image_urls": image_urls,
-            "web_search": web_search,
+            "web_search": search.enabled,
+            "web_search_reason": search.reason,
+            "external_fact_question": search.factual,
             "reasoning_effort": reasoning_effort,
             "vision_result": {},
             "intent": route.intent,
@@ -454,7 +463,7 @@ class TutorOrchestrator:
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None and not awaiting_vision:
+        if workflow_owner is not None and not awaiting_vision and not search.factual:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

@@ -17,7 +17,8 @@ from app.tutor.fast_path import VerificationMode
 from app.tutor.hint_policy import decide_hint_level
 from app.tutor.intent_router import Intent
 from app.tutor.misconception import Mistake
-from app.search.web_search import search_web, format_web_results_for_prompt
+from app.search.web_search import search_web_report, format_web_results_for_prompt
+from app.search.policy import search_query
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,7 @@ class FastContext:
     hint_level: int
     metrics: dict[str, float | int | str | bool]
     prerequisite_hints: list[dict[str, str]] = field(default_factory=list)
+    web_search_report: dict[str, Any] = field(default_factory=dict)
 
 
 class FastContextCollector:
@@ -140,103 +142,117 @@ class FastContextCollector:
             ): "document_chunks",
             asyncio.create_task(self._collect_symbolic_result(state)): "symbolic",
         }
-        if state.get("web_search"):
-            tasks[asyncio.create_task(self._collect_web_hits(state["message"]))] = "web_search"
+        web_task = (asyncio.create_task(self._collect_web_hits(state["message"]))
+                    if state.get("web_search") else None)
+        try:
+            done, pending = await asyncio.wait(tasks, timeout=self.timeout_seconds)
 
-        effective_timeout = max(self.timeout_seconds, 2.0) if state.get("web_search") else self.timeout_seconds
-        done, pending = await asyncio.wait(
-            tasks,
-            timeout=effective_timeout,
-        )
+            results: dict[str, Any] = {}
+            durations: dict[str, float] = {}
+            for task in done:
+                name = tasks[task]
+                try:
+                    value, duration_ms = task.result()
+                    results[name] = value
+                    durations[name] = duration_ms
+                except Exception:
+                    logger.exception("Fast context task %s failed", name)
 
-        results: dict[str, Any] = {}
-        durations: dict[str, float] = {}
-        for task in done:
-            name = tasks[task]
-            try:
-                value, duration_ms = task.result()
-                results[name] = value
-                durations[name] = duration_ms
-            except Exception:
-                logger.exception("Fast context task %s failed", name)
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
 
-        for task in pending:
-            task.cancel()
-        if pending:
-            await asyncio.gather(*pending, return_exceptions=True)
-
-        pack = results.get("hits", None)
-        hits = pack.direct_hits + pack.graph_hits if pack else []
-        document_chunks = list(results.get("document_chunks", []))
-        web_search_chunk = results.get("web_search")
-        if web_search_chunk and isinstance(web_search_chunk, str):
-            document_chunks.append(web_search_chunk)
-        verifier_result, mistake = results.get(
-            "symbolic",
-            (
-                VerifyResult(
-                    False,
+            pack = results.get("hits", None)
+            hits = pack.direct_hits + pack.graph_hits if pack else []
+            document_chunks = list(results.get("document_chunks", []))
+            web_report = {"status": "disabled", "reason": state.get("web_search_reason", "not_needed"),
+                          "result_count": 0, "sources": [], "attempts": []}
+            if web_task:
+                try:
+                    report, duration = await web_task
+                    web_report = {**report.to_dict(), "reason": state.get("web_search_reason", "explicit_on"),
+                                  "elapsed_ms": round(duration, 2)}
+                    durations["web_search"] = duration
+                    formatted = format_web_results_for_prompt(report.results)
+                    if formatted:
+                        document_chunks.append(formatted)
+                except Exception:
+                    web_report.update(status="error")
+            verifier_result, mistake = results.get(
+                "symbolic",
+                (
+                    VerifyResult(
+                        False,
+                        None,
+                        "本轮未获得确定性的自动验证结果。",
+                    ),
                     None,
-                    "本轮未获得确定性的自动验证结果。",
                 ),
-                None,
-            ),
-        )
-        concepts = self._derive_concepts(
-            state["message"],
-            hits,
-            mistake,
-            previous_concepts,
-        )
-        concept_items = self._build_concept_items(
-            message=state["message"],
-            concepts=concepts,
-            hits=hits,
-            mistake=mistake,
-            previous_items=previous_concept_items,
-            assessed=(
-                state.get("intent") is Intent.CHECK_STUDENT_STEP
-                and verifier_result.verified
-                and verifier_result.is_correct is not None
-            ),
-        )
-        learning_state = {
-            **state,
-            "hits": hits,
-        }
-        mastery = await asyncio.to_thread(
-            self._finalize_learning_state,
-            learning_state,
-            concepts,
-            verifier_result,
-            mistake,
-        )
+            )
+            concepts = [] if state.get("external_fact_question") else self._derive_concepts(
+                state["message"],
+                hits,
+                mistake,
+                previous_concepts,
+            )
+            concept_items = self._build_concept_items(
+                message=state["message"],
+                concepts=concepts,
+                hits=hits,
+                mistake=mistake,
+                previous_items=previous_concept_items,
+                assessed=(
+                    state.get("intent") is Intent.CHECK_STUDENT_STEP
+                    and verifier_result.verified
+                    and verifier_result.is_correct is not None
+                ),
+            )
+            learning_state = {
+                **state,
+                "hits": hits,
+            }
+            mastery = await asyncio.to_thread(
+                self._finalize_learning_state,
+                learning_state,
+                concepts,
+                verifier_result,
+                mistake,
+            )
 
-        metrics: dict[str, float | int | str | bool] = {
-            "fast_context_ms": round(
-                (time.perf_counter() - started) * 1000,
-                2,
-            ),
-            "local_rag_ms": round(durations.get("hits", 0.0), 2),
-            "symbolic_verify_ms": round(durations.get("symbolic", 0.0), 2),
-            "context_timed_out": bool(pending),
-        }
-        return FastContext(
-            history=history,
-            evidence_pack=pack,
-            hits=hits,
-            document_chunks=document_chunks,
-            concepts=concepts,
-            concept_items=concept_items,
-            verifier_result=verifier_result,
-            mistake=mistake,
-            mastery_score=mastery["mastery_score"],
-            mastery_delta=mastery["mastery_delta"],
-            mastery_label_str=mastery["mastery_label_str"],
-            hint_level=mastery["hint_level"],
-            metrics=metrics,
-            prerequisite_hints=mastery.get("prerequisite_hints", []),
-        )
+            metrics: dict[str, float | int | str | bool] = {
+                "fast_context_ms": round(
+                    (time.perf_counter() - started) * 1000,
+                    2,
+                ),
+                "local_rag_ms": round(durations.get("hits", 0.0), 2),
+                "symbolic_verify_ms": round(durations.get("symbolic", 0.0), 2),
+                "context_timed_out": bool(pending),
+                "web_search_ms": round(durations.get("web_search", 0.0), 2),
+            }
+            return FastContext(
+                history=history,
+                evidence_pack=pack,
+                hits=hits,
+                document_chunks=document_chunks,
+                concepts=concepts,
+                concept_items=concept_items,
+                verifier_result=verifier_result,
+                mistake=mistake,
+                mastery_score=mastery["mastery_score"],
+                mastery_delta=mastery["mastery_delta"],
+                mastery_label_str=mastery["mastery_label_str"],
+                hint_level=mastery["hint_level"],
+                metrics=metrics,
+                prerequisite_hints=mastery.get("prerequisite_hints", []),
+                web_search_report=web_report,
+            )
+        finally:
+            owned_tasks = [*tasks, *([web_task] if web_task else [])]
+            for task in owned_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*owned_tasks, return_exceptions=True)
 
     def _prepare_session(
         self,
@@ -282,6 +298,8 @@ class FastContextCollector:
         state: dict[str, Any],
     ) -> tuple[EvidencePack | None, float]:
         started = time.perf_counter()
+        if state.get("external_fact_question"):
+            return None, 0.0
         # Both retrievers run and are then fused. They used to be mutually
         # exclusive: a course-graph match discarded the hybrid retriever's
         # ranking entirely, and a course-graph miss discarded the case and
@@ -355,11 +373,10 @@ class FastContextCollector:
             chunks = []
         return chunks, (time.perf_counter() - started) * 1000
 
-    async def _collect_web_hits(self, query: str) -> tuple[str, float]:
+    async def _collect_web_hits(self, query: str) -> tuple[Any, float]:
         started = time.perf_counter()
-        results = await search_web(query, max_results=3, timeout=1.8)
-        formatted = format_web_results_for_prompt(results)
-        return formatted, (time.perf_counter() - started) * 1000
+        report = await search_web_report(search_query(query), max_results=3, timeout=10.0)
+        return report, (time.perf_counter() - started) * 1000
 
     async def _collect_symbolic_result(
         self,

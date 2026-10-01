@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 from starlette.responses import StreamingResponse
@@ -28,6 +30,7 @@ class TutorStreamRequest(BaseModel):
     requested_hint: bool = False
     image_urls: list[str] | None = None
     web_search: bool = False
+    web_search_mode: Literal["auto", "on", "off"] = "auto"
     reasoning_effort: str = "medium"
 
 
@@ -57,6 +60,7 @@ async def stream_tutor(
             requested_hint=payload.requested_hint,
             image_urls=payload.image_urls,
             web_search=payload.web_search,
+            web_search_mode=payload.web_search_mode,
             reasoning_effort=payload.reasoning_effort,
         ),
         media_type="text/event-stream",

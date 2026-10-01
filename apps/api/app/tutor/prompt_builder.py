@@ -61,6 +61,7 @@ def build_messages(
     bilibili_results: str = "", document_chunks: list[str] | None = None,
     pedagogical_action: str | None = None,
     prerequisite_hints: list[dict[str, str]] | None = None, evidence_pack: Any = None,
+    web_search_report: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     case = _dict(getattr(evidence_pack, "matched_case", None))
     policy = resolve_teaching_policy(intent, mode, hint_level, pedagogical_action, case)
@@ -91,6 +92,8 @@ def build_messages(
     documents = truncate_text(documents, _DOC_CHAR_BUDGET)
     runtime = {
         "prompt_version": PROMPT_VERSION,
+        "web_search": {key: value for key, value in (web_search_report or {"status": "disabled"}).items() if key != "sources"},
+        "web_search_rule": "搜索状态由服务器提供。success仅表示取得摘要，不等于已核实；引用支持说法的WEB编号并附来源链接。empty/error/timeout表示未完成联网核实，不得声称已查证、找到或不存在可信记录。disabled表示本轮未联网。对新闻先核实用户前提，证据不足时明确说明，不用旧知识断言现状。",
         "intent": intent.value, "subject": subject, "mode": mode,
         "resolved_policy": policy,
         "mastery_estimate": {"value": round(mastery_score, 4),
@@ -99,6 +102,7 @@ def build_messages(
         "mistake": asdict(mistake) if mistake else None,
         "evidence_untrusted": {
             "knowledge_hits": _hits_text(hits),
+            "web_sources": (web_search_report or {}).get("sources", []),
             "documents": documents,
             "other_references": truncate_text(bilibili_results, 1200),
             "course_case": case_data,
