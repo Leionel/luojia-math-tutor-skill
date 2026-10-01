@@ -25,13 +25,15 @@
 - 检索基线（`scripts/eval_retrieval.py`，244 条评测集）：chunk 级 BM25 **R@3 0.752 / R@5 0.798 / MRR 0.708**，vector（本地 LSA 降级臂）0.581/0.685/0.498，hybrid(RRF) 0.688/**0.805**/0.657；**图层 unit 级 dry-run R@3 0.725，hierarchy@1 = 0.867**（详见 research doc §25.3）。
 - 前端已统一到「农场水墨」设计令牌（`apps/web/tailwind.config.ts` 重映射了 slate/indigo 等默认色名——**改 UI 时注意类名颜色≠视觉颜色**）；阅读字体（衬线/无衬线）与主题（light/dark，存储键 `luojia-theme`/`luojia-reading`）持久化已修好。
 - 交互与思考链优化：消除白屏等待大卡片，采用极简折叠墨绿书卷徽标；输入台新增「🌐 联网探微」与「🧠 运思强度」（4档深度映射至 DeepSeek/OpenAI/Qwen/GLM/Anthropic）；新增藏书阁「Ctrl+K」全局跨域检索抽屉（教材定理/错题/笔记一键研讨）。
-- 最新本地验收：API 329 项、前端 17 项与知识 JSON 通过；生产构建/typecheck 通过，lint 0 错误/10 条已有警告；前端依赖审计 0 漏洞。未运行远端 CI，离线隔离门控未变。
+- 最新本地验收：API 329 项、前端 20 项与知识 JSON 通过；生产构建/typecheck 通过，lint 0 错误/10 条已有警告；前端依赖审计 0 漏洞。未运行远端 CI，离线隔离门控未变。
 
 ## M0 / M1 最新状态（2026-10-01，本段优先于下方历史记录）
 
 M0 已实现完整 SQLite 正式图、事务审核、generation CAS、幂等回执、备份/恢复工具；M1 已接入生产 Case / 单元召回，API、EvidenceBuilder、离线 evaluator 排序一致。228 题开发集 R@1=162/208（77.9%）、R@3=200/208（96.2%）；原20题通过，61题仍需审查。教师 gold 与未见任务验收待完成，M2 尚未实施。
 
 实际 API 库为 `apps/api/data/course_store.db`，初始化正式快照后仍 pending495 / superseded283，没有批量审核。数据库备份与完整验收见 `COURSE_GRAPH_M0_M1.md`；持久化须配置 COURSE_STORE_PATH，未配置为内存模式。先教师核对失败家族和少量求根材料，再推进受控数值诊断、提示与修订重验；不要继续盲目扩题或扩章。以下旧段落保留为基线证据，不是当前完成状态。
+
+图谱 UI 最新方向：参考 Obsidian Graph View，采用圆点/细线的有界力导向布局，关联数量决定大小，悬停/选择突出邻域，公式/内容在侧栏。窗口尺寸变化自动适配，选择不重载图，拖动不强制回位；卡片网格方案未提交。新增3项布局回归，最新API329/Web20。完整记录与截图入口见 COURSE_GRAPH_M0_M1.md 追加段。
 
 ## 4. 明确的未完成项（按优先级）
 

@@ -3,22 +3,17 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
-  MiniMap,
   Controls,
-  Background,
   useNodesState,
   useEdgesState,
-  addEdge,
   Handle,
   Position,
-  BackgroundVariant,
   Node,
   Edge,
   ReactFlowInstance
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { CheckCircle2, Lock, Flame, Info } from 'lucide-react';
-import { MathView } from '@/components/math-view';
+import { layoutCourseNodes } from '@/lib/course-graph-layout';
 
 export interface EvidencePackItem {
   id: string;
@@ -40,233 +35,21 @@ export interface KnowledgeGraphProps {
   selectedNodeId?: string;
 }
 
-// SkillNode renders at a fixed width so the layered layout math never overlaps.
-const NODE_W = 232;
-const GAP_X = 26;
-const LEVEL_H = 170;
-
-// Deterministic per-node jitter so rows read as a hand-laid scroll, not a ruler.
-function jitter(id: string, salt: number, span: number): number {
-  let h = salt;
-  for (let i = 0; i < id.length; i++) {
-    h = (h * 31 + id.charCodeAt(i)) | 0;
-  }
-  return ((Math.abs(h) % (span * 2 + 1)) - span);
-}
-
-function relayout(nodes: Node[], edges: Edge[]): Node[] {
-  if (nodes.length === 0) return nodes;
-  const ids = new Set(nodes.map((n) => n.id));
-  const level = new Map<string, number>();
-  nodes.forEach((n) => level.set(n.id, 0));
-  for (let pass = 0; pass < nodes.length; pass++) {
-    let changed = false;
-    edges.forEach((e) => {
-      if (!ids.has(e.source) || !ids.has(e.target) || e.source === e.target) return;
-      const want = (level.get(e.source) ?? 0) + 1;
-      if (want > (level.get(e.target) ?? 0)) {
-        level.set(e.target, want);
-        changed = true;
-      }
-    });
-    if (!changed) break;
-  }
-  const byLevel = new Map<number, Node[]>();
-  nodes.forEach((n) => {
-    const lvl = level.get(n.id) ?? 0;
-    if (!byLevel.has(lvl)) byLevel.set(lvl, []);
-    byLevel.get(lvl)!.push(n);
-  });
-  return nodes.map((n) => {
-    const lvl = level.get(n.id) ?? 0;
-    const siblings = byLevel.get(lvl)!;
-    return {
-      ...n,
-      width: NODE_W,
-      height: 96 + (n.data?.latex ? 42 : 0),
-      position: {
-        x: siblings.indexOf(n) * (NODE_W + GAP_X) + jitter(n.id, 7, 14),
-        y: lvl * LEVEL_H + jitter(n.id, 13, 26),
-      },
-    };
-  });
-}
-
-function softEdges(edges: Edge[]): Edge[] {
-  return edges.map((e) => ({
-    ...e,
-    type: e.type ?? "default",
-    style: { stroke: "var(--border-primary)", strokeWidth: 1.4, ...(e.style || {}) },
-  }));
-}
-
-function generateGraphLayout(items: EvidencePackItem[]) {
-  const levels = new Map<string, number>();
-  
-  items.forEach(item => levels.set(item.id, 0));
-  
-  for (let i = 0; i < items.length; i++) {
-    let changed = false;
-    items.forEach(item => {
-      if (item.prerequisite && item.prerequisite.length > 0) {
-        let maxPrereqLevel = -1;
-        item.prerequisite.forEach(prereq => {
-          if (levels.has(prereq)) {
-            maxPrereqLevel = Math.max(maxPrereqLevel, levels.get(prereq)!);
-          }
-        });
-        if (maxPrereqLevel !== -1 && levels.get(item.id)! <= maxPrereqLevel) {
-          levels.set(item.id, maxPrereqLevel + 1);
-          changed = true;
-        }
-      }
-    });
-    if (!changed) break;
-  }
-
-  const byLevel = new Map<number, EvidencePackItem[]>();
-  items.forEach(item => {
-    const lvl = levels.get(item.id) || 0;
-    if (!byLevel.has(lvl)) {
-      byLevel.set(lvl, []);
-    }
-    byLevel.get(lvl)!.push(item);
-  });
-
-  const newNodes: Node[] = [];
-  const newEdges: Edge[] = [];
-
-  const LEVEL_HEIGHT = 150;
-  const NODE_WIDTH = 250;
-
-  items.forEach(item => {
-    const lvl = levels.get(item.id) || 0;
-    const siblings = byLevel.get(lvl)!;
-    const idx = siblings.findIndex(s => s.id === item.id);
-    
-    const totalWidth = siblings.length * NODE_WIDTH;
-    const startX = -totalWidth / 2;
-    
-    newNodes.push({
-      id: item.id,
-      position: { x: startX + idx * NODE_WIDTH + NODE_WIDTH / 2, y: lvl * LEVEL_HEIGHT },
-      data: { label: item.concept_zh, status: item.status || 'unknown' },
-      type: 'skillNode'
-    });
-
-    if (item.prerequisite) {
-      item.prerequisite.forEach(prereq => {
-        newEdges.push({
-          id: `e${prereq}-${item.id}`,
-          source: prereq,
-          target: item.id,
-          animated: true,
-          style: { stroke: '#9ca3af', strokeWidth: 2 }
-        });
-      });
-    }
-  });
-
-  return { nodes: newNodes, edges: newEdges };
-}
-
-// Scope-semantic palette: node borders and badges encode course boundary
-// scope; mastery status is conveyed by icons only.
-const SCOPE_STYLES: Record<string, { badge: string; border: string; minimap: string; label: string }> = {
-  core: {
-    badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-    border: 'border-indigo-500 shadow-indigo-500/10',
-    minimap: '#6366f1',
-    label: '核心',
-  },
-  prerequisite: {
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-    border: 'border-amber-500 shadow-amber-500/10',
-    minimap: '#f59e0b',
-    label: '前置',
-  },
-  extension: {
-    badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
-    border: 'border-teal-500 shadow-teal-500/10',
-    minimap: '#14b8a6',
-    label: '拓展',
-  },
-  unclassified: {
-    badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-    border: 'border-slate-400 border-dashed shadow-slate-500/10',
-    minimap: '#94a3b8',
-    label: '未分类',
-  },
+const SCOPE_DOTS: Record<string, string> = {
+  core: "bg-[var(--text-muted)]", prerequisite: "bg-dai-500", extension: "bg-ochre-500", unclassified: "bg-[var(--text-muted)]",
 };
 
-// Case-match highlight: rose, distinct from every scope color.
-const HIGHLIGHT_CLASS = 'ring-4 ring-rose-500 border-rose-500 shadow-rose-500/40 scale-105';
-
-function getScopeStyle(scope?: string) {
-  return SCOPE_STYLES[scope || 'unclassified'] || SCOPE_STYLES.unclassified;
-}
-
 function SkillNode({ data }: { data: any }) {
-  const isMastered = data.status === 'mastered';
-  const isLearning = data.status === 'learning';
-  const isLocked = data.status === 'locked';
-  const isHighlighted = data.isHighlighted;
-  const isSelected = data.isSelected;
-  const scopeStyle = getScopeStyle(data.scope);
-
-  const typeBadge = data.unit_type === 'algorithm' ? '算法' :
-                    data.unit_type === 'theorem' ? '定理' :
-                    data.unit_type === 'definition' ? '定义' :
-                    data.unit_type === 'counterexample' ? '反例' :
-                    data.unit_type === 'misconception' ? '易错' : null;
-
+  const active = data.isSelected || data.isHighlighted || data.isHovered;
+  const size = Math.min(22, 10 + (data.degree || 0) * 2);
   return (
-    <div className={`px-3 py-2.5 shadow-lg rounded-2xl border-2 bg-white dark:bg-[#1e1e1b] flex flex-col gap-1 transition-all duration-300 w-[232px] cursor-pointer hover:shadow-xl hover:scale-[1.02]
-      ${isHighlighted ? HIGHLIGHT_CLASS : ''}
-      ${isSelected && !isHighlighted ? `ring-2 ${scopeStyle.border} scale-[1.03]` : ''}
-      ${!isHighlighted && !isSelected && isLocked ? 'opacity-60 grayscale border-slate-300 dark:border-slate-700' : ''}
-      ${!isHighlighted && !isSelected && !isLocked ? scopeStyle.border : ''}
-    `}>
-      <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-[var(--border-subtle)]" />
-
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          {isMastered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-          {isLearning && <Flame className="w-4 h-4 text-blue-500 animate-pulse" />}
-          {isLocked && <Lock className="w-4 h-4 text-gray-400" />}
-          {!isMastered && !isLearning && !isLocked && <Info className="w-4 h-4 text-slate-400" />}
-
-          <span className={`font-semibold text-sm truncate ${
-            isHighlighted ? 'text-rose-600 dark:text-rose-400 font-bold' :
-            'text-slate-800 dark:text-slate-100'
-          }`}>
-            {data.label}
-          </span>
-        </div>
-
-        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${scopeStyle.badge}`}>
-          {scopeStyle.label}
-        </span>
+    <div className={`relative flex items-center justify-center w-12 h-12 cursor-pointer transition-opacity ${data.isDimmed ? "opacity-25" : "opacity-100"}`} title={data.label}>
+      <Handle type="target" position={Position.Top} style={{ top: "50%", left: "50%", opacity: 0, border: 0 }} />
+      <div style={{ width: size, height: size }} className={`rounded-full transition-colors ${active ? "bg-olive-500 ring-4 ring-olive-500/15" : SCOPE_DOTS[data.scope] || SCOPE_DOTS.unclassified}`} />
+      <div className={`absolute top-10 left-1/2 -translate-x-1/2 w-36 text-center text-xs leading-4 ${active ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-secondary)]"}`}>
+        {String(data.label).replace(/\s*\([^)]*\)\s*$/, "")}
       </div>
-
-      {typeBadge && (
-        <div className="flex items-center gap-1 text-[11px] text-gray-400">
-          <span className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-gray-500 dark:text-gray-400">
-            {typeBadge}
-          </span>
-          {data.difficulty && (
-            <span className="text-gray-400">难度★{data.difficulty}</span>
-          )}
-        </div>
-      )}
-
-      {data.latex && (
-        <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-200 overflow-hidden max-w-full">
-          <MathView math={data.latex} className="text-[11px] text-indigo-900 dark:text-indigo-200" />
-        </div>
-      )}
-      
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-[var(--border-subtle)]" />
+      <Handle type="source" position={Position.Bottom} style={{ top: "50%", left: "50%", opacity: 0, border: 0 }} />
     </div>
   );
 }
@@ -286,81 +69,92 @@ export function KnowledgeGraph({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [loadError, setLoadError] = React.useState(false);
+  const [hoveredId, setHoveredId] = React.useState<string | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const flowRef = React.useRef<ReactFlowInstance | null>(null);
 
+  const layoutKey = nodes.map((node) => node.id).join("|");
   useEffect(() => {
-    if (nodes.length === 0) return;
+    if (!layoutKey) return;
     const first = setTimeout(() => {
-      flowRef.current?.fitView({ padding: 0.15 });
+      flowRef.current?.fitView({ padding: 0.22, minZoom: 0.3, maxZoom: 1.2 });
     }, 200);
     const second = setTimeout(() => {
-      flowRef.current?.fitView({ padding: 0.15 });
+      flowRef.current?.fitView({ padding: 0.22, minZoom: 0.3, maxZoom: 1.2 });
     }, 900);
     return () => {
       clearTimeout(first);
       clearTimeout(second);
     };
-  }, [nodes]);
+  }, [layoutKey]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => flowRef.current?.fitView({ padding: 0.22, minZoom: 0.3, maxZoom: 1.2 }), 80);
+    });
+    observer.observe(containerRef.current);
+    return () => { observer.disconnect(); clearTimeout(timer); };
+  }, []);
 
   const highlightSet = useMemo(() => new Set(highlightNodeIds), [highlightNodeIds]);
   
   useEffect(() => {
     if (items && items.length > 0) {
-      const layout = generateGraphLayout(items);
-      setNodes(relayout(layout.nodes, layout.edges));
-      setEdges(softEdges(layout.edges));
+      const layout = {
+        nodes: items.map((item) => ({ id: item.id, type: "skillNode", position: { x: 0, y: 0 }, data: { label: item.concept_zh, status: item.status || "unknown" } })),
+        edges: items.flatMap((item) => (item.prerequisite || []).map((source) => ({ id: `${source}-${item.id}`, source, target: item.id, label: "prerequisite_of" }))),
+      };
+      setNodes(layoutCourseNodes(layout.nodes, layout.edges));
+      setEdges(layout.edges);
       return;
     }
     
     if (propNodes && propEdges) {
-      setNodes(relayout(propNodes, propEdges));
-      setEdges(softEdges(propEdges));
+      setNodes(layoutCourseNodes(propNodes, propEdges));
+      setEdges(propEdges);
       return;
     }
 
     // Canonical graph comes from the backend course pack; no local copy participates.
     if (courseId) {
+      const controller = new AbortController();
       setIsLoading(true);
+      setLoadError(false);
       const params = new URLSearchParams({ format: "react_flow" });
       if (scopeFilter) params.set("scope", scopeFilter);
       if (studentId) params.set("student_id", studentId);
 
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
-      fetch(`${apiBase}/api/courses/${courseId}/graph?${params.toString()}`)
+      fetch(`${apiBase}/api/courses/${courseId}/graph?${params.toString()}`, { signal: controller.signal })
         .then((res) => {
           if (!res.ok) throw new Error("Graph fetch failed");
           return res.json();
         })
         .then((data) => {
-          if (data.nodes && data.nodes.length > 0) {
-            const enriched = data.nodes.map((n: Node) => ({
-              ...n,
-              data: {
-                ...n.data,
-                isHighlighted: highlightSet.has(n.id),
-                isSelected: selectedNodeId === n.id,
-              }
-            }));
-            setNodes(relayout(enriched, data.edges || []));
-            setEdges(softEdges(data.edges || []));
+          if (data.nodes) {
+            if (controller.signal.aborted) return;
+            setNodes(layoutCourseNodes(data.nodes, data.edges || []));
+            setEdges(data.edges || []);
           }
         })
         .catch(() => {
+          if (controller.signal.aborted) return;
+          setLoadError(true);
           setNodes([]);
           setEdges([]);
         })
         .finally(() => {
-          setIsLoading(false);
+          if (!controller.signal.aborted) setIsLoading(false);
         });
+      return () => controller.abort();
     }
-  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, highlightSet, selectedNodeId, setNodes, setEdges]);
+  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, setNodes, setEdges]);
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNode }), []);
-
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -369,40 +163,48 @@ export function KnowledgeGraph({
     [onSelectNode]
   );
 
+  const focusId = hoveredId || selectedNodeId;
+  const neighbors = new Set(focusId ? [focusId] : []);
+  const degree = new Map<string, number>();
+  edges.forEach((edge) => {
+    degree.set(edge.source, (degree.get(edge.source) || 0) + 1);
+    degree.set(edge.target, (degree.get(edge.target) || 0) + 1);
+    if (edge.source === focusId) neighbors.add(edge.target);
+    if (edge.target === focusId) neighbors.add(edge.source);
+  });
+  const displayNodes: Node[] = nodes.map((node) => ({ ...node, data: { ...node.data,
+    degree: degree.get(node.id) || 0, isSelected: node.id === selectedNodeId,
+    isHovered: node.id === hoveredId, isHighlighted: highlightSet.has(node.id),
+    isDimmed: Boolean(focusId && !neighbors.has(node.id)),
+  } }));
+  const displayEdges: Edge[] = edges.map((edge) => {
+    const active = edge.source === focusId || edge.target === focusId;
+    return { ...edge, type: "straight", label: undefined, animated: false,
+      style: { stroke: active ? "var(--accent)" : "var(--text-muted)", strokeWidth: active ? 1.5 : 0.8,
+        opacity: focusId ? active ? 0.8 : 0.08 : 0.25 },
+    };
+  });
+
   return (
-    <div className={`w-full h-full border border-[var(--border-subtle)] rounded-[2rem] overflow-hidden bg-[#faf9f6] dark:bg-[#1a1a18] relative ${className || ''}`}>
-      {isLoading && (
-        <div className="absolute top-4 right-4 z-20 bg-white/80 dark:bg-black/80 px-3 py-1 rounded-full text-xs font-medium text-indigo-600 dark:text-indigo-400 shadow backdrop-blur">
-          正在载入课程图谱...
-        </div>
-      )}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={handleNodeClick}
+    <div ref={containerRef} className={`w-full h-full overflow-hidden bg-[var(--bg-primary)] relative ${className || ""}`}>
+      {isLoading && <div className="absolute top-4 left-4 z-20 text-xs text-[var(--text-muted)]">正在载入课程关系…</div>}
+      {loadError && <div className="absolute inset-0 z-20 grid place-items-center text-sm text-[var(--text-muted)]">课程图谱加载失败，请确认后端服务后刷新。</div>}
+      {!isLoading && !loadError && !nodes.length && <div className="absolute inset-0 grid place-items-center text-sm text-[var(--text-muted)]">此范围暂无课程节点。</div>}
+      <ReactFlow<Node, Edge>
+        nodes={displayNodes} edges={displayEdges}
+        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        nodesConnectable={false} onNodeClick={handleNodeClick}
+        onNodeMouseEnter={(_, node) => setHoveredId(node.id)}
+        onNodeMouseLeave={() => setHoveredId(null)}
         nodeTypes={nodeTypes}
-        onInit={(instance) => {
-          flowRef.current = instance;
-          instance.fitView({ padding: 0.15 });
-        }}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
-        className="dark:filter dark:invert-[.05]"
+        onInit={(instance) => { flowRef.current = instance; instance.fitView({ padding: 0.22, minZoom: 0.3, maxZoom: 1.2 }); }}
+        fitView fitViewOptions={{ padding: 0.22, minZoom: 0.3, maxZoom: 1.2 }}
+        minZoom={0.3} maxZoom={2.5}
+        proOptions={{ hideAttribution: true }}
       >
-        <Controls className="bg-white dark:bg-black border-[var(--border-subtle)] fill-[var(--text-primary)]" />
-        <MiniMap
-          nodeColor={(n) => {
-            if (n.data?.isHighlighted) return '#f43f5e'; // rose: case-match highlight
-            return getScopeStyle(n.data?.scope as string | undefined).minimap;
-          }}
-          className="bg-white/50 dark:bg-black/50 border-[var(--border-subtle)]"
-          maskColor="rgba(0,0,0,0.1)"
-        />
-        <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="var(--border-primary)" />
+        <Controls showInteractive={false} className="!shadow-none !border !border-[var(--border-subtle)] !rounded-lg !overflow-hidden" />
       </ReactFlow>
+      <div className="absolute bottom-5 right-5 pointer-events-none text-[11px] text-[var(--text-muted)]">关系数量决定圆点大小 · 拖动 / 缩放</div>
     </div>
   );
 }

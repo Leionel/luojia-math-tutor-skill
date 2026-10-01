@@ -41,7 +41,7 @@ export default function GraphPage() {
   const [matchError, setMatchError] = useState<string | null>(null);
   const requestId = useRef(0);
   const [matching, setMatching] = useState(false);
-  const [simOpen, setSimOpen] = useState(true);
+  const [simOpen, setSimOpen] = useState(false);
   const [highlightNodeIds, setHighlightNodeIds] = useState<string[]>([]);
   const [courseCases, setCourseCases] = useState<Array<{ case_id: string; title: string; task_type: string; accepted_variants: string[] }>>([]);
 
@@ -54,6 +54,8 @@ export default function GraphPage() {
 
   const handleRunMatch = (queryText: string) => {
     if (!queryText.trim()) return;
+    setSimOpen(true);
+    setSelectedNode(null);
     const current = ++requestId.current;
     setMatching(true);
     setMatchedCaseResult(null);
@@ -87,7 +89,7 @@ export default function GraphPage() {
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden">
       {/* Top Navigation */}
-      <header className="flex-shrink-0 h-16 px-4 sm:px-6 flex items-center justify-between glass-header relative z-30">
+      <header className="flex-shrink-0 min-h-16 py-3 px-4 sm:px-6 flex flex-wrap gap-3 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] relative z-30">
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/chat"
@@ -99,7 +101,7 @@ export default function GraphPage() {
           <div className="h-4 w-px bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2 text-olive-700 dark:text-olive-300">
             <Network className="w-4.5 h-4.5 text-olive-600 dark:text-olive-400" />
-            <h1 className="text-base font-bold font-title tracking-wide">课程知识图谱</h1>
+            <h1 className="text-sm font-medium">课程关系图</h1>
           </div>
         </div>
 
@@ -120,7 +122,8 @@ export default function GraphPage() {
             ].map((btn) => (
               <button
                 key={btn.label}
-                onClick={() => setScopeFilter(btn.value)}
+                aria-pressed={scopeFilter === btn.value}
+                onClick={() => { setScopeFilter(btn.value); setSelectedNode(null); }}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                   scopeFilter === btn.value
                     ? btn.active
@@ -137,7 +140,8 @@ export default function GraphPage() {
       {/* Main Graph Area */}
       <div className="flex-1 relative flex overflow-hidden">
         {/* React Flow Graph */}
-        <main className="flex-1 relative bg-[var(--bg-primary)]">
+        <main className="flex-1 min-w-0 min-h-0 relative flex flex-col lg:flex-row bg-[var(--bg-primary)]">
+          <div className="flex-1 min-w-0 min-h-0 relative">
           <KnowledgeGraph
             courseId={courseId}
             scopeFilter={scopeFilter}
@@ -147,15 +151,18 @@ export default function GraphPage() {
             className="w-full h-full border-0 rounded-none bg-transparent"
           />
 
+          </div>
+
           {/* Teaching Case simulator: docked and collapsible so the canvas keeps the stage */}
-          <div className="absolute top-4 left-4 z-10 w-80 max-w-[calc(100vw-2rem)] bg-[var(--bg-overlay)] backdrop-blur-md rounded-xl border border-[var(--border-subtle)] shadow-lg transition-all">
+          <div className="order-first shrink-0 w-full lg:w-64 max-h-[38vh] lg:max-h-none overflow-y-auto bg-[var(--bg-secondary)] border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)]">
             <div className="flex items-center justify-between px-4 py-2.5">
               <button
+                aria-expanded={simOpen}
                 onClick={() => setSimOpen(!simOpen)}
                 className="flex items-center gap-1.5 text-xs font-bold text-olive-600 dark:text-olive-400"
               >
                 <Sparkles className="w-4 h-4 text-olive-500" />
-                <span>问法仿真器</span>
+                <span>问题定位</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${simOpen ? "" : "-rotate-90"}`} />
               </button>
               {matchedCaseResult && (
@@ -168,6 +175,10 @@ export default function GraphPage() {
               )}
             </div>
 
+            <div className="hidden lg:block px-4 pb-5 text-xs text-[var(--text-muted)] space-y-3">
+              <p>每个圆点是一项课程知识。点选节点查看内容，悬停聚焦相邻关系。</p>
+              <div className="flex gap-4"><span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-[var(--text-muted)]" />核心</span><span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-dai-500" />前置</span><span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-ochre-500" />拓展</span></div>
+            </div>
             {simOpen && (
             <div className="px-4 pb-4">
             <div className="relative mb-2">
@@ -176,7 +187,7 @@ export default function GraphPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleRunMatch(searchQuery)}
-                placeholder="输入学生问句测试案例匹配与图谱锚点..."
+                placeholder="输入问题，定位相关知识…"
                 className="w-full pl-8 pr-16 py-1.5 text-xs bg-[var(--bg-tertiary)] rounded-lg border border-transparent focus:border-olive-500 focus:outline-none"
               />
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--text-muted)]" />
@@ -234,7 +245,7 @@ export default function GraphPage() {
 
         {/* Right Slide-Over Node Detail Drawer */}
         {selectedNode && (
-          <aside className="w-96 md:w-[450px] flex-shrink-0 border-l border-[var(--border-subtle)] bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-20 transition-all">
+          <aside className="absolute inset-y-0 right-0 w-[min(100%,384px)] lg:relative lg:w-80 flex-shrink-0 border-l border-[var(--border-subtle)] bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-20 transition-all">
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between">
@@ -249,11 +260,10 @@ export default function GraphPage() {
                      selectedNode.data.scope === "prerequisite" ? "微积分前置" :
                      selectedNode.data.scope === "extension" ? "课程拓展" : "未分类 · 待教师审核"}
                   </span>
-                  <span className="text-[10px] bg-[var(--bg-tertiary)] px-2 py-0.5 rounded text-slate-500 font-mono">
-                    ID: {selectedNode.id}
-                  </span>
+
                 </div>
                 <button
+                  aria-label="关闭知识点详情"
                   onClick={() => setSelectedNode(null)}
                   className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--text-muted)] hover:text-slate-600"
                 >
@@ -268,7 +278,7 @@ export default function GraphPage() {
                 </h2>
                 {/* Meta tags */}
                 <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-[var(--text-muted)] pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span>类型: <strong className="text-slate-700 dark:text-slate-200">{selectedNode.data.unit_type}</strong></span>
+                  <span>类型: <strong className="text-slate-700 dark:text-slate-200">{({ concept: "概念", algorithm: "算法", theorem: "定理", definition: "定义", counterexample: "反例", misconception: "易错点" } as Record<string, string>)[String(selectedNode.data.unit_type)] || "知识点"}</strong></span>
                   <span>难度: <strong className="text-amber-500 dark:text-amber-400">★{selectedNode.data.difficulty || 2}</strong></span>
                   <span>掌握度: <strong className="text-emerald-600 dark:text-emerald-400">{selectedNode.data.mastery != null ? `${Math.round(selectedNode.data.mastery * 100)}%` : "未评估"}</strong></span>
                 </div>
@@ -278,7 +288,7 @@ export default function GraphPage() {
               {selectedNode.data.latex && (
                 <div className="bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/40 dark:from-indigo-950/60 dark:via-slate-800/80 dark:to-indigo-950/40 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-800/80 shadow-sm">
                   <span className="text-[10px] font-mono text-olive-600 dark:text-olive-400 uppercase tracking-wider font-semibold block mb-1 flex items-center gap-1">
-                    <Calculator className="w-3.5 h-3.5" /> 数学表达式 / 递推公理
+                    <Calculator className="w-3.5 h-3.5" /> 数学表达式
                   </span>
                   <div className="py-1 text-center overflow-x-auto">
                     <MathView math={selectedNode.data.latex} display={true} className="text-sm font-serif text-indigo-950 dark:text-indigo-100" />
@@ -355,7 +365,7 @@ export default function GraphPage() {
                 <div>
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-olive-500 dark:text-indigo-400" />
-                    关联 Teaching Cases 教学案例
+                    相关教学案例
                   </h3>
                   <div className="space-y-1.5">
                     {selectedNode.data.cases.map((cId: string) => {
@@ -370,7 +380,7 @@ export default function GraphPage() {
                             {caseItem ? caseItem.title : cId}
                           </div>
                           <div className="text-[11px] text-[var(--text-muted)]">
-                            {caseItem?.task_type} · 点击测试问法仿真
+                            {({ concept_explanation: "概念理解", convergence_analysis: "收敛分析", derivation: "公式推导", error_debugging: "错误排查", code_task: "代码实践" } as Record<string, string>)[caseItem?.task_type || ""] || "教学问题"} · 查看相关问题
                           </div>
                         </div>
                       );
@@ -386,7 +396,7 @@ export default function GraphPage() {
                 href={`/chat`}
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-olive-700 text-white rounded-xl text-xs font-semibold shadow transition-colors"
               >
-                在对话中以此知识点提问
+                返回对话继续学习
               </Link>
             </div>
           </aside>

@@ -235,3 +235,9 @@ Next.js 14.2.35 → 16.3.8，React/React DOM 与类型依赖同步19.3.0，`esli
 - 验收：npm test API329 / Web17 / 知识JSON通过；Next16.3.8构建、typecheck通过；lint0错误/10已有警告。真实浏览器核验匹配与追问，截图results/m0-m1/graph-match.png。日志results/m0-m1-full-test.log、m0-m1-web-check.log。开发服务3000/8000恢复，未远端CI或部署。
 - 提交：e23da77 M0；1db7739 M1+前轮Prompt/搜索；27dd51a 228题基准；923ab3a 移动/公式与匹配UI；dee8c24 Next/React工具链；最终文档与格式收尾另批。未push；密钥、DB、results、egg-info与public原型不提交。
 - 尚未完成：教师抽查61失败与歧义gold、材料少量审核、M2受控诊断Oracle/修订重验、事件链。图谱种子二分法公式已有孤立right定界符；本轮保持种子哈希，不能称全部图谱公式已修复。公开Case接口答案字段权限需M2前梳理，UI隐藏不等于接口隔离。
+
+### 同轮追加：Obsidian 风格课程关系图
+
+用户对原长带图谱与随后卡片网格均不满意，最终改为圆点/细线、确定性有界力导向布局、关联数量映射大小、悬停/选中突出邻域；不改课程数据与语义，不伪装学习路径或掌握度。去掉网格背景/缩略图/编辑连线，将内容与公式收进侧栏，问题定位默认折叠。修复高亮/选中重载图与拖动回位，取消旧范围请求，尺寸变化自动适配。官方参考 https://obsidian.md/help/plugins/graph；执行UI Design技能的Build模式。
+
+最新npm test API329/Web20/知识JSON通过；新增3项验证节点有限且分离、顺序稳定、环路/缺失端点容错。构建/typecheck通过，lint0错误/10已有警告。桌面/390px移动端与节点详情/问题定位浏览器验收见results/m0-m1/graph-obsidian-*.png，测试日志results/graph-ui-*.log。此UI另批提交，未push；公开Case答案接口隔离、教师gold与M2仍待推进。
