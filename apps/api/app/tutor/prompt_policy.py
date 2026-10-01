@@ -3,8 +3,8 @@ from pathlib import Path
 from app.tutor.hint_policy import HintLevel
 from app.tutor.intent_router import Intent
 
-REFERENCE_FILES = ("interactive-tutoring.md", "math-tools-guidelines.md", "knowledge-base-usage.md")
-PROMPT_VERSION = "teaching-v2.1"
+REFERENCE_FILES = ("interactive-tutoring.md", "math-tools-guidelines.md", "knowledge-base-usage.md", "visual-artifacts.md")
+PROMPT_VERSION = "teaching-v2.2"
 
 def load_teaching_prompt(skill_file: Path) -> str:
     sections = [skill_file.read_text(encoding="utf-8")]
