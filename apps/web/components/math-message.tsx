@@ -1,5 +1,6 @@
 "use client";
 
+import type { WebSearchReport } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { LatexRenderer } from "./latex-renderer";
 import { ReviewCard, type ReviewData } from "./review-card";
@@ -264,6 +265,7 @@ export function MathMessage({
   thinkingChain = "",
   thinkingSummary,
   thinkingElapsedMs,
+  webSearchReport,
   reviewData,
   onSimilar,
   onEdit,
@@ -277,6 +279,7 @@ export function MathMessage({
   thinkingChain?: string;
   thinkingSummary?: string;
   thinkingElapsedMs?: number;
+  webSearchReport?: WebSearchReport;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
@@ -400,6 +403,22 @@ export function MathMessage({
                 !isUser && "tracking-[0.01em]"
               )}
             >
+              {webSearchReport && webSearchReport.status !== "disabled" && (
+                <div className="mb-3 rounded-lg border border-[var(--border-subtle)] p-3 text-xs text-[var(--text-secondary)]" role="status">
+                  <p>{webSearchReport.status === "success"
+                    ? `联网检索返回 ${webSearchReport.result_count} 条摘要，尚未核验全文与发布日期。`
+                    : webSearchReport.status === "timeout" ? "联网检索超时，本轮未完成事实核实。"
+                    : webSearchReport.status === "empty" ? "联网检索未返回可用结果，本轮未完成事实核实。"
+                    : "联网检索服务暂不可用，本轮未完成事实核实。"}</p>
+                  {webSearchReport.sources?.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {webSearchReport.sources.filter((source) => /^https?:\/\//i.test(source.url)).map((source) => (
+                        <li key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer" className="text-olive-700 dark:text-olive-300 underline underline-offset-2 break-words">[{source.id}] {source.title}</a></li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               <LatexRenderer content={content} />
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">

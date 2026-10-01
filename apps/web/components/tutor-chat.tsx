@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import type { Message, Subject, TutorMeta, TutorMode } from "@/lib/api";
+import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode } from "@/lib/api";
 import type { ReviewData } from "./review-card";
 import { createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
@@ -125,7 +125,15 @@ export function TutorChat() {
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const [webSearch, setWebSearch] = useState(false);
+  const [webSearch, setWebSearch] = useState<WebSearchMode>("auto");
+  useEffect(() => {
+    const stored = window.localStorage.getItem("luojia_web_search_mode");
+    if (stored === "auto" || stored === "on" || stored === "off") setWebSearch(stored);
+  }, []);
+  function changeWebSearch(value: WebSearchMode) {
+    setWebSearch(value);
+    window.localStorage.setItem("luojia_web_search_mode", value);
+  }
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffortLevel>("medium");
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
@@ -179,7 +187,7 @@ export function TutorChat() {
 
   const status = useMemo(() => {
     if (!meta) return undefined;
-    const verification = meta.awaiting_confirmation ? "等待题目核对" : meta.verification_kind === "llm_review" ? "推理审查意见" : meta.verified ? "已完成本步检查" : "未完成本步检查";
+    const verification = meta.awaiting_confirmation ? "等待题目核对" : meta.verification_kind === "llm_review" ? "推理审查意见" : meta.verified ? "已完成本步检查" : meta.verification_kind === "none" ? "本轮无需步骤检查" : "未完成本步检查";
     return `${verification} · ${mode === "direct" ? "直接讲解" : mode === "practice" ? "练习模式" : "引导模式"}`;
   }, [meta, mode]);
 
@@ -391,11 +399,12 @@ export function TutorChat() {
           requested_hint: requestedHint,
           image_urls: imageUrls,
           abortSignal: abortControllerRef.current.signal,
-          web_search: webSearch,
+          web_search_mode: webSearch,
           reasoning_effort: reasoningEffort,
         },
         (nextMeta) => {
           setMeta(nextMeta);
+          setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, learningMeta: nextMeta } : message));
         },
         (token) => {
           setMessages((current) =>
@@ -740,6 +749,7 @@ export function TutorChat() {
                     isThinking={message.status === "thinking" && isStreaming}
                     thinkingElapsed={thinkingElapsed}
                     thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
+                    webSearchReport={message.learningMeta?.web_search}
                     thinkingSummary={message.thinkingSummary}
                     thinkingElapsedMs={message.thinkingElapsedMs}
                     reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
@@ -857,7 +867,7 @@ export function TutorChat() {
               mode={mode}
               onModeChange={setMode}
               webSearch={webSearch}
-              onWebSearchChange={setWebSearch}
+              onWebSearchChange={changeWebSearch}
               reasoningEffort={reasoningEffort}
               onReasoningEffortChange={setReasoningEffort}
               onSubmit={(val, forcedMode, images) => void submit(val, forcedMode, false, images)}

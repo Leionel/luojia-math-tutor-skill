@@ -33,7 +33,7 @@ export function TutorInput({
   placeholder,
   mode,
   onModeChange,
-  webSearch = false,
+  webSearch = "auto",
   onWebSearchChange,
   reasoningEffort = "medium",
   onReasoningEffortChange,
@@ -48,8 +48,8 @@ export function TutorInput({
   placeholder?: string;
   mode: TutorMode;
   onModeChange: (mode: TutorMode) => void;
-  webSearch?: boolean;
-  onWebSearchChange?: (val: boolean) => void;
+  webSearch?: "auto" | "on" | "off";
+  onWebSearchChange?: (val: "auto" | "on" | "off") => void;
   reasoningEffort?: ReasoningEffortLevel;
   onReasoningEffortChange?: (val: ReasoningEffortLevel) => void;
 }) {
@@ -605,21 +605,22 @@ export function TutorInput({
 
             <div className="w-px h-3.5 bg-[var(--border-subtle)] mx-0.5" />
 
-            {/* 联网检索开关 */}
-            <button
-              type="button"
-              onClick={() => onWebSearchChange?.(!webSearch)}
-              className={`inline-flex items-center gap-1 h-10 sm:h-8 px-2 sm:px-3 rounded-full text-xs font-semibold transition-all border ${
-                webSearch
-                  ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20"
-                  : "text-[var(--text-secondary)] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 border-transparent"
-              }`}
-              title={webSearch ? "已开启联网探微 (结合网络题库与最新学术推导)" : "点击开启联网检索"}
-            >
-              <Globe className={`w-3.5 h-3.5 ${webSearch ? "text-emerald-600 dark:text-emerald-400 animate-pulse" : "text-[var(--text-tertiary)]"}`} />
-              <span className="sm:hidden">联网</span><span className="hidden sm:inline">联网探微</span>
-              {webSearch && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
-            </button>
+            <label className="inline-flex items-center gap-1 min-h-12 sm:min-h-8 px-2 text-sm sm:text-xs text-[var(--text-secondary)]">
+              <Globe className="w-3.5 h-3.5 text-olive-600" />
+              <select
+                aria-label="联网检索模式"
+                name="web_search_mode"
+                disabled={disabled}
+                value={webSearch}
+                onChange={(event) => onWebSearchChange?.(event.target.value as "auto" | "on" | "off")}
+                className="max-w-32 min-h-12 sm:min-h-8 bg-transparent rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-olive-600"
+                title="自动：新闻和时效问题触发检索；开启：每轮检索；关闭：不联网"
+              >
+                <option value="auto">联网：自动</option>
+                <option value="on">联网：开启</option>
+                <option value="off">联网：关闭</option>
+              </select>
+            </label>
 
             {/* 运思推演深度开关 */}
             <div className="relative">

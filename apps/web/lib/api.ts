@@ -24,7 +24,16 @@ export type Message = {
   learning_meta?: TutorMeta | null;
 };
 
+export type WebSearchMode = "auto" | "on" | "off";
+export type WebSearchReport = {
+  status: "disabled" | "success" | "empty" | "error" | "timeout";
+  reason?: string;
+  result_count: number;
+  sources: Array<{ id: string; title: string; url: string; provider: string }>;
+};
+
 export type TutorMeta = {
+  web_search?: WebSearchReport;
   awaiting_confirmation?: boolean;
   vision_draft?: string;
   verification_kind?: "symbolic" | "llm_review" | "none";
@@ -248,6 +257,7 @@ export async function streamTutor(
     abortSignal?: AbortSignal;
     image_urls?: string[];
     web_search?: boolean;
+    web_search_mode?: WebSearchMode;
     reasoning_effort?: "off" | "low" | "medium" | "high" | "max";
   },
   onMeta: (meta: TutorMeta) => void,
