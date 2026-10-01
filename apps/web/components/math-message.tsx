@@ -169,7 +169,7 @@ function ThinkingProgressBanner({
                       </span>
                     </div>
                     <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
-                      <LatexRenderer content={step.content} />
+                      <LatexRenderer content={step.content} complete={false} />
                     </div>
                   </div>
                 ))}
@@ -240,7 +240,7 @@ function ThinkingSummaryView({
                         </span>
                       </div>
                       <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
-                        <LatexRenderer content={step.content} />
+                        <LatexRenderer content={step.content} complete={true} />
                       </div>
                     </div>
                   ))
@@ -261,6 +261,7 @@ export function MathMessage({
   content,
   status,
   isThinking = false,
+  isGenerating = false,
   thinkingElapsed = 0,
   thinkingChain = "",
   thinkingSummary,
@@ -275,6 +276,7 @@ export function MathMessage({
   content: string;
   status?: string;
   isThinking?: boolean;
+  isGenerating?: boolean;
   thinkingElapsed?: number;
   thinkingChain?: string;
   thinkingSummary?: string;
@@ -419,7 +421,7 @@ export function MathMessage({
                   )}
                 </div>
               )}
-              <LatexRenderer content={content} />
+              <LatexRenderer content={content} complete={!isGenerating && !isThinking} />
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
                   <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />

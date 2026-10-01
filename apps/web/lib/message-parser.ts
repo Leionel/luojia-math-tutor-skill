@@ -72,10 +72,10 @@ export type Block =
   | { type: "hr" }
   | { type: "br" }
   | { type: "display-math"; content: string }
-  | { type: "code-block"; language: string; content: string }
+  | { type: "code-block"; language: string; content: string; closed: boolean }
   | { type: "plot"; function: string; domain?: string }
   | { type: "bilibili-search"; keyword: string }
-  | { type: "html"; content: string }
+  | { type: "html"; content: string; closed: boolean }
   | { type: "paragraph"; lines: string[] };
 
 export function parseBlocks(lines: string[]): Block[] {
@@ -158,16 +158,17 @@ export function parseBlocks(lines: string[]): Block[] {
           i++;
         }
       }
-    } else if (line.startsWith("```")) {
-      const language = line.slice(3).trim();
+    } else if (/^ {0,3}```/.test(line)) {
+      const language = line.trimStart().slice(3).trim();
       const codeLines: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
+      while (i < lines.length && !/^ {0,3}```/.test(lines[i])) {
         codeLines.push(lines[i]);
         i++;
       }
-      if (i < lines.length) i++;
-      blocks.push({ type: "code-block", language, content: codeLines.join("\n") });
+      const closed = i < lines.length;
+      if (closed) i++;
+      blocks.push({ type: "code-block", language, content: codeLines.join("\n"), closed });
     } else if (line.trim() === "") {
       blocks.push({ type: "br" });
       i++;
@@ -186,11 +187,20 @@ export function parseBlocks(lines: string[]): Block[] {
       i++;
     } else if (/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(line.trim())) {
       const htmlLines: string[] = [];
-      while (i < lines.length && lines[i].trim() !== "") {
-        htmlLines.push(lines[i]);
-        i++;
+      const root = line.trim().match(/^<([a-z][a-z0-9]*)\b/i)?.[1];
+      let depth = 0;
+      let closed = false;
+      while (i < lines.length) {
+        if (htmlLines.length && /^(#{1,6} |```|<plot |<bilibili-search )/.test(lines[i].trim())) break;
+        const current = lines[i++];
+        htmlLines.push(current);
+        if (root) {
+          const tags = current.match(new RegExp(`<\\/?${root}\\b[^>]*>`, "gi")) || [];
+          for (const tag of tags) depth += tag.startsWith("</") ? -1 : tag.endsWith("/>") ? 0 : 1;
+          if (depth <= 0) { closed = true; break; }
+        } else break;
       }
-      blocks.push({ type: "html", content: htmlLines.join("\n") });
+      blocks.push({ type: "html", content: htmlLines.join("\n"), closed });
     } else {
       const paragraphLines: string[] = [];
       while (
@@ -207,7 +217,8 @@ export function parseBlocks(lines: string[]): Block[] {
         !lines[i].startsWith("***") &&
         !/^\\\[/.test(lines[i].trim()) &&
         !/^\$\$/.test(lines[i].trim()) &&
-        !lines[i].startsWith("```") &&
+        !/^ {0,3}```/.test(lines[i]) &&
+        !/^<(?:plot|bilibili-search)\s/i.test(lines[i].trim()) &&
         !/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(lines[i].trim()) &&
         lines[i].trim() !== ""
       ) {

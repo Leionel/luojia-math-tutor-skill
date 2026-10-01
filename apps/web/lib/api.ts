@@ -95,7 +95,7 @@ export type MasteryItem = {
   updated_at: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "./api-base";
 
 function headers(json = false, userApiKey?: string | null): Record<string, string> {
   return {

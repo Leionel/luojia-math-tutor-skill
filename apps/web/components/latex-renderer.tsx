@@ -2,59 +2,27 @@
 
 import katex from "katex";
 import { parseLatex, parseBlocks, type Block } from "@/lib/message-parser";
-import { Copy, Check, Eye, Code } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
-import { sanitizeHtmlBlock } from "@/lib/html-sanitize";
+import { StaticArtifact } from "./static-artifact";
+import { resolveAnswerImage, API_BASE } from "@/lib/api-base";
 import { balancedLatex } from "@/lib/latex-balance";
 import { SourceSpanCard } from "./source-span-card";
 
-function CodeBlock({ language, content }: { language: string; content: string }) {
-  const [copied, setCopied] = useState(false);
-  const [mode, setMode] = useState<"code" | "preview">("preview");
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  
-  const isHtml = language?.toLowerCase() === "html" || language?.toLowerCase() === "xml";
-
-  return (
-    <div className="my-4 rounded-xl overflow-hidden bg-[#0d1117] border border-[#30363d] shadow-lg">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{language || "text"}</span>
-          {isHtml && (
-            <div className="flex items-center bg-[#0d1117] rounded p-0.5 border border-[#30363d]">
-               <button onClick={() => setMode("preview")} className={`px-2 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${mode === "preview" ? "bg-[#21262d] text-cyan-400 font-medium" : "text-slate-500 hover:text-slate-300"}`}>
-                 <Eye className="w-3.5 h-3.5"/> Preview
-               </button>
-               <button onClick={() => setMode("code")} className={`px-2 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${mode === "code" ? "bg-[#21262d] text-cyan-400 font-medium" : "text-slate-500 hover:text-slate-300"}`}>
-                 <Code className="w-3.5 h-3.5"/> Source
-               </button>
-            </div>
-          )}
-        </div>
-        <button onClick={handleCopy} className="text-slate-400 hover:text-slate-200 transition-colors" title="Copy code">
-          {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-        </button>
-      </div>
-      {isHtml && mode === "preview" ? (
-        <iframe 
-          className="w-full bg-white border-none min-h-[300px]" 
-          sandbox="allow-scripts" 
-          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${content}</body></html>`} 
-          title="HTML Preview"
-        />
-      ) : (
-        <div className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed text-slate-300 selection:bg-cyan-500/30">
-          <pre><code>{content}</code></pre>
-        </div>
-      )}
-    </div>
-  );
+function CodeBlock({ language, content, ready }: { language: string; content: string; ready: boolean }) {
+  if (["html", "svg"].includes(language.toLowerCase())) return <StaticArtifact content={content} ready={ready} />;
+  return <div className="my-3 rounded-lg border border-[var(--border-subtle)] overflow-hidden"><div className="px-3 py-1 text-xs">{language || "text"}</div><pre className="p-3 overflow-auto text-xs whitespace-pre"><code>{content}</code></pre></div>;
+}
+function AnswerImage({ source, alt }: { source: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  const [requested, setRequested] = useState(false);
+  const src = resolveAnswerImage(source);
+  if (!src || failed) return <span role="status">图片不可用：{alt || "未命名图片"}</span>;
+  const external = new URL(src).origin !== new URL(API_BASE).origin;
+  if (external && !requested) return <span className="block"><button type="button" className="rounded border px-3 py-2 text-xs" onClick={() => setRequested(true)}>加载外部图片：{alt || new URL(src).hostname}</button> <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs underline">图片来源</a></span>;
+  return <span className="block"><img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="max-w-full h-auto rounded-lg" /><a href={src} target="_blank" rel="noopener noreferrer" className="text-xs underline">图片来源</a></span>;
 }
 
 function renderLatex(value: string, displayMode = false) {
@@ -157,10 +125,7 @@ function renderMarkdownInline(text: string): React.ReactNode {
     } else if (imageIndex === minIndex && imageMatch) {
       const before = remaining.slice(0, imageIndex);
       if (before) parts.push(<span key={key++}>{before}</span>);
-      const imgSrc = imageMatch[2].startsWith("/api") ? `http://127.0.0.1:8000${imageMatch[2]}` : imageMatch[2];
-      parts.push(
-        <img key={key++} src={imgSrc} alt={imageMatch[1]} className="max-w-full rounded-lg border border-[var(--border-subtle)] shadow-sm my-2 object-cover" />
-      );
+      parts.push(<AnswerImage key={key++} source={imageMatch![2]} alt={imageMatch![1]} />);
       remaining = remaining.slice(imageIndex + imageMatch[0].length);
     } else if (linkIndex === minIndex && linkMatch) {
       const before = remaining.slice(0, linkIndex);
@@ -213,7 +178,7 @@ function InlineLatex({ content }: { content: string }) {
   );
 }
 
-function renderBlock(block: Block, blockIndex: number): React.ReactNode {
+function renderBlock(block: Block, blockIndex: number, complete: boolean): React.ReactNode {
   switch (block.type) {
     case "table":
       return <div key={`table-${blockIndex}`} className="my-3 max-w-full overflow-x-auto"><table className="w-full border-collapse text-sm">
@@ -277,21 +242,13 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
     case "display-math":
       return <MathDisplayBlock key={`dm-${blockIndex}`} content={block.content} />;
     case "code-block":
-      return <CodeBlock key={`cb-${blockIndex}`} language={block.language} content={block.content} />;
+      return <CodeBlock key={`cb-${blockIndex}`} language={block.language} content={block.content} ready={complete && block.closed} />;
     case "plot":
       return <MathPlot key={`plot-${blockIndex}`} function={block.function} domain={block.domain} />;
     case "bilibili-search":
       return <VideoRecommend key={`bili-${blockIndex}`} keyword={block.keyword} />;
-    case "html": {
-      const safeContent = sanitizeHtmlBlock(block.content);
-      return (
-        <div 
-          key={`html-${blockIndex}`} 
-          className="my-3 overflow-x-auto html-container"
-          dangerouslySetInnerHTML={{ __html: safeContent }} 
-        />
-      );
-    }
+    case "html":
+      return <StaticArtifact key={`html-${blockIndex}`} content={block.content} ready={complete && block.closed} />;
     case "paragraph":
       return (
         <p key={`p-${blockIndex}`} className="my-1">
@@ -308,11 +265,11 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
   }
 }
 
-export function LatexRenderer({ content }: { content: string }) {
+export function LatexRenderer({ content, complete = true }: { content: string; complete?: boolean }) {
   const blocks = parseBlocks(content.split("\n"));
   return (
     <div className="message-prose min-w-0 max-w-full break-words whitespace-pre-wrap leading-7">
-      {blocks.map((block, blockIndex) => renderBlock(block, blockIndex))}
+      {blocks.map((block, blockIndex) => renderBlock(block, blockIndex, complete))}
     </div>
   );
 }

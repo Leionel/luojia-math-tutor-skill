@@ -34,3 +34,11 @@ test("Markdown tables support math and escaped cell separators", () => {
   assert.deepEqual(splitTableRow('| $x$ | a\\|b |'), ['$x$', 'a|b']);
   assert.deepEqual(parseBlocks(['| 变量 | 意义 |', '| :--- | ---: |', '| $x$ | 坐标 |']), [{type:'table',headers:['变量','意义'],rows:[['$x$','坐标']]}]);
 });
+
+test("visual blocks have explicit completion and cannot swallow following Markdown", () => {
+  const blocks = parseBlocks(["prose", '<plot function="x" />', '<bilibili-search keyword="math" />', '<svg viewBox="0 0 10 10">', '<circle r="2"/>', '</svg>', '## heading', 'tail']);
+  assert.deepEqual(blocks.map(b => b.type), ["paragraph", "plot", "bilibili-search", "html", "h2", "paragraph"]);
+  assert.equal((blocks[3] as {closed:boolean}).closed, true);
+  assert.equal((parseBlocks(['  ```html', '<div>unfinished'])[0] as {closed:boolean}).closed, false);
+  assert.equal((parseBlocks(['```svg', '<svg/>', '```'])[0] as {closed:boolean}).closed, true);
+});

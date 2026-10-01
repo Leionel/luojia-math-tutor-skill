@@ -621,7 +621,7 @@ export function TutorChat() {
                       </div>
                     ) : (
                       <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
-                        <LatexRenderer content={noteContent} />
+                        <LatexRenderer content={noteContent} complete={!isStreaming} />
                       </div>
                     )}
                   </div>
@@ -746,6 +746,7 @@ export function TutorChat() {
                     role={message.role}
                     content={message.content}
                     status={message.role === "assistant" && message.status !== "thinking" ? status : undefined}
+                    isGenerating={isStreaming && idx === messages.length - 1 && message.role === "assistant"}
                     isThinking={message.status === "thinking" && isStreaming}
                     thinkingElapsed={thinkingElapsed}
                     thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}

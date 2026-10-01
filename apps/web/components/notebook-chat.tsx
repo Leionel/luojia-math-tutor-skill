@@ -126,6 +126,7 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
               key={m.id}
               content={m.content}
               role={m.role}
+              isGenerating={isStreaming && (m.status === "thinking" || m.status === "typing")}
               isThinking={m.status === "thinking"}
               thinkingSummary={m.thinking_summary}
               thinkingElapsedMs={m.thinking_elapsed_ms}
