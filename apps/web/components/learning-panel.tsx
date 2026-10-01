@@ -99,7 +99,8 @@ type Mistake = {
 
 function verificationLabel(meta: TutorMeta | null) {
   if (!meta) return "尚未开始";
-  if (!meta.verified) return "本轮无需验算";
+  if (!meta.verified) return "未完成本步检查";
+  if (meta.verification_kind === "llm_review") return meta.is_correct ? "模型复核通过" : "模型复核发现偏差";
   return meta.is_correct ? "验算正确" : "发现偏差";
 }
 
@@ -142,7 +143,6 @@ export function LearningPanel({
   meta: TutorMeta | null;
   mistakes: Mistake[];
 }) {
-  const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"radar" | "graph">("radar");
   const [overallMastery, setOverallMastery] = useState<MasteryItem[]>([]);
   const [previousAverage, setPreviousAverage] = useState<number | null>(null);
@@ -255,7 +255,7 @@ export function LearningPanel({
             </span>
           </div>
           <div className="flex items-center justify-between gap-3 text-[13px]">
-            <span className="text-[var(--text-muted)]">后台严谨验算</span>
+            <span className="text-[var(--text-muted)]">本步检查</span>
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold",
@@ -282,11 +282,11 @@ export function LearningPanel({
             </div>
           )}
 
-          {meta?.mastery_score !== undefined && (
+          {meta?.verified && !!meta.concepts?.length && meta.mastery_score !== undefined && (
             <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
-                  考点掌握度评级
+                  考点掌握度估计
                 </div>
                 <div className="text-base font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(meta.mastery_score * 100)}%
@@ -427,28 +427,8 @@ export function LearningPanel({
   );
 
   return (
-    <>
-      <button
-        className="fixed bottom-24 right-4 z-40 flex items-center justify-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-lg transition-colors xl:hidden"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Brain className="h-4 w-4 text-brand" />
-        学习面板
-      </button>
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm xl:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside
-        className={cn(
-          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-l border-[var(--border-primary)] bg-gray-50 p-6 transition-transform duration-300 dark:bg-[var(--bg-sidebar)] xl:static xl:h-full xl:w-full xl:translate-x-0",
-          open ? "translate-x-0 shadow-2xl" : "translate-x-full",
-        )}
-      >
-        {content}
-      </aside>
-    </>
+    <aside className="h-full w-full min-h-0 overflow-y-auto border-l border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-6">
+      {content}
+    </aside>
   );
 }

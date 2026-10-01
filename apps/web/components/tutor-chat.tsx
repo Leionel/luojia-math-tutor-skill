@@ -11,10 +11,13 @@ import { ConfirmDialog } from "./confirm-dialog";
 import { LearningPanel } from "./learning-panel";
 import { MathMessage } from "./math-message";
 import { Sidebar } from "./sidebar";
+import { MobileDrawer } from "./mobile-drawer";
 import { TutorInput } from "./tutor-input";
 import { LatexRenderer } from "./latex-renderer";
 import { ZenOverlay } from "./zen-overlay";
 import { Button } from "./ui/button";
+import { GlobalSearchModal } from "./global-search-modal";
+import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
 
 type LocalMessage = {
@@ -52,8 +55,8 @@ const welcome = `### 欢迎来到珞珈数智助教
 你可以随时与我探讨**高等数学**、**线性代数**或**概率论与数理统计**的问题。
 
 #### ✨ 核心功能指南
-- **🎓 启发式教学**：我不会直接告诉你答案，而是以苏格拉底式的提问引导你思考。你可以点击右下角的“直接解答”切换模式。
-- **📊 实时掌握度追踪**：在右侧的学习面板，你可以看到每个知识点的精确掌握度，如同草木生长般清晰可见。
+- **🎓 启发式教学**：默认用提问引导你思考；也可以在输入区切换“直接讲解”，查看完整推导。
+- **📊 实时掌握度追踪**：在右侧的学习面板，你可以查看已评估知识点的掌握度估计；它会随解题记录更新。
 - **📝 自动错题本**：推导中的谬误会被自动记录成册，随时从侧边栏的“全局错题本”回顾并生成针对性练习。
 - **🎨 动态可视化**：你可以随时对我说“帮我画出 $y = x^2$ 的图像”或者“画出正态分布的图像”，抽象的数学将在水墨之间展现。
 
@@ -108,6 +111,7 @@ export function TutorChat() {
   const [thinkingElapsed, setThinkingElapsed] = useState(0);
   const [thinkingChains, setThinkingChains] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
+  const [visionDraft, setVisionDraft] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
   const [noteContent, setNoteContent] = useState("");
@@ -120,6 +124,22 @@ export function TutorChat() {
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const [webSearch, setWebSearch] = useState(false);
+  const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffortLevel>("medium");
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+
+  // Ctrl+K 全局搜索快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsGlobalSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
@@ -137,6 +157,7 @@ export function TutorChat() {
     localStorage.setItem("luojia_sidebar_collapsed", String(collapsed));
   };
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
+  const [isLearningCollapsed, setIsLearningCollapsed] = useState(false);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -158,7 +179,8 @@ export function TutorChat() {
 
   const status = useMemo(() => {
     if (!meta) return undefined;
-    return `${meta.verified ? "已后台验算" : "未完成后台验算"} · ${mode === "direct" ? "直接讲解" : mode === "practice" ? "练习模式" : "引导模式"}`;
+    const verification = meta.awaiting_confirmation ? "等待题目核对" : meta.verification_kind === "llm_review" ? "推理审查意见" : meta.verified ? "已完成本步检查" : "未完成本步检查";
+    return `${verification} · ${mode === "direct" ? "直接讲解" : mode === "practice" ? "练习模式" : "引导模式"}`;
   }, [meta, mode]);
 
   const reviewData = useMemo<ReviewData | null>(() => {
@@ -170,6 +192,8 @@ export function TutorChat() {
       mastery_score: meta.mastery_score ?? 0.5,
       mastery_label: meta.mastery_label ?? "一般",
       mastery_delta: meta.mastery_delta ?? 0,
+      verification_kind: meta.verification_kind,
+      verifier_summary: meta.verifier_summary,
     };
   }, [meta]);
 
@@ -257,6 +281,7 @@ export function TutorChat() {
   }
 
   function resetToDraftSession() {
+    setVisionDraft(null);
     setSessionId(null);
     let initialMessages: LocalMessage[] = [{ id: "welcome", role: "assistant", content: welcome }];
     const pendingQuiz = sessionStorage.getItem("pendingQuiz");
@@ -278,14 +303,17 @@ export function TutorChat() {
   }
 
   async function selectSession(nextSessionId: string) {
+    setVisionDraft(null);
     setSessionId(nextSessionId);
     const [serverMessages, serverMistakes, savedNotes] = await Promise.all([
       listMessages(nextSessionId).catch(() => [] as Message[]),
       listMistakes(nextSessionId).catch(() => []),
       listNotes("demo-user").catch(() => []),
     ]);
-    
+
     let currentMessages: LocalMessage[] = mapServerMessages(serverMessages);
+    const lastMeta = serverMessages.at(-1)?.learning_meta;
+    if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {
       currentMessages = [{ id: "welcome", role: "assistant", content: welcome }];
     }
@@ -295,7 +323,7 @@ export function TutorChat() {
       currentMessages.push({ id: crypto.randomUUID(), role: "assistant", content: pendingQuiz });
       sessionStorage.removeItem("pendingQuiz");
     }
-    
+
     setMessages(currentMessages);
     setMistakes(serverMistakes);
     setMeta(latestLearningMeta(serverMessages));
@@ -322,7 +350,8 @@ export function TutorChat() {
     }
   }
 
-  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false) {
+  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[]) {
+    setVisionDraft(null);
     let activeSession = sessionId;
     if (!activeSession) {
       const created = await createSession("综合");
@@ -360,8 +389,10 @@ export function TutorChat() {
           user_api_key: getUserApiKey() || null,
           model: getPreferredModel(),
           requested_hint: requestedHint,
-          image_urls: undefined,
-          abortSignal: abortControllerRef.current.signal
+          image_urls: imageUrls,
+          abortSignal: abortControllerRef.current.signal,
+          web_search: webSearch,
+          reasoning_effort: reasoningEffort,
         },
         (nextMeta) => {
           setMeta(nextMeta);
@@ -407,7 +438,8 @@ export function TutorChat() {
             delete next[assistantId];
             return next;
           });
-        }
+        },
+        (draft) => setVisionDraft(draft)
       );
       const [refreshedSessions, refreshedMistakes] = await Promise.all([
         listSessions().catch(() => sessions),
@@ -441,17 +473,17 @@ export function TutorChat() {
     try {
       const res = await generateNote(sessionId);
       setNoteContent(res.note);
-      
+
       const currentSession = sessions.find((s) => s.id === sessionId);
       const sessionSubject = currentSession?.subject || "综合";
-      
+
       // Auto-save to notebook
       await saveNote("demo-user", {
         session_id: sessionId,
         subject: sessionSubject,
         content: res.note
       });
-      
+
       setShowNoteToast(true);
       setTimeout(() => setShowNoteToast(false), 3000);
     } catch (e) {
@@ -508,12 +540,107 @@ export function TutorChat() {
     </div>
   );
 
+  const rightPanelContent = <>
+            <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
+              <button
+                onClick={() => setRightPanelMode("learning")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+              >
+                状态复盘
+              </button>
+              <button
+                onClick={() => setRightPanelMode("note")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+              >
+                随堂笔记
+              </button>
+              <button
+                onClick={() => { setIsLearningCollapsed(true); setIsMobileLearningOpen(false); }}
+                className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title="收起数理仪器面板"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden relative">
+              {rightPanelMode === "learning" ? (
+                <LearningPanel meta={meta} mistakes={mistakes} />
+              ) : (
+                <div className="absolute inset-0 flex flex-col bg-[var(--bg-card)]">
+                  <div className="flex justify-between items-center p-3 border-b border-[var(--border-primary)] shrink-0">
+                    <div className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] text-sm">
+                      <FileText className="w-4 h-4 text-[var(--text-accent)]" />
+                      随堂笔记
+                      {!isGeneratingNote && noteContent && (
+                        <Link href="/notebook" className="ml-1 text-[10px] font-normal text-[#617a55] bg-[#617a55]/10 hover:bg-[#617a55]/20 px-1.5 py-0.5 rounded-sm border border-[#617a55]/20 transition-colors">
+                          ✓ 已保存
+                        </Link>
+                      )}
+                    </div>
+                    {!isGeneratingNote && noteContent && (
+                      <button onClick={() => {
+                        void submit("我已经阅读完这份随堂笔记。请基于笔记中的核心考点与易错陷阱，为我出一份包含 3 道题的针对性小测验（先出第一题，不要直接给答案，让我一步步来练习）。", "practice");
+                      }} className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-[#617a55] text-white hover:bg-[#617a55]/90 rounded-md transition-colors">
+                        <PenTool className="w-3 h-3" /> 基于笔记测验
+                      </button>
+                    )}
+                  </div>
+                  <div id="note-print-area" className="flex-1 overflow-y-auto p-4 md:p-5">
+                    {isGeneratingNote ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-3 text-[var(--text-muted)]">
+                        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-accent)]" />
+                        <p className="text-xs animate-pulse">正在提炼核心考点...</p>
+                      </div>
+                    ) : !noteContent ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)] text-center px-4">
+                        <div className="w-16 h-16 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
+                          <FileText className="w-8 h-8 text-[var(--accent)] opacity-60" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
+                          <p className="text-xs">复习完当前内容后，点击下方按钮，AI将为你提炼核心考点与易错陷阱。</p>
+                        </div>
+                        <button
+                          onClick={handleGenerateNote}
+                          disabled={!sessionId}
+                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          一键生成笔记
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                        <LatexRenderer content={noteContent} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sticky Generate Button for Learning Panel */}
+            {rightPanelMode === "learning" && !noteContent && !isGeneratingNote && (
+              <div className="p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-tertiary)] shrink-0">
+                <button
+                  onClick={handleGenerateNote}
+                  disabled={!sessionId}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                >
+                  <FileText className="w-4 h-4" />
+                  生成本节课专属笔记
+                </button>
+              </div>
+            )}
+  </>;
+
   return (
-    <div className="flex h-screen flex-col bg-[var(--bg-primary)] transition-colors duration-300 overflow-hidden relative">
+    <div className="flex h-dvh flex-col bg-[var(--bg-primary)] transition-colors duration-300 overflow-hidden relative">
       <ZenOverlay isZenMode={isZenMode} />
       {isZenMode && (
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={toggleZenMode}
           className="fixed top-6 left-6 z-50 text-white/50 hover:text-white hover:bg-white/10 transition-colors rounded-full px-4"
         >
@@ -524,6 +651,7 @@ export function TutorChat() {
 
       {!isZenMode && (
         <AppHeader
+          onOpenSearch={() => setIsGlobalSearchOpen(true)}
           onNewSession={() => {
             // If already on an empty draft (no real session yet), nothing to do.
             if (!sessionId && !messages.some((m) => m.role === "user")) {
@@ -536,34 +664,37 @@ export function TutorChat() {
             if (window.innerWidth >= 1024) {
               handleToggleSidebar(!isSidebarCollapsed);
             } else {
+              setIsMobileLearningOpen(false);
               setIsMobileSidebarOpen(!isMobileSidebarOpen);
             }
           }}
-          onToggleLearning={() => setIsMobileLearningOpen(!isMobileLearningOpen)}
+          onToggleLearning={() => {
+            if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+              setIsLearningCollapsed(!isLearningCollapsed);
+            } else {
+              setIsMobileSidebarOpen(false);
+              setIsMobileLearningOpen(!isMobileLearningOpen);
+            }
+          }}
           onToggleZenMode={() => {
             if (!isZenMode) setShowZenConfirm(true);
             else void toggleZenMode();
           }}
         />
       )}
-      
+
       <div id="main-layout" className="flex min-h-0 flex-1 relative">
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)}>
-            <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-[var(--bg-card)] shadow-xl" onClick={e => e.stopPropagation()}>
-              <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-            </div>
-          </div>
+          <MobileDrawer title="历史会话" side="left" breakpoint={1024} onClose={() => setIsMobileSidebarOpen(false)}>
+            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          </MobileDrawer>
         )}
-        
-        {/* Mobile Learning Overlay */}
+
         {isMobileLearningOpen && (
-          <div className="fixed inset-0 z-40 xl:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileLearningOpen(false)}>
-            <div className="absolute right-0 top-0 bottom-0 w-[320px] bg-white dark:bg-[var(--bg-card)] shadow-xl" onClick={e => e.stopPropagation()}>
-              <LearningPanel meta={meta} mistakes={mistakes} />
-            </div>
-          </div>
+          <MobileDrawer title="学习面板" side="right" breakpoint={1280} onClose={() => setIsMobileLearningOpen(false)}>
+            <div className="flex h-full min-h-0 flex-col">{rightPanelContent}</div>
+          </MobileDrawer>
         )}
 
         {!isZenMode && !isSidebarCollapsed && (
@@ -583,14 +714,14 @@ export function TutorChat() {
         {!isZenMode && isSidebarCollapsed && (
           <button
             onClick={() => handleToggleSidebar(false)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 group flex h-20 w-4 items-center justify-center rounded-r-md border border-l-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 group hidden lg:flex h-20 w-4 items-center justify-center rounded-r-md border border-l-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
             title="展开侧边栏"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
-          <div 
+          <div
             className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
             ref={scrollContainerRef}
             onScroll={handleScroll}
@@ -700,7 +831,7 @@ export function TutorChat() {
           </div>
           {isStreaming && (
             <div className="flex justify-center mb-2">
-              <button 
+              <button
                 onClick={() => abortControllerRef.current?.abort()}
                 className="flex items-center gap-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] rounded-full px-4 py-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors shadow-sm"
               >
@@ -709,14 +840,27 @@ export function TutorChat() {
               </button>
             </div>
           )}
-          <div className="shrink-0 p-4 relative z-10 mx-auto w-full max-w-4xl">
+          <div className="shrink-0 p-3 sm:p-4 pb-[max(12px,env(safe-area-inset-bottom))] relative z-10 mx-auto w-full max-w-4xl">
+            {visionDraft && !isStreaming && (
+              <div className="mb-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] p-3 text-sm">
+                <p className="mb-2">请核对上方识别出的公式与条件，再继续解题。</p>
+                <div className="flex gap-3">
+                  <button type="button" className="text-[var(--text-accent)]" onClick={() => void submit(`图片题目已核对，请继续：\n${visionDraft}`)}>确认题目，继续</button>
+                  <button type="button" onClick={() => { setInputValue(visionDraft); setVisionDraft(null); }}>编辑题目</button>
+                </div>
+              </div>
+            )}
             <TutorInput
               value={inputValue}
               onChange={setInputValue}
               disabled={isStreaming}
               mode={mode}
               onModeChange={setMode}
-              onSubmit={(val, forcedMode) => void submit(val, forcedMode)}
+              webSearch={webSearch}
+              onWebSearchChange={setWebSearch}
+              reasoningEffort={reasoningEffort}
+              onReasoningEffortChange={setReasoningEffort}
+              onSubmit={(val, forcedMode, images) => void submit(val, forcedMode, false, images)}
               onDirect={() => void submit("我需要完整的推导过程和最终答案。请直接告诉我怎么做，不要反问我。", "direct")}
               onHint={() => void submit("能不能给我一点提示？", "socratic")}
               onSimilar={() => void submit("出一道类似的题目给我练习。", "practice")}
@@ -724,95 +868,21 @@ export function TutorChat() {
           </div>
         </main>
 
-        {!isZenMode && <ResizeHandle target="learning" className="hidden xl:block" />}
-        {!isZenMode && (
+        {!isZenMode && !isLearningCollapsed && <ResizeHandle target="learning" className="hidden xl:block" />}
+        {!isZenMode && !isLearningCollapsed && (
           <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
-            <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
-              <button 
-                onClick={() => setRightPanelMode("learning")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
-              >
-                状态复盘
-              </button>
-              <button 
-                onClick={() => setRightPanelMode("note")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
-              >
-                随堂笔记
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-hidden relative">
-              {rightPanelMode === "learning" ? (
-                <LearningPanel meta={meta} mistakes={mistakes} />
-              ) : (
-                <div className="absolute inset-0 flex flex-col bg-[var(--bg-card)]">
-                  <div className="flex justify-between items-center p-3 border-b border-[var(--border-primary)] shrink-0">
-                    <div className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] text-sm">
-                      <FileText className="w-4 h-4 text-[var(--text-accent)]" />
-                      随堂笔记
-                      {!isGeneratingNote && noteContent && (
-                        <Link href="/notebook" className="ml-1 text-[10px] font-normal text-[#617a55] bg-[#617a55]/10 hover:bg-[#617a55]/20 px-1.5 py-0.5 rounded-sm border border-[#617a55]/20 transition-colors">
-                          ✓ 已保存
-                        </Link>
-                      )}
-                    </div>
-                    {!isGeneratingNote && noteContent && (
-                      <button onClick={() => {
-                        void submit("我已经阅读完这份随堂笔记。请基于笔记中的核心考点与易错陷阱，为我出一份包含 3 道题的针对性小测验（先出第一题，不要直接给答案，让我一步步来练习）。", "practice");
-                      }} className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-[#617a55] text-white hover:bg-[#617a55]/90 rounded-md transition-colors">
-                        <PenTool className="w-3 h-3" /> 基于笔记测验
-                      </button>
-                    )}
-                  </div>
-                  <div id="note-print-area" className="flex-1 overflow-y-auto p-4 md:p-5">
-                    {isGeneratingNote ? (
-                      <div className="h-full flex flex-col items-center justify-center space-y-3 text-[var(--text-muted)]">
-                        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-accent)]" />
-                        <p className="text-xs animate-pulse">正在提炼核心考点...</p>
-                      </div>
-                    ) : !noteContent ? (
-                      <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)] text-center px-4">
-                        <div className="w-16 h-16 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
-                          <FileText className="w-8 h-8 text-[var(--accent)] opacity-60" />
-                        </div>
-                        <div className="space-y-1">
-                          <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
-                          <p className="text-xs">复习完当前内容后，点击下方按钮，AI将为你提炼核心考点与易错陷阱。</p>
-                        </div>
-                        <button 
-                          onClick={handleGenerateNote} 
-                          disabled={!sessionId}
-                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-                        >
-                          <Sparkles className="w-4 h-4" /> 
-                          一键生成笔记
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
-                        <LatexRenderer content={noteContent} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Sticky Generate Button for Learning Panel */}
-            {rightPanelMode === "learning" && !noteContent && !isGeneratingNote && (
-              <div className="p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-tertiary)] shrink-0">
-                <button 
-                  onClick={handleGenerateNote}
-                  disabled={!sessionId}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-                >
-                  <FileText className="w-4 h-4" /> 
-                  生成本节课专属笔记
-                </button>
-              </div>
-            )}
+            {rightPanelContent}
           </div>
+        )}
+
+        {!isZenMode && isLearningCollapsed && (
+          <button
+            onClick={() => setIsLearningCollapsed(false)}
+            className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 group h-20 w-4 items-center justify-center rounded-l-md border border-r-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
+            title="展开数理仪器与状态复盘"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
         )}
       </div>
 
@@ -858,14 +928,14 @@ export function TutorChat() {
                 <span className="text-[var(--text-muted)] italic">提示：随时可以按 ESC 键，或点击右上角的“退出”按钮恢复原状。</span>
               </p>
               <div className="flex items-center justify-end gap-3">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={() => setShowZenConfirm(false)}
                   className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                 >
                   取消
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     setShowZenConfirm(false);
                     void toggleZenMode();
@@ -881,12 +951,21 @@ export function TutorChat() {
       )}
 
       {/* Toast Notification */}
-      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${showNoteToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"}`}>
+      <div aria-hidden={!showNoteToast} role="status" className={`fixed top-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${showNoteToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"}`}>
         <div className="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-500 font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
           <FileText className="w-4 h-4" />
-          笔记已在右侧边栏生成！
+          笔记已生成，可在学习面板查看。
         </div>
       </div>
+
+      {/* 全局搜索抽屉 (Ctrl+K) */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+        onSelectResult={(text) => {
+          setInputValue((prev) => (prev ? `${prev}\n${text}` : text));
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import katex from "katex";
+import { parseLatex, parseBlocks, type Block } from "@/lib/message-parser";
 import { Copy, Check, Eye, Code } from "lucide-react";
 import { useState } from "react";
 import { MathPlot } from "./math-plot";
@@ -93,57 +94,6 @@ function MathDisplayBlock({ content }: { content: string }) {
       </button>
     </div>
   );
-}
-
-type Segment =
-  | { type: "text"; content: string }
-  | { type: "inline-math"; content: string }
-  | { type: "display-math"; content: string };
-
-function parseLatex(content: string): Segment[] {
-  const segments: Segment[] = [];
-  let remaining = content;
-
-  while (remaining.length > 0) {
-    const displayBlockRegex = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/;
-    const inlineRegex = /\\\(([\s\S]+?)\\\)|\$([^\$]+?)\$/;
-
-    const displayMatch = remaining.match(displayBlockRegex);
-    const inlineMatch = remaining.match(inlineRegex);
-
-    const displayIndex = displayMatch?.index ?? Infinity;
-    const inlineIndex = inlineMatch?.index ?? Infinity;
-
-    if (displayIndex === Infinity && inlineIndex === Infinity) {
-      segments.push({ type: "text", content: remaining });
-      remaining = "";
-      continue;
-    }
-
-    if (displayIndex < inlineIndex) {
-      const match = displayMatch!;
-      const beforeText = remaining.slice(0, match.index);
-      if (beforeText) {
-        segments.push({ type: "text", content: beforeText });
-      }
-
-      const latex = match[1] ?? match[2] ?? "";
-      segments.push({ type: "display-math", content: latex });
-      remaining = remaining.slice(match.index! + match[0].length);
-    } else {
-      const match = inlineMatch!;
-      const beforeText = remaining.slice(0, match.index);
-      if (beforeText) {
-        segments.push({ type: "text", content: beforeText });
-      }
-
-      const latex = match[1] ?? match[2] ?? "";
-      segments.push({ type: "inline-math", content: latex });
-      remaining = remaining.slice(match.index! + match[0].length);
-    }
-  }
-
-  return segments;
 }
 
 function renderMarkdownInline(text: string): React.ReactNode {
@@ -263,194 +213,13 @@ function InlineLatex({ content }: { content: string }) {
   );
 }
 
-type Block =
-  | { type: "h1"; content: string }
-  | { type: "h2"; content: string }
-  | { type: "h3"; content: string }
-  | { type: "h4"; content: string }
-  | { type: "ul"; items: string[] }
-  | { type: "ol"; items: string[] }
-  | { type: "blockquote"; content: string }
-  | { type: "hr" }
-  | { type: "br" }
-  | { type: "display-math"; content: string }
-  | { type: "code-block"; language: string; content: string }
-  | { type: "plot"; function: string; domain?: string }
-  | { type: "bilibili-search"; keyword: string }
-  | { type: "html"; content: string }
-  | { type: "paragraph"; lines: string[] };
-
-function parseBlocks(lines: string[]): Block[] {
-  const blocks: Block[] = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.startsWith("#### ")) {
-      blocks.push({ type: "h4", content: line.slice(5) });
-      i++;
-    } else if (line.startsWith("### ")) {
-      blocks.push({ type: "h3", content: line.slice(4) });
-      i++;
-    } else if (line.startsWith("## ")) {
-      blocks.push({ type: "h2", content: line.slice(3) });
-      i++;
-    } else if (line.startsWith("# ")) {
-      blocks.push({ type: "h1", content: line.slice(2) });
-      i++;
-    } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      const items: string[] = [];
-      while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
-        items.push(lines[i].slice(2));
-        i++;
-      }
-      blocks.push({ type: "ul", items });
-    } else if (/^\d+\.\s/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
-        const match = lines[i].match(/^(\d+)\.\s(.*)/);
-        if (match) items.push(match[2]);
-        i++;
-      }
-      blocks.push({ type: "ol", items });
-    } else if (line.startsWith("> ")) {
-      blocks.push({ type: "blockquote", content: line.slice(2) });
-      i++;
-    } else if (line.startsWith("---") || line.startsWith("***")) {
-      blocks.push({ type: "hr" });
-      i++;
-    } else if (/^\\\[/.test(line.trim()) && !/\\\\\[/.test(line.trim())) {
-      const endMarker = "\\]";
-      const startMarker = "\\[";
-      
-      const mathLines: string[] = [];
-      const firstLine = line.trim();
-      const afterStart = firstLine.slice(startMarker.length).trim();
-      if (afterStart && afterStart !== endMarker) {
-        mathLines.push(afterStart);
-      }
-      i++;
-      
-      while (i < lines.length) {
-        const currentLine = lines[i];
-        const trimmed = currentLine.trim();
-        if (trimmed === endMarker) {
-          i++;
-          break;
-        }
-        if (trimmed.endsWith(endMarker) && !trimmed.endsWith("\\\\]")) {
-          const beforeEnd = trimmed.slice(0, -endMarker.length).trim();
-          if (beforeEnd) {
-            mathLines.push(beforeEnd);
-          }
-          i++;
-          break;
-        }
-        mathLines.push(currentLine);
-        i++;
-      }
-      
-      blocks.push({ type: "display-math", content: mathLines.join("\n") });
-    } else if (/^\$\$/.test(line.trim())) {
-      const endMarker = "$$";
-      const startMarker = "$$";
-      
-      const mathLines: string[] = [];
-      const firstLine = line.trim();
-      const afterStart = firstLine.slice(startMarker.length).trim();
-      if (afterStart && afterStart !== endMarker) {
-        mathLines.push(afterStart);
-      }
-      i++;
-      
-      while (i < lines.length) {
-        const currentLine = lines[i];
-        const trimmed = currentLine.trim();
-        if (trimmed === endMarker) {
-          i++;
-          break;
-        }
-        if (trimmed.endsWith(endMarker)) {
-          const beforeEnd = trimmed.slice(0, -endMarker.length).trim();
-          if (beforeEnd) {
-            mathLines.push(beforeEnd);
-          }
-          i++;
-          break;
-        }
-        mathLines.push(currentLine);
-        i++;
-      }
-      
-      blocks.push({ type: "display-math", content: mathLines.join("\n") });
-    } else if (line.startsWith("```")) {
-      const language = line.slice(3).trim();
-      const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        i++;
-      }
-      if (i < lines.length) i++;
-      blocks.push({ type: "code-block", language, content: codeLines.join("\n") });
-    } else if (line.trim() === "") {
-      blocks.push({ type: "br" });
-      i++;
-    } else if (line.trim().startsWith("<plot ")) {
-      const matchFn = line.match(/function="([^"]+)"/);
-      const matchDomain = line.match(/domain="([^"]+)"/);
-      if (matchFn) {
-        blocks.push({ type: "plot", function: matchFn[1], domain: matchDomain?.[1] });
-      }
-      i++;
-    } else if (line.trim().startsWith("<bilibili-search ")) {
-      const matchKw = line.match(/keyword="([^"]+)"/);
-      if (matchKw) {
-        blocks.push({ type: "bilibili-search", keyword: matchKw[1] });
-      }
-      i++;
-    } else if (/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(line.trim())) {
-      const htmlLines: string[] = [];
-      while (i < lines.length && lines[i].trim() !== "") {
-        htmlLines.push(lines[i]);
-        i++;
-      }
-      blocks.push({ type: "html", content: htmlLines.join("\n") });
-    } else {
-      const paragraphLines: string[] = [];
-      while (
-        i < lines.length &&
-        !lines[i].startsWith("# ") &&
-        !lines[i].startsWith("## ") &&
-        !lines[i].startsWith("### ") &&
-        !lines[i].startsWith("#### ") &&
-        !lines[i].startsWith("- ") &&
-        !lines[i].startsWith("* ") &&
-        !/^\d+\.\s/.test(lines[i]) &&
-        !lines[i].startsWith("> ") &&
-        !lines[i].startsWith("---") &&
-        !lines[i].startsWith("***") &&
-        !/^\\\[/.test(lines[i].trim()) &&
-        !/^\$\$/.test(lines[i].trim()) &&
-        !lines[i].startsWith("```") &&
-        !/^<\/?(?:div|table|tbody|thead|tr|td|th|svg|ul|ol|li|h[1-6]|p|details|summary|section|article|nav|header|footer|main|aside|span)(?:>|\s)/i.test(lines[i].trim()) &&
-        lines[i].trim() !== ""
-      ) {
-        paragraphLines.push(lines[i]);
-        i++;
-      }
-      if (paragraphLines.length > 0) {
-        blocks.push({ type: "paragraph", lines: paragraphLines });
-      }
-    }
-  }
-
-  return blocks;
-}
-
 function renderBlock(block: Block, blockIndex: number): React.ReactNode {
   switch (block.type) {
+    case "table":
+      return <div key={`table-${blockIndex}`} className="my-3 max-w-full overflow-x-auto"><table className="w-full border-collapse text-sm">
+        <thead><tr>{block.headers.map((cell, index) => <th key={index} className="border border-[var(--border-primary)] bg-[var(--bg-tertiary)] p-2 text-left"><InlineLatex content={cell} /></th>)}</tr></thead>
+        <tbody>{block.rows.map((row, index) => <tr key={index}>{block.headers.map((_, col) => <td key={col} className="border border-[var(--border-primary)] p-2"><InlineLatex content={row[col] ?? ""} /></td>)}</tr>)}</tbody>
+      </table></div>;
     case "h1":
       return (
         <h1 key={`h1-${blockIndex}`} className="mt-6 mb-3 text-xl font-bold text-[var(--text-primary)]">
@@ -542,7 +311,7 @@ function renderBlock(block: Block, blockIndex: number): React.ReactNode {
 export function LatexRenderer({ content }: { content: string }) {
   const blocks = parseBlocks(content.split("\n"));
   return (
-    <div className="message-prose whitespace-pre-wrap leading-7">
+    <div className="message-prose min-w-0 max-w-full break-words whitespace-pre-wrap leading-7">
       {blocks.map((block, blockIndex) => renderBlock(block, blockIndex))}
     </div>
   );

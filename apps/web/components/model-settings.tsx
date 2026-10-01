@@ -87,8 +87,12 @@ export function ModelSettings() {
     setUserApiKey(key);
     setPreferredModel(id);
     setStatus("测试中...");
-    const result = await testModel(key || null, id);
-    setStatus(result.message);
+    try {
+      const result = await testModel(key || null, id);
+      setStatus(result.message);
+    } catch (err: unknown) {
+      setStatus(err instanceof Error ? err.message : "模型连接测试失败，请检查网络或配置");
+    }
   }
 
   return (

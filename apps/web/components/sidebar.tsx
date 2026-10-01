@@ -30,7 +30,6 @@ export function Sidebar({
   onSearchChange?: (val: string) => void;
   onModeSelect?: (modeId: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -153,7 +152,6 @@ export function Sidebar({
             onClick={() => {
               if (editingId === session.id) return;
               onSelect(session.id);
-              setOpen(false);
             }}
           >
             {editingId === session.id ? (
@@ -221,23 +219,7 @@ export function Sidebar({
 
   return (
     <>
-      <button
-        className="fixed left-3 top-20 z-20 rounded-md border border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-primary)] px-3 py-2 text-sm shadow-sm backdrop-blur-md lg:hidden"
-        onClick={() => setOpen((v) => !v)}
-      >
-        会话
-      </button>
-      {open && (
-        <div
-          className="fixed inset-0 z-20 bg-black/30 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside
-        className={`fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-[var(--border-primary)] bg-gray-50 dark:bg-[var(--bg-sidebar)] dark:backdrop-blur-3xl p-5 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:static lg:w-full lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+      <aside className="h-full w-full min-h-0 overflow-y-auto border-r border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-5">
         {content}
       </aside>
 

@@ -19,13 +19,13 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 h-8 px-3 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/80 hover:bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-primary)] transition-all shadow-xs group"
+        className="flex items-center gap-1.5 h-7 sm:h-7.5 px-2.5 sm:px-3 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]/90 hover:bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-primary)] transition-all shadow-xs group shrink-0"
         title="切换助教教学模式"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-olive-500 animate-pulse" />
         <Icon className="w-3.5 h-3.5 text-olive-600 dark:text-olive-400" />
         <span>{current.label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3 h-3 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

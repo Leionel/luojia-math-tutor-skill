@@ -25,6 +25,9 @@ export type Message = {
 };
 
 export type TutorMeta = {
+  awaiting_confirmation?: boolean;
+  vision_draft?: string;
+  verification_kind?: "symbolic" | "llm_review" | "none";
   intent: string;
   subject: string;
   concepts: string[];
@@ -153,7 +156,7 @@ export async function generateTitle(message: string, userApiKey?: string | null,
 export async function renameSession(sessionId: string, title: string, subject?: string) {
   const payload: any = { title };
   if (subject) payload.subject = subject;
-  
+
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}`, {
     method: "PUT",
     headers: headers(true),
@@ -225,7 +228,11 @@ export async function testModel(userApiKey: string | null, model?: string) {
     headers: headers(true, userApiKey),
     body: JSON.stringify({ model: model || null })
   });
-  if (!res.ok) throw new Error("模型测试失败");
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null);
+    const detail = errorBody?.detail || errorBody?.message;
+    throw new Error(detail ? `模型测试失败：${detail}` : `模型测试失败 (HTTP ${res.status})`);
+  }
   return res.json() as Promise<{ ok: boolean; message: string }>;
 }
 
@@ -240,12 +247,15 @@ export async function streamTutor(
     requested_hint?: boolean;
     abortSignal?: AbortSignal;
     image_urls?: string[];
+    web_search?: boolean;
+    reasoning_effort?: "off" | "low" | "medium" | "high" | "max";
   },
   onMeta: (meta: TutorMeta) => void,
   onToken: (token: string) => void,
   onThinkingChain?: (chain: string) => void,
   onOpening?: (content: string) => void,
-  onThinkingEnd?: (data: { summary: string; elapsedMs: number }) => void
+  onThinkingEnd?: (data: { summary: string; elapsedMs: number }) => void,
+  onVisionConfirmation?: (draft: string) => void
 ) {
   const { abortSignal, user_api_key: userApiKey, ...restPayload } = payload;
   const res = await fetch(`${API_BASE}/api/tutor/stream`, {
@@ -288,8 +298,10 @@ export async function streamTutor(
         if (onThinkingChain) onThinkingChain(thinkingChain);
       }
       if (event === "vision_confirmation") {
-        thinkingChain += `\n${String(data.content || "")}\n`;
-        if (onThinkingChain) onThinkingChain(thinkingChain);
+        const parsed = data.parsed || {};
+        const formulas = Array.isArray(parsed.latex) ? parsed.latex.map((item: unknown) => `$$${String(item)}$$`).join("\n") : "";
+        const draft = [String(parsed.problem_text || ""), formulas].filter(Boolean).join("\n\n");
+        if (onVisionConfirmation && data.requires_confirmation === true && draft) onVisionConfirmation(draft);
       }
       if (event === "thinking_end") {
         if (onThinkingChain) onThinkingChain(thinkingChain);
@@ -503,4 +515,39 @@ export async function listCourseCases(
   if (!res.ok) throw new Error("获取教学案例失败");
   const data = await res.json();
   return data.cases as CourseCase[];
+}
+
+export type GlobalSearchResultItem = {
+  id: string;
+  category: "curriculum" | "mistakes" | "notes";
+  category_label: string;
+  title: string;
+  subtitle: string;
+  content: string;
+  formula?: string | null;
+  metadata?: Record<string, any>;
+};
+
+export type GlobalSearchResponse = {
+  query: string;
+  category: string;
+  total: number;
+  items: GlobalSearchResultItem[];
+};
+
+export async function searchGlobal(
+  query: string,
+  category: string = "all",
+  limit: number = 20
+): Promise<GlobalSearchResponse> {
+  const params = new URLSearchParams({
+    q: query,
+    category,
+    limit: String(limit),
+  });
+  const res = await fetch(`${API_BASE}/api/search/global?${params.toString()}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error("全局检索失败");
+  return res.json() as Promise<GlobalSearchResponse>;
 }

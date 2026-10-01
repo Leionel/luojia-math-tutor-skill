@@ -80,10 +80,10 @@ function parseThinkingChain(text: string): ThinkingStep[] {
 
 function displayThinkingTitle(title: string) {
   const labels: Record<string, string> = {
-    PLAN: "解题策略分析",
-    "隐式 RAG": "知识点关联",
-    VERIFY: "步骤检查",
-    OUTPUT: "组织回答",
+    PLAN: "审题立意 · 策略规划",
+    "隐式 RAG": "知识图谱 · 脉络与学情",
+    VERIFY: "符号推求 · 代数公理验算",
+    OUTPUT: "落笔点拨 · 启发式讲解",
   };
   return labels[title] || title;
 }
@@ -111,34 +111,40 @@ function getStepIcon(type: ThinkingStep['type']) {
   }
 }
 
-function ThinkingIndicator({ elapsed }: { elapsed: number }) {
+function ThinkingProgressBanner({
+  elapsed,
+  chain,
+  isExpanded,
+  onToggle,
+}: {
+  elapsed: number;
+  chain?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const steps = chain ? parseThinkingChain(chain) : [];
   const dots = ".".repeat((elapsed % 3) + 1);
-  return (
-    <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/20 text-xs text-olive-700 dark:text-olive-300 font-medium animate-pulse shadow-sm">
-      <BrainCircuit className="w-3.5 h-3.5 text-olive-600 dark:text-olive-400 animate-spin" style={{ animationDuration: '4s' }} />
-      <span>正在构建数理推导步骤（{elapsed}s）{dots}</span>
-    </div>
-  );
-}
-
-function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isExpanded: boolean; onToggle: () => void }) {
-  if (!content) return null;
-  const steps = parseThinkingChain(content);
 
   return (
-    <div className="mt-2.5 mb-2">
-      <button
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group"
-        onClick={onToggle}
-      >
-        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isExpanded && "rotate-90")} />
-        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">推导演绎链路</span>
-        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-olive-500/15 text-olive-700 dark:text-olive-300 font-mono">
-          {steps.length} 个步骤
+    <div className="mb-3">
+      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/25 text-xs text-olive-800 dark:text-olive-300 font-serif shadow-xs">
+        <BrainCircuit className="w-3.5 h-3.5 text-olive-700 dark:text-olive-400 animate-spin" style={{ animationDuration: '4s' }} />
+        <span className="font-semibold tracking-wide">
+          珞珈师说：推演构思中（{elapsed}s）{dots}
         </span>
-      </button>
+        {steps.length > 0 && (
+          <button
+            onClick={onToggle}
+            className="inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[11px] font-mono text-olive-900 dark:text-olive-200 transition-colors cursor-pointer"
+          >
+            <span>{isExpanded ? "收起规划" : `查看 ${steps.length} 步演练`}</span>
+            <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", isExpanded && "rotate-90")} />
+          </button>
+        )}
+      </div>
+
       <AnimatePresence>
-        {isExpanded && (
+        {isExpanded && steps.length > 0 && (
           <motion.div
             initial={{ opacity: 0, height: 0, y: -4 }}
             animate={{ opacity: 1, height: 'auto', y: 0 }}
@@ -146,20 +152,22 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden mt-2"
           >
-            <div className="rounded-xl bg-[var(--bg-tertiary)]/80 backdrop-blur-md p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] shadow-sm">
-              <div className="relative pl-6 border-l-2 border-olive-500/25 dark:border-olive-400/20 ml-3 flex flex-col gap-4 py-1">
+            <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+              <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
                 {steps.map((step, idx) => (
                   <div key={idx} className="relative">
-                    <div className="absolute -left-[32px] top-0.5 w-6 h-6 rounded-full bg-white dark:bg-[#20211d] border border-olive-500/30 flex items-center justify-center shadow-xs z-10">
+                    <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
                       {getStepIcon(step.type)}
                     </div>
-                    <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                      <span className="text-xs text-olive-800 dark:text-olive-200">{displayThinkingTitle(step.title)}</span>
+                    <div className="flex items-center gap-2 select-none mb-0.5">
+                      <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
+                        {displayThinkingTitle(step.title)}
+                      </span>
                       <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
-                        Stage {idx + 1}
+                        阶段 {idx + 1}
                       </span>
                     </div>
-                    <div className="text-[var(--text-secondary)] bg-white/60 dark:bg-black/25 rounded-lg p-3 border border-[var(--border-subtle)] mt-1.5 shadow-xs select-text">
+                    <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
                       <LatexRenderer content={step.content} />
                     </div>
                   </div>
@@ -173,17 +181,27 @@ function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isE
   );
 }
 
-function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { summary: string; elapsedMs?: number; isExpanded: boolean; onToggle: () => void }) {
+function ThinkingSummaryView({
+  summary,
+  elapsedMs,
+  isExpanded,
+  onToggle
+}: {
+  summary: string;
+  elapsedMs?: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   const steps = parseThinkingChain(summary);
 
   return (
     <div className="mt-2.5 mb-2">
       <button
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group"
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group cursor-pointer"
         onClick={onToggle}
       >
         <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isExpanded && "rotate-90")} />
-        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">查看推演过程</span>
+        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">推导演绎链路</span>
         {elapsedMs ? (
           <span className="text-[10px] text-[var(--text-muted)] font-mono">
             {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
@@ -204,27 +222,29 @@ function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { sum
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden mt-2"
           >
-            <div className="rounded-xl bg-[var(--bg-tertiary)]/80 backdrop-blur-md p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] shadow-sm">
-              <div className="relative pl-6 border-l-2 border-olive-500/25 dark:border-olive-400/20 ml-3 flex flex-col gap-4 py-1">
+            <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+              <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
                 {steps.length > 0 ? (
                   steps.map((step, idx) => (
                     <div key={idx} className="relative">
-                      <div className="absolute -left-[32px] top-0.5 w-6 h-6 rounded-full bg-white dark:bg-[#20211d] border border-olive-500/30 flex items-center justify-center shadow-xs z-10">
+                      <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
                         {getStepIcon(step.type)}
                       </div>
-                      <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                        <span className="text-xs text-olive-800 dark:text-olive-200">{displayThinkingTitle(step.title)}</span>
+                      <div className="flex items-center gap-2 select-none mb-0.5">
+                        <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
+                          {displayThinkingTitle(step.title)}
+                        </span>
                         <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
-                          Stage {idx + 1}
+                          阶段 {idx + 1}
                         </span>
                       </div>
-                      <div className="text-[var(--text-secondary)] bg-white/60 dark:bg-black/25 rounded-lg p-3 border border-[var(--border-subtle)] mt-1.5 shadow-xs select-text">
+                      <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
                         <LatexRenderer content={step.content} />
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-[var(--text-muted)] italic">{summary}</div>
+                  <div className="text-[var(--text-muted)] italic text-xs">{summary}</div>
                 )}
               </div>
             </div>
@@ -299,51 +319,63 @@ export function MathMessage({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14, scale: 0.99 }}
+      initial={{ opacity: 0, y: 12, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 350, damping: 28 }}
-      className={cn("flex w-full gap-3 sm:gap-4.5 mb-7 group", isUser ? "justify-end" : "justify-start")}
+      className="flex w-full mb-6 group justify-start"
     >
-      {/* Assistant Crest */}
-      {!isUser && (
-        <div className="shrink-0 mt-1 flex-col items-center hidden sm:flex">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#617a55] to-[#4e6344] text-white shadow-sm shadow-[#617a55]/20 border border-[#617a55]/40">
-            <span className="font-title font-bold text-sm leading-none">珞</span>
+      <div className="flex flex-col w-full min-w-0">
+        {/* 角色标识与阶段指示 (学子立论 vs 珞珈师说) */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {isUser ? (
+              <>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#3e3f36] text-[#faf7f2] dark:bg-[#2b2c26] shadow-xs">
+                  「学子立论」
+                </span>
+                <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                  草稿演练步骤
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#4e6344] text-[#faf7f2] dark:bg-[#3f5137] shadow-xs">
+                  「珞珈师说」
+                </span>
+                <span className="text-xs font-serif font-semibold tracking-wide text-olive-800 dark:text-olive-200">
+                  启发辨析与证明
+                </span>
+              </>
+            )}
           </div>
-        </div>
-      )}
 
-      <div className={cn("flex flex-col min-w-0 max-w-full", isUser ? "items-end max-w-[85%] sm:max-w-[78%]" : "items-start flex-1")}>
-        {/* Mobile Header indicator */}
-        <div className="flex items-center gap-2 mb-1.5 sm:hidden">
-          {isUser ? (
-            <div className="flex items-center gap-1 text-[var(--text-muted)] text-[11px]">
-              <span className="font-medium">我</span>
-              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)]"><User className="h-2.5 w-2.5" /></div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-              <div className="flex h-4 w-4 items-center justify-center rounded bg-[#617a55] text-white"><span className="font-title font-bold text-[9px]">珞</span></div>
-              <span className="text-xs font-semibold font-title tracking-wide text-[#617a55] dark:text-[#879f7a]">珞珈数智</span>
+          {/* 状态徽标 (如后台验算通过) */}
+          {status && !isUser && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-olive-800 dark:text-olive-300 bg-olive-500/10 border border-olive-500/20">
+              {status.includes("未完成") ? (
+                <CircleDashed className="w-3 h-3 text-amber-500" />
+              ) : (
+                <CheckCircle2 className="w-3 h-3 text-olive-600 dark:text-olive-400" />
+              )}
+              <span>{status}</span>
             </div>
           )}
         </div>
 
-        {/* Message Container / Bubble */}
-        <div className={cn(
-          "w-full transition-all duration-300",
-          isUser 
-            ? "bg-[#617a55] text-[#faf7f2] dark:bg-[#4e6344] px-4.5 py-3 rounded-2xl rounded-tr-xs shadow-sm font-sans" 
-            : "text-[var(--text-primary)] bg-[var(--bg-card)]/80 dark:bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] rounded-2xl p-4 sm:p-5 shadow-sm"
-        )}>
+        {/* 手稿推导承载主体 (消除笨重的双重气泡卡片，保证长公式视窗宽裕) */}
+        <div
+          className={cn(
+            "w-full transition-all duration-200",
+            isUser
+              ? "border-l-[3.5px] border-[#c4ba9d] dark:border-[#525447] bg-[#f5f1e6]/45 dark:bg-[#252621]/45 rounded-r-xl p-4 sm:p-5 shadow-xs"
+              : "border border-[#e2dcc8]/80 dark:border-[#383a32]/80 bg-white/70 dark:bg-[#20211d]/70 rounded-xl p-4 sm:p-6 shadow-xs"
+          )}
+        >
           {isThinking && (
-            <ThinkingIndicator elapsed={thinkingElapsed} />
-          )}
-          
-          {thinkingChain && (
-            <ThinkingChain
-              content={thinkingChain}
-              isExpanded={isThinking ? true : isChainExpanded}
+            <ThinkingProgressBanner
+              elapsed={thinkingElapsed}
+              chain={thinkingChain}
+              isExpanded={isChainExpanded}
               onToggle={() => setIsChainExpanded(!isChainExpanded)}
             />
           )}
@@ -358,55 +390,61 @@ export function MathMessage({
           )}
 
           {content && (
-            <div className={cn(
-              "prose-sm sm:prose max-w-none text-[15px] sm:text-[15.5px] leading-relaxed",
-              isUser ? "text-[#faf7f2] font-sans prose-p:my-1 prose-headings:text-white" : "prose-neutral dark:prose-invert prose-p:leading-relaxed text-[var(--text-primary)]",
-              reading === "sans" ? "font-ui-sans" : "font-body",
-              !isUser && "tracking-[0.01em] leading-[1.8]"
-            )}>
+            <div
+              className={cn(
+                "prose-sm sm:prose max-w-none text-[15px] sm:text-[15.5px] leading-relaxed select-text overflow-x-auto",
+                isUser
+                  ? "text-[var(--text-primary)] font-serif prose-p:my-1"
+                  : "prose-neutral dark:prose-invert text-[var(--text-primary)] prose-p:leading-[1.8]",
+                reading === "sans" ? "font-ui-sans" : "font-serif",
+                !isUser && "tracking-[0.01em]"
+              )}
+            >
               <LatexRenderer content={content} />
+              {isThinking && (
+                <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
+                  <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />
+                  <span>正在提笔运思展开...</span>
+                </span>
+              )}
             </div>
           )}
-            
-          {status && !isUser ? (
-            <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border-subtle)] pt-2.5 text-[11px] font-medium text-[var(--text-muted)]">
-              {status.includes("未完成") ? <CircleDashed className="w-3.5 h-3.5 text-amber-500" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-              <span>{status}</span>
-            </div>
-          ) : null}
 
-          {reviewData && !isUser ? (
+          {/* 步骤复盘卡 (融入 C 方案双栏对照学案) */}
+          {reviewData && !isUser && (
             <div className="mt-3 pt-2">
               <ReviewCard data={reviewData} onSimilar={onSimilar} />
             </div>
-          ) : null}
+          )}
 
-          {/* Action Bar */}
-          <div className={cn("flex items-center gap-1.5 mt-3 pt-2 border-t border-[var(--border-subtle)]/60 transition-opacity duration-200", isUser ? "justify-end text-white/70" : "opacity-0 group-hover:opacity-100")}>
+          {/* 轻量操作工具栏 */}
+          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-subtle)]/70 text-[var(--text-muted)] text-[11px]">
             <button
               onClick={copyText}
-              className={cn("flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors", isUser ? "hover:bg-white/15 text-white/80 hover:text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]")}
-              title="复制回答"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+              title="复制内容"
             >
-              {isCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-olive-600" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{isCopied ? "已复制" : "复制"}</span>
             </button>
+
             {isUser && onEdit && (
               <button
                 onClick={onEdit}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium hover:bg-white/15 text-white/80 hover:text-white transition-colors"
-                title="重新编辑问题"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                title="重新编辑本步立论"
               >
                 <Edit2 className="w-3.5 h-3.5" />
                 <span>编辑</span>
               </button>
             )}
+
             {!isUser && (
               <button
                 onClick={playSpeech}
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors",
-                  isPlaying ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                  "inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors",
+                  isPlaying && "text-olive-600 font-bold"
                 )}
                 title={isPlaying ? "停止播放" : "朗读数学解答"}
               >
@@ -414,11 +452,12 @@ export function MathMessage({
                 <span>{isPlaying ? "停止" : "朗读"}</span>
               </button>
             )}
+
             {!isUser && onRetry && (
               <button
                 onClick={onRetry}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-                title="以此步骤重新生成"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                title="以此步骤重新推导"
               >
                 <RefreshCcw className="w-3.5 h-3.5" />
                 <span>重试</span>
@@ -427,15 +466,6 @@ export function MathMessage({
           </div>
         </div>
       </div>
-
-      {/* User Avatar */}
-      {isUser && (
-        <div className="shrink-0 mt-1 flex-col items-center hidden sm:flex">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shadow-xs">
-            <User className="h-4 w-4" />
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }

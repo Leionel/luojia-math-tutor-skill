@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -39,6 +39,8 @@ export default function GraphPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [matchedCaseResult, setMatchedCaseResult] = useState<any>(null);
   const [matchError, setMatchError] = useState<string | null>(null);
+  const requestId = useRef(0);
+  const [matching, setMatching] = useState(false);
   const [simOpen, setSimOpen] = useState(true);
   const [highlightNodeIds, setHighlightNodeIds] = useState<string[]>([]);
   const [courseCases, setCourseCases] = useState<Array<{ case_id: string; title: string; task_type: string; accepted_variants: string[] }>>([]);
@@ -51,21 +53,32 @@ export default function GraphPage() {
   }, [courseId]);
 
   const handleRunMatch = (queryText: string) => {
+    if (!queryText.trim()) return;
+    const current = ++requestId.current;
+    setMatching(true);
+    setMatchedCaseResult(null);
+    setHighlightNodeIds([]);
     setSearchQuery(queryText);
     setMatchError(null);
     matchCourseCase(courseId, queryText, {})
       .then((res) => {
+        if (current !== requestId.current) return;
         setMatchedCaseResult(res);
         setHighlightNodeIds(res.concept_anchor_ids || []);
       })
       .catch(() => {
+        if (current !== requestId.current) return;
         setMatchedCaseResult(null);
         setHighlightNodeIds([]);
         setMatchError("案例匹配失败：请确认后端 API 已启动。");
-      });
+      })
+      .finally(() => { if (current === requestId.current) setMatching(false); });
   };
 
   const handleClearMatch = () => {
+    ++requestId.current;
+    setMatching(false);
+    setMatchError(null);
     setSearchQuery("");
     setMatchedCaseResult(null);
     setHighlightNodeIds([]);
@@ -76,7 +89,7 @@ export default function GraphPage() {
       {/* Top Navigation */}
       <header className="flex-shrink-0 h-16 px-4 sm:px-6 flex items-center justify-between glass-header relative z-30">
         <div className="flex items-center gap-3 sm:gap-4">
-          <Link 
+          <Link
             href="/chat"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
@@ -94,7 +107,7 @@ export default function GraphPage() {
           {/* Course select badge */}
           <div className="hidden md:flex items-center gap-1.5 bg-[var(--bg-tertiary)]/70 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--text-secondary)] border border-[var(--border-subtle)]">
             <BookOpen className="w-3.5 h-3.5 text-olive-600 dark:text-olive-400" />
-            <span>《数值分析》求根单元 (27 节点 / 21 关系)</span>
+            <span>《数值分析》求根单元</span>
           </div>
 
           {/* Scope Filters */}
@@ -125,13 +138,13 @@ export default function GraphPage() {
       <div className="flex-1 relative flex overflow-hidden">
         {/* React Flow Graph */}
         <main className="flex-1 relative bg-[var(--bg-primary)]">
-          <KnowledgeGraph 
+          <KnowledgeGraph
             courseId={courseId}
             scopeFilter={scopeFilter}
             onSelectNode={(node) => setSelectedNode(node)}
             highlightNodeIds={highlightNodeIds}
             selectedNodeId={selectedNode?.id}
-            className="w-full h-full border-0 rounded-none bg-transparent" 
+            className="w-full h-full border-0 rounded-none bg-transparent"
           />
 
           {/* Teaching Case simulator: docked and collapsible so the canvas keeps the stage */}
@@ -168,10 +181,11 @@ export default function GraphPage() {
               />
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--text-muted)]" />
               <button
+                disabled={matching || !searchQuery.trim()}
                 onClick={() => handleRunMatch(searchQuery)}
                 className="absolute right-1 top-1 px-2 py-0.5 bg-olive-600 text-[#faf7f2] rounded text-[11px] font-medium hover:bg-olive-700"
               >
-                匹配
+                {matching ? "匹配中" : "匹配"}
               </button>
             </div>
 
@@ -194,31 +208,21 @@ export default function GraphPage() {
                 {matchError}
               </div>
             )}
-            {matchedCaseResult && matchedCaseResult.matched_case && (
-              <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-slate-800 dark:text-slate-100">
-                    {matchedCaseResult.matched_case.title}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded font-mono font-medium">
-                    {matchedCaseResult.decision} ({Math.round(matchedCaseResult.confidence * 100)}%)
-                  </span>
+            {matchedCaseResult && (
+              <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] text-xs space-y-2" role="status">
+                <div className="font-semibold text-[var(--text-primary)]">
+                  {matchedCaseResult.matched_case?.title || (matchedCaseResult.decision === "UNCERTAIN" ? "需要补充题目信息" : "当前案例库未覆盖此问题")}
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-[var(--text-muted)] mb-1.5">
-                  {matchedCaseResult.matched_case.learning_objectives[0]}
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  {matchedCaseResult.matched_case ? "仅为主题匹配，尚未验算解题过程。" : matchedCaseResult.reason === "out_of_course" ? "该问题超出当前求根单元的课程范围。" : "补充算法、题目条件和解题步骤后，可重新匹配。"}
                 </p>
-
-                {matchedCaseResult.matched_case.diagnostic_probes.length > 0 && (
-                  <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900 text-[11px] text-indigo-900 dark:text-indigo-200">
-                    <span className="font-semibold block mb-1 flex items-center gap-1">
-                      <HelpCircle className="w-3.5 h-3.5 text-olive-500" />
-                      教学诊断探针：
-                    </span>
-                    <MathMarkdown content={matchedCaseResult.matched_case.diagnostic_probes[0].question} className="text-[11px] text-indigo-900 dark:text-indigo-200 mb-1" />
-                    <div className="mt-1 pt-1 border-t border-indigo-100/60 dark:border-indigo-800/40 text-[10px]">
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 mr-1">诊断基准：</span>
-                      <MathMarkdown content={matchedCaseResult.matched_case.diagnostic_probes[0].correct_answer} className="text-[10px] text-[var(--text-secondary)] inline" />
-                    </div>
+                {matchedCaseResult.clarification_question && (
+                  <p className="p-2 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-secondary)] leading-relaxed">{matchedCaseResult.clarification_question}</p>
+                )}
+                {matchedCaseResult.matched_case?.diagnostic_probes?.length > 0 && (
+                  <div className="p-2.5 rounded-lg border border-[var(--border-subtle)] text-[11px]">
+                    <span className="font-semibold mb-1 flex items-center gap-1"><HelpCircle className="w-3.5 h-3.5 text-olive-500" />思考问题</span>
+                    <MathMarkdown content={matchedCaseResult.matched_case.diagnostic_probes[0].question} className="text-[11px] text-[var(--text-secondary)]" />
                   </div>
                 )}
               </div>
@@ -249,7 +253,7 @@ export default function GraphPage() {
                     ID: {selectedNode.id}
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedNode(null)}
                   className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--text-muted)] hover:text-slate-600"
                 >
