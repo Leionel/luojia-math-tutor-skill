@@ -129,6 +129,9 @@ class EvidencePack:
     required_conditions: list[str] = field(default_factory=list)
     boundary_decision: dict[str, Any] = field(default_factory=dict)
     student_history_refs: list[dict[str, Any]] = field(default_factory=list)
+    match_decision: str = ""
+    condition_details: list[dict[str, Any]] = field(default_factory=list)
+    retrieval_trace: dict[str, Any] = field(default_factory=dict)
 
 
 

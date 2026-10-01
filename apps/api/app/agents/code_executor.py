@@ -204,6 +204,8 @@ async def execute_python_code(code: str, timeout: int = 10) -> str:
             
         out_str = process.stdout.strip()[:_MAX_OUTPUT_CHARS]
         err_str = process.stderr.strip()[:_MAX_OUTPUT_CHARS]
+        if process.returncode != 0 and not err_str:
+            return f"Error: code exited with status {process.returncode}; no verification result is available."
 
         # A missing interpreter dependency is an environment fault, not a
         # student-code fault. Surface it distinctly so the verification hard

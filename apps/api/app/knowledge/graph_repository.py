@@ -74,6 +74,13 @@ class CourseGraphRepository:
     def get_unit(self, unit_id: str) -> Optional[KnowledgeUnit]:
         return self.units.get(unit_id)
 
+    def search_units(self, query: str, limit: int = 5, allow_extension: bool = False) -> list[dict[str, Any]]:
+        """Independent Query recall over verified, boundary-allowed units."""
+        from app.knowledge.course_retrieval import normalize, rank_documents
+        allowed = set(self.boundary_checker.filter_units(list(self.units), allow_extension=allow_extension))
+        docs = [{"id": u.id, "text": normalize(" ".join([u.title] * 3 + u.aliases * 2 + u.keywords + u.chapter_path + [u.content]))}
+                for u in self.units.values() if u.id in allowed and u.review_status == "verified" and u.course_id == self.course_id]
+        return [{"unit_id": uid, "score": round(score, 4)} for uid, score in rank_documents(query, docs)[:limit] if score >= 1.0]
 
     def get_subgraph(
         self,

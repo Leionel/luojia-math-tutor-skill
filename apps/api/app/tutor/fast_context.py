@@ -17,6 +17,7 @@ from app.tutor.fast_path import VerificationMode
 from app.tutor.hint_policy import decide_hint_level
 from app.tutor.intent_router import Intent
 from app.tutor.misconception import Mistake
+from app.search.web_search import search_web, format_web_results_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,10 @@ def fuse_evidence_packs(
     base = course_pack or local_pack
     course_hits = (course_pack.direct_hits + course_pack.graph_hits) if course_pack else []
     local_hits = (local_pack.direct_hits + local_pack.graph_hits) if local_pack else []
-    return replace(base, direct_hits=fuse_hits(course_hits, local_hits), graph_hits=[])
+    citations = {c["id"]: c for pack in (course_pack, local_pack) if pack
+                 for c in pack.citations}
+    return replace(base, direct_hits=fuse_hits(course_hits, local_hits), graph_hits=[],
+                   citations=list(citations.values()))
 
 
 @dataclass
@@ -136,9 +140,13 @@ class FastContextCollector:
             ): "document_chunks",
             asyncio.create_task(self._collect_symbolic_result(state)): "symbolic",
         }
+        if state.get("web_search"):
+            tasks[asyncio.create_task(self._collect_web_hits(state["message"]))] = "web_search"
+
+        effective_timeout = max(self.timeout_seconds, 2.0) if state.get("web_search") else self.timeout_seconds
         done, pending = await asyncio.wait(
             tasks,
-            timeout=self.timeout_seconds,
+            timeout=effective_timeout,
         )
 
         results: dict[str, Any] = {}
@@ -159,7 +167,10 @@ class FastContextCollector:
 
         pack = results.get("hits", None)
         hits = pack.direct_hits + pack.graph_hits if pack else []
-        document_chunks = results.get("document_chunks", [])
+        document_chunks = list(results.get("document_chunks", []))
+        web_search_chunk = results.get("web_search")
+        if web_search_chunk and isinstance(web_search_chunk, str):
+            document_chunks.append(web_search_chunk)
         verifier_result, mistake = results.get(
             "symbolic",
             (
@@ -292,13 +303,14 @@ class FastContextCollector:
                 builder.build_evidence_pack,
                 query=state["message"],
                 student_id=state.get("user_id"),
-                task_mode=state.get("mode"),
+                # Teaching mode (guided/direct) is not a Case task type.
+                task_mode=state.get("task_type"),
                 allow_extension=False,
             )
         except Exception as exc:
             logger.debug("CourseEvidenceBuilder check failed or bypassed: %s", exc)
             return None
-        if pack and (pack.matched_case or pack.concept_anchors):
+        if pack:
             return pack
         return None
 
@@ -342,6 +354,12 @@ class FastContextCollector:
             logger.exception("Document chunk search failed")
             chunks = []
         return chunks, (time.perf_counter() - started) * 1000
+
+    async def _collect_web_hits(self, query: str) -> tuple[str, float]:
+        started = time.perf_counter()
+        results = await search_web(query, max_results=3, timeout=1.8)
+        formatted = format_web_results_for_prompt(results)
+        return formatted, (time.perf_counter() - started) * 1000
 
     async def _collect_symbolic_result(
         self,

@@ -12,6 +12,7 @@ from app.memory.repository import Repository
 from app.observability import current_request_id
 from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
+from app.tutor.prompt_policy import load_teaching_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class TutorOrchestrator:
         self.settings = settings
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
-        self.skill_text = settings.skill_file.read_text(encoding="utf-8")
+        self.skill_text = load_teaching_prompt(settings.skill_file)
         self.workflow_owner = TutorWorkflow(settings, repository)
         self.workflow = self.workflow_owner.workflow
 
@@ -37,7 +38,10 @@ class TutorOrchestrator:
         learning_objective = state.get("learning_objective") or ""
         pedagogical_action = state.get("pedagogical_action") or ""
         action_descriptions = {
-            "explain": "苏格拉底式引导讲解",
+            "explain": "讲解概念或解题过程",
+            "hint": "提供当前步骤的提示",
+            "ask_question": "核对步骤并提出针对性问题",
+            "review_concept": "复习相关概念",
             "tutor": "苏格拉底式引导讲解",
             "check_step": "检查解题步骤",
             "generate_exercise": "生成练习题进行训练",
@@ -78,7 +82,7 @@ class TutorOrchestrator:
             rag_items.append(
                 f"涉及概念：{'、'.join(concepts[:3])}{'等' if len(concepts) > 3 else ''}"
             )
-        rag_items.append("已载入会话历史与当前掌握度评估")
+        rag_items.append("已参考会话历史；掌握度估计可能包含初始默认值")
         if document_chunks:
             rag_items.append(f"已参考用户绑定文档（{len(document_chunks)} 个片段）")
 
@@ -112,9 +116,14 @@ class TutorOrchestrator:
 
         if verification_result:
             if verification_result.get("verified"):
-                verify_items.append("Verifier LLM 验证通过")
+                verdict = verification_result.get("is_correct")
+                verify_items.append(
+                    "推理审查认为本步正确（非确定性证明）" if verdict is True else
+                    "推理审查发现需要修正之处" if verdict is False else
+                    "推理审查完成，正误尚不能确定"
+                )
             else:
-                verify_items.append("Verifier LLM 未能确认当前推导")
+                verify_items.append("推理审查未能确认当前推导")
 
         if not verify_items:
             verify_items.append("本轮未触发符号校验")
@@ -125,9 +134,9 @@ class TutorOrchestrator:
         output_items = []
         route = state.get("metrics", {}).get("route", "")
         if pedagogical_action == "generate_exercise" or route == "examiner":
-            output_items.append("已进入 Examiner 出题/测验阶段")
+            output_items.append("正在生成练习题")
         elif route and "teacher" in str(route):
-            output_items.append("已进入 Teacher 启发式讲解阶段")
+            output_items.append("正在组织讲解")
         else:
             output_items.append("已开始组织回答")
 
@@ -192,6 +201,7 @@ class TutorOrchestrator:
             "concepts": concepts,
             "concept_items": concept_items,
             "verified": verified,
+            "verification_kind": "llm_review" if verification_result else "symbolic" if getattr(verifier_result, "verified", False) else "none",
             "is_correct": is_correct,
             "mistake": getattr(mistake, "label", mistake),
             "verifier_summary": verifier_summary or "",
@@ -215,6 +225,8 @@ class TutorOrchestrator:
         model: str | None = None,
         requested_hint: bool = False,
         image_urls: list[str] | None = None,
+        web_search: bool = False,
+        reasoning_effort: str = "medium",
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
         request_id = current_request_id()
@@ -224,7 +236,7 @@ class TutorOrchestrator:
             0.5,
         )
         route = route_fast_path(message, mode, subject)
-        opening = generate_opening(route)
+        opening = "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
             2,
@@ -249,6 +261,8 @@ class TutorOrchestrator:
             "model": model,
             "requested_hint": requested_hint,
             "image_urls": image_urls,
+            "web_search": web_search,
+            "reasoning_effort": reasoning_effort,
             "vision_result": {},
             "intent": route.intent,
             "detected_subject": route.subject,
@@ -380,7 +394,11 @@ class TutorOrchestrator:
                 await asyncio.gather(task, return_exceptions=True)
 
         # Build thinking summary and calculate elapsed_ms
-        thinking_summary = self._build_thinking_summary(final_state)
+        awaiting_vision = final_state.get("awaiting_vision_confirmation", False)
+        thinking_summary = "图片核对阶段，本轮未开始解题或评估掌握度。" if awaiting_vision else self._build_thinking_summary(final_state)
+        if awaiting_vision:
+            await asyncio.to_thread(self.repository.ensure_user, user_id)
+            await asyncio.to_thread(self.repository.add_message, session_id, "user", message)
         if first_token_time is not None:
             thinking_elapsed_ms = round((first_token_time - request_started) * 1000)
         else:
@@ -401,12 +419,23 @@ class TutorOrchestrator:
         explicit_concepts = extract_explicit_concepts(
             f"{message}\n{visible_output}"
         )
-        if explicit_concepts:
+        if explicit_concepts and not awaiting_vision:
             final_state = {
                 **final_state,
                 "concepts": explicit_concepts,
             }
         learning_meta = self._build_learning_meta(final_state)
+        if awaiting_vision:
+            parsed = final_state.get("vision_result", {})
+            draft = "\n\n".join(part for part in (
+                str(parsed.get("problem_text") or ""),
+                "\n".join(f"$${item}$$" for item in parsed.get("latex", [])),
+            ) if part)
+            learning_meta = {"intent": "vision_confirmation", "subject": subject,
+                             "verified": False, "is_correct": None, "concepts": [],
+                             "concept_items": [], "awaiting_confirmation": True,
+                             "vision_draft": draft, "verification_kind": "none",
+                             "mistake": None, "verifier_summary": "图片核对阶段，尚未开始解题"}
         intent = learning_meta["intent"]
         message_id = await asyncio.to_thread(
             self.repository.add_message,
@@ -425,7 +454,7 @@ class TutorOrchestrator:
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None:
+        if workflow_owner is not None and not awaiting_vision:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

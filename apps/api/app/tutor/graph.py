@@ -25,6 +25,8 @@ from app.tutor.fast_path import (
 )
 from app.tutor.intent_router import Intent
 from app.tutor.policy_router import PolicyRouter
+from app.tutor.prompt_policy import load_teaching_prompt
+from pydantic import BaseModel, ConfigDict, StrictBool, ValidationError
 from app.tutor.prompt_builder import (
     HintLevel,
     build_examiner_prompt,
@@ -36,6 +38,15 @@ from app.tutor.prompt_builder import (
 logger = logging.getLogger(__name__)
 
 
+class VerificationReview(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    verified: StrictBool
+    is_correct: StrictBool | None
+    error_step: str | None
+    reason: str
+    summary: str
+
+
 def sse(event: str, data: dict) -> str:
     return (
         f"event: {event}\n"
@@ -44,6 +55,10 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    web_search: bool
+    reasoning_effort: str
+    awaiting_vision_confirmation: bool
+    tool_evidence: list[dict[str, Any]]
     message: str
     session_id: str
     user_id: str
@@ -97,7 +112,7 @@ def route_after_context(state: AgentState) -> str:
     if state.get("requires_policy_fallback"):
         return "policy_fallback"
     if state.get("intent") == Intent.PROOF_HINT:
-        return "proof_tutor"
+        return "verifier"
     if state.get("pedagogical_action") == "generate_exercise":
         return "examiner"
     if _needs_llm_verifier(state):
@@ -107,7 +122,7 @@ def route_after_context(state: AgentState) -> str:
 
 def route_after_policy(state: AgentState) -> str:
     if state.get("intent") == Intent.PROOF_HINT:
-        return "proof_tutor"
+        return "verifier"
     if state.get("pedagogical_action") == "generate_exercise":
         return "examiner"
     if _needs_llm_verifier(state):
@@ -125,7 +140,7 @@ class TutorWorkflow:
         self.context_collector = FastContextCollector(repository, settings=settings)
         self._semantic_worker_task: asyncio.Task | None = None
         self._semantic_worker_stop = asyncio.Event()
-        self.skill_text = settings.skill_file.read_text(encoding="utf-8")
+        self.skill_text = load_teaching_prompt(settings.skill_file)
         self.workflow = self.build_tutor_graph()
 
     def build_tutor_graph(self) -> CompiledGraph:
@@ -139,7 +154,11 @@ class TutorWorkflow:
         workflow.add_node("proof_tutor", self.proof_tutor_node)
 
         workflow.add_edge(START, "vision_parse")
-        workflow.add_edge("vision_parse", "fast_context")
+        workflow.add_conditional_edges(
+            "vision_parse",
+            lambda state: "stop" if state.get("awaiting_vision_confirmation") else "continue",
+            {"stop": END, "continue": "fast_context"},
+        )
         workflow.add_conditional_edges(
             "fast_context",
             route_after_context,
@@ -161,7 +180,10 @@ class TutorWorkflow:
                 "proof_tutor": "proof_tutor",
             },
         )
-        workflow.add_edge("verifier", "teacher")
+        workflow.add_conditional_edges(
+            "verifier", lambda state: "proof" if state.get("intent") == Intent.PROOF_HINT else "teach",
+            {"proof": "proof_tutor", "teach": "teacher"},
+        )
         workflow.add_edge("teacher", END)
         workflow.add_edge("examiner", END)
         workflow.add_edge("proof_tutor", END)
@@ -221,7 +243,7 @@ class TutorWorkflow:
             confirmation = (
                 "我先把图片识别为下面这道题，请你确认公式和条件是否准确；"
                 "若有误请直接指出：\n\n"
-                f"{parsed_text}"
+                f"{parsed_text}\n\n请确认后继续，或先修正识别有误的条件。"
             )
             on_thinking = self._callback(config, "on_thinking")
             if on_thinking:
@@ -235,7 +257,12 @@ class TutorWorkflow:
                         },
                     )
                 )
+            on_token = self._callback(config, "on_token")
+            if on_token:
+                await on_token(sse("message", {"content": confirmation}))
             return {
+                "awaiting_vision_confirmation": True,
+                "final_output": confirmation,
                 "original_message": state.get("message", ""),
                 "message": enriched_message,
                 "vision_result": parsed,
@@ -259,7 +286,13 @@ class TutorWorkflow:
             on_progress = self._callback(config, "on_progress")
             if on_progress:
                 await on_progress(f"[VISION]\n图片解析未完成：{exc}")
+            failure = "图片识别未完成，请重新上传清晰图片或输入题目文字；本轮没有开始解题。"
+            on_token = self._callback(config, "on_token")
+            if on_token:
+                await on_token(sse("message", {"content": failure}))
             return {
+                "awaiting_vision_confirmation": True,
+                "final_output": failure,
                 "vision_result": {"error": str(exc)},
                 "metrics": {
                     **state.get("metrics", {}),
@@ -497,6 +530,7 @@ class TutorWorkflow:
             state["intent"],
             state.get("user_api_key"),
             state.get("model"),
+            history=self._history_from_messages(state.get("messages", []), state["message"]),
         )
         action = decision.action
         metrics = dict(state.get("metrics", {}))
@@ -589,7 +623,6 @@ class TutorWorkflow:
         # by the model voluntarily emitting a [VERIFY] tag.
         require_verification = (
             state.get("verification_mode") == VerificationMode.SYMBOLIC.value
-            or bool(state.get("verification_result"))
         )
         return await self._stream_generation(
             state,
@@ -617,6 +650,8 @@ class TutorWorkflow:
         config: RunnableConfig,
     ) -> dict:
         from app.tutor.proof_tutor import build_proof_tutor_prompt
+
+        state = {**state, "metrics": {**state.get("metrics", {}), "route": "proof_tutor"}}
         return await self._stream_generation(
             state,
             config,
@@ -641,14 +676,14 @@ class TutorWorkflow:
         on_progress = self._callback(config, "on_progress")
         started = time.perf_counter()
         response_text = ""
-        tool_evidence: list[dict[str, str]] = []
+        tool_evidence: list[dict[str, Any]] = []
         verification_forced = False
 
         if on_progress:
             output_text = {
-                "examiner": "已进入 Examiner 出题/测验阶段。",
+                "examiner": "正在生成练习题。",
                 "proof_tutor": "已进入证明结构辅导阶段。",
-                "teacher": "已进入 Teacher 启发式讲解阶段。",
+                "teacher": "正在组织讲解。",
             }.get(default_route, "已进入教学回答阶段。")
             await on_progress(f"[OUTPUT]\n{output_text}")
 
@@ -659,6 +694,8 @@ class TutorWorkflow:
                     prompt,
                     state.get("user_api_key"),
                     state.get("model"),
+                    effort=state.get("reasoning_effort", "medium"),
+                    enable_search=state.get("web_search", False),
                 )
                 metrics["llm_call_count"] = (
                     int(metrics.get("llm_call_count", 0)) + 1
@@ -667,6 +704,7 @@ class TutorWorkflow:
                 if (
                     require_verification
                     and not code_blocks
+                    and not tool_evidence
                     and not verification_forced
                     and tool_round < max_rounds
                 ):
@@ -678,7 +716,7 @@ class TutorWorkflow:
                         *prompt,
                         {"role": "assistant", "content": candidate},
                         {
-                            "role": "user",
+                            "role": "developer",
                             "content": (
                                 "[系统强制要求] 本轮包含符号推导，必须先输出 [VERIFY] "
                                 "后跟一个 python 代码块（仅允许 math/sympy），"
@@ -693,18 +731,20 @@ class TutorWorkflow:
                     break
 
                 results = []
-                for code in code_blocks:
+                for code in code_blocks[:1]:
                     result = await execute_python_code(
                         code,
                         timeout=self.settings.tool_timeout_seconds,
                     )
-                    results.append(result)
-                    tool_evidence.append({"code": code, "result": result})
+                    success = bool(result.strip()) and "Error:" not in result and "no output" not in result
+                    record = {"code": code, "result": result, "execution_succeeded": success}
+                    results.append(record)
+                    tool_evidence.append(record)
                 prompt = [
                     *prompt,
                     {"role": "assistant", "content": candidate},
                     {
-                        "role": "user",
+                        "role": "developer",
                         "content": (
                             "[TOOL_RESULT]\n"
                             + json.dumps(results, ensure_ascii=False)
@@ -719,7 +759,8 @@ class TutorWorkflow:
             # run, or an upstream verifier failure, is surfaced to the student
             # instead of silently flowing into the final answer.
             upstream_failure = (state.get("verification_result") or {}).get("verified") is False
-            if require_verification and not tool_evidence:
+            usable_tools = [item for item in tool_evidence if item["execution_succeeded"]]
+            if (require_verification and not usable_tools) or (tool_evidence and not usable_tools):
                 response_text = (
                     "⚠️ 本轮未能完成符号验算，以下内容未经确定性验证，请仔细核对。\n\n"
                     + response_text
@@ -736,6 +777,7 @@ class TutorWorkflow:
                 response_text = f"❗ {failure_summary}\n\n{response_text}"
 
             metrics["sandbox_tool_calls"] = len(tool_evidence)
+            metrics["sandbox_successful_calls"] = len(usable_tools)
             metrics["teacher_first_token_ms"] = round(
                 (time.perf_counter() - started) * 1000,
                 2,
@@ -770,12 +812,16 @@ class TutorWorkflow:
         prompt: list[dict[str, Any]],
         api_key: str | None,
         model: str | None,
+        effort: str = "medium",
+        enable_search: bool = False,
     ) -> str:
         response = ""
         async for token in self.llm.stream(
             prompt,
             api_key=api_key,
             model=model,
+            effort=effort,
+            enable_search=enable_search,
         ):
             if isinstance(token, dict):
                 if token.get("type") == "reasoning":
@@ -799,6 +845,8 @@ class TutorWorkflow:
 
     @staticmethod
     def _visible_output(response: str) -> str:
+        response = re.sub(r"\[VERIFY\]\s*```(?:python|py)\s*\n.*?```", "", response,
+                          flags=re.IGNORECASE | re.DOTALL)
         output = re.search(
             r"\[OUTPUT\]\s*(.*)$",
             response,
@@ -908,28 +956,18 @@ class TutorWorkflow:
         try:
             start = response_text.index("{")
             end = response_text.rindex("}") + 1
-            parsed = json.loads(response_text[start:end])
-            if isinstance(parsed, dict):
-                is_correct = parsed.get("is_correct")
-                if is_correct not in {True, False, None}:
-                    is_correct = None
-                reason = str(parsed.get("reason") or "").strip()
-                summary = str(parsed.get("summary") or reason).strip()
-                return {
-                    "verified": bool(parsed.get("verified")),
-                    "is_correct": is_correct,
-                    "error_step": parsed.get("error_step"),
-                    "reason": reason,
-                    "summary": summary,
-                }
-        except (ValueError, json.JSONDecodeError):
+            parsed = VerificationReview.model_validate_json(response_text[start:end])
+            if not parsed.verified:
+                parsed.is_correct = None
+            return parsed.model_dump()
+        except (ValueError, json.JSONDecodeError, ValidationError):
             pass
         return {
             "verified": False,
             "is_correct": None,
             "error_step": None,
             "reason": "Verifier did not return the required JSON schema.",
-            "summary": response_text.strip(),
+            "summary": "推理审查未返回有效状态，暂无法确认本步；请核对条件。",
         }
 
     @staticmethod

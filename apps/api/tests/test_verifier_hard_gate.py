@@ -51,7 +51,7 @@ class FakeLLM:
         self.responses = list(responses)
         self.prompts: list[list[dict]] = []
 
-    async def stream(self, prompt, api_key=None, model=None):
+    async def stream(self, prompt, api_key=None, model=None, **kwargs):
         self.prompts.append(prompt)
         if not self.responses:
             raise AssertionError("FakeLLM received more model calls than scripted")

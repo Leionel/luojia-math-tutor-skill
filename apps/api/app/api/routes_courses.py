@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.auth import Principal, get_principal, require_role
 from app.config import Settings
@@ -18,7 +18,7 @@ OUTCOME_EVENT_TYPES = {"attempt", "revision", "revision_success", "probe", "erro
 
 
 class MatchRequest(BaseModel):
-    query: str
+    query: str = Field(min_length=1, max_length=20000)
     context: Optional[dict[str, Any]] = None
 
 

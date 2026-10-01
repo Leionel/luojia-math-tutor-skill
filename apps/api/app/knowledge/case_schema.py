@@ -113,6 +113,9 @@ class CaseMatchResult:
     difference_axes: list[str] = field(default_factory=list)
     diagnostic_probe: Optional[dict[str, Any]] = None
     review_required: bool = False
+    clarification_question: Optional[str] = None
+    reason: str = ""
+    unit_candidates: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -125,4 +128,7 @@ class CaseMatchResult:
             "difference_axes": self.difference_axes,
             "diagnostic_probe": self.diagnostic_probe,
             "review_required": self.review_required,
+            "clarification_question": self.clarification_question,
+            "reason": self.reason,
+            "unit_candidates": self.unit_candidates,
         }

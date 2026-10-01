@@ -28,7 +28,7 @@ class CourseService:
         self.graph_repo = CourseGraphRepository(course_id=course_id)
         self.candidate_mgr = CandidateManager(store=self.store)
         self.overlay_store = StudentOverlayStore(store=self.store)
-        self.case_matcher = TeachingCaseMatcher(self.graph_repo.case_repo)
+        self.case_matcher = TeachingCaseMatcher(self.graph_repo.case_repo, graph_repo=self.graph_repo)
 
         self._load_default_course_pack()
         self.review_service = GraphReviewService(self.graph_repo, self.candidate_mgr, store=self.store)

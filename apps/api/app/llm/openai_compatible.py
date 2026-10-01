@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator
 
 import httpx
 
-from app.config import Settings, PROVIDER_BASE_URLS
+from app.config import Settings, PROVIDER_BASE_URLS, configured_model_catalog
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +22,106 @@ class OpenAICompatibleClient:
     def __init__(self, settings: Settings):
         self.settings = settings
 
+    @staticmethod
+    def _wire_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        # Backend-authored developer slots use the established system role on
+        # the shared Chat Completions wire. Never promote student/history data.
+        return [{**message, "role": "system"} if message.get("role") == "developer"
+                else dict(message) for message in messages]
+
+    def build_request_payload(
+        self,
+        model: str | None,
+        messages: list[dict[str, Any]],
+        effort: str = "medium",
+        enable_search: bool = False,
+        stream: bool = True,
+        temperature: float = 0.3,
+    ) -> dict[str, Any]:
+        base_url, resolved_model = self.settings.resolve_request(model)
+        provider = ""
+        catalog = configured_model_catalog()
+        for m_id, spec in catalog.items():
+            if m_id == model or spec.name == model or m_id == resolved_model:
+                provider = spec.provider
+                break
+
+        if not provider:
+            low_url = (base_url or "").lower()
+            low_mod = (model or resolved_model or "").lower()
+            if "deepseek" in low_url or "deepseek" in low_mod:
+                provider = "deepseek"
+            elif "dashscope" in low_url or "qwen" in low_mod:
+                provider = "qwen"
+            elif "bigmodel" in low_url or "glm" in low_mod:
+                provider = "glm"
+            elif "moonshot" in low_url or "kimi" in low_mod:
+                provider = "moonshot"
+            elif "anthropic" in low_url:
+                provider = "anthropic"
+            else:
+                provider = "openai"
+
+        payload: dict[str, Any] = {
+            "model": resolved_model,
+            "messages": self._wire_messages(messages),
+            "stream": stream,
+            "temperature": temperature,
+        }
+
+        # 1. Native web search mapping
+        if enable_search:
+            if provider == "qwen":
+                payload["enable_search"] = True
+            elif provider == "glm":
+                payload["tools"] = [{"type": "web_search", "web_search": {"enable": True}}]
+            elif provider in ("moonshot", "kimi"):
+                payload["tools"] = [{"type": "builtin_function", "function": {"name": "$web_search"}}]
+
+        # 2. Reasoning effort mapping
+        clean_effort = (effort or "medium").lower()
+        if clean_effort == "off":
+            if provider == "deepseek":
+                payload["thinking"] = {"type": "disabled"}
+            elif provider == "qwen":
+                payload["enable_thinking"] = False
+            elif provider == "glm":
+                payload["thinking"] = {"type": "disabled"}
+        elif provider == "deepseek":
+            if clean_effort == "low":
+                payload["reasoning_effort"] = "low"
+            elif clean_effort in ("max", "high"):
+                payload["reasoning_effort"] = "max" if clean_effort == "max" else "high"
+            else:
+                payload["reasoning_effort"] = "high"
+        elif provider == "qwen":
+            payload["enable_thinking"] = True
+            budget_map = {"low": 1024, "medium": 4096, "high": 8192, "max": 16384}
+            payload["thinking_budget"] = budget_map.get(clean_effort, 4096)
+        elif provider == "glm":
+            payload["thinking"] = {"type": "enabled"}
+            if clean_effort == "low":
+                payload["reasoning_effort"] = "low"
+            elif clean_effort in ("max", "high"):
+                payload["reasoning_effort"] = "max" if clean_effort == "max" else "high"
+            else:
+                payload["reasoning_effort"] = "high"
+        elif provider == "anthropic":
+            effort_map = {"low": "low", "medium": "medium", "high": "high", "max": "max"}
+            payload["output_config"] = {"effort": effort_map.get(clean_effort, "medium")}
+        else:
+            effort_map = {"low": "low", "medium": "medium", "high": "high", "max": "high"}
+            payload["reasoning_effort"] = effort_map.get(clean_effort, "medium")
+
+        return payload
+
     async def stream(
         self,
         messages: list[dict[str, Any]],
         api_key: str | None = None,
         model: str | None = None,
+        effort: str = "medium",
+        enable_search: bool = False,
     ) -> AsyncIterator[str | dict[str, str]]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
         base_url, resolved_model = self.settings.resolve_request(model)
@@ -41,12 +136,14 @@ class OpenAICompatibleClient:
             return
 
         url = f"{base_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": resolved_model,
-            "messages": messages,
-            "stream": True,
-            "temperature": 0.3,
-        }
+        payload = self.build_request_payload(
+            model=model,
+            messages=messages,
+            effort=effort,
+            enable_search=enable_search,
+            stream=True,
+            temperature=0.3,
+        )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         client = self.get_http_client()
         async with client.stream("POST", url, json=payload, headers=headers, timeout=60.0) as response:
@@ -74,6 +171,8 @@ class OpenAICompatibleClient:
         messages: list[dict[str, Any]],
         api_key: str | None = None,
         model: str | None = None,
+        effort: str = "medium",
+        enable_search: bool = False,
     ) -> str:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
         base_url, resolved_model = self.settings.resolve_request(model)
@@ -82,12 +181,14 @@ class OpenAICompatibleClient:
                 "未配置模型 API Key。请在服务端设置 LLM_API_KEY。"
             )
         url = f"{base_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": resolved_model,
-            "messages": messages,
-            "stream": False,
-            "temperature": 0.1,
-        }
+        payload = self.build_request_payload(
+            model=model,
+            messages=messages,
+            effort=effort,
+            enable_search=enable_search,
+            stream=False,
+            temperature=0.1,
+        )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()

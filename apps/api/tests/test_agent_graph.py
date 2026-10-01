@@ -79,7 +79,7 @@ def make_config(session_id: str = "session-1") -> dict:
 
 
 def install_fake_stream(workflow: TutorWorkflow, text: str) -> None:
-    async def fake_stream(messages, api_key=None, model=None):
+    async def fake_stream(messages, api_key=None, model=None, **kwargs):
         yield {"type": "content", "content": text}
 
     workflow.llm.stream = fake_stream
@@ -117,7 +117,7 @@ def test_symbolic_success_routes_directly_to_teacher():
 def test_complex_proof_routes_through_proof_tutor():
     state = make_state("证明拉格朗日中值定理")
 
-    assert route_after_context(state) == "proof_tutor"
+    assert route_after_context(state) == "verifier"
 
 
 @pytest.mark.asyncio
@@ -158,7 +158,7 @@ async def test_symbolic_success_skips_verifier_llm():
     ])
     seen_prompts: list[list[dict]] = []
 
-    async def scripted_stream(messages, api_key=None, model=None):
+    async def scripted_stream(messages, api_key=None, model=None, **kwargs):
         seen_prompts.append(list(messages))
         yield {"type": "content", "content": next(responses)}
 
@@ -183,8 +183,9 @@ async def test_symbolic_success_skips_verifier_llm():
 
 
 @pytest.mark.asyncio
-async def test_complex_proof_uses_proof_tutor_directly():
+async def test_complex_proof_is_reviewed_before_tutoring():
     workflow = TutorWorkflow(get_settings(), make_repository())
+    workflow.llm.chat_completion = AsyncMock(return_value='{"verified": true, "is_correct": null, "error_step": null, "reason": "需给出学生步骤", "summary": "审查题目条件"}')
     install_fake_stream(workflow, "先明确定理中的条件分别起什么作用。")
     state = make_state("证明拉格朗日中值定理")
 
@@ -193,7 +194,7 @@ async def test_complex_proof_uses_proof_tutor_directly():
         config=make_config(state["session_id"]),
     )
 
-    assert final_state["metrics"]["llm_call_count"] == 1
+    assert final_state["metrics"]["llm_call_count"] == 2
     assert final_state["metrics"]["route"] == "proof_tutor"
 
 
@@ -205,7 +206,7 @@ async def test_policy_fallback_does_not_duplicate_user_prompt():
     )
     captured_prompt = []
 
-    async def fake_stream(messages, api_key=None, model=None):
+    async def fake_stream(messages, api_key=None, model=None, **kwargs):
         captured_prompt.extend(messages)
         yield {"type": "content", "content": "请先补充题目条件。"}
 
@@ -230,7 +231,7 @@ async def test_policy_fallback_does_not_duplicate_user_prompt():
 async def test_model_reasoning_is_not_forwarded_or_persisted():
     workflow = TutorWorkflow(get_settings(), make_repository())
 
-    async def fake_stream(messages, api_key=None, model=None):
+    async def fake_stream(messages, api_key=None, model=None, **kwargs):
         yield {"type": "reasoning", "content": "private chain of thought"}
         yield {"type": "content", "content": "公开回答"}
 
@@ -257,7 +258,7 @@ async def test_teacher_executes_requested_verification_before_showing_output(mon
         "[OUTPUT]\n已核对，结果是 4。",
     ])
 
-    async def fake_stream(messages, api_key=None, model=None):
+    async def fake_stream(messages, api_key=None, model=None, **kwargs):
         yield {"type": "content", "content": next(responses)}
 
     execute = AsyncMock(return_value="Output:\n4")
