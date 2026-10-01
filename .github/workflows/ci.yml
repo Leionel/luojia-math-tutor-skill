@@ -45,10 +45,13 @@ jobs:
         run: npm ci
       - name: Type check
         working-directory: apps/web
-        run: npx tsc --noEmit
+        run: npm run typecheck
+      - name: Lint
+        working-directory: apps/web
+        run: npm run lint
       - name: Frontend utility tests
         working-directory: apps/web
-        run: node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts
+        run: node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/message-parser.test.ts
       - name: Production build
         working-directory: apps/web
         run: npm run build

@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-v0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg?logo=next.js&logoColor=white)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg?logo=next.js&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Agent](https://img.shields.io/badge/Agent-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![Pedagogy](https://img.shields.io/badge/Pedagogy-Socratic-blueviolet.svg)](#🧠-learning-loop-基于-bkt-的动态掌握度追踪)
@@ -179,7 +179,7 @@ Iron Constraints (不可突破的底线):
 虽然核心在于 Agent Workflow，但本项目同样具备完善的工业级全栈实现：
 
 *   **分层 RAG 检索引擎**：本地 BM25 位于首字热路径，不依赖网络；Semantic Embedding 在当前回答结束后异步增强并缓存，失败不会影响本轮输出。
-*   **全栈交互体验**：Next.js 14 (App Router) + FastAPI + SQLite。支持上传解析、公式渲染、掌握度雷达、随堂笔记和用户自带模型配置。
+*   **全栈交互体验**：Next.js 16 (App Router) + React 19 + FastAPI + SQLite。支持上传解析、公式渲染、掌握度雷达、随堂笔记和用户自带模型配置。
 *   **智能动态标签 (Dynamic Tagging)**：显式数学术语、上一轮会话状态与本地知识检索共同确定考点；短跟进会优先继承上下文，避免“好的，继续”触发无关知识点漂移。
 
 ---
@@ -187,7 +187,7 @@ Iron Constraints (不可突破的底线):
 ## 📁 项目目录结构
 
 ```text
-├── apps/web                     # Next.js 14 前端项目 (React, TypeScript, Tailwind)
+├── apps/web                     # Next.js 16 前端项目 (React 19, TypeScript, Tailwind)
 │   ├── app/                     # App Router 路由 (chat, mistake-book, notebook, dashboard)
 │   ├── components/              # 核心 UI 组件 (草稿板, 公式键盘, 消息泡, 学习面板等)
 │   └── lib/                     # API 请求与前端封装
@@ -208,7 +208,7 @@ Iron Constraints (不可突破的底线):
 ## ⚙️ 本地快速部署
 
 ### 1. 前置准备
-*   安装 [Node.js](https://nodejs.org/) (v18+)
+*   安装 [Node.js](https://nodejs.org/)（Next.js 最低 v20.9；本仓库测试与 CI 使用 v24）
 *   安装 [Python](https://www.python.org/) (v3.10+)
 
 ### 2. 配置环境变量
@@ -275,7 +275,11 @@ npm run test:api
 # Run frontend helper/security tests
 npm run test:web:ui
 
-# Build and type-check the frontend
+# 生成路由类型并检查 TypeScript；独立运行 ESLint
+npm --prefix apps/web run typecheck
+npm --prefix apps/web run lint
+
+# Build and type-check the frontend (先停止 Web dev server)
 npm run build:web
 ```
 

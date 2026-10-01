@@ -11,7 +11,8 @@ The primary app lives under `apps/`. `apps/api/app/` contains the FastAPI backen
 - `npm run dev:web`: start Next.js on port `3000` (these two scripts use `npm.cmd` and are Windows-only).
 - `npm test`: validate knowledge JSON, run the API test suite, and run frontend utility tests.
 - `npm run build:web`: create and type-check the production frontend build.
-- `cd apps/web && npm run lint`: run Next.js lint checks.
+- `cd apps/web && npm run typecheck`: generate Next.js route types, then check TypeScript.
+- `cd apps/web && npm run lint`: run ESLint flat-config checks (Next.js 16 removed `next lint`; builds do not run lint).
 
 ## Testing Guidelines
 
