@@ -23,6 +23,7 @@ export type PlotPoint = { x: number; y: number };
 
 export type PlotPoints = {
   pts: PlotPoint[];
+  segments: PlotPoint[][];
   minY: number;
   maxY: number;
 };
@@ -205,12 +206,15 @@ export function buildPlotPoints(
   maxX: number,
   samples = 100,
 ): PlotPoints | null {
-  if (!Number.isFinite(minX) || !Number.isFinite(maxX) || minX >= maxX || samples < 2) {
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX) || minX >= maxX || !Number.isInteger(samples) || samples < 2 || samples > 1000) {
     return null;
   }
 
+  if (!Number.isFinite(maxX - minX)) return null;
   const step = (maxX - minX) / samples;
   const pts: PlotPoint[] = [];
+  const segments: PlotPoint[][] = [];
+  let segment: PlotPoint[] = [];
   let minY = Infinity;
   let maxY = -Infinity;
 
@@ -220,19 +224,37 @@ export function buildPlotPoints(
       const y = evaluateMathExpression(expression, x);
       minY = Math.min(minY, y);
       maxY = Math.max(maxY, y);
+      const previous = segment.at(-1);
+      if (previous) {
+        // Probe the interval: a pole need not coincide with a sample.
+        let broken = false;
+        for (const fraction of [0.25, 0.5, 0.75]) {
+          try {
+            const probe = evaluateMathExpression(expression, previous.x + (x - previous.x) * fraction);
+            const linear = previous.y + (y - previous.y) * fraction;
+            if (Math.abs(probe - linear) > 2 * Math.max(1, Math.abs(previous.y), Math.abs(y))) broken = true;
+          } catch { broken = true; }
+        }
+        if (broken) { segments.push(segment); segment = []; }
+      }
+      segment.push({ x, y });
       pts.push({ x, y });
     } catch {
-      // Singular samples are omitted so continuous portions can still render.
+      if (segment.length) segments.push(segment);
+      segment = [];
     }
   }
 
+  if (segment.length) segments.push(segment);
   if (!pts.length || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
     return null;
   }
 
   const yRange = maxY === minY ? 1 : maxY - minY;
+  if (!Number.isFinite(yRange) || !Number.isFinite(minY - yRange * 0.1) || !Number.isFinite(maxY + yRange * 0.1)) return null;
   return {
     pts,
+    segments,
     minY: minY - yRange * 0.1,
     maxY: maxY + yRange * 0.1,
   };

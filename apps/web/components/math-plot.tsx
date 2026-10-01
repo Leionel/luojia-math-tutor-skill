@@ -17,12 +17,12 @@ export function MathPlot({ function: fn, domain = "-10,10" }: MathPlotProps) {
   
   // Calculate points
   const points = useMemo(() => {
-    return buildPlotPoints(fn, minX, maxX);
-  }, [fn, minX, maxX]);
+    return domain.split(",").length === 2 && domain.split(",").every(v => v.trim() !== "") ? buildPlotPoints(fn, minX, maxX) : null;
+  }, [fn, minX, maxX, domain]);
 
   if (!points) return <div className="p-4 bg-red-50 text-red-500 rounded border border-red-200">无法渲染函数图像: {fn}</div>;
 
-  const { pts, minY, maxY } = points;
+  const { segments, minY, maxY } = points;
   
   // Transform domain to SVG coordinates
   const scaleX = (x: number) => padding + ((x - minX) / (maxX - minX)) * (width - 2 * padding);
@@ -31,14 +31,14 @@ export function MathPlot({ function: fn, domain = "-10,10" }: MathPlotProps) {
   const originX = minX <= 0 && maxX >= 0 ? scaleX(0) : scaleX(minX);
   const originY = minY <= 0 && maxY >= 0 ? scaleY(0) : scaleY(minY);
 
-  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(p.x)} ${scaleY(p.y)}`).join(" ");
+  const pathD = segments.map(pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(p.x)} ${scaleY(p.y)}`).join(" ")).join(" ");
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-[#d6d0ba] dark:border-[#3e3f36] bg-[#faf7f2]/80 dark:bg-[#1e1e1b]/80 shadow-md p-4 w-fit flex flex-col items-center">
+    <div className="my-4 rounded-xl overflow-hidden border border-[#d6d0ba] dark:border-[#3e3f36] bg-[#faf7f2]/80 dark:bg-[#1e1e1b]/80 shadow-md p-3 w-full min-w-0 max-w-full flex flex-col items-center">
       <div className="mb-2 text-sm font-title text-[#617a55] border-b border-[#d6d0ba] dark:border-[#3e3f36] pb-2 w-full text-center">
         函数图像: f(x) = {fn}
       </div>
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="font-body text-xs text-[#757a6b]">
+      <svg role="img" aria-label={`函数 ${fn} 的数值采样图`} viewBox={`0 0 ${width} ${height}`} className="block w-full h-auto font-body text-xs text-[var(--text-secondary)]">
         {/* Grid X */}
         {Array.from({ length: 11 }).map((_, i) => {
           const x = minX + (maxX - minX) * (i / 10);
@@ -62,12 +62,13 @@ export function MathPlot({ function: fn, domain = "-10,10" }: MathPlotProps) {
         })}
 
         {/* Axes */}
-        <line x1={padding} y1={originY} x2={width - padding} y2={originY} stroke="currentColor" strokeWidth={1} />
-        <line x1={originX} y1={padding} x2={originX} y2={height - padding} stroke="currentColor" strokeWidth={1} />
+        {minY <= 0 && maxY >= 0 && <line x1={padding} y1={originY} x2={width - padding} y2={originY} stroke="currentColor" strokeWidth={1} />}
+        {minX <= 0 && maxX >= 0 && <line x1={originX} y1={padding} x2={originX} y2={height - padding} stroke="currentColor" strokeWidth={1} />}
 
         {/* Function Curve */}
         <path d={pathD} fill="none" stroke="#617a55" strokeWidth={2} className="drop-shadow-sm" />
       </svg>
+      <p className="text-xs text-[var(--text-muted)]">数值采样示意；间断检测为启发式，不能替代证明。</p>
     </div>
   );
 }
