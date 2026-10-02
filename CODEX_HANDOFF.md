@@ -1,6 +1,41 @@
 # CODEX 交接文档
 
-> 最新交接：2026-10-02（M2/M3工程回执见末节）。写给要接手本仓库的 Codex。M0/M1 最新实测见研究文档 §27.8 与 `COURSE_GRAPH_M0_M1.md`；长期推进继续以 §27 为准；本文下方按日期保留历史工作记录。
+> 最新交接：2026-10-03（小珞、教学流程审查与F1–F4/F8加强）。写给要接手本仓库的 Codex。M0/M1 最新实测见研究文档 §27.8 与 `COURSE_GRAPH_M0_M1.md`；诊断/研究主线见 §27，新增功能规划见 §28 与下方入口；本文下方按日期保留历史工作记录。
+
+
+## 2026-10-03 小珞、教学流程审查与 F1–F4/F8 加强
+
+用户授权加入数学学姐形象“小珞”、检查明显不符的流程/设定/提示并直接修复，随后授权在五小时额度耗尽前继续加强薄弱处。本轮原样接入小珞 PNG 到首页/聊天欢迎区，明确 AI 身份；统一独立 probe 的新帮助保护（普通聊天/笔记/相似题/求根提交），保存每条回答自身教学模式和检查状态，修正模式与任务意图冲突、相似题未持久保存、抽样教材笔记全书措辞及提示数据边界，新增根主题开发参考题。teaching-v2.4；计算执行与数学语义验证明确分开。
+
+F1 反馈待确认时锁定输入和新提交，保留幂等重试；F2 原文段落追加笔记草稿且刷新恢复；F3 逐步/播放/暂停/同条件轨迹对照/历史回看与按实验保存的本地复盘；F4 未确认选项按 owner/测评恢复、题号导航与确认进度；F8 已保存行号定位、未提交修改提示、两版原文对照、tol/max_iter 使用与 solve 本体作用域静态检查。学生代码仍不执行，提示/手动轨迹不提升独立成功。无新增表/依赖。
+
+本地最终 npm test：知识JSON/API469/Web39；生产build及TypeScript通过；lint0错误/10原有警告；diff check通过。浏览器在隔离演示库验证五类增强、首页与聊天形象，以及390px实验布局；未调用真实模型。日志 results/f1-f4-f8-strengthened-*.log。完整审查、修复与剩余弱项见 planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md。真实模型/教师gold/真人学习收益/C0/C1/远端CI未验证。数学语义Answer Guard及动态HTML同步JS的CPU强制隔离仍未闭合；历史内容/外部帮助无法由当前应用保护排除；完整PDF标注、跨设备本地草稿与静态规则版本回执后续再做。未commit/push/deploy，保留原工作区成果与无关原型。额度读数91%时结束新功能扩展并收尾。
+
+## 2026-10-02 首页与F5/F8（上一轮回执）
+
+用户继续授权更新首页、加强F1–F4，并启动F5和F8首版。首页接入只读owner概览、六入口、真实任务恢复与参考测评；中文衬线排版、数学示意与减少动画适配。F1找回计划外/跨日未完成检验；F2笔记按原文章节过滤；F3参数/预测草稿及实验链接恢复；F4当前测评/结果链接恢复。详见 `planning/learning-experience-2026-10/home-f5-f8-delivery.md`。
+
+新增learning_extensions：F5文字讲回、引用原句/来源哈希/补充版本，模型意见明确未核验；无模型可自我对照。F8限定Newton静态审阅、手动轨迹独立诊断与前后版本比较。没有C0隔离回执，因此不执行学生代码，旧code_executor未放宽。F5/F8帮助受首次独立probe保护，不更新独立成绩。复用learning_records，无新增数据库表或依赖。
+
+本地npm test：API458/Web35/知识JSON通过；生产build与类型检查通过；lint0错误/10原有警告。浏览器使用隔离演示库；真实模型/教师核对/学生试用/C0/C1/远端CI未验证。预览 localhost:3000 首页、8000 API，仍用 results/f1-f4-ui*.db 和LUOJIA_NO_DOTENV=1。未commit/push/deploy，既有原型/egg-info等文件保留。
+
+用户提供透明PNG Logo已原样接入首页、学习工作区、对话品牌区与浏览器图标，复用BrandLogo，原图SHA256一致。资产apps/web/public/brand/luojia-logo.png。
+
+## 2026-10-02 F1–F4首版（上一轮回执）
+
+用户授权先做F1–F4，并授权自检后升级。今日学习/教材伴读/求根实验/章节诊断已接入，聊天顶部“今日学习”进入；交付范围与后续门槛见 `planning/learning-experience-2026-10/f1-f4-delivery.md`。新增LearningWorkspace、受控root_runner、source-bound explanation与learning_records；runtime课程库默认随文件SQLite派生持久库，显式COURSE_STORE_PATH优先。旧段落“无配置即内存”只保留作历史基线。
+
+本地npm test API445/Web34/JSON、typecheck/build通过；lint0错误/10既有警告。390px/1440px浏览器核心流程、恢复和弃测通过，results/f1-f4-*为隔离演示证据。参考题计分不是研究成绩，真实模型、教师gold和学生试用未验证；旧版本任务恢复/完整PDF标注/独立研究测验未完成。没有commit/push/deploy；保留既有原型/egg-info等无关工作区文件。
+
+## 2026-10-02 功能规划入口（仅规划，优先读取）
+
+用户要求在竞品建议基础上形成详细规划，选择融入现有六个月数值分析主线，并希望利用AI加速、不提前删除后续功能。已形成[总规划](planning/learning-experience-2026-10/README.md)：F1今日任务/间隔复习、F2教材伴读、F3数值实验优先，F4章节小测、F5讲回、F6视频伴学、F7教师简报、F8代码作业全部细化；七份文件含基线门槛、核心分计划、后续任务与实施记录模板。
+
+下一步从B0核对现有求根WIP开始：本轮源码已存在root_expression/root_finding/root_diagnostics、前端输入/反馈卡及probe/ack/replay，不能重复实现，也不能仅凭文件存在宣称M2/M3已验收。核对过程含数学参考、10条episode、交付/幂等/权限/公开答案边界，以及根前端测试与CI清单差异。F2可在材料身份/授权/版本确认后先做，F1成绩与F3诊断依赖B0通过。
+
+目标窗口2026/10–2027/03；沿用每周约3开发日的未确认估算，58–85开发日加返工余量。AI节省比例、教师档期、招募、字幕与隔离运行环境均未实测；按两周实际完成量校准。研究冻结版与候选功能隔离，独立学习结果不由受助成功/自动实验/模型讲回评价替代。
+
+本轮仅写规划与项目记忆，未主动修改业务代码/正式数据/冻结题集，未运行应用测试或构建，未commit/push/deploy。后续偏离与验收写planning/learning-experience-2026-10/implementation-notes.md，并回写三份项目记忆。
 
 ## 1. 这是什么项目
 
@@ -131,3 +166,15 @@ success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提�
 验收：npm test 知识 JSON/API415/Web30；production build/typecheck；lint 0错误/10既有警告；12家族13/13三元组；10条生产图/SSE固定episode及工具异常、取消、事务、权限、重启、重复回执回归。浏览器主聊天表单及动态图示390px无横向溢出，暂停/频率/错误/停止/重启/超时门控实测；临时验收路由已删除。日志与截图 results/m2-m3-*，正式论文 gold/真人/远端CI结果不由这些本地结果替代。
 
 后续优先 M4 教师与数值/容差独立审计，再按长期计划做未见任务和无AI延迟保持；新增学习体验规划保留为独立文档工作，不在本轮业务提交中打包。服务恢复3000/8000；commit/push以最终回执为准。
+
+## 2026-10-03 登录体验补查
+
+用户指出登录系统未同步更新。当前Git历史显示真实Web鉴权接入于2026-09-08，后端后来有课程权限维护；本次没有重写鉴权协议。已修复聊天退出只跳转不清凭证：清除token/owner/演示键，完整跳转以卸载owner相关页面状态，保留学习草稿；桌面/手机均可退出。注册移除不保存的院校/专业，称呼/账号区分，账号格式与服务端一致，补齐label/自动填充。登录/注册成功进入今日学习。鉴权布局加入Logo/主题/首页返回，删除无依据的SECURE CONNECTION标语。
+
+本轮前端40项通过（新增退出清理回归）、生产build/类型检查通过，lint0错误/10既有警告；后端未改，本轮未重复API suite，上一轮API469是之前的证据。截图results/auth-login-updated.jpg。没有实际注册/登录真实账号、密码重置或远端验证；当前isolated demo API没有配置token secret，不能以演示界面验证真实签发。剩余：密码找回、邮箱验证、服务端token撤销/刷新、过期引导与跨标签页状态；注册在签发配置缺失时先创建用户的非原子流程也需后续修复。未commit/push/deploy，五小时额度约94%时只做收尾。
+
+## 2026-10-03 分批提交准备
+
+用户明确授权分批提交并推送，按四个边界：后端学习与教学规则、学习工作区与品牌形象、登录体验、规划及交接记录。提交前重跑npm test：知识JSON/API469/Web40全部通过；最新auth-followup生产build与类型检查通过，lint0错误/10既有警告，diff check通过。git grep sk-检查仅发现说明文字/普通标识符/既有二进制匹配，新增源码/规划未检出匹配的凭证格式。既有egg-info、demo-jiuzhang-hybrid.html、style-explorer.html、ui-proposals、ignored results/数据库/env不纳入。
+
+首版后端包含learning_records表、课程持久库派生路径和tzdata依赖；COURSE_STORE_PATH显式优先，离线测试门控保留。当前分支feature/course-graph-2.0。远端fetch首次因GitHub443连接失败，当前remote-tracking ref不是实时远端证据；推送将在提交后单独尝试并报告，本文不提前宣称已推送。
