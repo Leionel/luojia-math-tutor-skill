@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode } from "@/lib/api";
+import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode, RootSubmission, RootDiagnosis } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
@@ -12,6 +12,7 @@ import { LearningPanel } from "./learning-panel";
 import { MathMessage } from "./math-message";
 import { Sidebar } from "./sidebar";
 import { MobileDrawer } from "./mobile-drawer";
+import { RootAttemptForm } from "./root-attempt-form";
 import { TutorInput } from "./tutor-input";
 import { LatexRenderer } from "./latex-renderer";
 import { ZenOverlay } from "./zen-overlay";
@@ -111,6 +112,11 @@ export function TutorChat() {
   const [thinkingElapsed, setThinkingElapsed] = useState(0);
   const [thinkingChains, setThinkingChains] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
+  const [rootForm, setRootForm] = useState(false);
+  const [rootDraft, setRootDraft] = useState<Partial<RootSubmission> | undefined>();
+  useEffect(() => { setRootForm(false); setRootDraft(undefined); }, [sessionId]);
+  const [rootInstruction, setRootInstruction] = useState("");
+  const [rootError, setRootError] = useState("");
   const [visionDraft, setVisionDraft] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
@@ -358,7 +364,7 @@ export function TutorChat() {
     }
   }
 
-  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[]) {
+  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission) {
     setVisionDraft(null);
     let activeSession = sessionId;
     if (!activeSession) {
@@ -390,6 +396,7 @@ export function TutorChat() {
 
       await streamTutor(
         {
+          root_submission: rootSubmission,
           session_id: activeSession,
           message: value,
           subject: "综合" as any,
@@ -460,11 +467,12 @@ export function TutorChat() {
       setMessages((current) =>
         current.map((message) =>
           message.id === assistantId
-            ? { ...message, content: `### 当前判断\n接口调用失败：${error instanceof Error ? error.message : "未知错误"}` }
+            ? { ...message, content: `${message.content}\n\n本轮未完成：${error instanceof Error ? error.message : "未知错误"}`, learningMeta: {intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:{code:"stream_failed",message:error instanceof Error ? error.message : "未知错误"}} }
             : message
         )
       );
     } finally {
+      setThinkingChains(current => { const next = {...current}; delete next[assistantId]; return next; });
       setIsStreaming(false);
       setMessages((current) =>
         current.map((message) =>
@@ -745,12 +753,17 @@ export function TutorChat() {
                     key={message.id}
                     role={message.role}
                     content={message.content}
-                    status={message.role === "assistant" && message.status !== "thinking" ? status : undefined}
+                    status={message.learningMeta?.error ? "本轮未完成" : message.role === "assistant" && message.status !== "thinking" ? status : undefined}
                     isGenerating={isStreaming && idx === messages.length - 1 && message.role === "assistant"}
                     isThinking={message.status === "thinking" && isStreaming}
                     thinkingElapsed={thinkingElapsed}
                     thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
                     webSearchReport={message.learningMeta?.web_search}
+                    isIncomplete={!!message.learningMeta?.error}
+                    rootDiagnosis={message.learningMeta?.root_diagnosis}
+                    sessionId={sessionId || ""}
+                    onRootRevision={(report: RootDiagnosis) => {setRootDraft({episode_id:report.episode_id,attempt_id:report.attempt_id,attempt:report.input});setRootInstruction(report.kind === "probe" ? "继续独立探针；首次提交后的修订不计为新的独立证据。" : "");setRootForm(true);}}
+                    onRootProbe={async (report: RootDiagnosis) => {try {const probe=await startRootProbe(sessionId || "",report.episode_id);setRootDraft({episode_id:probe.episode_id,attempt:probe.challenge});setRootInstruction(probe.instruction);setRootForm(true);setRootError("");} catch(e) {setRootError(e instanceof Error ? e.message : "无法开启独立探针。");}}}
                     thinkingSummary={message.thinkingSummary}
                     thinkingElapsedMs={message.thinkingElapsedMs}
                     reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
@@ -861,6 +874,11 @@ export function TutorChat() {
                 </div>
               </div>
             )}
+            <div className="mx-auto max-w-4xl px-4 flex flex-wrap gap-2 items-center">
+              <button type="button" disabled={isStreaming} className="text-xs rounded border px-3 py-2" onClick={() => {setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}}>求根过程验证</button>
+              {rootError && <span role="alert" className="text-xs text-cinnabar-600">{rootError}</span>}
+            </div>
+            {rootForm && <RootAttemptForm key={`${rootDraft?.episode_id || "new"}-${rootDraft?.attempt_id || "first"}`} initial={rootDraft} instruction={rootInstruction} disabled={isStreaming} onClose={()=>setRootForm(false)} onSubmit={submission => {setRootForm(false);void submit(`求根过程：${submission.attempt.function}\n\n\`\`\`root-attempt\n${JSON.stringify(submission, null, 2)}\n\`\`\``, mode, false, undefined, submission);}}/>}
             <TutorInput
               value={inputValue}
               onChange={setInputValue}

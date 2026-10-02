@@ -12,7 +12,7 @@ import { balancedLatex } from "@/lib/latex-balance";
 import { SourceSpanCard } from "./source-span-card";
 
 function CodeBlock({ language, content, ready }: { language: string; content: string; ready: boolean }) {
-  if (["html", "svg"].includes(language.toLowerCase())) return <StaticArtifact content={content} ready={ready} />;
+  if (["html", "svg"].includes(language.toLowerCase())) return <StaticArtifact content={content} ready={ready} interactive={language.toLowerCase() === "html"} />;
   return <div className="my-3 rounded-lg border border-[var(--border-subtle)] overflow-hidden"><div className="px-3 py-1 text-xs">{language || "text"}</div><pre className="p-3 overflow-auto text-xs whitespace-pre"><code>{content}</code></pre></div>;
 }
 function AnswerImage({ source, alt }: { source: string; alt: string }) {

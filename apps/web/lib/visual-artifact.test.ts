@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resolveAnswerImage } from "./api-base.ts";
-import { ARTIFACT_CSP, staticSvgHeight } from "./visual-artifact.ts";
+import { ARTIFACT_CSP, DYNAMIC_ARTIFACT_CSP, staticSvgHeight } from "./visual-artifact.ts";
 test("answer images use configured backend and reject active or credential URLs", () => {
   assert.equal(resolveAnswerImage("/api/assets/a.png", "https://tutor.example"), "https://tutor.example/api/assets/a.png");
   for (const url of ["javascript:alert(1)", "data:text/html,test", "https://user:pass@example.com/a"]) assert.equal(resolveAnswerImage(url), null);
@@ -15,4 +15,10 @@ test("SVG viewBox sizing is bounded and HTML keeps manual sizing", () => {
   assert.equal(staticSvgHeight('<svg viewBox="0 0 10 99999"></svg>', 344), 800);
   assert.equal(staticSvgHeight('<svg viewBox="0 0 0 10"></svg>', 344), null);
   assert.equal(staticSvgHeight('<div>card</div>', 344), null);
+});
+
+test("dynamic HTML enables inline scripts while keeping network and browsing denied", () => {
+  assert.ok(DYNAMIC_ARTIFACT_CSP.includes("script-src 'unsafe-inline'"));
+  for (const directive of ["default-src 'none'", "connect-src 'none'", "frame-src 'none'", "object-src 'none'"]) assert.ok(DYNAMIC_ARTIFACT_CSP.includes(directive));
+  assert.ok(!DYNAMIC_ARTIFACT_CSP.includes("unsafe-eval"));
 });

@@ -1,7 +1,8 @@
 "use client";
 
-import type { WebSearchReport } from "@/lib/api";
+import type { WebSearchReport, RootDiagnosis } from "@/lib/api";
 import { useState, useEffect } from "react";
+import { RootDiagnosticCard } from "./root-diagnostic-card";
 import { LatexRenderer } from "./latex-renderer";
 import { ReviewCard, type ReviewData } from "./review-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -262,6 +263,8 @@ export function MathMessage({
   status,
   isThinking = false,
   isGenerating = false,
+  isIncomplete = false,
+  rootDiagnosis, sessionId = "", onRootRevision, onRootProbe,
   thinkingElapsed = 0,
   thinkingChain = "",
   thinkingSummary,
@@ -277,6 +280,11 @@ export function MathMessage({
   status?: string;
   isThinking?: boolean;
   isGenerating?: boolean;
+  isIncomplete?: boolean;
+  rootDiagnosis?: RootDiagnosis;
+  sessionId?: string;
+  onRootRevision?: (report: RootDiagnosis) => void;
+  onRootProbe?: (report: RootDiagnosis) => void;
   thinkingElapsed?: number;
   thinkingChain?: string;
   thinkingSummary?: string;
@@ -421,7 +429,8 @@ export function MathMessage({
                   )}
                 </div>
               )}
-              <LatexRenderer content={content} complete={!isGenerating && !isThinking} />
+              {rootDiagnosis && <RootDiagnosticCard report={rootDiagnosis} sessionId={sessionId} complete={!isGenerating && !isThinking && !isIncomplete} onRevision={onRootRevision} onProbe={onRootProbe}/> }
+              <LatexRenderer content={content} complete={!isGenerating && !isThinking && !isIncomplete} />
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
                   <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />

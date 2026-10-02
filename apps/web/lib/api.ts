@@ -1,3 +1,4 @@
+import { readTutorEvents } from "./tutor-stream";
 import { getAuthHeaders, getCurrentUserId } from "./demo-auth";
 
 export type TutorMode = "socratic" | "direct" | "practice";
@@ -33,10 +34,12 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  root_diagnosis?: RootDiagnosis;
+  error?: {code: string; message: string};
   web_search?: WebSearchReport;
   awaiting_confirmation?: boolean;
   vision_draft?: string;
-  verification_kind?: "symbolic" | "llm_review" | "none";
+  verification_kind?: "symbolic" | "llm_review" | "root_oracle" | "none";
   intent: string;
   subject: string;
   concepts: string[];
@@ -247,6 +250,7 @@ export async function testModel(userApiKey: string | null, model?: string) {
 
 export async function streamTutor(
   payload: {
+    root_submission?: RootSubmission;
     session_id: string;
     message: string;
     subject: Subject;
@@ -276,52 +280,29 @@ export async function streamTutor(
   });
   if (!res.ok || !res.body) throw new Error("助教连接中断，请稍后重试");
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
   let thinkingChain = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split("\n\n");
-    buffer = events.pop() || "";
-    for (const raw of events) {
-      const eventLine = raw.split("\n").find((line) => line.startsWith("event: "));
-      const dataLine = raw.split("\n").find((line) => line.startsWith("data: "));
-      if (!eventLine || !dataLine) continue;
-      const event = eventLine.replace("event: ", "");
-      const data = JSON.parse(dataLine.replace("data: ", ""));
-      if (event === "meta" || event === "meta_update") {
-        onMeta(data as TutorMeta);
-      }
-      if (event === "opening") {
-        if (onOpening) onOpening(String(data.content || ""));
-        else onToken(String(data.content || ""));
-      }
-      if (event === "token" || event === "message") {
-        onToken(String(data.content || data.text || ""));
-      }
-      if (event === "thinking") {
-        thinkingChain += String(data.content || data.text || "");
-        if (onThinkingChain) onThinkingChain(thinkingChain);
-      }
-      if (event === "vision_confirmation") {
-        const parsed = data.parsed || {};
-        const formulas = Array.isArray(parsed.latex) ? parsed.latex.map((item: unknown) => `$$${String(item)}$$`).join("\n") : "";
-        const draft = [String(parsed.problem_text || ""), formulas].filter(Boolean).join("\n\n");
-        if (onVisionConfirmation && data.requires_confirmation === true && draft) onVisionConfirmation(draft);
-      }
-      if (event === "thinking_end") {
-        if (onThinkingChain) onThinkingChain(thinkingChain);
-        if (onThinkingEnd) onThinkingEnd({
-          summary: data.summary || "",
-          elapsedMs: data.elapsed_ms || 0
-        });
-      }
+  await readTutorEvents(res.body.getReader(), (event, data) => {
+    if (event === "meta" || event === "meta_update") onMeta(data as TutorMeta);
+    if (event === "opening") {
+      if (onOpening) onOpening(String(data.content || ""));
+      else onToken(String(data.content || ""));
     }
-  }
+    if (event === "token" || event === "message") onToken(String(data.content || data.text || ""));
+    if (event === "thinking") {
+      thinkingChain += String(data.content || data.text || "");
+      onThinkingChain?.(thinkingChain);
+    }
+    if (event === "vision_confirmation") {
+      const parsed = (data.parsed || {}) as {latex?: unknown[]; problem_text?: string};
+      const formulas = Array.isArray(parsed.latex) ? parsed.latex.map(item => `$$${String(item)}$$`).join("\n") : "";
+      const draft = [String(parsed.problem_text || ""), formulas].filter(Boolean).join("\n\n");
+      if (data.requires_confirmation === true && draft) onVisionConfirmation?.(draft);
+    }
+    if (event === "thinking_end") {
+      onThinkingChain?.(thinkingChain);
+      onThinkingEnd?.({summary: String(data.summary || ""), elapsedMs: Number(data.elapsed_ms || 0)});
+    }
+  });
 }
 
 export async function generateSimilarExercises(concept: string, difficulty: number = 2, count: number = 1) {
@@ -560,4 +541,43 @@ export async function searchGlobal(
   });
   if (!res.ok) throw new Error("全局检索失败");
   return res.json() as Promise<GlobalSearchResponse>;
+}
+
+
+export type RootAttemptInput = {
+  initial_value?: number | null;
+  method: "newton" | "bisection" | "fixed_point";
+  function: string;
+  iterates?: Array<number | "NaN" | "Inf" | "-Inf">;
+  brackets?: number[][];
+  interval?: number[] | null;
+  phi?: string | null;
+  derivative?: string | null;
+  update?: string | null;
+  variant?: "standard" | "damped" | "modified";
+  damping?: number;
+  multiplicity?: number;
+  goal?: "root_error" | "residual";
+  tolerance?: number;
+  stop_reason?: "none" | "step" | "bracket" | "residual" | "exact" | "iteration_limit";
+};
+export type RootSubmission = {attempt: RootAttemptInput; attempt_id: string; episode_id?: string};
+export type RootDiagnosis = {
+  status: "supported" | "contradicted" | "inconclusive" | "tool_error";
+  family: string; summary: string; next_probe: string; error_step: number | null;
+  complete: boolean; oracle_version: string; case_id: string | null; case_decision: string;
+  episode_id: string; attempt_id: string; feedback_id: string; kind: "practice" | "probe";
+  help_level: number; remaining_help: number; input: RootAttemptInput;
+  delivery: string; outcome: string;
+  trace: Array<{k: number; x_k: number; f_x: number; step_size: number | null; bracket?: number[]}>;
+};
+export async function acknowledgeRootFeedback(sessionId: string, report: RootDiagnosis) {
+  const response = await fetch(`${API_BASE}/api/root-diagnostics/ack`, {method: "POST", headers: headers(true), body: JSON.stringify({session_id:sessionId,episode_id:report.episode_id,attempt_id:report.attempt_id,feedback_id:report.feedback_id})});
+  if (!response.ok) throw new Error("显示回执未保存，结果尚未计入。");
+  return response.json() as Promise<{status:string;outcome:string}>;
+}
+export async function startRootProbe(sessionId: string, episodeId: string) {
+  const response = await fetch(`${API_BASE}/api/root-diagnostics/probe`, {method:"POST",headers:headers(true),body:JSON.stringify({session_id:sessionId,episode_id:episodeId})});
+  if (!response.ok) throw new Error("请先完成练习并保存显示回执，再开始独立探针。");
+  return response.json() as Promise<{episode_id:string;challenge:RootAttemptInput;instruction:string}>;
 }

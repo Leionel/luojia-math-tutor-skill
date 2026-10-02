@@ -62,7 +62,7 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
           model: getPreferredModel() || undefined,
           abortSignal: abortControllerRef.current.signal
         },
-        () => {}, // ignore meta
+        meta => setMessages(current => current.map(m => m.id === assistantId ? {...m, learning_meta:meta} : m)),
         (text) => {
           setMessages(current => current.map(m => 
             m.id === assistantId 
@@ -95,11 +95,8 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
         m.id === assistantId ? { ...m, status: undefined } : m
       ));
     } catch (e: any) {
-      if (e.name !== "AbortError") {
-        setMessages(current => current.map(m => 
-          m.id === assistantId ? { ...m, content: m.content + "\n\n[网络错误，请重试]", status: "error" } : m
-        ));
-      }
+      const message = e.name === "AbortError" ? "本轮已停止，回答尚未完成。" : e.message || "连接失败";
+      setMessages(current => current.map(m => m.id === assistantId ? {...m, content:m.content + `\n\n本轮未完成：${message}`, status:"error", learning_meta:{intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:{code:e.code || "stream_failed",message}}} : m));
     } finally {
       setIsStreaming(false);
     }
@@ -126,6 +123,9 @@ export function NotebookChat({ sessionId, subject }: { sessionId: string; subjec
               key={m.id}
               content={m.content}
               role={m.role}
+              sessionId={sessionId}
+              isIncomplete={!!m.learning_meta?.error || m.status === "error"}
+              rootDiagnosis={m.learning_meta?.root_diagnosis}
               isGenerating={isStreaming && (m.status === "thinking" || m.status === "typing")}
               isThinking={m.status === "thinking"}
               thinkingSummary={m.thinking_summary}
