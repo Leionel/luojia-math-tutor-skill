@@ -4,7 +4,7 @@ from app.tutor.hint_policy import HintLevel
 from app.tutor.intent_router import Intent
 
 REFERENCE_FILES = ("interactive-tutoring.md", "math-tools-guidelines.md", "knowledge-base-usage.md", "visual-artifacts.md")
-PROMPT_VERSION = "teaching-v2.3"
+PROMPT_VERSION = "teaching-v2.4"
 
 def load_teaching_prompt(skill_file: Path) -> str:
     sections = [skill_file.read_text(encoding="utf-8")]
@@ -15,7 +15,7 @@ def load_teaching_prompt(skill_file: Path) -> str:
 
 def resolve_teaching_policy(intent: Intent, mode: str, hint_level: HintLevel,
                             action: str | None, case: dict | None = None) -> dict:
-    full = mode == "direct" or intent == Intent.FULL_SOLUTION
+    full = intent == Intent.FULL_SOLUTION or (mode == "direct" and intent != Intent.GENERATE_EXERCISE)
     if full:
         action = "explain"
     elif intent == Intent.GENERATE_EXERCISE:

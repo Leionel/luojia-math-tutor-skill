@@ -203,6 +203,7 @@ class TutorOrchestrator:
             concept_items.append(item)
         return {
             "intent": intent,
+            "teaching_mode": state.get("mode", "socratic"),
             "web_search": state.get("web_search_report"),
             "subject": state.get("detected_subject")
             or state.get("subject")

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import re
 
 
 class Intent(str, Enum):
@@ -64,15 +65,16 @@ def _is_negated(text: str, marker: str) -> bool:
 
 def route_intent_decision(message: str, mode: str = "socratic") -> IntentDecision:
     text = message.strip().lower()
-    if mode == "direct":
-        return IntentDecision(Intent.FULL_SOLUTION, 0.99, False, (Intent.FULL_SOLUTION,))
-
     matched: list[Intent] = []
     for intent, markers in _MARKERS.items():
         if any(marker in text and not _is_negated(text, marker) for marker in markers):
             matched.append(intent)
 
     if not matched:
+        if mode == "practice":
+            if "=" in text or re.fullmatch(r"[-+\d.,\s]+", text):
+                return IntentDecision(Intent.CHECK_STUDENT_STEP, 0.55, True, ())
+            return IntentDecision(Intent.GENERATE_EXERCISE, 0.8, False, ())
         math_signal = any(
             marker in text
             for marker in ("=", "∫", "\\int", "lim", "矩阵", "概率", "函数", "求")

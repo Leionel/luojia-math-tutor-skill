@@ -74,9 +74,20 @@ _service_lock = threading.RLock()
 def get_course_service(course_id: str = "numerical_analysis") -> CourseService:
     with _service_lock:
         if course_id not in _course_services:
-            _course_services[course_id] = CourseService(course_id=course_id)
+            settings = get_settings()
+            path = settings.course_store_path
+            if not path and settings.database_url.startswith("sqlite:///"):
+                # Runtime workspaces survive restart by default. Explicit
+                # CourseService(store=CourseStore(None)) remains isolated for tests.
+                database_path = settings.database_url.removeprefix("sqlite:///")
+                if database_path != ":memory:":
+                    path = database_path + ".course.db"
+            _course_services[course_id] = CourseService(course_id=course_id, store=CourseStore(path or None))
         return _course_services[course_id]
 
 
 def reset_course_services() -> None:
-    _course_services.clear()
+    with _service_lock:
+        for service in _course_services.values():
+            service.store.close()
+        _course_services.clear()

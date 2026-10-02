@@ -270,7 +270,9 @@ async def test_teacher_executes_requested_verification_before_showing_output(mon
     result = await workflow.teacher_node(state, make_config())
 
     execute.assert_awaited_once_with("print(2 + 2)", timeout=workflow.settings.tool_timeout_seconds)
-    assert result["final_output"] == "已核对，结果是 4。"
+    assert result["final_output"].endswith("已核对，结果是 4。")
+    assert "不等于下文全部结论已经得到数学验证" in result["final_output"]
+    assert result["metrics"]["tool_validation_scope"] == "execution_only"
     assert result["metrics"]["sandbox_tool_calls"] == 1
     assert "尚未核对" not in result["final_output"]
 

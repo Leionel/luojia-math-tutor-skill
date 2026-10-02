@@ -197,3 +197,43 @@ def test_internal_verify_code_is_hidden_even_after_output_tag():
     response = '[OUTPUT]讲解正文\n[VERIFY]\n```python\nprint(2)\n```'
     assert TutorWorkflow._visible_output(response) == '讲解正文'
     assert TutorWorkflow._visible_output('[OUTPUT]学生请求的代码\n```python\nx = 2\n```').endswith('```')
+
+
+@pytest.mark.parametrize("mode", ["direct", "practice", "socratic"])
+def test_exercise_intent_is_not_replaced_by_answer_disclosure(mode):
+    from app.tutor.fast_path import route_fast_path
+    route = route_fast_path("来一道牛顿法练习题，不要答案", mode, "auto")
+    assert route.intent == Intent.GENERATE_EXERCISE
+    policy = resolve_teaching_policy(route.intent, mode, HintLevel.INDEPENDENT, route.pedagogical_action)
+    assert policy["action"] == "generate_exercise" and policy["disclosure"] == "scaffolded"
+
+
+def test_practice_explains_questions_checks_answers_and_generates_for_topic():
+    from app.tutor.fast_path import route_fast_path
+    assert route_fast_path("什么是牛顿法？", "practice", "auto").intent == Intent.CONCEPT
+    assert route_fast_path("x=1.5", "practice", "auto").intent == Intent.CHECK_STUDENT_STEP
+    assert route_fast_path("牛顿法", "practice", "auto").intent == Intent.GENERATE_EXERCISE
+
+
+def test_persona_is_named_but_does_not_claim_human_identity():
+    prompt = load_teaching_prompt(get_settings().skill_file)
+    assert "小珞" in prompt and "不是真人身份" in prompt
+
+
+@pytest.mark.asyncio
+async def test_successful_unrelated_tool_is_not_presented_as_mathematical_proof(monkeypatch):
+    monkeypatch.setattr("app.tutor.graph.execute_python_code", AsyncMock(return_value="2"))
+    workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```", "[OUTPUT]一个未经独立核对的结论"]))
+    result = await workflow._stream_generation(_state(), None, [{"role":"user","content":"q"}],default_route="teacher",require_verification=True)
+    assert result["metrics"]["tool_validation_scope"] == "execution_only"
+    assert "不等于下文全部结论已经得到数学验证" in result["final_output"]
+
+
+def test_numerical_fallback_has_complete_questions_and_checkable_root_bound():
+    from app.tutor.exercise_generator import get_fallback_exercises
+    from fractions import Fraction
+    for concept in ["牛顿法", "二分法", "不动点", "残差"]:
+        exercise = get_fallback_exercises(concept, 2, 1)[0]
+        assert len(exercise["text"]) > 40 and exercise["answer"]
+    x = Fraction(577,408)
+    assert (x*x-2)/2 == Fraction(1,332928)

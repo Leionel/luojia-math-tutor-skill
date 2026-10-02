@@ -72,9 +72,11 @@ def test_pending_delivery_and_unknown_never_count_as_success(service):
 def test_server_probe_initial_value_no_guess_and_no_leaked_steps(service):
     practice = submit(service, newton())
     assert ack(service, practice)["outcome"] == "observed_success"
+    extra_practice = submit(service, newton(), "extra-practice"); ack(service, extra_practice)
     probe = service.start_probe("student-1", "session-1", practice["episode_id"])
     assert service.start_probe("student-1", "session-1", practice["episode_id"])["episode_id"] == probe["episode_id"]
-    extra_practice = submit(service, newton(), "extra-practice"); ack(service, extra_practice)
+    with pytest.raises(ValueError, match="独立检验"):
+        submit(service, newton(), "new-reference-during-probe")
     reserved = service.start_probe("student-1", "session-1", extra_practice["episode_id"])
     assert reserved["challenge"]["function"] != probe["challenge"]["function"]
     challenge = probe["challenge"]

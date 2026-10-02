@@ -812,6 +812,9 @@ class TutorWorkflow:
                 metrics["verification_enforced"] = "enforced"
             else:
                 metrics["verification_enforced"] = "not_required"
+            if usable_tools:
+                response_text = "计算工具已返回结果；这不等于下文全部结论已经得到数学验证，仍需核对条件与推导。\n\n" + response_text
+                metrics["tool_validation_scope"] = "execution_only"
             if upstream_failure:
                 failure_summary = (
                     state.get("verification_result") or {}

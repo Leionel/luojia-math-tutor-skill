@@ -21,3 +21,10 @@ os.environ.pop("LLM_API_KEY", None)
 os.environ.pop("MINERU_API_KEY", None)
 
 os.environ.pop("TAVILY_API_KEY", None)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # The runtime factory now uses an isolated durable course DB alongside the
+    # test DB. Close cached connections before TemporaryDirectory's Windows cleanup.
+    from app.knowledge.course_service import reset_course_services
+    reset_course_services()

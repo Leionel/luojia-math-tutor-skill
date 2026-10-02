@@ -8,6 +8,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.math_tools.root_finding import FAMILIES, ORACLE_VERSION, RootAttempt, diagnose
+from app.math_tools.root_expression import RootExpression, ExpressionError
 from app.tutor.prompt_policy import PROMPT_VERSION
 
 
@@ -60,6 +61,8 @@ class RootEpisodeService:
                 "graph_generation": graph.get("generation", 0)}
 
     def submit(self, student_id, session_id, submission: RootSubmission, *, mode="socratic", model=None):
+        from app.tutor.help_boundary import assert_reference_help_allowed
+        assert_reference_help_allowed(student_id, self.course, submission.episode_id)
         # All attempt/event/episode writes share the same store transaction.
         with self.store.transaction():
             episode = self.owned(submission.episode_id, student_id, session_id) if submission.episode_id else self._new(student_id, session_id)
@@ -182,6 +185,19 @@ class RootEpisodeService:
                 return {"episode_id": existing["episode_id"], "challenge": existing["challenge"], "instruction": "继续此前的独立探针。"}
             normalize = lambda text: "".join(text.replace("**", "^").split())
             seen = {normalize(parent["attempts"][0]["input"]["function"])}
+            for run in self.store.learning_records(student_id, self.course.course_id, "lab"):
+                source = run["parameters"]["function"]
+                seen.add(normalize(source))
+                # Conservatively exclude equivalent exposed quadratic tasks,
+                # including parentheses, x*x, decimal constants and ** notation.
+                # These samples only exclude tasks; they never certify correctness.
+                try:
+                    expression = RootExpression(source)
+                    n = -expression.evaluate(0)
+                    if n == int(n) and 3 <= n <= 50 and all(abs(expression.evaluate(x) - (x*x-n)) < 1e-12 for x in (-1, 1, 2)):
+                        seen.add(normalize(f"x^2-{int(n)}"))
+                except (ExpressionError, ArithmeticError):
+                    pass
             for event in self.store.list_events(student_id, self.course.course_id):
                 if event["event_type"] in ("probe", "probe_issued"):
                     prior_probe = self.store.load_episode(event["payload"]["episode_id"])

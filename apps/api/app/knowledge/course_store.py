@@ -11,6 +11,14 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS learning_records (
+    owner_id TEXT NOT NULL,
+    course_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    record_id TEXT NOT NULL,
+    data TEXT NOT NULL,
+    PRIMARY KEY (owner_id, course_id, kind, record_id)
+);
 CREATE TABLE IF NOT EXISTS root_episodes (
     episode_id TEXT PRIMARY KEY,
     student_id TEXT NOT NULL,
@@ -88,6 +96,7 @@ class CourseStore:
         self._memory_unit_states: dict[tuple, dict] = {}
         self._memory_case_states: dict[tuple, dict] = {}
         self._memory_episodes: dict[str, dict] = {}
+        self._memory_learning: dict[tuple, dict] = {}
         self._transaction_depth = 0
         self._memory_revisions: list[dict[str, Any]] = []
         self._memory_graphs: dict[str, dict[str, Any]] = {}
@@ -341,7 +350,7 @@ class CourseStore:
                 if self._conn:
                     self._conn.execute("BEGIN IMMEDIATE")
                 else:
-                    snapshot = copy.deepcopy((self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes))
+                    snapshot = copy.deepcopy((self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes, self._memory_learning))
             self._transaction_depth += 1
             try:
                 yield
@@ -351,7 +360,7 @@ class CourseStore:
                 if outer:
                     if self._conn: self._conn.rollback()
                     elif snapshot:
-                        self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes = snapshot
+                        self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes, self._memory_learning = snapshot
                 raise
             finally:
                 self._transaction_depth -= 1
@@ -382,3 +391,23 @@ class CourseStore:
                           (data["episode_id"], data["student_id"], data["course_id"], data["session_id"], json.dumps(data, ensure_ascii=False)))
         else:
             self._memory_episodes[data["episode_id"]] = copy.deepcopy(data)
+
+    def learning_record(self, owner: str, course: str, kind: str, record_id: str) -> dict | None:
+        with self._lock:
+            if self._conn:
+                rows = self._query("SELECT data FROM learning_records WHERE owner_id=? AND course_id=? AND kind=? AND record_id=?", (owner, course, kind, record_id))
+                return json.loads(rows[0][0]) if rows else None
+            return copy.deepcopy(self._memory_learning.get((owner, course, kind, record_id)))
+
+    def save_learning_record(self, owner: str, course: str, kind: str, record_id: str, data: dict) -> None:
+        with self._lock:
+            if self._conn:
+                self._execute("INSERT INTO learning_records VALUES(?,?,?,?,?) ON CONFLICT(owner_id,course_id,kind,record_id) DO UPDATE SET data=excluded.data", (owner, course, kind, record_id, json.dumps(data, ensure_ascii=False, allow_nan=False)))
+            else:
+                self._memory_learning[(owner, course, kind, record_id)] = copy.deepcopy(data)
+
+    def learning_records(self, owner: str, course: str, kind: str) -> list[dict]:
+        with self._lock:
+            if self._conn:
+                return [json.loads(row[0]) for row in self._query("SELECT data FROM learning_records WHERE owner_id=? AND course_id=? AND kind=? ORDER BY rowid", (owner, course, kind))]
+            return copy.deepcopy([value for (o, c, k, _), value in self._memory_learning.items() if (o, c, k) == (owner, course, kind)])

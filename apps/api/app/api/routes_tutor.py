@@ -12,7 +12,7 @@ from app.auth import (
     resolve_user_id,
 )
 from app.config import Settings
-from app.main_deps import get_app_settings, get_orchestrator
+from app.main_deps import get_app_settings, get_orchestrator, ensure_reference_help_allowed
 from app.tutor.orchestrator import TutorOrchestrator
 from app.tutor.root_diagnostics import RootSubmission, extract_submission
 
@@ -56,6 +56,7 @@ async def stream_tutor(
             submission = extract_submission(payload.message)
         except (ValueError, TypeError):
             raise HTTPException(status_code=422, detail="求根数据格式无效，请核对 root-attempt JSON。")
+    ensure_reference_help_allowed(user_id, submission.episode_id if submission else None)
     return StreamingResponse(
         orchestrator.stream_reply(
             session_id=payload.session_id,
