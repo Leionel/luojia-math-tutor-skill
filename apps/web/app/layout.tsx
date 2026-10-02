@@ -5,6 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "珞珈数智助教",
+  icons: { icon: "/brand/luojia-logo.png", apple: "/brand/luojia-logo.png" },
   description:
     "面向大学数学课程的 AI Tutor",
 };

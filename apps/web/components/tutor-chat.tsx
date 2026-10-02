@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode, RootSubmission, RootDiagnosis } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { messageStatus } from "@/lib/message-status";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
+import { TutorCompanion } from "./tutor-companion";
 import { ConfirmDialog } from "./confirm-dialog";
 import { LearningPanel } from "./learning-panel";
 import { MathMessage } from "./math-message";
@@ -51,33 +53,31 @@ function latestLearningMeta(items: Message[]): TutorMeta | null {
   return null;
 }
 
-const welcome = `### 欢迎来到珞珈数智助教
-你好！我是一款专为东方美学与深层逻辑打造的数学助教。
-你可以随时与我探讨**高等数学**、**线性代数**或**概率论与数理统计**的问题。
+const welcome = `### 从你正在读的一页、正在算的一步开始
+我是小珞，珞珈数智的 AI 数学助教。我们可以一起读教材、核对推导、做数值实验，也可以讨论高等数学、线性代数和概率统计。
 
-#### ✨ 核心功能指南
-- **🎓 启发式教学**：默认用提问引导你思考；也可以在输入区切换“直接讲解”，查看完整推导。
-- **📊 实时掌握度追踪**：在右侧的学习面板，你可以查看已评估知识点的掌握度估计；它会随解题记录更新。
-- **📝 自动错题本**：推导中的谬误会被自动记录成册，随时从侧边栏的“全局错题本”回顾并生成针对性练习。
-- **🎨 动态可视化**：你可以随时对我说“帮我画出 $y = x^2$ 的图像”或者“画出正态分布的图像”，抽象的数学将在水墨之间展现。
+- **读懂条件**：说明公式在什么条件下适用；教材伴读会保留原文来源。
+- **检查过程**：把自己的步骤发来；求根轨迹可用数值规则核对，其他回答会注明检查依据与限制。
+- **按需帮助**：默认给适量提示；切换“直接讲解”或明确索取时可以给完整过程。练习先给题目，作答后再核对。
+- **回看记录**：学习面板的估计与错题记录供复习参考，不等于已证明掌握。
 
-准备好了吗？试试发送：
-> 我算 $\\int x^2 dx = x^3$，对吗？`;
+试试问我：
+> 牛顿法的残差很小，就一定接近根了吗？`;
 
 const PROMPT_SUGGESTIONS = [
   {
-    category: "高等数学",
-    icon: "∫",
-    title: "极限与可导性辨析",
-    desc: "函数在某点可导与极限存在之间的深层充要条件？",
-    prompt: "请问函数在某点极限存在、连续与可导这三者之间有什么本质关系与典型反例？",
+    category: "数值分析",
+    icon: "xₖ",
+    title: "残差与根误差",
+    desc: "残差很小，为什么还需要误差依据？",
+    prompt: "牛顿法得到的残差很小，是否一定接近根？请解释两者关系与需要的条件。",
   },
   {
-    category: "高等数学",
-    icon: "dx",
-    title: "不定积分错因探究",
-    desc: "我算 ∫x²dx = x³，请帮我分析哪一步有问题？",
-    prompt: "我算 \\int x^2 dx = x^3，对吗？请引导我找出问题所在。",
+    category: "数值分析",
+    icon: "[a,b]",
+    title: "二分法的前提",
+    desc: "端点异号之外，还需确认什么？",
+    prompt: "对函数 1/x 在 [-1,1] 上用二分法，因为端点异号所以一定有根，对吗？",
   },
   {
     category: "线性代数",
@@ -190,12 +190,6 @@ export function TutorChat() {
       setAutoScroll(isAtBottom);
     }
   };
-
-  const status = useMemo(() => {
-    if (!meta) return undefined;
-    const verification = meta.awaiting_confirmation ? "等待题目核对" : meta.verification_kind === "llm_review" ? "推理审查意见" : meta.verified ? "已完成本步检查" : meta.verification_kind === "none" ? "本轮无需步骤检查" : "未完成本步检查";
-    return `${verification} · ${mode === "direct" ? "直接讲解" : mode === "practice" ? "练习模式" : "引导模式"}`;
-  }, [meta, mode]);
 
   const reviewData = useMemo<ReviewData | null>(() => {
     if (!meta || meta.verified === false || meta.is_correct === null) return null;
@@ -399,7 +393,7 @@ export function TutorChat() {
           root_submission: rootSubmission,
           session_id: activeSession,
           message: value,
-          subject: "综合" as any,
+          subject: "auto",
           mode: forcedMode || mode,
           user_api_key: getUserApiKey() || null,
           model: getPreferredModel(),
@@ -744,6 +738,7 @@ export function TutorChat() {
             onScroll={handleScroll}
           >
             <div className="mx-auto max-w-4xl px-4 py-8 pb-32">
+              {messages.length === 1 && messages[0].id === "welcome" && <TutorCompanion compact/>}
 
               {(() => {
                 const lastAssistantIdx = messages.reduce((acc, m, i) =>
@@ -753,7 +748,7 @@ export function TutorChat() {
                     key={message.id}
                     role={message.role}
                     content={message.content}
-                    status={message.learningMeta?.error ? "本轮未完成" : message.role === "assistant" && message.status !== "thinking" ? status : undefined}
+                    status={message.role === "assistant" && message.status !== "thinking" ? messageStatus(message.learningMeta) : undefined}
                     isGenerating={isStreaming && idx === messages.length - 1 && message.role === "assistant"}
                     isThinking={message.status === "thinking" && isStreaming}
                     thinkingElapsed={thinkingElapsed}
@@ -790,28 +785,8 @@ export function TutorChat() {
                       }
                     } : undefined}
                     onSimilar={() => {
-                      if (meta?.concepts?.[0]) {
-                        const concept = meta.concepts[0];
-                        const masteryScore = meta.mastery_score ?? 0.5;
-                        const difficulty = masteryScore >= 0.8 ? 3 : masteryScore >= 0.5 ? 2 : 1;
-                        generateSimilarExercises(concept, difficulty, 1)
-                          .then(exercises => {
-                            if (exercises && exercises.length > 0) {
-                              const exercise = exercises[0];
-                              const msg = `请练习这道关于"${concept}"的类似题：\n\n${exercise.text}\n\n（完成解答后可告诉我你的答案或步骤）`;
-                              const assistantId = crypto.randomUUID();
-                              setMessages((current) => [...current, { id: assistantId, role: "assistant", content: msg }]);
-                              setMode("practice");
-                            } else {
-                              void submit("请给我生成一道类似的练习题。", "practice");
-                            }
-                          })
-                          .catch(() => {
-                            void submit("请给我生成一道类似的练习题。", "practice");
-                          });
-                      } else {
-                        void submit("请给我生成一道类似的练习题。", "practice");
-                      }
+                      const concept = message.learningMeta?.concepts?.[0];
+                      void submit(`请围绕${concept ? `“${concept}”和` : ""}下面这段讲解出一道条件完整的类似练习题，先不要答案：\n\n${message.content.slice(0,2000)}`, "practice");
                     }}
                   />
                 ));

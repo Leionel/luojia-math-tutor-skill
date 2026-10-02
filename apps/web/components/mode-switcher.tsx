@@ -5,9 +5,9 @@ import { Check, ChevronDown, Sparkles, BookOpen, Target } from "lucide-react";
 import type { TutorMode } from "@/lib/api";
 
 const modes: Array<{ value: TutorMode; label: string; desc: string; icon: typeof Sparkles }> = [
-  { value: "socratic", label: "引导模式", desc: "苏格拉底式提问，一步步引导你自行推导，不直接给答案。", icon: Sparkles },
+  { value: "socratic", label: "引导模式", desc: "默认给适量提示与下一步；概念可完整解释，明确索取时也可给完整解答。", icon: Sparkles },
   { value: "direct", label: "直接讲解", desc: "直接给出严谨的推导过程与最终答案，适合快速查漏补缺。", icon: BookOpen },
-  { value: "practice", label: "练习模式", desc: "针对当前知识点生成难度递进的相似练习题，巩固所学。", icon: Target },
+  { value: "practice", label: "练习模式", desc: "可请求同类练习，先给题目；提交答案后核对，提问时仍可解释概念。", icon: Target },
 ];
 
 export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: (mode: TutorMode) => void }) {

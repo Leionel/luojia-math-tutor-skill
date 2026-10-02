@@ -51,7 +51,7 @@ jobs:
         run: npm run lint
       - name: Frontend utility tests
         working-directory: apps/web
-        run: node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts
+        run: node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts lib/learning-input.test.ts lib/message-status.test.ts
       - name: Production build
         working-directory: apps/web
         run: npm run build

@@ -34,6 +34,7 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  teaching_mode?: TutorMode;
   root_diagnosis?: RootDiagnosis;
   error?: {code: string; message: string};
   web_search?: WebSearchReport;

@@ -353,10 +353,10 @@ export function MathMessage({
             ) : (
               <>
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#4e6344] text-[#faf7f2] dark:bg-[#3f5137] shadow-xs">
-                  「珞珈师说」
+                  「小珞」
                 </span>
                 <span className="text-xs font-serif font-semibold tracking-wide text-olive-800 dark:text-olive-200">
-                  启发辨析与证明
+                  AI 数学助教
                 </span>
               </>
             )}
@@ -365,7 +365,7 @@ export function MathMessage({
           {/* 状态徽标 (如后台验算通过) */}
           {status && !isUser && (
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-olive-800 dark:text-olive-300 bg-olive-500/10 border border-olive-500/20">
-              {status.includes("未完成") ? (
+              {!status.includes("已完成") ? (
                 <CircleDashed className="w-3 h-3 text-amber-500" />
               ) : (
                 <CheckCircle2 className="w-3 h-3 text-olive-600 dark:text-olive-400" />
