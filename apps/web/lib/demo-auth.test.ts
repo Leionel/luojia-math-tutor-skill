@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { grantDemoAccess, hasDemoAccess } from "./demo-auth.ts";
+import { grantDemoAccess, hasDemoAccess, clearAuthSession, getAuthHeaders, getCurrentUserId } from "./demo-auth.ts";
+
+test("sign out clears credentials and demo access while preserving learning drafts",()=>{
+  const store=installStorage({luojia_auth_token:"test-token",luojia_auth_user:"alice",luojia_demo_access:"true",mock_auth_token:"true","reading-note:alice:test":"draft"});
+  clearAuthSession();
+  assert.deepEqual(getAuthHeaders(),{});
+  assert.equal(getCurrentUserId(),"demo-user");
+  assert.equal(hasDemoAccess(),false);
+  assert.equal(store.get("reading-note:alice:test"),"draft");
+});
 
 function installStorage(initial: Record<string, string> = {}) {
   const store = new Map(Object.entries(initial));

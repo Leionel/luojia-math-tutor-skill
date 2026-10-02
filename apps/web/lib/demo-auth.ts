@@ -55,3 +55,10 @@ export function grantDemoAccess(): void {
   window.localStorage.setItem(DEMO_ACCESS_KEY, "true");
   window.localStorage.removeItem(LEGACY_ACCESS_KEY);
 }
+
+export function clearAuthSession(): void {
+  if (typeof window === "undefined") return;
+  for (const key of [AUTH_TOKEN_KEY, AUTH_USER_KEY, DEMO_ACCESS_KEY, LEGACY_ACCESS_KEY]) {
+    window.localStorage.removeItem(key);
+  }
+}
