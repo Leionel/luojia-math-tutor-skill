@@ -14,6 +14,7 @@ from app.auth import (
 from app.config import Settings
 from app.main_deps import get_app_settings, get_orchestrator
 from app.tutor.orchestrator import TutorOrchestrator
+from app.tutor.root_diagnostics import RootSubmission, extract_submission
 
 
 router = APIRouter(prefix="/api/tutor", tags=["tutor"])
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/api/tutor", tags=["tutor"])
 
 class TutorStreamRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    root_submission: RootSubmission | None = None
     session_id: str
     user_id: str = "demo-user"
     message: str
@@ -48,6 +50,12 @@ async def stream_tutor(
         settings.resolve_model(payload.model)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    submission = payload.root_submission
+    if not submission:
+        try:
+            submission = extract_submission(payload.message)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=422, detail="求根数据格式无效，请核对 root-attempt JSON。")
     return StreamingResponse(
         orchestrator.stream_reply(
             session_id=payload.session_id,
@@ -62,6 +70,7 @@ async def stream_tutor(
             web_search=payload.web_search,
             web_search_mode=payload.web_search_mode,
             reasoning_effort=payload.reasoning_effort,
+            root_submission=submission.model_dump(mode="json") if submission else None,
         ),
         media_type="text/event-stream",
     )

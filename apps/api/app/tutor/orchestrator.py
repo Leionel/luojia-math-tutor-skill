@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+import httpx
 from collections.abc import AsyncIterator
 
 from app.config import Settings
@@ -65,6 +66,9 @@ class TutorOrchestrator:
         Only uses deterministic fields — no LLM calls.
         Output format uses stage tags for the frontend to parse.
         """
+        if state.get("root_diagnosis"):
+            report = state["root_diagnosis"]
+            return f"[PLAN]\n核对所提交的求根轨迹与目标。\n\n[VERIFY]\n{report['summary']}\n\n[OUTPUT]\n已输出受控数值反馈；显示回执后记录过程证据。"
         parts = []
 
         # ── PLAN ──
@@ -233,6 +237,7 @@ class TutorOrchestrator:
         web_search: bool = False,
         web_search_mode: str = "auto",
         reasoning_effort: str = "medium",
+        root_submission: dict | None = None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
         request_id = current_request_id()
@@ -243,7 +248,7 @@ class TutorOrchestrator:
         )
         route = route_fast_path(message, mode, subject)
         search = decide_search(message, web_search_mode, web_search)
-        opening = "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
+        opening = "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
             2,
@@ -258,6 +263,7 @@ class TutorOrchestrator:
         )
 
         initial_state = {
+            "root_submission": root_submission,
             "message": message,
             "original_message": message,
             "session_id": session_id,
@@ -386,13 +392,23 @@ class TutorOrchestrator:
                 exc,
                 exc_info=True,
             )
-            yield sse(
-                "error",
-                {
-                    "message": "本轮生成暂时失败，请稍后重试。",
-                    "recoverable": True,
-                },
-            )
+            code, message, recoverable = "generation_failed", "本轮生成暂时失败，请稍后重试。", True
+            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (401, 403):
+                code, message, recoverable = "model_auth_failed", "模型服务鉴权失败，请核对所选模型、接口地址与 API Key。", False
+            elif isinstance(exc, (httpx.TimeoutException, asyncio.TimeoutError)):
+                code, message = "model_timeout", "模型响应超时，本轮未生成完整回答；可降低运思强度后重试。"
+            elif isinstance(exc, httpx.ConnectError):
+                code, message = "model_unreachable", "无法连接模型服务，请检查网络与接口地址。"
+            elif isinstance(exc, (ValueError, KeyError)) and root_submission:
+                code, message = "root_attempt_invalid", "求根 episode 或修订输入无效；请核对任务条件，或开始新的练习。"
+            # Safe error metadata survives refresh; it never asserts a completed answer.
+            failure_meta = {"error": {"code": code, "message": message}, "verified": False, "is_correct": None, "intent": "generation_failed", "verification_kind": "none", "subject": subject, "concepts": [], "mistake": None, "verifier_summary": "本轮未完成"}
+            failure_id = None
+            try:
+                failure_id = await asyncio.to_thread(self.repository.add_message, session_id, "assistant", f"{opening}\n\n本轮未完成：{message}", "generation_failed", "本轮生成失败，尚未完成验证。", None, failure_meta)
+            except Exception:
+                logger.exception("Could not persist failed response metadata")
+            yield sse("error", {"message": message, "code": code, "recoverable": recoverable, "message_id": failure_id})
             return
         finally:
             if queue_get and not queue_get.done():
@@ -434,6 +450,12 @@ class TutorOrchestrator:
                 "concepts": explicit_concepts,
             }
         learning_meta = self._build_learning_meta(final_state)
+        if final_state.get("root_diagnosis"):
+            report = final_state["root_diagnosis"]
+            learning_meta.update(root_diagnosis=report, verification_kind="root_oracle",
+                                 verified=report["status"] in ("supported", "contradicted"),
+                                 is_correct=True if report["complete"] else False if report["status"] == "contradicted" else None,
+                                 verifier_summary=report["summary"], mastery_delta=0, hint_level=report["help_level"])
         if awaiting_vision:
             parsed = final_state.get("vision_result", {})
             draft = "\n\n".join(part for part in (
@@ -463,7 +485,7 @@ class TutorOrchestrator:
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None and not awaiting_vision and not search.factual:
+        if workflow_owner is not None and not awaiting_vision and not search.factual and not root_submission:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

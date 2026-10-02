@@ -56,6 +56,8 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    root_submission: dict[str, Any]
+    root_diagnosis: dict[str, Any]
     web_search_report: dict[str, Any]
     web_search_reason: str
     external_fact_question: bool
@@ -147,8 +149,37 @@ class TutorWorkflow:
         self.skill_text = load_teaching_prompt(settings.skill_file)
         self.workflow = self.build_tutor_graph()
 
+    async def root_diagnostic_node(self, state: AgentState, config: RunnableConfig) -> dict:
+        from app.knowledge.course_service import get_course_service
+        from app.tutor.root_diagnostics import RootEpisodeService, RootSubmission, feedback_text
+        service = RootEpisodeService(get_course_service("numerical_analysis"))
+        submission = RootSubmission.model_validate(state["root_submission"])
+        work = asyncio.create_task(asyncio.to_thread(service.submit, state["user_id"], state["session_id"], submission, mode=state.get("mode", "socratic"), model=state.get("model")))
+        try:
+            report = await asyncio.shield(work)
+        except asyncio.CancelledError:
+            # A Python worker cannot be killed halfway through its transaction.
+            # Finish its bounded write and retain an unknown delivery outcome.
+            try:
+                report = await work
+                await asyncio.to_thread(service.delivery_interrupted, state["user_id"], state["session_id"], report["episode_id"], submission.attempt_id)
+            except Exception:
+                logger.exception("Could not record interrupted root delivery")
+            raise
+        await asyncio.to_thread(self.repository.ensure_user, state["user_id"])
+        await asyncio.to_thread(self.repository.add_message, state["session_id"], "user", state["message"])
+        output = feedback_text(report)
+        on_token = self._callback(config, "on_token")
+        if on_token:
+            await on_token(sse("message", {"content": output}))
+        return {"root_diagnosis": report, "final_output": output, "intent": Intent.CHECK_STUDENT_STEP,
+                "pedagogical_action": report["action"], "verification_mode": "none",
+                "requires_policy_fallback": False, "concepts": report["unit_ids"],
+                "hint_level": report["help_level"], "metrics": {**state.get("metrics", {}), "route": "root_diagnostic"}}
+
     def build_tutor_graph(self) -> CompiledGraph:
         workflow = StateGraph(AgentState)
+        workflow.add_node("root_diagnostic", self.root_diagnostic_node)
         workflow.add_node("vision_parse", self.vision_parse_node)
         workflow.add_node("fast_context", self.fast_context_node)
         workflow.add_node("policy_fallback", self.policy_fallback_node)
@@ -157,7 +188,8 @@ class TutorWorkflow:
         workflow.add_node("examiner", self.examiner_node)
         workflow.add_node("proof_tutor", self.proof_tutor_node)
 
-        workflow.add_edge(START, "vision_parse")
+        workflow.add_conditional_edges(START, lambda state: "root" if state.get("root_submission") else "normal", {"root": "root_diagnostic", "normal": "vision_parse"})
+        workflow.add_edge("root_diagnostic", END)
         workflow.add_conditional_edges(
             "vision_parse",
             lambda state: "stop" if state.get("awaiting_vision_confirmation") else "continue",

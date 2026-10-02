@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+import copy
 import datetime
 import json
 import logging
@@ -9,6 +11,13 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS root_episodes (
+    episode_id TEXT PRIMARY KEY,
+    student_id TEXT NOT NULL,
+    course_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    data TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS canonical_graphs (
     course_id TEXT PRIMARY KEY,
     generation INTEGER NOT NULL DEFAULT 0,
@@ -75,6 +84,11 @@ class CourseStore:
         # In-memory fallbacks keep event idempotency and revision history
         # working in demo/test mode (no COURSE_STORE_PATH configured).
         self._memory_events: set[str] = set()
+        self._event_records: dict[str, dict] = {}
+        self._memory_unit_states: dict[tuple, dict] = {}
+        self._memory_case_states: dict[tuple, dict] = {}
+        self._memory_episodes: dict[str, dict] = {}
+        self._transaction_depth = 0
         self._memory_revisions: list[dict[str, Any]] = []
         self._memory_graphs: dict[str, dict[str, Any]] = {}
         if path:
@@ -142,7 +156,8 @@ class CourseStore:
             return
         with self._lock:
             self._conn.execute(sql, params)
-            self._conn.commit()
+            if not self._transaction_depth:
+                self._conn.commit()
 
     def _query(self, sql: str, params: tuple = ()) -> list[tuple]:
         if not self._conn:
@@ -171,6 +186,9 @@ class CourseStore:
     # --- student overlay --------------------------------------------------
 
     def upsert_unit_state(self, student_id: str, course_id: str, unit_id: str, data: dict[str, Any]) -> None:
+        if not self._conn:
+            self._memory_unit_states[(student_id, course_id, unit_id)] = copy.deepcopy(data)
+            return
         self._execute(
             "INSERT INTO student_unit_states (student_id, course_id, unit_id, data) VALUES (?, ?, ?, ?) "
             "ON CONFLICT(student_id, course_id, unit_id) DO UPDATE SET data = excluded.data",
@@ -178,6 +196,8 @@ class CourseStore:
         )
 
     def load_unit_states(self, course_id: Optional[str] = None) -> list[dict[str, Any]]:
+        if not self._conn:
+            return copy.deepcopy([v for (_, cid, _), v in self._memory_unit_states.items() if not course_id or cid == course_id])
         if course_id:
             rows = self._query(
                 "SELECT data FROM student_unit_states WHERE course_id = ?", (course_id,)
@@ -187,6 +207,9 @@ class CourseStore:
         return [json.loads(r[0]) for r in rows]
 
     def upsert_case_state(self, student_id: str, course_id: str, case_id: str, data: dict[str, Any]) -> None:
+        if not self._conn:
+            self._memory_case_states[(student_id, course_id, case_id)] = copy.deepcopy(data)
+            return
         self._execute(
             "INSERT INTO student_case_states (student_id, course_id, case_id, data) VALUES (?, ?, ?, ?) "
             "ON CONFLICT(student_id, course_id, case_id) DO UPDATE SET data = excluded.data",
@@ -194,6 +217,8 @@ class CourseStore:
         )
 
     def load_case_states(self, course_id: Optional[str] = None) -> list[dict[str, Any]]:
+        if not self._conn:
+            return copy.deepcopy([v for (_, cid, _), v in self._memory_case_states.items() if not course_id or cid == course_id])
         if course_id:
             rows = self._query(
                 "SELECT data FROM student_case_states WHERE course_id = ?", (course_id,)
@@ -221,6 +246,7 @@ class CourseStore:
     ) -> None:
         if not self._conn:
             self._memory_events.add(event_id)
+            self._event_records[event_id] = {"event_id": event_id, "student_id": student_id, "course_id": course_id, "event_type": event_type, "payload": copy.deepcopy(payload)}
             return
         self._execute(
             "INSERT OR IGNORE INTO process_events (event_id, student_id, course_id, event_type, payload) "
@@ -304,3 +330,55 @@ class CourseStore:
             }
             for r in rows
         ]
+
+    @contextmanager
+    def transaction(self):
+        """Shared lock + SQLite IMMEDIATE transaction; nested operations never commit early."""
+        with self._lock:
+            outer = self._transaction_depth == 0
+            snapshot = None
+            if outer:
+                if self._conn:
+                    self._conn.execute("BEGIN IMMEDIATE")
+                else:
+                    snapshot = copy.deepcopy((self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes))
+            self._transaction_depth += 1
+            try:
+                yield
+                if outer and self._conn:
+                    self._conn.commit()
+            except BaseException:
+                if outer:
+                    if self._conn: self._conn.rollback()
+                    elif snapshot:
+                        self._memory_events, self._event_records, self._memory_unit_states, self._memory_case_states, self._memory_episodes = snapshot
+                raise
+            finally:
+                self._transaction_depth -= 1
+
+    def list_events(self, student_id: str, course_id: str, episode_id: str | None = None) -> list[dict]:
+        if self._conn:
+            rows = self._query("SELECT event_id,event_type,payload FROM process_events WHERE student_id=? AND course_id=? ORDER BY rowid", (student_id, course_id))
+            events = [{"event_id": r[0], "event_type": r[1], "student_id": student_id, "course_id": course_id, "payload": json.loads(r[2])} for r in rows]
+        else:
+            events = copy.deepcopy([r for r in self._event_records.values() if r["student_id"] == student_id and r["course_id"] == course_id])
+        return [e for e in events if not episode_id or e["payload"].get("episode_id") == episode_id]
+
+    def event_record(self, event_id: str) -> dict | None:
+        if self._conn:
+            rows = self._query("SELECT student_id,course_id,event_type,payload FROM process_events WHERE event_id=?", (event_id,))
+            return {"student_id": rows[0][0], "course_id": rows[0][1], "event_type": rows[0][2], "payload": json.loads(rows[0][3])} if rows else None
+        return copy.deepcopy(self._event_records.get(event_id))
+
+    def load_episode(self, episode_id: str) -> dict | None:
+        if self._conn:
+            rows = self._query("SELECT data FROM root_episodes WHERE episode_id=?", (episode_id,))
+            return json.loads(rows[0][0]) if rows else None
+        return copy.deepcopy(self._memory_episodes.get(episode_id))
+
+    def save_episode(self, data: dict) -> None:
+        if self._conn:
+            self._execute("INSERT INTO root_episodes(episode_id,student_id,course_id,session_id,data) VALUES(?,?,?,?,?) ON CONFLICT(episode_id) DO UPDATE SET data=excluded.data",
+                          (data["episode_id"], data["student_id"], data["course_id"], data["session_id"], json.dumps(data, ensure_ascii=False)))
+        else:
+            self._memory_episodes[data["episode_id"]] = copy.deepcopy(data)

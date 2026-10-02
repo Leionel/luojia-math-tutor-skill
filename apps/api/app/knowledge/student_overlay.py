@@ -1,3 +1,4 @@
+import copy
 import datetime
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -121,6 +122,7 @@ class StudentOverlayStore:
                 self._case_states[(s.student_id, s.course_id, s.case_id)] = s
 
     def get_unit_state(self, student_id: str, course_id: str, unit_id: str) -> StudentUnitState:
+        self._reload()
         key = (student_id, course_id, unit_id)
         if key not in self._unit_states:
             self._unit_states[key] = StudentUnitState(
@@ -131,6 +133,7 @@ class StudentOverlayStore:
         return self._unit_states[key]
 
     def get_case_state(self, student_id: str, course_id: str, case_id: str) -> StudentCaseState:
+        self._reload()
         key = (student_id, course_id, case_id)
         if key not in self._case_states:
             self._case_states[key] = StudentCaseState(
@@ -141,104 +144,87 @@ class StudentOverlayStore:
         return self._case_states[key]
 
     def record_process_event(
-        self,
-        event_id: str,
-        student_id: str,
-        course_id: str,
-        unit_ids: list[str],
-        case_id: Optional[str] = None,
-        event_type: str = "attempt",  # attempt | hint | revision | revision_success | probe | error
-        is_independent: Optional[bool] = None,
-        is_success: Optional[bool] = None,
-        help_level: int = 0,
-        misconception_id: Optional[str] = None,
+        self, event_id: str, student_id: str, course_id: str, unit_ids: list[str],
+        case_id: Optional[str] = None, event_type: str = "attempt",
+        is_independent: Optional[bool] = None, is_success: Optional[bool] = None,
+        help_level: int = 0, misconception_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> dict[str, Any]:
-        """Reduce one observable process event into overlay state.
+        """Validate first, then append and reduce in one transaction.
 
-        Idempotent on event_id: a duplicate event is recorded but does not
-        change state twice.
+        Raw observations may have an unknown outcome. Only explicit outcomes
+        alter success/failure counts; callers enforce their evidence authority.
         """
-        if self.store and self.store.event_exists(event_id):
-            return {"status": "duplicate", "event_id": event_id}
-
-        now = datetime.datetime.now().isoformat()
-        payload = {
-            "unit_ids": unit_ids,
-            "case_id": case_id,
-            "event_type": event_type,
-            "is_independent": is_independent,
-            "is_success": is_success,
-            "help_level": help_level,
-            "misconception_id": misconception_id,
-        }
-        if self.store:
-            self.store.append_event(event_id, student_id, course_id, event_type, payload)
-
-        if event_type == "hint":
-            # Hint exposure only counts evidence of help usage; never success.
-            for uid in unit_ids:
-                state = self.get_unit_state(student_id, course_id, uid)
-                state.hint_exposure_count += 1
-                state.last_practiced_at = now
-                state.updated_from_event_id = event_id
-                if self.store:
-                    self.store.upsert_unit_state(student_id, course_id, uid, state.to_dict())
-            if case_id:
-                case_state = self.get_case_state(student_id, course_id, case_id)
-                case_state.max_help_used = max(case_state.max_help_used, help_level)
-                case_state.last_interaction_at = now
-                if self.store:
-                    self.store.upsert_case_state(student_id, course_id, case_id, case_state.to_dict())
-            return {"status": "recorded", "event_id": event_id}
-
-        if is_success is None:
-            raise ValueError(f"is_success is required for event_type={event_type!r}")
-        if is_independent is None:
-            raise ValueError(f"is_independent is required for event_type={event_type!r}")
-
-        # Update case state
-        if case_id:
-            case_state = self.get_case_state(student_id, course_id, case_id)
-            case_state.exposure_count += 1
-            if event_type in ("attempt", "revision", "probe"):
-                case_state.attempt_count += 1
-            case_state.max_help_used = max(case_state.max_help_used, help_level)
-            case_state.last_interaction_at = now
-            if is_success:
-                case_state.latest_outcome = "success" if is_independent else "assisted_success"
-                if is_independent and case_state.independent_transfer_status != "verified":
-                    case_state.independent_transfer_status = "verified"
-            else:
-                case_state.latest_outcome = "failed"
-                case_state.independent_transfer_status = "struggled"
-            if self.store:
-                self.store.upsert_case_state(student_id, course_id, case_id, case_state.to_dict())
-
-        # Update unit states: evidence counts only, no mastery arithmetic.
-        for uid in unit_ids:
-            unit_state = self.get_unit_state(student_id, course_id, uid)
-            unit_state.last_practiced_at = now
-            unit_state.updated_from_event_id = event_id
-            unit_state.attempt_count += 1
-
-            if is_success:
-                unit_state.latest_outcome = "success" if is_independent else "assisted_success"
-                if is_independent:
-                    unit_state.independent_evidence_count += 1
-                else:
-                    unit_state.assisted_success_count += 1
-            else:
-                unit_state.latest_outcome = "failed"
-                unit_state.failure_count += 1
-                if misconception_id and misconception_id not in unit_state.misconception_candidate_refs:
-                    unit_state.misconception_candidate_refs.append(misconception_id)
-
-            if self.store:
-                self.store.upsert_unit_state(student_id, course_id, uid, unit_state.to_dict())
-
+        if not event_id or not student_id or not course_id or not 0 <= help_level <= 3:
+            raise ValueError("Invalid event identity/help level")
+        if len(unit_ids) != len(set(unit_ids)) or len(unit_ids) > 30:
+            raise ValueError("Invalid unit ids")
+        if event_type not in {"attempt", "hint", "hint_exposed", "revision", "revision_success", "probe", "error", "outcome", "verifier_evidence", "diagnosis", "delivery_failed", "probe_issued"}:
+            raise ValueError("Unknown process event")
+        if is_success is not None and is_independent is None:
+            raise ValueError("Outcome requires independence classification")
+        if event_type in {"outcome", "revision_success", "error"} and is_success is None:
+            raise ValueError("Outcome event requires a known result")
+        payload = {"unit_ids": unit_ids, "case_id": case_id, "event_type": event_type,
+                   "is_independent": is_independent, "is_success": is_success,
+                   "help_level": help_level, "misconception_id": misconception_id, **(metadata or {})}
+        store = self.store
+        if store is None:
+            from app.knowledge.course_store import CourseStore
+            self.store = store = CourseStore()
+        with store.transaction():
+            previous = store.event_record(event_id)
+            if previous:
+                if previous["student_id"] != student_id or previous["course_id"] != course_id or previous["event_type"] != event_type or previous["payload"] != payload:
+                    raise ValueError("Event id collision")
+                return {"status": "duplicate", "event_id": event_id}
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            units = {d["unit_id"]: StudentUnitState.from_dict(d) for d in store.load_unit_states(course_id) if d["student_id"] == student_id}
+            cases = {d["case_id"]: StudentCaseState.from_dict(d) for d in store.load_case_states(course_id) if d["student_id"] == student_id}
+            hint = event_type in {"hint", "hint_exposed"}
+            attempt = event_type in {"attempt", "revision", "probe"}
+            changes = hint or attempt or is_success is not None
+            for uid in unit_ids if changes else []:
+                state = copy.deepcopy(units.get(uid) or StudentUnitState(student_id, course_id, uid))
+                state.updated_from_event_id, state.last_practiced_at = event_id, now
+                if attempt: state.attempt_count += 1
+                if hint: state.hint_exposure_count += 1
+                if is_success is True:
+                    state.latest_outcome = "success" if is_independent else "assisted_success" if help_level else "observed_success"
+                    if is_independent: state.independent_evidence_count += 1
+                    elif help_level: state.assisted_success_count += 1
+                elif is_success is False:
+                    state.latest_outcome = "failed"
+                    state.failure_count += 1
+                    if misconception_id and misconception_id not in state.misconception_candidate_refs:
+                        state.misconception_candidate_refs.append(misconception_id)
+                store.upsert_unit_state(student_id, course_id, uid, state.to_dict())
+            if case_id and changes:
+                state = copy.deepcopy(cases.get(case_id) or StudentCaseState(student_id, course_id, case_id))
+                state.last_interaction_at = now
+                if attempt: state.attempt_count += 1
+                if hint:
+                    state.exposure_count += 1
+                    state.max_help_used = max(state.max_help_used, help_level)
+                if is_success is True:
+                    state.latest_outcome = "success" if is_independent else "assisted_success" if help_level else "observed_success"
+                    # One independent probe is evidence, not verified transfer ability.
+                    if is_independent: state.independent_transfer_status = "probe_observed"
+                elif is_success is False:
+                    state.latest_outcome = "failed"
+                    state.independent_transfer_status = "struggled" if is_independent else state.independent_transfer_status
+                store.upsert_case_state(student_id, course_id, case_id, state.to_dict())
+            store.append_event(event_id, student_id, course_id, event_type, payload)
+        self._reload()
         return {"status": "recorded", "event_id": event_id}
 
+    def _reload(self):
+        if self.store:
+            self._unit_states = {(d["student_id"], d["course_id"], d["unit_id"]): StudentUnitState.from_dict(d) for d in self.store.load_unit_states()}
+            self._case_states = {(d["student_id"], d["course_id"], d["case_id"]): StudentCaseState.from_dict(d) for d in self.store.load_case_states()}
+
     def get_course_overlay(self, student_id: str, course_id: str) -> dict[str, Any]:
+        self._reload()
         unit_map = {
             k[2]: state.to_dict()
             for k, state in self._unit_states.items()

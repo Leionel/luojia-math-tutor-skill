@@ -91,7 +91,16 @@ def test_endpoint_evidence_builder_and_offline_evaluator_use_identical_ranking(s
     assert offline_matcher.match(query).to_dict() == actual
     endpoint = TestClient(app).post("/api/courses/numerical_analysis/cases/match", json={"query": query}).json()
     pack = CourseEvidenceBuilder().build_evidence_pack(query)
-    assert endpoint == actual
+    # Public delivery redacts probe answers; ranking still shares the exact
+    # production/evaluator implementation and must remain identical.
+    for key in ("decision", "matched_case_id", "confidence", "candidate_cases",
+                "concept_anchor_ids", "difference_axes", "unit_candidates",
+                "review_required", "clarification_question", "reason"):
+        assert endpoint[key] == actual[key]
+    assert endpoint["matched_case"]["case_id"] == actual["matched_case_id"]
+    assert "correct_answer" not in (endpoint["diagnostic_probe"] or {})
+    from app.auth import Principal
+    assert routes._public_case(actual["matched_case"], Principal("teacher", True, "teacher")) == actual["matched_case"]
     assert pack.retrieval_trace["case_candidates"] == actual["candidate_cases"]
     assert pack.retrieval_trace["unit_candidates"] == actual["unit_candidates"]
     assert pack.matched_case["case_id"] == actual["matched_case_id"]

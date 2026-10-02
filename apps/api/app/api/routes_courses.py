@@ -71,11 +71,13 @@ def get_course_graph(
     course_id: str,
     scope: Optional[str] = Query(None, description="Filter by scope: core, prerequisite, extension"),
     student_id: Optional[str] = Query(None, description="Overlay student evidence"),
-    format: str = Query("react_flow", description="react_flow or raw")
+    format: str = Query("react_flow", description="react_flow or raw"),
+    principal: Principal = Depends(get_principal),
 ):
     service = get_course_service(course_id)
     overlay = None
     if student_id:
+        _ensure_overlay_access(student_id, principal)
         overlay = service.overlay_store.get_course_overlay(student_id, course_id)
 
     if format == "raw":
@@ -148,29 +150,36 @@ def get_course_subgraph(
 def list_cases(
     course_id: str,
     task_type: Optional[str] = Query(None),
-    concept_id: Optional[str] = Query(None)
+    concept_id: Optional[str] = Query(None),
+    principal: Principal = Depends(get_principal),
 ):
     service = get_course_service(course_id)
     if concept_id:
         cases = service.graph_repo.case_repo.find_by_concept(concept_id)
     else:
         cases = service.graph_repo.case_repo.list_cases(course_id=course_id, task_type=task_type)
-    return {"cases": [c.to_dict() for c in cases], "total": len(cases)}
+    return {"cases": [_public_case(c.to_dict(), principal) for c in cases], "total": len(cases)}
 
 
 @router.post("/{course_id}/cases/match")
-def match_case(course_id: str, payload: MatchRequest):
+def match_case(course_id: str, payload: MatchRequest, principal: Principal = Depends(get_principal)):
     service = get_course_service(course_id)
     result = service.case_matcher.match(
         query=payload.query,
         course_id=course_id,
         context=payload.context or {}
     )
-    return result.to_dict()
+    data = result.to_dict()
+    if data.get("matched_case"):
+        data["matched_case"] = _public_case(data["matched_case"], principal)
+    if not principal.is_teacher and data.get("diagnostic_probe"):
+        data["diagnostic_probe"] = _public_probe(data["diagnostic_probe"])
+    return data
 
 
 @router.get("/{course_id}/candidates")
-def list_candidates(course_id: str, status: Optional[str] = Query(None)):
+def list_candidates(course_id: str, status: Optional[str] = Query(None), principal: Principal = Depends(get_principal)):
+    require_role(principal, ("teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
     candidates = service.candidate_mgr.list_candidates(course_id=course_id, status=status)
     return {"candidates": [c.to_dict() for c in candidates], "total": len(candidates)}
@@ -282,14 +291,16 @@ def review_candidate(
 
 
 @router.get("/{course_id}/revisions")
-def list_revisions(course_id: str):
+def list_revisions(course_id: str, principal: Principal = Depends(get_principal)):
+    require_role(principal, ("teacher", "admin"), get_app_settings())
     service = get_course_service(course_id)
     revisions = service.store.list_revisions(course_id)
     return {"revisions": revisions, "total": len(revisions)}
 
 
 @router.get("/users/{user_id}/{course_id}/overlay")
-def get_student_overlay(user_id: str, course_id: str):
+def get_student_overlay(user_id: str, course_id: str, principal: Principal = Depends(get_principal)):
+    _ensure_overlay_access(user_id, principal)
     service = get_course_service(course_id)
     return service.overlay_store.get_course_overlay(student_id=user_id, course_id=course_id)
 
@@ -301,7 +312,8 @@ def record_student_event(
     payload: ProcessEventRequest,
     principal: Principal = Depends(get_principal),
 ):
-    require_role(principal, ("student", "teacher", "admin"), get_app_settings())
+    require_role(principal, ("teacher", "admin"), get_app_settings())
+    _ensure_overlay_access(user_id, principal)
     service = get_course_service(course_id)
     result = service.overlay_store.record_process_event(
         event_id=payload.event_id,
@@ -318,3 +330,25 @@ def record_student_event(
     if result.get("status") == "duplicate":
         return {"status": "duplicate", "event_id": payload.event_id}
     return {"status": "success", "event_id": payload.event_id}
+
+
+def _ensure_overlay_access(user_id: str, principal: Principal):
+    settings = get_app_settings()
+    if (principal.authenticated or settings.auth_required) and user_id != principal.user_id and not principal.is_teacher:
+        raise HTTPException(status_code=403, detail="Cross-user overlay access is forbidden.")
+
+
+def _public_probe(data: dict) -> dict:
+    # Explicit public fields: future private keys are withheld by default.
+    return {key: data[key] for key in ("probe_id", "id", "type", "question") if key in data}
+
+
+def _public_case(data: dict, principal: Principal) -> dict:
+    if principal.is_teacher:
+        return data
+    data = dict(data)
+    data["diagnostic_probes"] = [_public_probe(p) for p in data.get("diagnostic_probes", [])]
+    data["possible_actions"] = []
+    if data.get("disclosure_policy") != "direct":
+        data["reasoning_signature"] = []
+    return data

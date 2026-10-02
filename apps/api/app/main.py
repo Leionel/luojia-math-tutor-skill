@@ -26,6 +26,7 @@ from app.api.routes_courses import router as courses_router
 from app.api.routes_auth import router as auth_router
 from app.api.routes_observability import router as observability_router
 from app.api.routes_search import router as search_router
+from app.api.routes_root_diagnostics import router as root_diagnostics_router
 from app.config import get_settings
 from app.main_deps import get_orchestrator
 from app.observability import request_observability_middleware
@@ -83,3 +84,5 @@ app.include_router(knowledge_router)
 app.include_router(courses_router)
 app.include_router(observability_router)
 app.include_router(search_router)
+
+app.include_router(root_diagnostics_router)
