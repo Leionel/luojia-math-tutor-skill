@@ -1,0 +1,26 @@
+{
+  "stage": "M2-M3 engineering candidate",
+  "oracle_version": "root-oracle-v1",
+  "tolerance_version": "root-tolerance-v1",
+  "prompt_version": "teaching-v2.3",
+  "artifact_version": "visual-v2",
+  "gold_status": "developer fixtures only",
+  "teacher_review": "pending",
+  "unseen_evaluation": "not_run",
+  "files": {
+    "apps/api/app/math_tools/root_expression.py": "6bfe57272e22ba3a58c3c9571591ee3a82411a28c80abaedacf6de62d796075d",
+    "apps/api/app/math_tools/root_finding.py": "22ba764980eda17ba49ffe22b31362560e70bda4dbb97c15b13e8024bcc8380a",
+    "apps/api/app/tutor/root_diagnostics.py": "46b969cec84809873921c998b3ed62fea6b1d17900887e13825bb7d5c7e960ca",
+    "apps/api/tests/test_root_episodes.py": "6c9c9e83c97e3d3ee77528122c7b142582fd0d7d9468d57629558c7f9b14a54a",
+    "apps/api/tests/test_root_oracle.py": "7a01a8429a7253f64fabf764f16b040855b50fc35840e90b97ff6a76c23293ab",
+    "evaluation/root_diagnostic_episodes.json": "ceddb75696ad165165754ca53c7da0ade6b98ca666fb37800ec585ed25be01a3",
+    "apps/api/app/knowledge/course_store.py": "587ef1b45a160e9e69af00e6bedee2255ca2786cf06d2f4aea89c4780dbce741",
+    "apps/api/app/knowledge/student_overlay.py": "ea321fd12c82bc823dab4b7b8e829c51a55eacaf1e4f5fef12377888df602b78",
+    "apps/api/app/tutor/graph.py": "30bd86a3228e2ee7a6598d59452ed07bd59bea1fa5c3dea2283a8685592e7ada",
+    "apps/api/app/tutor/orchestrator.py": "772e2e286a9c2913595d10f5ee899987c8d759e04fad9236d1e61a62b10d9433",
+    "apps/api/app/tutor/prompt_policy.py": "ae0af8345a9ff82498bee32b94c82046cb6e0039632b45d8406af17eeafe7133",
+    "apps/web/lib/visual-artifact.ts": "20a97938c00e35b23db67b78035d76c9939b25f61d86609e70eac3e437d42b94",
+    "apps/web/components/static-artifact.tsx": "8f6279c1023097e09a4dcf365c7e2cce9b5a33fac8319da173c7796330863c82"
+  },
+  "hash_encoding": "UTF-8 text normalized to LF"
+}

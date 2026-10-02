@@ -269,3 +269,14 @@ success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提�
 服务已恢复 Web3000/API8000。M2求根过程诊断闭环、独立教师gold与学习事件评估仍为后续主线，任意生成JavaScript不作为诊断Oracle。提交分为静态渲染安全、函数图语义/响应式、提示词协议、实施回执四批；推送结果以当前回合最终输出为准。
 
 本轮实现提交：dfd8792 静态预览与生成门控；25ca8fb 分段函数图与响应式；e646c16 visual-v1 提示词协议。文档回执另批提交，用户已明确要求 push 当前分支。
+
+
+## 2026-10-02 — M2/M3 工程闭环与动态 HTML 恢复
+
+用户授权继续 M2/M3、恢复动态 HTML，并沿用分批commit/push。实现详见 COURSE_GRAPH_M2_M3.md。受控 RootAttempt 表单/JSON进入生产 LangGraph 独立路径，不调用LLM、不执行学生代码；Newton/二分/不动点12家族，状态 supported/contradicted/inconclusive/tool_error，输出步骤与数值证据，Case仍经过生产matcher。修改轨迹重验；缺条件和工具异常保持未知。
+
+SQLite新增root_episodes，事件/状态同事务，先验证后写入；显示ACK后计帮助/结果，未交付未知，重试及重启幂等。预算3、首试服务器探针有固定初值/参数与至少两步，发题即预留且避开该学生已发函数；私有探针证据与正确答案不经学生API披露。受助修订计assisted，普通正确计observed，首次独立probe仅probe_observed。学生不能自报成功；Overlay/episode/session跨用户隔离，候选/修订读取教师权限。demo兼容不称生产权限。课程库/会话库非跨库原子事务。
+
+visual-v2/teaching-v2.3恢复闭合完成态html内联JS，主动运行的无同源iframe，CSP禁外联/eval/嵌套，60KB/1500节点，错误/停止/重启/30秒定时卸载。同步JS死循环没有硬CPU隔离，图示绝不记数值验证成功。SSE新增鉴权/超时/连接错误、终端done与EOF检查；失败部分回答保持预览禁用，保留错误状态，凭证未改。
+
+验收npm test/API415/Web30/知识JSON、build/typecheck通过；lint0错误/10原有警告；12家族13/13开发三元组；10生产SSE固定episode含3合法替代，另工具异常/取消/并发/重启/回滚/回执/权限回归。截图results/m2-m3-{dynamic-desktop,dynamic-mobile,chat-mobile}.png，日志m2-m3-*；临时验收路由删除，未写真实会话、未调用真实模型。教师逐题gold和独立测试未验收，G3教师项/M4不能标完成。新增规划文档的并行修改不纳入本轮提交。

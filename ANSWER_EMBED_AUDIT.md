@@ -80,3 +80,10 @@
 验证：离线 npm test（知识 JSON、API346、Web26）通过；生产 build/typecheck 通过；lint 0 errors/10 existing warnings。日志 results/embed-repair-{full-test,build,lint}.log。浏览器独立临时页面调用真实 renderer，验证 SVG/HTML 白名单、空沙箱、CSP、生成中零 iframe、XML 源码、主题切换及 390px 无横向溢出；SVG180px/HTML320px，测试样例显示两段曲线。截图 results/embed-repair-{desktop,mobile}.png。临时路由已删除，没有写入真实会话，没有调用真实模型或运行恶意外传/死循环样例；未执行正式渗透或全平台安全验收。iframe onError 只作加载失败兜底，不声称可完整获知跨源内容错误。
 
 服务已恢复 localhost:3000/chat 与 API8000；用户授权分批提交并 push。M2 过程诊断仍按原时间线推进，图示不替代受控数值 Oracle。
+
+
+## 动态能力更新（2026-10-02，优先于上方静态专用描述）
+
+用户明确要求恢复动态HTML，已改为visual-v2/teaching-v2.3。闭合且完整回答中的html围栏允许内联JS、DOM/Canvas/按钮/滑块/动画，用户主动运行后才挂载独立srcdoc，sandbox仅allow-scripts、不开放同源；CSP禁网络/CDN/eval/iframe/对象/表单。静态SVG与裸HTML仍无脚本；主页面sanitizer不扩大。60KB/1500节点、错误/停止/重启、30秒宿主定时卸载和来源+通道核对已接入；同步死循环没有硬CPU/内存隔离保证。
+
+浏览器真实组件膜振动示意：动画/暂停/频率/隔离/停止/重启/脚本异常/生成门控/定时退出、390px无溢出通过；重启空白与运行中文字滞留已修。失败或取消的部分回答不开放预览。未运行外传/死循环攻击或正式渗透验证，未调用真实模型。动态JS不进入求根Oracle，不记数值验证成绩。详见COURSE_GRAPH_M2_M3.md；npm test/API415/Web30、build/typecheck通过，lint0错误/10既有警告。
