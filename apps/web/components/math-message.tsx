@@ -11,6 +11,11 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme-context";
 import { AgentRunReceipt } from "./agent-run-receipt";
 import { deliveryGuardLabel, type DeliveryGuard } from "@/lib/delivery-guard";
+import {RootActionCards} from "./learning/root-action-card";
+import type {LearningContextRef} from "@/lib/learning-context";
+import type {LabRun} from "@/lib/learning-api";
+import type {TutorMeta} from "@/lib/api";
+import Link from "next/link";
 
 function cleanMathForSpeech(text: string) {
   return text
@@ -274,6 +279,7 @@ export function MathMessage({
   webSearchReport,
   answerGuard,
   agentRun,
+  learningMeta, messageId, learningContext, actionsDisabled, onLabSaved,
   reviewData,
   onSimilar,
   onEdit,
@@ -296,6 +302,11 @@ export function MathMessage({
   webSearchReport?: WebSearchReport;
   answerGuard?: DeliveryGuard;
   agentRun?: unknown;
+  learningMeta?: TutorMeta | null;
+  messageId?: string;
+  learningContext?: LearningContextRef;
+  actionsDisabled?: boolean;
+  onLabSaved?: (run: LabRun) => void;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
@@ -353,7 +364,7 @@ export function MathMessage({
                   「学子立论」
                 </span>
                 <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                  草稿演练步骤
+                  {learningContext?"围绕参考实验的提问":"你的提问与过程"}
                 </span>
               </>
             ) : (
@@ -409,6 +420,10 @@ export function MathMessage({
           )}
 
           {!isUser && <AgentRunReceipt value={agentRun} disconnected={isIncomplete} />}
+          {!isUser && learningMeta?.learning_context && <p className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-olive-500/15 pb-3 text-xs leading-6 text-[var(--text-secondary)]">
+            <span>本轮引用 · x₀={learningMeta.learning_context.parameters.initial_value}{learningMeta.learning_context.ref.selected_step!==null?` · 第 ${learningMeta.learning_context.ref.selected_step} 步`:" · 完整实验"}</span>
+            <Link href={`/lab?id=${encodeURIComponent(learningMeta.learning_context.ref.record_id)}${learningMeta.learning_context.ref.selected_step===null?"":`&step=${learningMeta.learning_context.ref.selected_step}`}`} className="underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600">回看原实验</Link>
+          </p>}
 
           {!isUser && deliveryGuardLabel(answerGuard) && (
             <p className="mb-3 text-base sm:text-xs leading-relaxed text-[var(--text-secondary)]" role="status">
@@ -445,6 +460,7 @@ export function MathMessage({
               )}
               {rootDiagnosis && <RootDiagnosticCard report={rootDiagnosis} sessionId={sessionId} complete={!isGenerating && !isThinking && !isIncomplete} onRevision={onRootRevision} onProbe={onRootProbe}/> }
               <LatexRenderer content={content} complete={!isGenerating && !isThinking && !isIncomplete} />
+              {!isUser && !isGenerating && !isThinking && !isIncomplete && <RootActionCards meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onSaved={onLabSaved}/>}
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
                   <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />

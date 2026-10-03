@@ -2,7 +2,7 @@
 import {useEffect, useState} from "react";
 import type {LabRun} from "@/lib/learning-api";
 
-export function LabPlayback({run, comparison}: {run: LabRun; comparison?: LabRun}) {
+export function LabPlayback({run, comparison, onDiscussStep}: {run: LabRun; comparison?: LabRun; onDiscussStep?: (step:number)=>void}) {
   const [step,setStep]=useState(0);
   const [playing,setPlaying]=useState(false);
   const last=run.rows.length-1;
@@ -36,6 +36,7 @@ export function LabPlayback({run, comparison}: {run: LabRun; comparison?: LabRun
     </svg><figcaption className="text-base sm:text-sm leading-6 text-[var(--text-secondary)]">实线：本次轨迹；淡线：全部已算步骤。{comparison?"虚线：对照轨迹的相同步数。":""}图形趋势不替代收敛与误差判断。</figcaption></figure>
     <label htmlFor={`step-${run.id}`} className="mt-4 block text-base sm:text-sm">选择迭代步骤</label><input id={`step-${run.id}`} aria-valuetext={`第${row.k}步，近似值${row.x.toPrecision(7)}`} type="range" min={0} max={Math.max(last,1)} step={1} value={step} disabled={last===0} onChange={e=>move(Number(e.target.value))} className="h-12 w-full accent-olive-700"/>
     <div className="flex flex-wrap gap-2"><button type="button" className={button} disabled={step===0} onClick={()=>move(step-1)}>上一步</button><button type="button" className={button} disabled={last===0} onClick={()=>{if(playing)setPlaying(false);else{if(step===last)setStep(0);setPlaying(true);}}}>{playing?"暂停回放":step===last?"重新播放":"播放迭代"}</button><button type="button" className={button} disabled={step===last} onClick={()=>move(step+1)}>下一步</button><button type="button" className={button} disabled={step===last} onClick={()=>move(last)}>看最后一步</button></div>
+    {onDiscussStep && <button type="button" onClick={()=>{setPlaying(false);onDiscussStep(row.k);}} className="mt-3 inline-flex min-h-12 items-center text-sm font-medium text-olive-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600 dark:text-olive-300">问小珞：解释第 {row.k} 步 →</button>}
     <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-[var(--border-primary)] pt-4 text-base sm:text-sm"><div><dt>近似值 xₖ</dt><dd className="mt-1 break-all font-mono">{row.x.toPrecision(9)}</dd></div><div><dt>残差 |f(xₖ)|</dt><dd className="mt-1 break-all font-mono">{Math.abs(row.fx).toExponential(4)}</dd></div><div><dt>相邻差</dt><dd className="mt-1 font-mono">{row.step?.toExponential(4)??"初值，无前一步"}</dd></div><div><dt>当前区间</dt><dd className="mt-1 break-words font-mono">{row.bracket?.map(v=>v.toPrecision(6)).join(" ~ ")??"此方法未逐步保存区间"}</dd></div></dl>
     <p className="mt-4 text-base sm:text-sm leading-7 text-[var(--text-secondary)]">{step===last?`到达已保存的末步。${run.stop_detail}；${run.diagnosis.summary}`:"当前在回放中间步骤。残差或相邻差变小，不能直接认定已达到根误差目标。"}</p>
   </section>;

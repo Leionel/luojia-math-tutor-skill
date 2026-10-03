@@ -35,6 +35,8 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  tutor_artifacts?: unknown[];
+  learning_context?: import("./learning-context").LearningTaskSnapshot;
   agent_run?: AgentRun;
   answer_guard?: import("./delivery-guard").DeliveryGuard;
   teaching_mode?: TutorMode;
@@ -116,9 +118,10 @@ function activeUserId(_requested?: string): string {
   return getCurrentUserId();
 }
 
-export async function createSession(subject: Subject = "foundations") {
+export async function createSession(subject: Subject = "foundations", signal?: AbortSignal) {
   const res = await fetch(`${API_BASE}/api/sessions`, {
     method: "POST",
+    signal,
     headers: headers(true),
     body: JSON.stringify({ user_id: activeUserId(), subject })
   });
@@ -188,8 +191,8 @@ export async function truncateSession(sessionId: string, messageId: string) {
   return res.json();
 }
 
-export async function listMessages(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`, { cache: "no-store", headers: headers() });
+export async function listMessages(sessionId: string, signal?: AbortSignal) {
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`, { cache: "no-store", headers: headers(), signal });
   if (!res.ok) throw new Error("获取消息失败");
   const data = await res.json();
   return data.items as Message[];
@@ -260,6 +263,7 @@ export async function getAgentRun(sessionId:string,runId:string) {
 
 export async function streamTutor(
   payload: {
+    learning_context?: import("./learning-context").LearningContextRef;
     parent_run_id?: string;
     root_submission?: RootSubmission;
     session_id: string;
@@ -290,7 +294,10 @@ export async function streamTutor(
     body: JSON.stringify({ user_id: activeUserId(), ...restPayload }),
     signal: abortSignal,
   });
-  if (!res.ok || !res.body) throw new Error("助教连接中断，请稍后重试");
+  if (!res.ok || !res.body) {
+    const failure = await res.json().catch(() => null);
+    throw new Error(typeof failure?.detail === "string" ? failure.detail.slice(0, 500) : "助教连接中断，请稍后重试");
+  }
 
   let thinkingChain = "";
   await readTutorEvents(res.body.getReader(), (event, data) => {

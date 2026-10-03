@@ -23,6 +23,11 @@ import { Button } from "./ui/button";
 import { GlobalSearchModal } from "./global-search-modal";
 import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
+import {learningRequest, type LabRun} from "@/lib/learning-api";
+import {rootContextRef, labChatKey, type LearningTaskSnapshot} from "@/lib/learning-context";
+import {getCurrentUserId} from "@/lib/demo-auth";
+import {ChatLifetime} from "@/lib/chat-lifetime";
+import {ContextBanner} from "./learning/context-banner";
 
 type LocalMessage = {
   id: string;
@@ -128,6 +133,9 @@ export function TutorChat() {
   useEffect(() => { setRootForm(false); setRootDraft(undefined); }, [sessionId]);
   const [rootInstruction, setRootInstruction] = useState("");
   const [rootError, setRootError] = useState("");
+  const [learningContext, setLearningContext] = useState<LearningTaskSnapshot | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [contextError, setContextError] = useState("");
   const [visionDraft, setVisionDraft] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
@@ -140,6 +148,9 @@ export function TutorChat() {
   const [showZenConfirm, setShowZenConfirm] = useState(false);
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
+  const lifetime=useRef(new ChatLifetime());
+  const viewGeneration=useRef(0);
+  const alive=useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeRunRef = useRef<AgentRun | undefined>(undefined);
 
@@ -225,7 +236,13 @@ export function TutorChat() {
   }, [searchQuery]);
 
   useEffect(() => {
+    alive.current=true;
+    const manager=lifetime.current,generation=viewGeneration;
     void bootstrap();
+    const ownerChanged=()=>{viewGeneration.current++;lifetime.current.invalidate();setMessages([]);setLearningContext(null);setContextError("身份已变化，请刷新后继续。");setIsStreaming(false);};
+    const storage=(event:StorageEvent)=>{if(event.key?.startsWith("luojia_auth_")||event.key===null)ownerChanged();};
+    window.addEventListener("luojia-auth-change",ownerChanged);window.addEventListener("storage",storage);
+    return()=>{alive.current=false;generation.current++;manager.invalidate();window.removeEventListener("luojia-auth-change",ownerChanged);window.removeEventListener("storage",storage);};
   }, []);
 
   const isThinkingActive = messages.some(
@@ -291,16 +308,33 @@ export function TutorChat() {
   }, [isResizing]);
 
   async function bootstrap() {
-    const existing = await listSessions().catch(() => []);
+    const generation=++viewGeneration.current, owner=getCurrentUserId();
+    const valid=()=>alive.current && generation===viewGeneration.current && owner===getCurrentUserId();
+    setContextLoading(true);
+    const existing=await listSessions().catch(()=>[]);
+    if(!valid())return;
     setSessions(existing);
-    if (existing[0]) {
-      await selectSession(existing[0].id);
-    } else {
-      resetToDraftSession();
+    const params=new URLSearchParams(window.location.search),labId=params.get("lab");
+    if(labId){
+      try{
+        const run=await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000));
+        const step=params.get("step");
+        const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",rootContextRef(run,step===null?null:Number(step)),AbortSignal.timeout(15000));
+        if(!valid())return;
+        const mapped=localStorage.getItem(labChatKey(owner,labId));
+        if(mapped&&existing.some(s=>s.id===mapped)) await selectSession(mapped,snapshot);
+        else {resetToDraftSession();setLearningContext(snapshot);setContextLoading(false);window.history.replaceState(null,"",`/chat?lab=${encodeURIComponent(labId)}${step===null?"":`&step=${step}`}`);}
+      }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"实验引用不可用");setContextLoading(false);}}
+      return;
     }
+    const selected=existing.find(s=>s.id===params.get("session"))??existing[0];
+    if(selected)await selectSession(selected.id);else resetToDraftSession();
   }
 
   function resetToDraftSession() {
+    viewGeneration.current++;lifetime.current.invalidate();setIsStreaming(false);setContextLoading(false);
+    window.history.replaceState(null,"","/chat");
+    setLearningContext(null); setContextError("");
     setVisionDraft(null);
     setSessionId(null);
     let initialMessages: LocalMessage[] = [{ id: "welcome", role: "assistant", content: welcome }];
@@ -322,7 +356,10 @@ export function TutorChat() {
     resetToDraftSession();
   }
 
-  async function selectSession(nextSessionId: string) {
+  async function selectSession(nextSessionId: string, override?:LearningTaskSnapshot) {
+    const generation=++viewGeneration.current,owner=getCurrentUserId();
+    lifetime.current.invalidate();setIsStreaming(false);setContextLoading(true);
+    const valid=()=>alive.current && generation===viewGeneration.current && owner===getCurrentUserId();
     setVisionDraft(null);
     setSessionId(nextSessionId);
     const [serverMessages, serverMistakes, savedNotes] = await Promise.all([
@@ -331,8 +368,19 @@ export function TutorChat() {
       listNotes("demo-user").catch(() => []),
     ]);
 
+    if(!valid())return;
     let currentMessages: LocalMessage[] = mapServerMessages(serverMessages);
     const lastMeta = serverMessages.at(-1)?.learning_meta;
+    let snapshot=override??null, contextFailure="";
+    if(!override&&lastMeta?.learning_context){
+      try{snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",lastMeta.learning_context.ref,AbortSignal.timeout(15000));}
+      catch(e){contextFailure=e instanceof Error?e.message:"实验引用不可用";}
+    }
+    if(!valid())return;
+    setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
+    const query=new URLSearchParams({session:nextSessionId});
+    if(snapshot){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));localStorage.setItem(labChatKey(owner,snapshot.ref.record_id),nextSessionId);}
+    window.history.replaceState(null,"",`/chat?${query}`);
     if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {
       currentMessages = [{ id: "welcome", role: "assistant", content: welcome }];
@@ -371,39 +419,40 @@ export function TutorChat() {
   }
 
   async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission, parentRunId?:string) {
-    setVisionDraft(null);
-    let activeSession = sessionId;
-    if (!activeSession) {
-      const created = await createSession("综合");
-      activeSession = created.session_id;
-      setSessionId(activeSession);
-      // Immediately refresh sidebar so the new session shows up even
-      // before async title generation finishes (or if it fails).
-      listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
+    if (isStreaming || contextLoading || contextError) return;
+    if (learningContext && (rootSubmission || imageUrls?.length)) {
+      setRootError("请先移除实验引用，再发送自己的作答或图片。"); return;
     }
-
-    const userMessage: LocalMessage = { id: crypto.randomUUID(), role: "user", content: value };
-    const assistantId = crypto.randomUUID();
-    setMessages((current) => [...current, userMessage, { id: assistantId, role: "assistant", content: "", status: "thinking" }]);
-    setIsStreaming(true);
-    setMeta(null);
-    setThinkingChains({});
-    setThinkingElapsed(0);
-    activeRunRef.current = undefined;
-    abortControllerRef.current = new AbortController();
-
+    const manager=lifetime.current,lease=manager.begin(getCurrentUserId());
+    if(!lease)return;
+    const valid=()=>alive.current && manager.current(lease,getCurrentUserId());
+    abortControllerRef.current=lease.controller;
+    setIsStreaming(true);setVisionDraft(null);
+    const assistantId=crypto.randomUUID();
+    let activeSession=sessionId;
     try {
+      if(!activeSession){
+        const created=await createSession("综合",lease.controller.signal);
+        if(!valid())return;
+        activeSession=created.session_id;setSessionId(activeSession);
+      }
+      if(learningContext)localStorage.setItem(labChatKey(getCurrentUserId(),learningContext.ref.record_id),activeSession);
+      const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
+      setMessages(current=>[...current,userMessage,{id:assistantId,role:"assistant",content:"",status:"thinking"}]);
+      setMeta(null);setThinkingChains({});setThinkingElapsed(0);activeRunRef.current=undefined;
       const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 0;
       if (isFirstUserMessage) {
         generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async ({ title: autoTitle, label: autoLabel }) => {
-          await renameSession(activeSession, autoTitle, autoLabel).catch(() => {});
-          listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
+          if(!valid())return;
+          await renameSession(activeSession!, autoTitle, autoLabel).catch(() => {});
+          listSessions("demo-user", searchQuery).then((s) => {if(valid())setSessions(s);}).catch(() => {});
         }).catch(() => {});
       }
 
       await streamTutor(
         {
           root_submission: rootSubmission,
+          learning_context: learningContext?.ref,
           parent_run_id:parentRunId,
           session_id: activeSession,
           message: value,
@@ -414,14 +463,16 @@ export function TutorChat() {
           requested_hint: requestedHint,
           image_urls: imageUrls,
           abortSignal: abortControllerRef.current.signal,
-          web_search_mode: webSearch,
+          web_search_mode: learningContext?"off":webSearch,
           reasoning_effort: reasoningEffort,
         },
         (nextMeta) => {
+          if(!valid())return;
           setMeta(nextMeta);
           setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, learningMeta: {...nextMeta,agent_run:mergeAgentRun(message.learningMeta?.agent_run,nextMeta.agent_run)} } : message));
         },
         (token) => {
+          if(!valid())return;
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantId ? {
@@ -433,9 +484,11 @@ export function TutorChat() {
           );
         },
         (chain) => {
+          if(!valid())return;
           setThinkingChains((prev) => ({ ...prev, [assistantId]: chain }));
         },
         (content) => {
+          if(!valid())return;
           // onOpening: append content but keep thinking status
           setMessages((current) =>
             current.map((message) =>
@@ -448,6 +501,7 @@ export function TutorChat() {
           );
         },
         ({ summary, elapsedMs }) => {
+          if(!valid())return;
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantId ? {
@@ -463,8 +517,8 @@ export function TutorChat() {
             return next;
           });
         },
-        (draft) => setVisionDraft(draft),
-        (run) => { activeRunRef.current=run; setMessages(current=>current.map(message=>message.id===assistantId ? {
+        (draft) => {if(valid())setVisionDraft(draft);},
+        (run) => { if(!valid())return; activeRunRef.current=run; setMessages(current=>current.map(message=>message.id===assistantId ? {
           ...message, learningMeta:{...(message.learningMeta || {intent:"pending",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮进行中"}),agent_run:mergeAgentRun(message.learningMeta?.agent_run,run)}
         }:message)); }
       );
@@ -472,11 +526,15 @@ export function TutorChat() {
         listSessions().catch(() => sessions),
         listMistakes(activeSession).catch(() => mistakes)
       ]);
+      if(!valid())return;
       setSessions(refreshedSessions);
       setMistakes(refreshedMistakes);
-      const history = await listMessages(activeSession);
+      const history = await listMessages(activeSession,lease.controller.signal);
+      if(!valid())return;
       setMessages(mapServerMessages(history));
     } catch (error) {
+      if(!valid())return;
+      if(!activeSession)setRootError(error instanceof Error?error.message:"创建会话失败");
       const cancelled = abortControllerRef.current?.signal.aborted || (error instanceof Error && error.name === "AbortError");
       const failureText = cancelled ? "已停止生成，本轮没有收到完整回答。" : error instanceof Error ? error.message : "未知错误";
       setMessages((current) =>
@@ -487,8 +545,9 @@ export function TutorChat() {
         )
       );
     } finally {
+      if(!valid()){manager.finish(lease);return;}
       const run = activeRunRef.current as AgentRun | undefined;
-      if (run?.status === "running") {
+      if (activeSession && run?.status === "running") {
         let saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
         if (saved?.status === "running") {
           // The disconnect listener may still be draining owned work. One
@@ -496,10 +555,12 @@ export function TutorChat() {
           await new Promise(resolve=>setTimeout(resolve,150));
           saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
         }
-        if (saved) setMessages(current=>current.map(message=>message.id===assistantId && message.learningMeta ? {
+        if (saved && valid()) setMessages(current=>current.map(message=>message.id===assistantId && message.learningMeta ? {
           ...message, learningMeta:{...message.learningMeta,agent_run:mergeAgentRun(message.learningMeta.agent_run,saved)}
         }:message));
       }
+      if(!valid()){manager.finish(lease);return;}
+      manager.finish(lease);
       setThinkingChains(current => { const next = {...current}; delete next[assistantId]; return next; });
       setIsStreaming(false);
       setMessages((current) =>
@@ -753,6 +814,11 @@ export function TutorChat() {
           </button>
         )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
+          {(learningContext || contextError || contextLoading) && <div className="mx-auto w-full max-w-4xl px-4 pt-4">
+            {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {lifetime.current.invalidate();setLearningContext(null); setContextError(""); window.history.replaceState(null, "", "/chat");}}/>}
+            {contextLoading && <p role="status" className="p-3">正在核对实验引用…</p>}
+            {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {setLearningContext(null); setContextError(""); window.history.replaceState(null, "", "/chat");}}>移除失效引用，继续普通聊天</button></div>}
+          </div>}
           <div
             className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
             ref={scrollContainerRef}
@@ -766,6 +832,7 @@ export function TutorChat() {
                   m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
                 return messages.map((message, idx) => (
                   <MathMessage
+                    learningMeta={message.learningMeta} messageId={message.id} learningContext={learningContext?.ref} actionsDisabled={isStreaming || contextLoading || !!contextError}
                     key={message.id}
                     role={message.role}
                     content={message.content}
@@ -785,16 +852,20 @@ export function TutorChat() {
                     thinkingSummary={message.thinkingSummary}
                     thinkingElapsedMs={message.thinkingElapsedMs}
                     reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
-                    onEdit={message.role === "user" ? async () => {
-                      if (!sessionId) return;
+                    onEdit={message.role === "user" && !isStreaming ? async () => {
+                      if (!sessionId || isStreaming) return;
+                      const generation=viewGeneration.current,owner=getCurrentUserId();
                       await truncateSession(sessionId, message.id);
+                      if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
                       setInputValue(message.content);
                       const msgs = await listMessages(sessionId);
+                      if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
                       setMessages(mapServerMessages(msgs));
                       setMeta(latestLearningMeta(msgs));
                     } : undefined}
-                    onRetry={message.role === "assistant" ? async () => {
-                      if (!sessionId) return;
+                    onRetry={message.role === "assistant" && !isStreaming ? async () => {
+                      if (!sessionId || isStreaming) return;
+                      const generation=viewGeneration.current,owner=getCurrentUserId();
                       let prevUserMsg = null;
                       for(let j=idx-1; j>=0; j--){
                         if(messages[j].role === "user"){ prevUserMsg = messages[j]; break;}
@@ -802,6 +873,7 @@ export function TutorChat() {
                       if(prevUserMsg) {
                         await truncateSession(sessionId, prevUserMsg.id);
                         const msgs = await listMessages(sessionId);
+                        if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
                         setMessages(mapServerMessages(msgs));
                         setMeta(latestLearningMeta(msgs));
                         void submit(prevUserMsg.content,undefined,false,undefined,undefined,message.learningMeta?.agent_run?.run_id);
@@ -823,7 +895,7 @@ export function TutorChat() {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {PROMPT_SUGGESTIONS.map((item, pIdx) => (
+                    {(learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:PROMPT_SUGGESTIONS).map((item, pIdx) => (
                       <button
                         key={pIdx}
                         onClick={() => void submit(item.prompt)}
@@ -880,7 +952,7 @@ export function TutorChat() {
             <TutorInput
               value={inputValue}
               onChange={setInputValue}
-              disabled={isStreaming}
+              disabled={isStreaming || contextLoading || !!contextError}
               mode={mode}
               onModeChange={setMode}
               webSearch={webSearch}

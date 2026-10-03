@@ -9,7 +9,7 @@ export const learningButton = "rounded-lg bg-olive-700 px-4 py-2.5 text-base sm:
 export const learningInput = "w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3 text-base sm:text-sm focus:outline focus:outline-2 focus:outline-olive-600 -outline-offset-1";
 export const learningPanel = "rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 sm:p-6";
 
-export function LearningShell({title, description, children}: {title: string; description: string; children: ReactNode}) {
+export function LearningShell({title, description, children, wide=false}: {title: string; description: string; children: ReactNode; wide?: boolean}) {
   const pathname = usePathname();
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
     <header className="border-b border-[var(--border-subtle)]">
@@ -22,7 +22,7 @@ export function LearningShell({title, description, children}: {title: string; de
           <Link key={href} href={href} aria-current={(pathname === href || (href === "/lab" && pathname === "/numerical-lab")) ? "page" : undefined} className={`shrink-0 border-b-2 px-1 py-3 text-center text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-olive-600 sm:px-3 sm:text-sm ${(pathname === href || (href === "/lab" && pathname === "/numerical-lab")) ? "border-olive-600 font-semibold text-olive-700 dark:text-olive-300" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{label}</Link>)}
       </nav>
     </header>
-    <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+    <div className={`mx-auto w-full ${wide?"max-w-[1480px] sm:py-8":"max-w-6xl sm:py-12"} px-5 py-8 sm:px-8`}>
       <div className="mb-8 max-w-2xl"><h1 className="font-title text-3xl font-semibold sm:text-4xl">{title}</h1><p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">{description}</p></div>
       {children}
     </div>

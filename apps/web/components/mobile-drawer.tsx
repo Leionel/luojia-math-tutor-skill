@@ -12,6 +12,8 @@ export function MobileDrawer({ title, side, breakpoint, onClose, children }: {
   close.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const backgrounds: Array<{ element: HTMLElement; inert: boolean }> = [];
     let branch: HTMLElement | null = dialog.current?.parentElement ?? null;
     while (branch && branch !== document.body) {
@@ -40,6 +42,7 @@ export function MobileDrawer({ title, side, breakpoint, onClose, children }: {
       document.removeEventListener("keydown", handleKey);
       window.removeEventListener("resize", handleResize);
       backgrounds.forEach(({element, inert}) => { element.inert = inert; });
+      document.body.style.overflow = previousOverflow;
       if (previous?.isConnected) previous.focus();
     };
   }, [breakpoint]);
@@ -47,7 +50,7 @@ export function MobileDrawer({ title, side, breakpoint, onClose, children }: {
     <div ref={dialog} role="dialog" aria-modal="true" aria-label={title} className={`absolute inset-y-0 ${side === "left" ? "left-0" : "right-0"} flex w-[min(360px,calc(100vw-32px))] min-h-0 flex-col bg-[var(--bg-card)] shadow-xl`} onClick={event => event.stopPropagation()}>
       <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-primary)] px-4 py-3">
         <h2 className="font-semibold text-[var(--text-primary)]">{title}</h2>
-        <button type="button" aria-label={`关闭${title}`} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]" onClick={onClose}><X className="h-5 w-5" /></button>
+        <button type="button" aria-label={`关闭${title}`} className="flex size-12 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-olive-600" onClick={onClose}><X className="h-5 w-5" /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>

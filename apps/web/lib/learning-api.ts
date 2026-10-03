@@ -33,6 +33,8 @@ export type ReadingDocument = {
 };
 export type ReadingNote = {id: string; source_id: string; section_id?: string | null; source_hash?: string; content: string; created_at: string};
 export type LabRun = {
+  input_hash: string; runner_version: string; graph_revision: string; max_iterations?: number;
+  prediction_timing?: "after_preview";
   id: string; prediction: string; parameters: RootParameters; stop_detail: string;
   rows: {k: number; x: number; fx: number; step: number | null; bracket: number[] | null}[];
   diagnosis: Diagnosis;

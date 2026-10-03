@@ -20,7 +20,7 @@
     "test": "node scripts/validate-json.js && node scripts/run-api-tests.js && npm.cmd run test:web:ui",
     "test:knowledge": "node scripts/validate-json.js",
     "test:api": "node scripts/run-api-tests.js",
-    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts lib/learning-input.test.ts lib/message-status.test.ts lib/delivery-guard.test.ts lib/agent-run.test.ts lib/numerical-lab.test.ts",
+    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts lib/learning-input.test.ts lib/message-status.test.ts lib/delivery-guard.test.ts lib/agent-run.test.ts lib/numerical-lab.test.ts lib/chat-lifetime.test.ts",
     "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
     "dev:web": "cd apps/web && npm.cmd run dev",
     "build:web": "cd apps/web && npm.cmd run build",

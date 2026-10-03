@@ -48,6 +48,7 @@ export async function authenticate(
   window.localStorage.setItem(AUTH_USER_KEY, String(payload.user_id));
   window.localStorage.removeItem(DEMO_ACCESS_KEY);
   window.localStorage.removeItem(LEGACY_ACCESS_KEY);
+  window.dispatchEvent?.(new Event("luojia-auth-change"));
 }
 
 export function grantDemoAccess(): void {
@@ -61,4 +62,5 @@ export function clearAuthSession(): void {
   for (const key of [AUTH_TOKEN_KEY, AUTH_USER_KEY, DEMO_ACCESS_KEY, LEGACY_ACCESS_KEY]) {
     window.localStorage.removeItem(key);
   }
+  window.dispatchEvent?.(new Event("luojia-auth-change"));
 }
