@@ -232,12 +232,12 @@ def lab(body: LabRequest, principal: Principal = Depends(get_principal)):
 
 @router.get("/root-lab/runs/{run_id}")
 def lab_run(run_id: str, principal: Principal = Depends(get_principal)):
-    return invoke(lambda: workspace().get(principal.user_id, "lab", run_id))
+    return invoke(lambda: workspace().lab_run(principal.user_id, run_id))
 
 
 @router.get("/root-lab/runs")
 def lab_runs(principal: Principal = Depends(get_principal)):
-    return {"runs": workspace().store.learning_records(principal.user_id, "numerical_analysis", "lab")[-20:]}
+    return {"runs": invoke(lambda: workspace().lab_runs(principal.user_id))}
 
 
 @router.post("/assessments")

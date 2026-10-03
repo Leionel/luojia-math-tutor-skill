@@ -584,13 +584,17 @@ def test_shared_help_boundary_owner_probe_exception_and_release(workspace):
     assert_reference_help_allowed("alice", workspace.course)
 
 
-def test_http_chat_exercises_and_notes_cannot_bypass_pending_probe(workspace,monkeypatch):
+@pytest.mark.parametrize("boundary", ["probe", "assessment"])
+def test_http_chat_exercises_and_notes_cannot_bypass_pending_help(workspace,monkeypatch,boundary):
     from types import SimpleNamespace
     from app.main import app
     from app.main_deps import get_orchestrator,get_repository,get_app_settings
     from app.knowledge import course_service
     parent = complete(workspace, practice(workspace))
-    workspace.probe_task("alice",parent["id"])
+    if boundary == "probe":
+        workspace.probe_task("alice",parent["id"])
+    else:
+        workspace.new_assessment("alice")
     monkeypatch.setattr(course_service,"get_course_service",lambda name:workspace.course)
     async def no_generation(**kwargs):
         raise AssertionError("must block before generation")
@@ -608,6 +612,76 @@ def test_http_chat_exercises_and_notes_cannot_bypass_pending_probe(workspace,mon
                 ("/api/tutor/notes",{"session_id":parent["session_id"]}),
                 ("/api/users/alice/notes/from-document",{"document_id":doc})]:
                 response=client.post(url,json=body)
-                assert response.status_code==409 and "独立检验" in response.json()["detail"]
+                assert response.status_code==409 and ("独立检验" if boundary == "probe" else "自检") in response.json()["detail"]
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("finish", ["submit", "abandon"])
+def test_chapter_assessment_locks_reference_help_until_finished(workspace, finish):
+    from app.tutor.help_boundary import assert_reference_help_allowed
+    assessment = workspace.new_assessment("alice")
+    with pytest.raises(ValueError, match="自检"):
+        assert_reference_help_allowed("alice", workspace.course)
+    assert_reference_help_allowed("bob", workspace.course)
+    if finish == "submit":
+        for question in QUESTIONS:
+            workspace.answer_assessment("alice", assessment["id"], question[0], question[3])
+        result = workspace.submit_assessment("alice", assessment["id"])
+    else:
+        result = workspace.end_assessment("alice", assessment["id"])
+    assert not result["independent_success"]
+    assert_reference_help_allowed("alice", workspace.course)
+
+
+@pytest.mark.parametrize("boundary", ["assessment", "probe"])
+def test_root_lab_http_new_replay_and_history_respect_help_lock(workspace, monkeypatch, boundary):
+    from fastapi import FastAPI
+    from app.api import routes_learning
+    monkeypatch.setattr(routes_learning, "workspace", lambda: workspace)
+    app = FastAPI()
+    app.include_router(routes_learning.router)
+    app.dependency_overrides[get_principal] = lambda: Principal("alice", True)
+    with TestClient(app) as client:
+        body = lab_request().model_dump(mode="json")
+        saved_response = client.post("/api/root-lab/runs", json=body)
+        assert saved_response.status_code == 200
+        saved = saved_response.json()
+        if boundary == "assessment":
+            assessment = workspace.new_assessment("alice")
+        else:
+            parent = complete(workspace, practice(workspace))
+            probe = workspace.probe_task("alice", parent["id"])
+        # A saved request retry must not bypass a newly started assessment/probe.
+        for response in (
+            client.post("/api/root-lab/runs", json={**body, "request_id": "new-help"}),
+            client.post("/api/root-lab/runs", json=body),
+            client.get(f"/api/root-lab/runs/{saved['id']}"),
+            client.get("/api/root-lab/runs"),
+        ):
+            assert response.status_code == 409
+            assert "rows" not in response.json() and "runs" not in response.json()
+        assert workspace.store.learning_records("alice", workspace.course_id, "lab") == [saved]
+        app.dependency_overrides[get_principal] = lambda: Principal("bob", True)
+        assert client.get("/api/root-lab/runs").json() == {"runs": []}
+        assert client.get(f"/api/root-lab/runs/{saved['id']}").status_code == 404
+        assert client.post("/api/root-lab/runs", json=body).status_code == 200
+        app.dependency_overrides[get_principal] = lambda: Principal("alice", True)
+        if boundary == "assessment":
+            workspace.end_assessment("alice", assessment["id"])
+        else:
+            complete(workspace, probe, request_id="release-reference-lock")
+        assert client.post("/api/root-lab/runs", json=body).json() == saved
+        assert client.get(f"/api/root-lab/runs/{saved['id']}").json() == saved
+        assert client.get("/api/root-lab/runs").json() == {"runs": [saved]}
+
+
+def test_reading_excerpt_respects_chapter_assessment_lock(workspace):
+    from app.tutor.reading_explanation import source_excerpt
+    unit = workspace.reading_units()[0]
+    assessment = workspace.new_assessment("alice")
+    with pytest.raises(ValueError, match="自检"):
+        source_excerpt(workspace, "alice", unit["id"], unit["source_hash"], None, 0, None)
+    assert source_excerpt(workspace, "bob", unit["id"], unit["source_hash"], None, 0, None)["quote"]
+    workspace.end_assessment("alice", assessment["id"])
+    assert source_excerpt(workspace, "alice", unit["id"], unit["source_hash"], None, 0, None)["quote"]

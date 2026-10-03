@@ -1,9 +1,12 @@
-"""One owner-scoped boundary for new reference help during first probes."""
+"""One owner-scoped boundary for reference help during assessments/probes."""
 
 def assert_reference_help_allowed(owner, course=None, allowed_probe_id=None):
     if course is None:
         from app.knowledge.course_service import get_course_service
         course = get_course_service("numerical_analysis")
+    if any(record.get("state") == "in_progress" for record in
+           course.store.learning_records(owner, course.course_id, "assessment")):
+        raise ValueError("请先完成或结束当前章节自检，再请求新的参考帮助。")
     pending = []
     for event in course.store.list_events(owner, course.course_id):
         if event["event_type"] == "probe_issued":

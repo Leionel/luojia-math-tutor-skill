@@ -2,6 +2,7 @@
 import asyncio
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.tutor.learning_workspace import digest
+from app.tutor.help_boundary import assert_reference_help_allowed
 
 
 def source_excerpt(workspace, owner, source_id, source_hash, section_id, start, end):
@@ -19,11 +20,7 @@ def source_excerpt(workspace, owner, source_id, source_hash, section_id, start, 
     end = len(quote) if end is None else end
     if not 0 <= start < end <= len(quote) or end-start > 6000:
         raise ValueError("请选择 1–6000 字符的原文范围")
-    for event in workspace.store.list_events(owner, workspace.course_id):
-        if event["event_type"] == "probe_issued":
-            episode = workspace.store.load_episode(event["payload"]["episode_id"])
-            if episode and not any(a["acknowledged"] for a in episode["attempts"]):
-                raise ValueError("先完成当前独立检验，再查看伴读解释")
+    assert_reference_help_allowed(owner, workspace.course)
     return {"quote": quote[start:end], "source_id": source_id, "source_hash": source_hash,
             "section_id": section_id, "start": start, "end": end,
             "conditions": unit["conditions"] if unit else []}

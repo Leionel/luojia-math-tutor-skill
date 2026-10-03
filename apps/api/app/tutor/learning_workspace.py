@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from app.knowledge.review_schedule import advance_review, POLICY_VERSION
 from app.math_tools.root_runner import run_reference
 from app.tutor.root_diagnostics import RootEpisodeService, RootSubmission
+from app.tutor.help_boundary import assert_reference_help_allowed
 from app.math_tools.root_finding import RootAttempt
 
 CONTENT_VERSION = "root-learning-dev-v1"
@@ -280,22 +281,28 @@ class LearningWorkspace:
 
     def lab(self, owner, request):
         with self.store.transaction():
+            # Re-check before cache reuse: a new assessment can lock old help.
+            assert_reference_help_allowed(owner, self.course)
             old = self.store.learning_record(owner, self.course_id, "lab", request.request_id)
             input_hash = digest(request.model_dump())
             if old:
                 if old["input_hash"] != input_hash:
                     raise ValueError("同一请求标识不能更改参数")
                 return old
-            # Reject reference help for an outstanding independent probe.
-            for event in self.store.list_events(owner, self.course_id):
-                if event["event_type"] == "probe_issued":
-                    episode = self.store.load_episode(event["payload"]["episode_id"])
-                    if episode and not any(a["acknowledged"] for a in episode["attempts"]):
-                        raise ValueError("请先提交当前独立检验，再运行参考实验")
             result = run_reference(request)
             result.update(id=request.request_id, input_hash=input_hash, parameters=request.attempt.model_dump(),
                           prediction=request.prediction, graph_revision=self.revision(), created_at=datetime.now(timezone.utc).isoformat())
             return self.save(owner, "lab", request.request_id, result)
+
+    def lab_run(self, owner, run_id):
+        with self.store.transaction():
+            assert_reference_help_allowed(owner, self.course)
+            return self.get(owner, "lab", run_id)
+
+    def lab_runs(self, owner):
+        with self.store.transaction():
+            assert_reference_help_allowed(owner, self.course)
+            return self.store.learning_records(owner, self.course_id, "lab")[-20:]
 
     def save_reading_note(self, owner, request_id, source_id, source_hash, section_id, content):
         with self.store.transaction():
