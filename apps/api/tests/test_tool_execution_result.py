@@ -67,15 +67,16 @@ class ControlledProcess:
 @pytest.mark.asyncio
 async def test_cancel_kills_owned_child_finishes_communication_and_removes_script(monkeypatch):
     children = []
+    spawned = asyncio.Event()
     def spawn(*args, **kwargs):
         child = ControlledProcess(*args, **kwargs)
         children.append(child)
+        spawned.set()
         return child
     monkeypatch.setattr("app.agents.code_executor.subprocess.Popen", spawn)
     task = asyncio.create_task(execute_python_result("print(2)"))
     # Wait for the actual spawn boundary, then for the worker to enter communicate.
-    while not children:
-        await asyncio.sleep(0)
+    await asyncio.wait_for(spawned.wait(), 5)
     child = children[0]
     assert await asyncio.wait_for(asyncio.to_thread(child.started.wait, 5), 6)
     task.cancel()
