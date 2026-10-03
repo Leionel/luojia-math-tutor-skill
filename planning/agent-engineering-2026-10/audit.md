@@ -71,3 +71,7 @@ pass 表示本项代码 / 契约已见满足，且注明验证边界；unknown �
 实际检查包括：`tutor/graph.py`、`orchestrator.py`、`fast_context.py`、`fast_path.py`、`intent_router.py`、`policy_router.py`、`prompt_builder.py`、`prompt_policy.py`、`proof_tutor.py`；`llm/openai_compatible.py`、`completion_protocol.py`；`agents/code_executor.py`、`tool_result.py`；`memory/repository.py`；`api/routes_tutor.py`；`web/components/tutor-chat.tsx`、`math-message.tsx`、`learning-panel.tsx`；`web/lib/api.ts`、`message-status.ts`、`tutor-stream.ts`；相关图、提示词、SSE、执行器与 API 回归。
 
 验证详情见 [plan.md](plan.md) A0 回执与 `results/agent-reliability-tests.log`。本轮测试全离线；没有真实模型、学生试用、教师 gold、正式 sandbox、远端 CI 或生产部署证据。官方项目比较与后续切片见规划，不把参考文档描述冒充本项目已经实现。
+
+## 6. A1–A2 后续收敛（2026-10-03）
+
+原表为 A0 后的基线审查，不重写历史计数。最终正文现有交付守卫 / 有限修复，交付标注与数学核验分开；持久回执关联消息终态，并在浏览器验证取消与刷新恢复。置信提示 finding 的显式执行声明范围已收敛，间接语义与 Guard 误拦仍需 A5。可纠正记忆仍未完成（A4），不把整个应用 AX 标成通过。新增行为与范围见 [交付回执](delivery-a0-a2.md)。
