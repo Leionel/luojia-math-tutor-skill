@@ -34,6 +34,7 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  answer_guard?: import("./delivery-guard").DeliveryGuard;
   teaching_mode?: TutorMode;
   root_diagnosis?: RootDiagnosis;
   error?: {code: string; message: string};
@@ -284,6 +285,7 @@ export async function streamTutor(
   let thinkingChain = "";
   await readTutorEvents(res.body.getReader(), (event, data) => {
     if (event === "meta" || event === "meta_update") onMeta(data as TutorMeta);
+    if (event === "error" && data.learning_meta && typeof data.learning_meta === "object") onMeta(data.learning_meta as TutorMeta);
     if (event === "opening") {
       if (onOpening) onOpening(String(data.content || ""));
       else onToken(String(data.content || ""));

@@ -29,6 +29,9 @@ from app.tutor.fast_path import (
 from app.tutor.intent_router import Intent
 from app.tutor.policy_router import PolicyRouter
 from app.tutor.prompt_policy import load_teaching_prompt
+from app.tutor.answer_guard import (
+    AnswerDeliveryError, answer_requested, check_delivery, check_root_contract, guard_report,
+)
 from pydantic import BaseModel, ConfigDict, StrictBool, ValidationError
 from app.tutor.prompt_builder import (
     HintLevel,
@@ -68,6 +71,7 @@ class AgentState(TypedDict, total=False):
     awaiting_vision_confirmation: bool
     awaiting_intent_clarification: bool
     tool_evidence: list[dict[str, Any]]
+    answer_guard: dict[str, Any]
     message: str
     session_id: str
     user_id: str
@@ -164,10 +168,11 @@ class TutorWorkflow:
         await asyncio.to_thread(self.repository.ensure_user, state["user_id"])
         await asyncio.to_thread(self.repository.add_message, state["session_id"], "user", state["message"])
         output = feedback_text(report)
+        delivery = check_root_contract(report, output)
         on_token = self._callback(config, "on_token")
         if on_token:
             await on_token(sse("message", {"content": output}))
-        return {"root_diagnosis": report, "final_output": output, "intent": Intent.CHECK_STUDENT_STEP,
+        return {"root_diagnosis": report, "final_output": output, "answer_guard": delivery, "intent": Intent.CHECK_STUDENT_STEP,
                 "pedagogical_action": report["action"], "verification_mode": "none",
                 "requires_policy_fallback": False, "concepts": report["unit_ids"],
                 "hint_level": report["help_level"], "metrics": {**state.get("metrics", {}), "route": "root_diagnostic"}}
@@ -784,6 +789,7 @@ class TutorWorkflow:
                 raise ModelCompletionError("model_empty_output")
             upstream_failure = (state.get("verification_result") or {}).get("verified") is False
             usable_tools = [item for item in tool_evidence if item["execution_succeeded"] and item["has_output"]]
+            response_text, delivery = await self._guard_answer(response_text, prompt, state, bool(usable_tools), metrics)
             if (require_verification and not usable_tools) or (tool_evidence and not usable_tools):
                 response_text = (
                     "⚠️ 本轮未能完成符号验算，以下内容未经确定性验证，请仔细核对。\n\n"
@@ -831,8 +837,43 @@ class TutorWorkflow:
             "final_output": response_text,
             "thinking_chain": "",
             "tool_evidence": tool_evidence,
+            "answer_guard": delivery,
             "metrics": metrics,
         }
+
+    async def _guard_answer(self, candidate: str, prompt: list, state: AgentState,
+                            execution_succeeded: bool, metrics: dict) -> tuple[str, dict]:
+        if not self.settings.answer_guard_enabled:
+            return candidate, guard_report("unavailable", enabled=False)
+        options = {"exercise": state.get("intent") == Intent.GENERATE_EXERCISE,
+                   "allow_answer": answer_requested(state["message"]),
+                   "execution_succeeded": execution_succeeded}
+        try:
+            verdict = check_delivery(candidate, **options)
+        except Exception as exc:
+            raise AnswerDeliveryError(guard_report("unavailable")) from exc
+        if verdict.passed:
+            return candidate, guard_report("passed")
+        # This recovery path has no tool loop and cannot write learning events.
+        repair_prompt = [*prompt, {"role": "assistant", "content": candidate}, {
+            "role": "developer", "content": "只修复最后一条回答的交付违规，保留可支持的教学内容。"
+            "只返回学生正文；不得调用工具或输出内部协议，不能把失败说成成功。"
+            "没有执行学生的完整程序；工具执行不代表整个回答已证明。"
+            + json.dumps({"rule_ids": verdict.violations, **options}, ensure_ascii=False)}]
+        metrics["llm_call_count"] = int(metrics.get("llm_call_count", 0)) + 1
+        metrics["guard_repair_calls"] = 1
+        try:
+            repaired = await self._collect_model_response(repair_prompt, state.get("user_api_key"),
+                          state.get("model"), effort=state.get("reasoning_effort", "medium"))
+            # Do not strip a repair tool request into an innocent-looking answer.
+            second = check_delivery(repaired, **options)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            raise AnswerDeliveryError(guard_report("unavailable", verdict.violations, 1)) from exc
+        if not second.passed:
+            raise AnswerDeliveryError(guard_report("withheld", second.violations, 1))
+        return repaired.strip(), guard_report("repaired", verdict.violations, 1)
 
     async def _collect_model_response(
         self,

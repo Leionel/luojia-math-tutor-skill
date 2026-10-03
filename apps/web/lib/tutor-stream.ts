@@ -15,7 +15,10 @@ export async function readTutorEvents(reader: ReadableStreamDefaultReader<Uint8A
     let data: Record<string, unknown>;
     try { data = JSON.parse(json); } catch { throw new TutorStreamError("响应格式异常，本轮未完成。", "invalid_event"); }
     if (!data || typeof data !== "object" || Array.isArray(data)) throw new TutorStreamError("响应格式异常，本轮未完成。", "invalid_event");
-    if (event === "error") throw new TutorStreamError(typeof data.message === "string" ? data.message.slice(0, 500) : "本轮生成失败，请重试。", typeof data.code === "string" ? data.code : "generation_failed");
+    if (event === "error") {
+      onEvent(event, data);
+      throw new TutorStreamError(typeof data.message === "string" ? data.message.slice(0, 500) : "本轮生成失败，请重试。", typeof data.code === "string" ? data.code : "generation_failed");
+    }
     onEvent(event, data);
     return event === "done";
   }

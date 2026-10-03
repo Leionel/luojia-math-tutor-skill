@@ -17,6 +17,7 @@ from app.observability import current_request_id
 from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
 from app.tutor.prompt_policy import load_teaching_prompt
+from app.tutor.answer_guard import AnswerDeliveryError
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +226,7 @@ class TutorOrchestrator:
             "pedagogical_action": state.get("pedagogical_action", ""),
             "learning_objective": state.get("learning_objective", ""),
             "route": state.get("metrics", {}).get("route", ""),
+            "answer_guard": state.get("answer_guard"),
         }
 
     async def stream_reply(
@@ -400,6 +402,8 @@ class TutorOrchestrator:
             if isinstance(exc, ModelCompletionError):
                 code, message = exc.code, str(exc)
                 recoverable = code != "model_not_configured"
+            elif isinstance(exc, AnswerDeliveryError):
+                code, message = exc.code, str(exc)
             elif isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (401, 403):
                 code, message, recoverable = "model_auth_failed", "模型服务鉴权失败，请核对所选模型、接口地址与 API Key。", False
             elif isinstance(exc, (httpx.TimeoutException, asyncio.TimeoutError)):
@@ -410,12 +414,14 @@ class TutorOrchestrator:
                 code, message = "root_attempt_invalid", "求根 episode 或修订输入无效；请核对任务条件，或开始新的练习。"
             # Safe error metadata survives refresh; it never asserts a completed answer.
             failure_meta = {"error": {"code": code, "message": message}, "verified": False, "is_correct": None, "intent": "generation_failed", "verification_kind": "none", "subject": subject, "concepts": [], "mistake": None, "verifier_summary": "本轮未完成"}
+            if isinstance(exc, AnswerDeliveryError):
+                failure_meta["answer_guard"] = exc.report
             failure_id = None
             try:
                 failure_id = await asyncio.to_thread(self.repository.add_message, session_id, "assistant", f"{opening}\n\n本轮未完成：{message}", "generation_failed", "本轮生成失败，尚未完成验证。", None, failure_meta)
             except Exception:
                 logger.exception("Could not persist failed response metadata")
-            yield sse("error", {"message": message, "code": code, "recoverable": recoverable, "message_id": failure_id})
+            yield sse("error", {"message": message, "code": code, "recoverable": recoverable, "message_id": failure_id, "learning_meta": failure_meta})
             return
         finally:
             if queue_get and not queue_get.done():

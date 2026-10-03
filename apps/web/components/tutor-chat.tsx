@@ -461,7 +461,7 @@ export function TutorChat() {
       setMessages((current) =>
         current.map((message) =>
           message.id === assistantId
-            ? { ...message, content: `${message.content}\n\n本轮未完成：${error instanceof Error ? error.message : "未知错误"}`, learningMeta: {intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:{code:"stream_failed",message:error instanceof Error ? error.message : "未知错误"}} }
+            ? { ...message, content: `${message.content}\n\n本轮未完成：${error instanceof Error ? error.message : "未知错误"}`, learningMeta: {...message.learningMeta,intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:message.learningMeta?.error || {code:"stream_failed",message:error instanceof Error ? error.message : "未知错误"}} }
             : message
         )
       );
@@ -754,6 +754,7 @@ export function TutorChat() {
                     thinkingElapsed={thinkingElapsed}
                     thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
                     webSearchReport={message.learningMeta?.web_search}
+                    answerGuard={message.learningMeta?.answer_guard}
                     isIncomplete={!!message.learningMeta?.error}
                     rootDiagnosis={message.learningMeta?.root_diagnosis}
                     sessionId={sessionId || ""}

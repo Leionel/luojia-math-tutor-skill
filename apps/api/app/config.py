@@ -158,6 +158,7 @@ class Settings(BaseModel):
     )
     tool_timeout_seconds: int = int(os.getenv("TOOL_TIMEOUT_SECONDS", "8"))
     tool_max_rounds: int = int(os.getenv("TOOL_MAX_ROUNDS", "2"))
+    answer_guard_enabled: bool = os.getenv("ANSWER_GUARD_ENABLED", "true").lower() == "true"
 
     def resolve_request(self, request_model: str | None) -> tuple[str, str]:
         """Resolve a request model id to (base_url, model_name).
