@@ -194,12 +194,18 @@ results/                        # 本地生成证据，不跟踪
 - [分支日志](luojia_tutor2_branch_log.md)、[研究规划](luojia_tutor2_course_graph_research_refined.md)、[交接文档](CODEX_HANDOFF.md)、[贡献约定](AGENTS.md)。
 - [海报更新提示词](planning/learning-experience-2026-10/poster-update-prompt.md)：现有视觉材料的更新说明。
 
+## 项目海报
+
+![珞珈数智助教新版海报：小珞、Newton 迭代示意与六项学习功能](LJ_Tutor_Poster.png)
+
+新版海报展示小珞、求根实验与六项学习入口；实验面板为静态示意，功能范围与验证证据以上文为准。
+
 <details>
-<summary>早期视觉海报（待按当前功能更新）</summary>
+<summary>查看第一版海报</summary>
 
-![早期珞珈数智助教海报，内容不代表当前验收范围](LJ_Tutor_Poster.png)
+![第一版珞珈数智助教海报，保留历史视觉设计](v1poster.png)
 
-该图保留历史视觉设计。图中的性能数字、绝对验证措辞和旧功能排列不作为当前能力说明；当前功能与限制以上文为准。
+第一版保留为历史归档。图中的性能数字、绝对验证措辞和旧功能排列不作为当前能力说明。
 
 </details>
 

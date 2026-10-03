@@ -2716,3 +2716,10 @@ F1 反馈待确认时锁定输入和新提交，保留幂等重试；F2 原文�
 本轮 npm test：知识JSON/API469/Web40通过；本地文档链接无缺失、Newton 示例离线核对与diff check通过。日志 results/readme-update-tests.log。未从干净环境重装依赖，未重复build/真实模型/教师gold/真人评测。内置imagegen两次网络错误，第三次请求按用户指示停止；没有新图，旧海报/原Logo/原小珞保留。交付PNG与视觉核验由后续生成结果决定，不承诺提示词分辨率、可编辑文字层或效果。
 
 此前四批047f134/f875b3e/381c0d6/65ece36已推送，fetch核对本轮开始时本地与远端feature/course-graph-2.0一致。当前文档及提示词按明确清单提交，提交/推送回执在最终交付分别报告；无关原型/egg-info、ignored results、数据库/env不纳入。研究主线、教师/独立与延迟测验门槛不变；没有远端CI或部署证据。
+
+
+## 2026-10-03 用户新版海报接入与 v1 归档
+
+用户自行提供新版 PNG，并明确要求原海报改名为 v1poster。新附件原样接入根目录 LJ_Tutor_Poster.png；原图归档为 v1poster.png。两图实际1055×1491，SHA256分别为3803c9ed3683cc6dc3c03b0aa85c2c5371ef910531c55095c57e8ee1ceb3a8e4、5935f08d8171c0c8f1042dd0e1c481506ff2db955d42b8bdbabf8edc711e115b，均与各自原文件一致。README 展示新版、折叠保留第一版，poster-update-prompt.md 更新实际交付记录；未重新生图或修改 Logo/小珞素材。
+
+已核对六项功能、代码未执行标注、Newton 四个近似值与先越过再趋近的示意。海报为静态展示，不是生产运行或学习效果验收。文件哈希、文档链接和 diff check 通过；业务源码/配置/冻结数据未改。本轮离线 npm test：知识JSON/API469/Web40全部通过，日志 results/poster-asset-update-tests.log；提交/推送回执单独报告；只提交本轮图片及相关文档，保留既有无关原型/egg-info，未部署或重跑真实模型/教师/真人评测。上一节“未替换海报”是当时历史状态。
