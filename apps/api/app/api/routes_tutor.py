@@ -12,9 +12,11 @@ from app.auth import (
     resolve_user_id,
 )
 from app.config import Settings
-from app.main_deps import get_app_settings, get_orchestrator, ensure_reference_help_allowed
+from app.main_deps import get_app_settings, get_orchestrator, ensure_reference_help_allowed, get_learning_workspace
 from app.tutor.orchestrator import TutorOrchestrator
 from app.tutor.root_diagnostics import RootSubmission, extract_submission
+from app.tutor.learning_context import LearningContextRef, resolve_learning_context
+from app.tutor.learning_actions import LearningActions, PreviewActionRequest, SavePreviewRequest
 
 
 router = APIRouter(prefix="/api/tutor", tags=["tutor"])
@@ -23,6 +25,7 @@ router = APIRouter(prefix="/api/tutor", tags=["tutor"])
 class TutorStreamRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     root_submission: RootSubmission | None = None
+    learning_context: LearningContextRef | None = None
     parent_run_id: str | None = Field(default=None,pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$")
     session_id: str
     user_id: str = "demo-user"
@@ -44,6 +47,7 @@ async def stream_tutor(
     principal: Principal = Depends(get_principal),
     settings: Settings = Depends(get_app_settings),
     user_api_key: str | None = Depends(get_forwarded_llm_key),
+    learning_workspace=Depends(get_learning_workspace),
 ):
     user_id = resolve_user_id(principal, payload.user_id, settings)
     ensure_session_access(payload.session_id, principal, settings, orchestrator.repository)
@@ -58,6 +62,15 @@ async def stream_tutor(
         except (ValueError, TypeError):
             raise HTTPException(status_code=422, detail="求根数据格式无效，请核对 root-attempt JSON。")
     ensure_reference_help_allowed(user_id, submission.episode_id if submission else None)
+    if payload.learning_context:
+        if submission or payload.image_urls:
+            raise HTTPException(422, "实验参考讨论与作答/图片核对请分开发送。")
+        try:
+            resolve_learning_context(learning_workspace, user_id, payload.learning_context)
+        except KeyError as exc:
+            raise HTTPException(404, "实验不存在或无权访问") from exc
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
     return TutorStreamingResponse(
         orchestrator.stream_reply(
             session_id=payload.session_id,
@@ -74,9 +87,49 @@ async def stream_tutor(
             reasoning_effort=payload.reasoning_effort,
             root_submission=submission.model_dump(mode="json") if submission else None,
             parent_run_id=payload.parent_run_id,
+            learning_context=payload.learning_context,
+            learning_workspace=learning_workspace,
         ),
         media_type="text/event-stream",
     )
+
+
+@router.post("/context")
+def learning_context(ref: LearningContextRef, principal: Principal = Depends(get_principal),
+                     workspace=Depends(get_learning_workspace)):
+    try:
+        return resolve_learning_context(workspace, principal.user_id, ref)
+    except KeyError as exc:
+        raise HTTPException(404, "实验不存在或无权访问") from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+def action_call(operation):
+    try:
+        return operation()
+    except KeyError as exc:
+        raise HTTPException(404, "操作卡片不存在或无权访问") from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@router.get("/sessions/{session_id}/messages/{message_id}/artifacts/{artifact_id}")
+def action_state(session_id: str, message_id: str, artifact_id: str,
+                 principal: Principal = Depends(get_principal), workspace=Depends(get_learning_workspace)):
+    return action_call(lambda: LearningActions(workspace, workspace.repository).state(principal.user_id,session_id,message_id,artifact_id))
+
+
+@router.post("/sessions/{session_id}/messages/{message_id}/artifacts/{artifact_id}/preview")
+def preview_action(session_id: str, message_id: str, artifact_id: str, body: PreviewActionRequest,
+                   principal: Principal = Depends(get_principal), workspace=Depends(get_learning_workspace)):
+    return action_call(lambda: LearningActions(workspace, workspace.repository).preview(principal.user_id,session_id,message_id,artifact_id,body))
+
+
+@router.post("/sessions/{session_id}/messages/{message_id}/artifacts/{artifact_id}/save")
+def save_action(session_id: str, message_id: str, artifact_id: str, body: SavePreviewRequest,
+                principal: Principal = Depends(get_principal), workspace=Depends(get_learning_workspace)):
+    return action_call(lambda: LearningActions(workspace, workspace.repository).save(principal.user_id,session_id,message_id,artifact_id,body))
 
 class TitleGenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

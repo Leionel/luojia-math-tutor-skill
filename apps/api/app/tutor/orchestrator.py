@@ -19,6 +19,8 @@ from app.tutor.graph import TutorWorkflow
 from app.tutor.prompt_policy import load_teaching_prompt
 from app.tutor.answer_guard import AnswerDeliveryError
 from app.tutor.run_trace import durable_call
+from app.tutor.learning_context import LearningContextRef, resolve_learning_context
+from app.tutor.intent_router import Intent
 
 logger = logging.getLogger(__name__)
 
@@ -236,12 +238,14 @@ class TutorOrchestrator:
                            requested_hint: bool = False, image_urls: list[str] | None = None,
                            web_search: bool = False, web_search_mode: str = "auto",
                            reasoning_effort: str = "medium", root_submission: dict | None = None,
-                           parent_run_id: str | None = None) -> AsyncIterator[str]:
+                           parent_run_id: str | None = None, learning_context: LearningContextRef | None = None,
+                           learning_workspace=None) -> AsyncIterator[str]:
         from app.tutor.run_trace import RunTrace
         trace = RunTrace(self.repository, session_id, user_id,parent_run_id,
                          model or getattr(getattr(self,"settings",None),"llm_model",None))
         inner = self._stream_reply(session_id,user_id,message,subject,mode,user_api_key,model,
-                                   requested_hint,image_urls,web_search,web_search_mode,reasoning_effort,root_submission,trace)
+                                   requested_hint,image_urls,web_search,web_search_mode,reasoning_effort,root_submission,trace,
+                                   learning_context,learning_workspace)
         heartbeat = None
         interrupted = False
         try:
@@ -296,6 +300,8 @@ class TutorOrchestrator:
         reasoning_effort: str = "medium",
         root_submission: dict | None = None,
         trace=None,
+        learning_context: LearningContextRef | None = None,
+        learning_workspace=None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
         request_id = current_request_id()
@@ -305,8 +311,8 @@ class TutorOrchestrator:
             0.5,
         )
         route = route_fast_path(message, mode, subject)
-        search = decide_search(message, web_search_mode, web_search)
-        opening = "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
+        search = decide_search(message, "off" if learning_context else web_search_mode, False if learning_context else web_search)
+        opening = "我先读取并核对这次参考实验，再讨论你关心的步骤。" if learning_context else "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
             2,
@@ -319,6 +325,13 @@ class TutorOrchestrator:
                 "opening_ms": opening_ms,
             },
         )
+
+        snapshot = None
+        async def validate_reference():
+            if learning_context:
+                return await asyncio.to_thread(resolve_learning_context, learning_workspace, user_id, learning_context)
+        if learning_context:
+            snapshot = await validate_reference()
 
         initial_state = {
             "root_submission": root_submission,
@@ -379,6 +392,12 @@ class TutorOrchestrator:
                 "route": "",
             },
         }
+        if snapshot:
+            # Reference trajectories cannot be graded as the student's own work.
+            initial_state.update(learning_context=snapshot, intent=Intent.CONCEPT,
+                                 detected_subject="数值分析", pedagogical_action="explain",
+                                 learning_objective="讨论当前保存的 Newton 参考实验",
+                                 verification_mode="none", requires_policy_fallback=False, confidence=1.0)
 
         queue: asyncio.Queue[str] = asyncio.Queue()
         first_token_time: float | None = None
@@ -386,6 +405,7 @@ class TutorOrchestrator:
 
         async def on_token(event_str: str) -> None:
             nonlocal first_token_time
+            await validate_reference()
             if first_token_time is None:
                 first_token_time = time.perf_counter()
             await queue.put(event_str)
@@ -468,6 +488,8 @@ class TutorOrchestrator:
                 code, message = "model_unreachable", "无法连接模型服务，请检查网络与接口地址。"
             elif isinstance(exc, (ValueError, KeyError)) and root_submission:
                 code, message = "root_attempt_invalid", "求根 episode 或修订输入无效；请核对任务条件，或开始新的练习。"
+            elif isinstance(exc, (ValueError, KeyError)) and learning_context:
+                code, message = "learning_context_unavailable", "当前实验引用已失效，或自检/独立检验正在进行；请返回实验台核对。"
             # Safe error metadata survives refresh; it never asserts a completed answer.
             failure_meta = {"error": {"code": code, "message": message}, "verified": False, "is_correct": None, "intent": "generation_failed", "verification_kind": "none", "subject": subject, "concepts": [], "mistake": None, "verifier_summary": "本轮未完成"}
             if isinstance(exc, AnswerDeliveryError):
@@ -527,6 +549,14 @@ class TutorOrchestrator:
                 "concepts": explicit_concepts,
             }
         learning_meta = self._build_learning_meta(final_state)
+        if snapshot and not awaiting_input:
+            await validate_reference()
+            learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,
+                                 verification_kind="none", mastery_delta=0,
+                                 verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
+            if (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
+                from app.tutor.learning_actions import root_proposal
+                learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id)]
         if final_state.get("root_diagnosis"):
             report = final_state["root_diagnosis"]
             learning_meta.update(root_diagnosis=report, verification_kind="root_oracle",
@@ -576,7 +606,7 @@ class TutorOrchestrator:
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None and not awaiting_input and not search.factual and not root_submission:
+        if workflow_owner is not None and not awaiting_input and not search.factual and not root_submission and not learning_context:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

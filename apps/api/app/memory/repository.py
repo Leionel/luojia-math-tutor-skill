@@ -247,6 +247,30 @@ class Repository(AgentRunRepository):
                 raise ValueError("execution terminal conflict")
         return message_id
 
+    def get_delivered_artifact(self, owner: str, session_id: str, message_id: str, artifact_id: str):
+        """Only a committed, owned, successful and visible answer can authorize UI actions."""
+        with self.connect() as conn:
+            row = conn.execute("""select m.learning_meta, r.id from messages m
+                join sessions s on s.id=m.session_id
+                join agent_runs r on r.message_id=m.id and r.session_id=m.session_id and r.user_id=s.user_id
+                where m.id=? and m.session_id=? and s.user_id=? and m.role='assistant'
+                  and r.status='succeeded' and r.hidden=0""", (message_id, session_id, owner)).fetchone()
+        if row is None:
+            return None
+        try:
+            meta = json.loads(row[0] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            return None
+        if not isinstance(meta, dict):
+            return None
+        if (meta.get("answer_guard") or {}).get("status") not in {"passed", "repaired"}:
+            return None
+        artifacts = meta.get("tutor_artifacts", [])
+        if not isinstance(artifacts, list):
+            return None
+        return next((a for a in artifacts if isinstance(a, dict) and
+                     a.get("artifact_id") == artifact_id and a.get("run_id") == row[1] and a.get("origin") == "server"), None)
+
     def list_messages(self, session_id: str) -> list[dict[str, Any]]:
         with self.connect() as conn:
             rows = conn.execute(

@@ -383,7 +383,7 @@ class FastContextCollector:
         state: dict[str, Any],
     ) -> tuple[tuple[VerifyResult, Mistake | None], float]:
         started = time.perf_counter()
-        if state.get("verification_mode") != VerificationMode.SYMBOLIC.value:
+        if state.get("learning_context") or state.get("verification_mode") != VerificationMode.SYMBOLIC.value:
             result = (
                 VerifyResult(False, None, "本轮无需自动符号验证。"),
                 None,
@@ -597,6 +597,10 @@ class FastContextCollector:
         mastery_score = self.settings.initial_mastery
         mastery_delta = 0.0
         hint_level = 0
+
+        if state.get("learning_context"):
+            return {"mastery_score": mastery_score, "mastery_delta": 0.0,
+                    "mastery_label_str": mastery_label(mastery_score), "hint_level": 3}
 
         if mistake:
             try:

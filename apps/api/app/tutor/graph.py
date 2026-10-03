@@ -61,6 +61,7 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    learning_context: dict[str, Any]
     root_submission: dict[str, Any]
     root_diagnosis: dict[str, Any]
     web_search_report: dict[str, Any]
@@ -747,7 +748,7 @@ class TutorWorkflow:
             await on_progress(f"[OUTPUT]\n{output_text}")
 
         try:
-            max_rounds = max(0, min(self.settings.tool_max_rounds, 2))
+            max_rounds = 0 if state.get("learning_context") else max(0, min(self.settings.tool_max_rounds, 2))
             run_event = self._callback(config,"on_run_event")
             for tool_round in range(max_rounds + 1):
                 if run_event:
@@ -1011,6 +1012,7 @@ class TutorWorkflow:
             prerequisite_hints=state.get("prerequisite_hints"),
             evidence_pack=evidence_pack,
             web_search_report=state.get("web_search_report"),
+            learning_context=state.get("learning_context"),
         )
 
     @staticmethod

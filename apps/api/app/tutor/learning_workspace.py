@@ -290,7 +290,7 @@ class LearningWorkspace:
                     raise ValueError("同一请求标识不能更改参数")
                 return old
             result = run_reference(request)
-            result.update(id=request.request_id, input_hash=input_hash, parameters=request.attempt.model_dump(),
+            result.update(id=request.request_id, input_hash=input_hash, parameters=request.attempt.model_dump(), max_iterations=request.max_iterations,
                           prediction=request.prediction, graph_revision=self.revision(), created_at=datetime.now(timezone.utc).isoformat())
             return self.save(owner, "lab", request.request_id, result)
 

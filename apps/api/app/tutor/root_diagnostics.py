@@ -185,8 +185,11 @@ class RootEpisodeService:
                 return {"episode_id": existing["episode_id"], "challenge": existing["challenge"], "instruction": "继续此前的独立探针。"}
             normalize = lambda text: "".join(text.replace("**", "^").split())
             seen = {normalize(parent["attempts"][0]["input"]["function"])}
-            for run in self.store.learning_records(student_id, self.course.course_id, "lab"):
-                source = run["parameters"]["function"]
+            events = self.store.list_events(student_id, self.course.course_id)
+            exposed = [run["parameters"]["function"] for run in self.store.learning_records(student_id, self.course.course_id, "lab")]
+            exposed += [event["payload"]["function"] for event in events if event["event_type"] == "hint_exposed"
+                        and event["payload"].get("origin") == "root_lab_preview" and event["payload"].get("function")]
+            for source in exposed:
                 seen.add(normalize(source))
                 # Conservatively exclude equivalent exposed quadratic tasks,
                 # including parentheses, x*x, decimal constants and ** notation.
@@ -198,7 +201,7 @@ class RootEpisodeService:
                         seen.add(normalize(f"x^2-{int(n)}"))
                 except (ExpressionError, ArithmeticError):
                     pass
-            for event in self.store.list_events(student_id, self.course.course_id):
+            for event in events:
                 if event["event_type"] in ("probe", "probe_issued"):
                     prior_probe = self.store.load_episode(event["payload"]["episode_id"])
                     if prior_probe and prior_probe.get("challenge"):

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from fastapi import Depends
 
 from app.config import Settings, get_settings
 from app.memory.repository import Repository
@@ -21,6 +22,12 @@ def ensure_reference_help_allowed(owner: str, allowed_probe_id: str | None = Non
 @lru_cache
 def get_repository() -> Repository:
     return Repository(get_settings())
+
+
+def get_learning_workspace(repository: Repository = Depends(get_repository)):
+    from app.knowledge.course_service import get_course_service
+    from app.tutor.learning_workspace import LearningWorkspace
+    return LearningWorkspace(get_course_service("numerical_analysis"), repository)
 
 
 @lru_cache

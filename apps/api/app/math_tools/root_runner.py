@@ -3,6 +3,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.math_tools.root_expression import RootExpression, ExpressionError
 from app.math_tools.root_finding import RootAttempt, diagnose
 
+RUNNER_VERSION = "root-runner-v1"
+
 
 class LabRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -77,6 +79,8 @@ def run_reference(request: LabRequest) -> dict:
             reason = f"停止生成：{exc}"
             break
     generated = a.model_copy(update={"iterates": trace, "brackets": brackets, "stop_reason": stop})
+    diagnosis = diagnose(generated)
+    diagnosis["summary"] = diagnosis["summary"].replace("提交轨迹", "参考轨迹")
     return {"rows": rows, "stop_reason": stop, "stop_detail": reason,
-            "diagnosis": diagnose(generated), "runner_version": "root-runner-v1",
+            "diagnosis": diagnosis, "runner_version": RUNNER_VERSION,
             "evidence_kind": "reference_help", "independent_success": False}
