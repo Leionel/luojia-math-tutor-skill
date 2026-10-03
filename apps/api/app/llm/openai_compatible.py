@@ -7,8 +7,38 @@ import httpx
 
 from app.config import Settings, PROVIDER_BASE_URLS, configured_model_catalog
 from app.llm.completion_protocol import ModelCompletionError, validate_finish_reason
+from app.llm.capabilities import tools_available
+from app.llm.model_turn import TurnAssembler
+from app.llm.call_observation import metered_stream, metered_completion, usage_received, content_received, request_dispatched, call_degraded
+from app.llm.capabilities import capability
 
 logger = logging.getLogger(__name__)
+
+MAX_RESPONSE_BYTES = 524288
+
+
+async def bounded_lines(response):
+    """Bound incoming bytes before building a possibly unterminated SSE line."""
+    pending = bytearray()
+    received = 0
+    async for chunk in response.aiter_bytes():
+        received += len(chunk)
+        if received > MAX_RESPONSE_BYTES:
+            raise ModelCompletionError("model_output_truncated")
+        pending.extend(chunk)
+        while b"\n" in pending:
+            line, _, rest = pending.partition(b"\n")
+            pending = bytearray(rest)
+            if len(line)>131072:
+                raise ModelCompletionError("model_response_invalid")
+            try:
+                yield line.rstrip(b"\r").decode("utf-8", errors="strict")
+            except UnicodeDecodeError:
+                raise ModelCompletionError("model_response_invalid") from None
+        if len(pending) > 131072:
+            raise ModelCompletionError("model_response_invalid")
+    if pending:
+        yield pending.rstrip(b"\r").decode("utf-8", errors="strict")
 
 
 class OpenAICompatibleClient:
@@ -22,6 +52,13 @@ class OpenAICompatibleClient:
 
     def __init__(self, settings: Settings):
         self.settings = settings
+
+    def validate_payload(self, payload, model):
+        # UTF-8 bytes are a conservative input budget, not a token measurement.
+        cap = capability(self.settings, model)
+        limit = min(131072, cap["input_token_limit"] or 131072)
+        if len(json.dumps(payload, ensure_ascii=False, allow_nan=False).encode()) > limit:
+            raise ModelCompletionError("model_response_invalid")
 
     @staticmethod
     def _wire_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -69,6 +106,9 @@ class OpenAICompatibleClient:
             "stream": stream,
             "temperature": temperature,
         }
+        cap = capability(self.settings, model)
+        if cap["output_token_limit"] is not None:
+            payload["max_completion_tokens" if provider=="openai" else "max_tokens"] = min(cap["output_token_limit"], 4096)
 
         # 1. Native web search mapping
         if enable_search:
@@ -114,8 +154,10 @@ class OpenAICompatibleClient:
             effort_map = {"low": "low", "medium": "medium", "high": "high", "max": "high"}
             payload["reasoning_effort"] = effort_map.get(clean_effort, "medium")
 
+        self.validate_payload(payload, model)
         return payload
 
+    @metered_stream
     async def stream(
         self,
         messages: list[dict[str, Any]],
@@ -139,12 +181,16 @@ class OpenAICompatibleClient:
             temperature=0.3,
         )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        if capability(self.settings, model)["stream_usage"] is True:
+            payload["stream_options"] = {"include_usage": True}
+        self.validate_payload(payload, model)
         client = self.get_http_client()
         terminal = False
         has_content = False
+        await request_dispatched()
         async with client.stream("POST", url, json=payload, headers=headers, timeout=60.0) as response:
             response.raise_for_status()
-            async for line in response.aiter_lines():
+            async for line in bounded_lines(response):
                 if not line.startswith("data:"):
                     continue
                 data = line.removeprefix("data:").strip()
@@ -161,6 +207,8 @@ class OpenAICompatibleClient:
                     # Never copy a vendor error payload (which can contain credentials).
                     raise ModelCompletionError("model_provider_error")
                 choices = chunk.get("choices")
+                if "usage" in chunk:
+                    usage_received(chunk["usage"])
                 if choices == [] and "usage" in chunk:
                     continue
                 if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
@@ -180,12 +228,14 @@ class OpenAICompatibleClient:
                     if not isinstance(content, str):
                         raise ModelCompletionError("model_response_invalid")
                     has_content = has_content or bool(content.strip())
+                    content_received(content)
                     yield {"type": "content", "content": content}
         if not terminal:
             raise ModelCompletionError("model_stream_incomplete")
         if not has_content:
             raise ModelCompletionError("model_empty_output")
 
+    @metered_completion
     async def chat_completion(
         self,
         messages: list[dict[str, Any]],
@@ -210,8 +260,11 @@ class OpenAICompatibleClient:
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()
+            await request_dispatched()
             response = await client.post(url, json=payload, headers=headers, timeout=60.0)
             response.raise_for_status()
+            if len(response.content) > MAX_RESPONSE_BYTES:
+                raise ModelCompletionError("model_output_truncated")
             try:
                 data = response.json()
             except ValueError as exc:
@@ -220,6 +273,7 @@ class OpenAICompatibleClient:
                 raise ModelCompletionError("model_response_invalid")
             if data.get("error"):
                 raise ModelCompletionError("model_provider_error")
+            usage_received(data.get("usage"))
             try:
                 choice = data["choices"][0]
                 validate_finish_reason(choice.get("finish_reason"))
@@ -232,6 +286,54 @@ class OpenAICompatibleClient:
         except Exception as e:
             logger.error("chat_completion failed: %s", e)
             raise
+
+    @metered_completion
+    async def tool_turn(self, messages, api_key=None, model=None, effort="medium", allow_calls=True):
+        """Native tool request is a completed model turn, never a completed answer."""
+        if not tools_available(self.settings, model):
+            raise ModelCompletionError("model_tool_call_unsupported")
+        key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
+        if not key:
+            raise ModelCompletionError("model_not_configured")
+        from app.agents.typed_tools import wire_tools
+        payload = self.build_request_payload(model, messages, effort=effort, stream=True, enable_search=False)
+        payload.update(tools=wire_tools(), tool_choice="auto" if allow_calls else "none", parallel_tool_calls=False)
+        if capability(self.settings, model)["stream_usage"] is True:
+            payload["stream_options"] = {"include_usage": True}
+        self.validate_payload(payload, model)
+        base, _ = self.settings.resolve_request(model)
+        assembler = TurnAssembler()
+        await request_dispatched()
+        async with self.get_http_client().stream("POST", f"{base.rstrip('/')}/chat/completions", json=payload,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, timeout=60) as response:
+            response.raise_for_status()
+            async for line in bounded_lines(response):
+                if not line.startswith("data:"): continue
+                data = line.removeprefix("data:").strip()
+                if data == "[DONE]": break
+                if len(data.encode()) > 131072: raise ModelCompletionError("model_response_invalid")
+                try:
+                    frame = json.loads(data)
+                except (ValueError, TypeError):
+                    raise ModelCompletionError("model_response_invalid") from None
+                if not isinstance(frame, dict): raise ModelCompletionError("model_response_invalid")
+                if frame.get("error"): raise ModelCompletionError("model_provider_error")
+                choices = frame.get("choices")
+                if "usage" in frame: usage_received(frame["usage"])
+                if choices == [] and "usage" in frame: continue
+                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
+                    raise ModelCompletionError("model_response_invalid")
+                assembler.feed(choices[0])
+                content_received(choices[0].get("delta", {}).get("content"))
+        turn = assembler.result()
+        from app.llm.call_observation import current_call_id
+        turn.model_call_id = current_call_id()
+        if turn.calls:
+            from app.llm.call_observation import native_call_received
+            native_call_received(turn.calls[0].call_id)
+        if turn.calls and not allow_calls:
+            raise ModelCompletionError("model_tool_budget")
+        return turn
 
     async def test(self, api_key: str | None = None, model: str | None = None) -> dict[str, str | bool]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
@@ -264,6 +366,7 @@ class OpenAICompatibleClient:
         except Exception as exc:
             return {"ok": False, "message": f"模型连接失败：{exc}"}
 
+    @metered_completion
     async def create_embedding(
         self, text: str, api_key: str | None = None, model: str | None = None
     ) -> list[float]:
@@ -324,6 +427,7 @@ class OpenAICompatibleClient:
             key = key or self.settings.llm_api_key
 
         if not key:
+            call_degraded("model_not_configured")
             return []
 
         url = f"{base_url.rstrip('/')}/embeddings"
@@ -334,11 +438,14 @@ class OpenAICompatibleClient:
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()
+            await request_dispatched()
             response = await client.post(url, json=payload, headers=headers, timeout=10.0)
             response.raise_for_status()
             data = response.json()
+            usage_received(data.get("usage"))
             return data["data"][0]["embedding"]
         except Exception as exc:
+            call_degraded("model_timeout" if isinstance(exc,httpx.TimeoutException) else "model_provider_error")
             logger.error(
                 "Embedding API call failed for model %s (url: %s): %s",
                 resolved_model,

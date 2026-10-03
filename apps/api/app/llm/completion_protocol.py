@@ -11,6 +11,7 @@ class ModelCompletionError(RuntimeError):
         "model_response_invalid": "模型服务返回格式异常，本轮未完成，请重试。",
         "model_provider_error": "模型服务报告生成失败，请稍后重试。",
         "model_empty_output": "模型未返回可交付的正文，请重试。",
+        "model_tool_budget": "本轮计算调用达到预算，尚未返回可交付的正文，请缩小问题后重试。",
     }
 
     def __init__(self, code: str):

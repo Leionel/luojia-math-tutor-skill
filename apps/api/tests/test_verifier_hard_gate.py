@@ -75,7 +75,7 @@ def _state(**overrides) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_missing_verify_tag_triggers_forced_verification_round():
+async def test_unknown_capability_does_not_force_generated_code_verification():
     llm = FakeLLM([
         "[OUTPUT] 直接给结论，不验算。",
         "[VERIFY]\n```python\nprint(2**8)\n```\n[OUTPUT] 验算后给出结论。",
@@ -91,12 +91,10 @@ async def test_missing_verify_tag_triggers_forced_verification_round():
         require_verification=True,
     )
 
-    assert result["metrics"]["verification_enforced"] == "enforced"
-    assert result["metrics"]["sandbox_tool_calls"] == 1
-    # The forced instruction reached the model as an extra user turn.
-    flattened = " ".join(str(m.get("content", "")) for m in llm.prompts[1])
-    assert "[系统强制要求]" in flattened
-    assert not result["final_output"].startswith("⚠️")
+    assert result["metrics"]["verification_enforced"] == "degraded"
+    assert result["metrics"]["sandbox_tool_calls"] == 0
+    assert len(llm.prompts) == 1
+    assert result["final_output"].startswith("⚠️ 本轮未能完成符号验算")
 
 
 @pytest.mark.asyncio

@@ -69,7 +69,7 @@ async def test_guard_repairs_once_without_executing_tool_and_before_delivery(mon
         yield {"type": "content", "content": next(responses)}
     workflow.llm.stream = stream
     tool = AsyncMock(side_effect=AssertionError("repair must not execute"))
-    monkeypatch.setattr("app.tutor.graph.execute_python_result", tool)
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result", tool)
     state = make_state("什么是导数？")
     config = make_config()
     result = await workflow.workflow.ainvoke(state, config=config)
@@ -132,7 +132,7 @@ async def test_repair_tool_request_is_withheld_without_executing(monkeypatch):
         yield {"type":"content","content":"[VERIFY]\n```python\nprint(2)\n```\n[OUTPUT]\n提示"}
     workflow.llm.stream=stream
     tool=AsyncMock()
-    monkeypatch.setattr("app.tutor.graph.execute_python_result",tool)
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result",tool)
     with pytest.raises(AnswerDeliveryError):
         await workflow._guard_answer("我已运行你的代码。",[],make_state("什么是导数"),False,{})
     tool.assert_not_awaited()
@@ -152,16 +152,16 @@ async def test_disabled_guard_is_unavailable_and_empty_completion_gate_survives(
 
 
 @pytest.mark.asyncio
-async def test_success_without_stdout_is_execution_evidence_but_not_math_evidence(monkeypatch):
-    from app.agents.tool_result import ToolExecutionResult
+async def test_retired_python_request_cannot_become_execution_evidence(monkeypatch):
     workflow=TutorWorkflow(get_settings(),make_repository())
-    responses=iter(["[VERIFY]\n```python\npass\n```\n[OUTPUT]\n核对中", "已执行代码，本次没有输出。"])
     async def stream(*args,**kwargs):
-        yield {"type":"content","content":next(responses)}
+        yield {"type":"content","content":"[VERIFY]\n```python\npass\n```\n[OUTPUT]\n没有完成验算。"}
     workflow.llm.stream=stream
-    monkeypatch.setattr("app.tutor.graph.execute_python_result",AsyncMock(return_value=ToolExecutionResult("succeeded",exit_code=0)))
+    forbidden=AsyncMock(side_effect=AssertionError("generated code is retired"))
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result", forbidden)
     result=await workflow.workflow.ainvoke(make_state("什么是导数？"),config=make_config())
     assert result["answer_guard"]["status"]=="passed"
-    assert result["metrics"]["llm_call_count"]==2
+    assert result["metrics"]["llm_call_count"]==1
     assert result["metrics"]["sandbox_successful_calls"]==0
-    assert "未经确定性验证" in result["final_output"]
+    assert "没有执行模型生成的代码" in result["final_output"]
+    forbidden.assert_not_awaited()

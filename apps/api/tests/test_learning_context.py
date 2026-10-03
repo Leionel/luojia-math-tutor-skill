@@ -84,7 +84,7 @@ async def test_compiled_reference_discussion_uses_true_rows_never_grades_and_rec
     def forbidden(*args,**kwargs): raise AssertionError("reference discussion cannot grade or execute code")
     monkeypatch.setattr(workspace.repository,"upsert_mastery",forbidden)
     monkeypatch.setattr(workspace.repository,"add_mistake_event",forbidden)
-    monkeypatch.setattr("app.tutor.graph.execute_python_result",forbidden)
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result",forbidden)
     events=[parse_event(e) async for e in tutor.stream_reply(session,"alice","我觉得 x=0 是正确的，对吗？",
                         learning_context=reference(run),learning_workspace=workspace)]
     prompt="\n".join(m["content"] for turn in prompts for m in turn)

@@ -151,36 +151,14 @@ async def test_symbolic_success_skips_verifier_llm():
     workflow.context_collector.timeout_seconds = 10.0
     workflow.llm.chat_completion = AsyncMock()
 
-    # First response skips verification; after the forced re-prompt the model
-    # complies with a sandbox check and produces the visible answer.
-    responses = iter([
-        "[OUTPUT] 这一步可以通过对结果求导来核对。",
-        "[VERIFY]\n```python\nfrom sympy import diff, symbols\nx = symbols('x')\nprint(diff(x**2 + 0, x))\n```\n[OUTPUT] 我们对 x^2 + C 求导来核对这一步。",
-        "[OUTPUT] 求导结果为 2x，这一步核对无误。",
-    ])
-    seen_prompts: list[list[dict]] = []
-
-    async def scripted_stream(messages, api_key=None, model=None, **kwargs):
-        seen_prompts.append(list(messages))
-        yield {"type": "content", "content": next(responses)}
-
-    workflow.llm.stream = scripted_stream
+    install_fake_stream(workflow, "这一步可以通过对结果求导来核对。")
     state = make_state("我算 ∫2x dx = x^2 + C，对吗？")
-
-    final_state = await workflow.workflow.ainvoke(
-        state,
-        config=make_config(state["session_id"]),
-    )
-
+    final_state = await workflow.workflow.ainvoke(state, config=make_config(state["session_id"]))
     assert final_state["verifier_result"].verified is True
-    # The verifier LLM node is skipped, but the hard gate forces the teacher
-    # through: (0) unverified draft, (1) forced [VERIFY] round, (2) final
-    # answer after the sandbox result — three streamed model calls in total.
-    assert final_state["metrics"]["llm_call_count"] == 3
-    assert final_state["metrics"]["verification_enforced"] == "enforced"
-    assert final_state["metrics"]["sandbox_tool_calls"] >= 1
-    flattened = " ".join(str(m.get("content", "")) for m in seen_prompts[1])
-    assert "[系统强制要求]" in flattened
+    # Existing deterministic evidence suffices; no generated-code re-prompt.
+    assert final_state["metrics"]["llm_call_count"] == 1
+    assert final_state["metrics"]["sandbox_tool_calls"] == 0
+    assert final_state["metrics"]["typed_tool_calls"] == 0
     workflow.llm.chat_completion.assert_not_awaited()
 
 
@@ -304,7 +282,7 @@ async def test_model_reasoning_is_not_forwarded_or_persisted():
 
 
 @pytest.mark.asyncio
-async def test_teacher_executes_requested_verification_before_showing_output(monkeypatch):
+async def test_teacher_ignores_retired_code_protocol_without_executing(monkeypatch):
     workflow = TutorWorkflow(get_settings(), make_repository())
     responses = iter([
         "[VERIFY]\n```python\nprint(2 + 2)\n```\n[OUTPUT]\n尚未核对",
@@ -315,19 +293,18 @@ async def test_teacher_executes_requested_verification_before_showing_output(mon
         yield {"type": "content", "content": next(responses)}
 
     execute = AsyncMock(return_value=ToolExecutionResult("succeeded", stdout="4", exit_code=0))
-    monkeypatch.setattr("app.tutor.graph.execute_python_result", execute)
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result", execute)
     workflow.llm.stream = fake_stream
     state = make_state("请核对 2+2")
     state["messages"] = [{"role": "system", "content": "skill"}, {"role": "user", "content": state["message"]}]
 
     result = await workflow.teacher_node(state, make_config())
 
-    execute.assert_awaited_once_with("print(2 + 2)", timeout=workflow.settings.tool_timeout_seconds)
-    assert result["final_output"].endswith("已核对，结果是 4。")
-    assert "不等于下文全部结论已经得到数学验证" in result["final_output"]
-    assert result["metrics"]["tool_validation_scope"] == "execution_only"
-    assert result["metrics"]["sandbox_tool_calls"] == 1
-    assert "尚未核对" not in result["final_output"]
+    execute.assert_not_awaited()
+    assert "旧式代码验算请求已忽略" in result["final_output"]
+    assert result["metrics"]["sandbox_tool_calls"] == 0
+    assert result["metrics"]["typed_tool_calls"] == 0
+    assert "已核对，结果是 4。" not in result["final_output"]
 
 
 @pytest.mark.asyncio

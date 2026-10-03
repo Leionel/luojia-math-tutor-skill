@@ -406,6 +406,9 @@ class TutorOrchestrator:
         async def on_token(event_str: str) -> None:
             nonlocal first_token_time
             await validate_reference()
+            if any(step.get("tool_name") for step in trace.steps):
+                from app.tutor.help_boundary import assert_reference_help_allowed
+                await asyncio.to_thread(assert_reference_help_allowed, user_id)
             if first_token_time is None:
                 first_token_time = time.perf_counter()
             await queue.put(event_str)
@@ -427,15 +430,18 @@ class TutorOrchestrator:
         config = {
             "configurable": {
                 "thread_id": session_id,
+                "run_id": trace.run_id,
                 "on_run_event": on_run_event,
                 "on_token": on_token,
                 "on_thinking": on_thinking,
                 "on_progress": on_progress,
             }
         }
-        task = asyncio.create_task(
-            self.workflow.ainvoke(initial_state, config=config)
-        )
+        async def invoke_observed():
+            from app.llm.call_observation import observation
+            with observation(on_run_event, trace.run_id):
+                return await self.workflow.ainvoke(initial_state, config=config)
+        task = asyncio.create_task(invoke_observed())
         queue_get: asyncio.Task[str] | None = None
 
         try:
@@ -582,6 +588,9 @@ class TutorOrchestrator:
                              "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
                              "route": "intent_clarification"}
         intent = learning_meta["intent"]
+        if final_state.get("tool_evidence"):
+            from app.tutor.help_boundary import assert_reference_help_allowed
+            await asyncio.to_thread(assert_reference_help_allowed, user_id)
         await trace.step("delivery","started")
         terminal_status = "clarification" if awaiting_input else "succeeded"
         learning_meta["agent_run"] = trace.terminal_snapshot(terminal_status)
@@ -601,6 +610,7 @@ class TutorOrchestrator:
         yield sse("run_event",learning_meta["agent_run"])
         yield sse("meta_update", learning_meta)
         metrics = dict(final_state.get("metrics", {}))
+        metrics["model_request_usage"] = trace.snapshot()["usage"]
         metrics["total_ms"] = round(
             (time.perf_counter() - request_started) * 1000,
             2,

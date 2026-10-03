@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 
-GUARD_VERSION = "delivery-v1"
+GUARD_VERSION = "delivery-v2"
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ def answer_requested(message: str) -> bool:
 
 
 def check_delivery(text: str, *, exercise: bool = False, allow_answer: bool = False,
-                   execution_succeeded: bool = False) -> DeliveryCheck:
+                   execution_succeeded: bool = False, tool_evidence=None) -> DeliveryCheck:
     """High precision checks of explicit claims/sections, not all semantic leaks.
 
     Unlabelled answers, indirect claims and mathematical correctness require
@@ -59,6 +59,11 @@ def check_delivery(text: str, *, exercise: bool = False, allow_answer: bool = Fa
     if not text.strip():
         violations.append("empty_body")
     assertions = _assertion_text(text)
+    evidence = tool_evidence or []
+    if evidence and not any(item.get("status") == "succeeded" for item in evidence) and _claims(assertions, r"(?:工具|求导|数值计算)(?:已|已经)?(?:成功|完成|验证通过)|经(?:工具|数值计算)验证"):
+        violations.append("tool_result_contradiction")
+    if any((item.get("data") or {}).get("evidence_scope") == "quadrature_error_estimate" for item in evidence) and _claims(assertions, r"积分(?:结果|误差)[^。\n]{0,15}(?:严格保证|严格验证|已证明)"):
+        violations.append("integration_scope_claim")
     if re.search(r"\[(?:PLAN|VERIFY|CORRECT|OUTPUT|TOOL_RESULT|RUNTIME_CONTEXT|NODE_CONTEXT)\]", assertions, re.I):
         violations.append("internal_protocol")
     if _claims(assertions, r"(?:已(?:经)?(?:成功)?(?:运行|执行)|(?:我|我们)(?:运行|执行)了)(?:了)?\s*(?:你的|您(?:的)?|学生的)(?:完整)?(?:Python\s*)?(?:代码|程序|作业)|\b(?:I|we)\s+(?:have\s+)?(?:executed|ran|run)\s+your\s+(?:code|program)"):

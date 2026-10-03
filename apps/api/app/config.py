@@ -158,6 +158,9 @@ class Settings(BaseModel):
     )
     tool_timeout_seconds: int = int(os.getenv("TOOL_TIMEOUT_SECONDS", "8"))
     tool_max_rounds: int = int(os.getenv("TOOL_MAX_ROUNDS", "2"))
+    typed_math_tools_enabled: bool = os.getenv("TYPED_MATH_TOOLS_ENABLED", "false").lower() == "true"
+    llm_capabilities_json: str = os.getenv("LLM_CAPABILITIES_JSON", "{}")
+    llm_prices_json: str = os.getenv("LLM_PRICES_JSON", "{}")
     answer_guard_enabled: bool = os.getenv("ANSWER_GUARD_ENABLED", "true").lower() == "true"
 
     def resolve_request(self, request_model: str | None) -> tuple[str, str]:

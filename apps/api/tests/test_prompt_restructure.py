@@ -97,7 +97,7 @@ def test_completed_review_can_find_error_without_saying_passed():
 
 @pytest.mark.asyncio
 async def test_failed_tool_execution_cannot_satisfy_verification_gate(monkeypatch):
-    monkeypatch.setattr("app.tutor.graph.execute_python_result", AsyncMock(return_value=ToolExecutionResult("unavailable", stderr="dependency unavailable", error_code="tool_dependency_missing")))
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result", AsyncMock(return_value=ToolExecutionResult("unavailable", stderr="dependency unavailable", error_code="tool_dependency_missing")))
     workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```\n[OUTPUT]draft",
                                        "[OUTPUT]推导说明"]))
     result = await workflow._stream_generation(_state(), None, [{"role": "user", "content": "q"}],
@@ -105,7 +105,7 @@ async def test_failed_tool_execution_cannot_satisfy_verification_gate(monkeypatc
     assert result["metrics"]["verification_enforced"] == "degraded"
     assert result["metrics"]["sandbox_successful_calls"] == 0
     assert result["final_output"].startswith("⚠️")
-    assert result["tool_evidence"][0]["execution_succeeded"] is False
+    assert result["tool_evidence"] == []
 
 @pytest.mark.asyncio
 async def test_vision_confirmation_stops_before_context_and_generation():
@@ -222,12 +222,13 @@ def test_persona_is_named_but_does_not_claim_human_identity():
 
 
 @pytest.mark.asyncio
-async def test_successful_unrelated_tool_is_not_presented_as_mathematical_proof(monkeypatch):
-    monkeypatch.setattr("app.tutor.graph.execute_python_result", AsyncMock(return_value=ToolExecutionResult("succeeded", stdout="2", exit_code=0)))
-    workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```", "[OUTPUT]一个未经独立核对的结论"]))
+async def test_retired_unrelated_code_is_not_presented_as_mathematical_proof(monkeypatch):
+    monkeypatch.setattr("app.agents.code_executor.execute_python_result", AsyncMock(return_value=ToolExecutionResult("succeeded", stdout="2", exit_code=0)))
+    workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```\n[OUTPUT]一个未经独立核对的结论"]))
     result = await workflow._stream_generation(_state(), None, [{"role":"user","content":"q"}],default_route="teacher",require_verification=True)
-    assert result["metrics"]["tool_validation_scope"] == "execution_only"
-    assert "不等于下文全部结论已经得到数学验证" in result["final_output"]
+    assert result["metrics"]["sandbox_tool_calls"] == 0
+    assert result["tool_evidence"] == []
+    assert "未经确定性验证" in result["final_output"]
 
 
 def test_numerical_fallback_has_complete_questions_and_checkable_root_bound():

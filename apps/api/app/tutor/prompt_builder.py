@@ -162,13 +162,13 @@ def build_teacher_prompt(state: dict) -> list[dict[str, Any]]:
                       "deterministic": asdict(deterministic) if isinstance(deterministic, VerifyResult) else {}},
         instruction="遵循 resolved_policy；分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。",
         tool_protocol=("本轮仅解释保存的参考轨迹；不请求执行工具、代码或自动保存。" if state.get("learning_context") else
-                       "确需符号验算时先输出 [VERIFY] 后的 python 代码块，仅允许 math/sympy，"
-                       "打印关键结果；收到 TOOL_RESULT 后再输出 [OUTPUT] 学生正文。执行成功不等于命题成立。"),
+                       "仅在本轮提供原生工具时调用 numerical_run 或 math_differentiate；无工具时明确未核验。"
+                       "不生成或执行Python协议，不自动保存记录。结果仅支持其声明的范围，不证明全部结论。"),
     )
 
 def build_examiner_prompt(state: dict) -> list[dict[str, Any]]:
     return _with_node_slots(
         state, "generate_exercise", concepts=state.get("concepts", []),
         instruction="出一道条件完整、可作答的同类练习，不因默认掌握度断言学生水平，不附答案，除非学生明确索取。",
-        tool_protocol="若请求后台验算，使用 [VERIFY] python(math/sympy)，题目正文放在 [OUTPUT] 后。",
+        tool_protocol="仅使用本轮实际提供的固定工具，不生成Python协议。工具结果不作为学生独立作答。",
     )

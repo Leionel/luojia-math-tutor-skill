@@ -3,19 +3,30 @@ import asyncio
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from app.memory.agent_runs import RUN_VERSION, MAX_STEPS, clean_step
+from app.memory.agent_runs import RUN_VERSION, MAX_STEPS, clean_step, close_open_spans
+from app.llm.call_observation import usage_summary
 from app.tutor.answer_guard import GUARD_VERSION
 from app.tutor.prompt_policy import PROMPT_VERSION
 
 
-async def durable_call(function, *args, **kwargs):
-    """Drain a SQLite write before cancellation propagates; no orphan write thread."""
+async def settled_call(function, *args, **kwargs):
+    """Repeated cancellation cannot detach a committing SQLite write."""
     task = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
-    try:
-        return await asyncio.shield(task)
-    except asyncio.CancelledError:
-        await task
-        raise
+    cancelled = False
+    while True:
+        try:
+            return await asyncio.shield(task), cancelled
+        except asyncio.CancelledError:
+            if task.cancelled():
+                raise
+            cancelled = True
+
+
+async def durable_call(function, *args, **kwargs):
+    result, cancelled = await settled_call(function, *args, **kwargs)
+    if cancelled:
+        raise asyncio.CancelledError
+    return result
 
 
 class RunTrace:
@@ -48,30 +59,34 @@ class RunTrace:
                 "status":status or self.status,"seq":self.seq,"steps":[dict(step) for step in self.steps],
                 "truncated":self.seq > MAX_STEPS,"created_at":self.created_at,"updated_at":self.updated_at,
                 "message_id":message_id,"prompt_version":PROMPT_VERSION,"guard_version":GUARD_VERSION,
-                "usage":None,"model_alias":self.model_alias,"parent_run_id":self.parent_run_id}
+                "usage":usage_summary(self.steps,self.seq > MAX_STEPS),"model_alias":self.model_alias,"parent_run_id":self.parent_run_id}
 
     async def step(self, phase, status, **fields):
         async with self.lock:
             if self.status != "running":
                 return
             clean = clean_step({"seq":self.seq+1,"phase":phase,"status":status,**fields})
-            accepted = await durable_call(self.repository.append_agent_run_step,self.run_id,self.user_id,clean)
+            accepted, cancelled = await settled_call(self.repository.append_agent_run_step,self.run_id,self.user_id,clean)
             if accepted is False:
                 raise RuntimeError("execution sequence unavailable")
             self.seq += 1
             if len(self.steps) < MAX_STEPS:
                 self.steps.append(clean)
             self.updated_at = datetime.now(timezone.utc).isoformat()
+            if cancelled:
+                raise asyncio.CancelledError
 
     def finish_args(self, status):
         return {"run_id":self.run_id,"user_id":self.user_id,"status":status}
 
     def terminal_snapshot(self,status):
         snapshot = self.snapshot(status)
+        snapshot["seq"] = close_open_spans(snapshot["steps"], status, snapshot["seq"])
         snapshot["seq"] += 1
         if len(snapshot["steps"]) < MAX_STEPS:
             snapshot["steps"].append({"seq":snapshot["seq"],"phase":"delivery","status":status})
         snapshot["truncated"] = snapshot["seq"] > MAX_STEPS
+        snapshot["usage"] = usage_summary(snapshot["steps"], snapshot["truncated"])
         return snapshot
 
     def committed(self,status):
