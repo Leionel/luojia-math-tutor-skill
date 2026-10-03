@@ -1,8 +1,8 @@
 # A6：类型化工具首批实施切片
 
-> 实施状态：S2的固定业务动作已落地（preview_root_lab / save_reference_lab），见 [S1/S2交付](delivery-s1-s2.md)。本文计算工具/符号工具与旧Python退役是下一批A6.2；业务卡片不代替该验收。
+> 实施状态：S2固定业务动作与 S3/A6.2 固定数学工具/旧Python退役已完成本地工程验收。S4调用计量也已接入，见 [S3/S4交付](delivery-s3-s4.md)。业务卡片仍由服务器组装，原生计算按匹配能力配置启用；真实模型效果另由S5/A5验收。
 
-日期：2026-10-03。状态：A6.1 业务动作已交付，A6.2 计算工具待实施。目标：业务动作/数学工具经过参数、权限、预算、证据、交付和回执检查。追加产品意见后的顺序见 [聊天衔接审阅](chat-workspace-review.md)；A6.1/A4.2 先交付最小业务动作、卡片与内嵌聊天，以下计算细节主要用于 A6.2。沿用 [Runtime 约束](runtime-review-schedule.md)，偏离记入 [implementation-notes.md](implementation-notes.md) 的 `Deviations`。
+日期：2026-10-03。状态：A6.1与A6.2本地工程交付，真实模型验证待S5。目标：业务动作/数学工具经过参数、权限、预算、证据、交付和回执检查。追加产品意见后的顺序见 [聊天衔接审阅](chat-workspace-review.md)；A6.1/A4.2 先交付最小业务动作、卡片与内嵌聊天，以下为 A6.2 的设计合同，实际预算与限制以 [S3/S4回执](delivery-s3-s4.md) 为准。沿用 [Runtime 约束](runtime-review-schedule.md)，偏离记入 [implementation-notes.md](implementation-notes.md) 的 `Deviations`。
 
 ## 1. 先业务闭环，再证明计算路径
 

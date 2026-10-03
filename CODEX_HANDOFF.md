@@ -1,5 +1,13 @@
 # CODEX 交接文档
 
+## 2026-10-03 S3/S4 固定数学工具与调用计量
+
+用户授权S3/S4。已新增固定math_differentiate/numerical_run、Chat Completions原生分片组装、两轮预算、实际worker取消/超时/64KiB输出回收、帮助前后重验与hint_exposed；模型生成Python调用点全部退役，旧executor仅历史内部实现/测试，无app调用方。Newton可信引用继续固定快照和服务器业务卡片，不把模型计算结果自动保存或算学生掌握。teaching-v2.5 / delivery-v2，默认typed关闭，精确selector+resolved_model+endpoint hash绑定能力和可选价格。
+
+每次客户端调用记录安全span/call/parent、起止/状态/耗时、正文首delta（非reasoning、非缓冲等待）、provider usage及可选日期价格；工具span关联提出请求的模型span。缺失/冲突usage与不支持cache/reasoning计价保持未知，部分汇总标明覆盖。run-v1现有JSON兼容，无表/迁移/依赖。修复重复取消中SQLite已提交但内存序号未更新：持锁等待写入并同步再取消。重启过期run闭合span，不重放。
+
+最终本地JSON/API655/Web51、v2合同38/38实例92/92、TypeScript/lint（0error/10既有warning）/生产build通过；隔离真实HTTP适配器/编译图/worker/Guard/SQLite网页验证3请求/2报告/1求导/1修复、刷新一致与390px无横向溢出，价格是合成测试值。实际现有两库SQLite backup integrity_check=ok后恢复正常API8000/Web3000，未改私密env。完整配置/证据/限制见planning/agent-engineering-2026-10/delivery-s3-s4.md。下一步S5/A5约4–6集中开发日含回归，人工gold另计；真实供应商能力、账单、教学收益、远端CI/部署未验收。下方S1/S2“下一步S3/S4”是历史状态。
+
 ## 2026-10-03 S1/S2 实验聊天闭环
 
 用户授权S1/S2并要求更精致的界面。已实现Newton保存记录的LearningContextRef与服务端快照，owner/input_hash/runner_version/graph_revision/selected_step重验；最多11行/8KiB，参考讨论不写学生作答、mastery/BKT或独立成绩。桌面小珞侧栏、手机抽屉、指定步骤、刷新/会话映射恢复，以及参数编辑→预览→显式保存→同页更新已落地。卡片关联成功且可见的Guard通过消息/run，24小时过期，每卡3次预览，最多100次迭代；重验帮助边界、版本/哈希与最新预览，幂等保存。未保存的预览也记录help事件并从未见probe候选中排除。
@@ -9,7 +17,7 @@
 完整离线JSON/API600/Web48、针对46项、A3契约19/19与实例40/40通过；TypeScript/build通过，lint0错误/10既有警告。隔离真实HTTP/编排/Guard/SQLite与固定模型响应验证桌面预览/脏参数锁定/保存回流/刷新/完整聊天步骤恢复、390px抽屉/草稿/取消/Escape与焦点恢复；真实模型与真人学习收益、远端CI/部署另验。截图与日志在ignored results/s1-s2-*。交付细节见planning/agent-engineering-2026-10/delivery-s1-s2.md。下一步S3/A6.2→S4/A7→S5/A5，余8–12个集中开发日含回归余量，人工gold另计；完整A4/F1/F2/F5/F8、跨领域可信引用、A8/C0另估。
 
 
-> 最新交接：2026-10-03（S1/S2实验聊天闭环）。A0–A3、多领域实验已完成本地工程验收；当前先读 `planning/agent-engineering-2026-10/delivery-s1-s2.md` 与主规划。Runtime约束/a6-tool-runtime.md继续使用，但旧“A6先于A4”顺序已修订。M0/M1见研究文档§27.8，研究主线见§27；下方历史状态仅表示当时进度。
+> 最新交接：2026-10-03（S3/S4固定数学工具与调用计量）。先读 `planning/agent-engineering-2026-10/delivery-s3-s4.md` 与主规划§12，再读S1/S2回执。Runtime约束/a6-tool-runtime.md继续使用，下一步S5/A5；M0/M1见研究文档§27.8，研究主线见§27。下方历史状态仅表示当时进度。
 
 ## 2026-10-03 聊天衔接意见与局部修复
 

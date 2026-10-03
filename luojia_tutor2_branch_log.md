@@ -407,3 +407,14 @@ README 旧“A3 尚未完成”已修正；本轮只改文档，A4–A8 未实�
 卡片由服务器固定映射组装，默认参数沿用原实验；未实现模型自主工具选择。本引用路径关闭生成Python执行和联网，其他旧Python路径待S3/A6.2退役。笔记/实验共享完整会话控制，主聊天共享ChatLifetime与MathMessage；锁在创建前取得，切换/卸载/退出拒绝旧回调，取消/失败/EOF不能留下可执行卡片，草稿按owner保留。没有新表/迁移/依赖，不改学生成绩规则。新字段用现有JSON，缺少历史预算显式标为legacy_default。
 
 完整离线JSON/API600/Web48、针对46项、A3契约19/19与实例40/40通过；TypeScript/build通过，lint0错误/10既有警告。隔离真实HTTP/编排/Guard/SQLite与固定模型响应验证桌面预览/脏参数锁定/保存回流/刷新/完整聊天步骤恢复、390px抽屉/草稿/取消/Escape与焦点恢复；真实模型与真人学习收益、远端CI/部署另验。截图与日志在ignored results/s1-s2-*。交付细节见planning/agent-engineering-2026-10/delivery-s1-s2.md。下一步S3/A6.2→S4/A7→S5/A5，余8–12个集中开发日含回归余量，人工gold另计；完整A4/F1/F2/F5/F8、跨领域可信引用、A8/C0另估。
+
+
+## 2026-10-03 S3/S4 固定数学工具与调用计量
+
+用户授权S3/S4。普通聊天固定math_differentiate/numerical_run通过原生tool_calls接入编译图/Guard/run，最多两轮、参数白名单、真实固定worker取消/超时/输出回收；模型Python执行调用点退役，关闭typed也不恢复。成功工具计参考帮助，不自动保存或计掌握；Newton可信引用与业务卡片沿用S1/S2。默认typed关闭，精确模型/端点能力绑定后启用；teaching-v2.5/delivery-v2。
+
+S4在实际客户端调用边界记录span/call/parent、起止/状态/耗时、正文首delta与provider usage。工具span关联提出请求的模型span；缺失usage不补零，cache/reasoning计价未支持时费用未知，可选价格带币种/日期版本。现有run-v1 JSON兼容，无新表/依赖/迁移。检索超时重复取消造成落盘/内存序号失配已修复，持锁等待SQLite写入并同步后传播取消；过期重启闭合span，不重放。
+
+本地最终知识JSON/API655/Web51、v2合同38/38实例92/92、TypeScript/lint0error10既有warning/build通过。v1历史19/40保留。隔离真实HTTP/编译图/worker/Guard/SQLite网页验证3请求2报告、一次求导和一次修复、刷新一致、390px无横向溢出；费用仅合成测试数据。现有两库SQLite backup integrity_check=ok后恢复API8000/Web3000，私密env未改。详见planning/agent-engineering-2026-10/delivery-s3-s4.md；不是模型准确率、真实供应商验证、账单或教学收益，远端CI/部署未验收。
+
+下一步S5/A5任务冻结、旧基线对照与人工gold，再按明确配置/预算运行E3真实模型烟测；S5及回归预计4–6集中开发日，人工gold另计。全功能引用、A8/C0另估；工程成果可如实写固定工具Runtime/调用回执/离线失败注入，不补造模型质量指标。提交/推送证据以本轮最终回执为准；保留无关runtime文档修改、原型、egg-info与ignored results。

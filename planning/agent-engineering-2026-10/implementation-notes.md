@@ -44,6 +44,15 @@
 
 ## Deviations
 
+### 2026-10-03：S3/S4 合同实现与计量
+
+- 交付S3/A6.2固定数学工具、原生调用续轮与模型Python退役，再接S4/A7 actual client span/usage/正文首片段/可选版本价格。S1/S2业务卡片不迁为模型保存动作，Newton可信引用路径关闭新计算，保留原单路径合同。
+- 原生JSON函数名使用numerical_run/math_differentiate，语义对应规划numerical.run/math.differentiate。精确selector+resolved_model+endpoint hash绑定能力，未知不发tools/include_usage；提供方名称不是能力证据。输入采用硬字节预算，不假称tokenizer测量。
+- Windows Python -I不加载本机用户级已安装Pydantic，固定worker显式加入该固定目录而不处理.pth/PYTHONPATH；无OS强隔离声明。实际进程取消/超时/输出超限由真实子进程回归，不以模拟成功代替。
+- 检索两个超时窗口会重复取消同一回执写入；SQLite可提交而内存序号未更新。新增settled_call持有锁并等待实际写入、更新序号后传播取消，真实SQLite回归覆盖两次取消。
+- v2评测38合同/92实例，旧v1历史19/40保留；新增范围升级版本，不把旧executor历史测试当当前生产路径证明。完整离线API655/Web51、JSON、类型/lint/build及隔离网页验收，详见 [S3/S4回执](delivery-s3-s4.md)。真实模型和教师gold另由S5评测，不宣称模型准确率或实际账单。
+- 无新表/迁移/依赖，不改独立成功/BKT规则，不改私密env；现有两库备份校验ok后恢复正常服务。剩余S5及回归约4–6集中开发日，人工gold另计。保留现有runtime-review-schedule.md的无关修改与原型文件。
+
 ### 2026-10-03：审阅 Runtime 意见并修订后续日程
 
 - 原计划：A3 后直接 A4 → A5；持久恢复仅作为延后项。

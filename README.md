@@ -223,7 +223,7 @@ results/                        # 本地生成证据，不跟踪
 
 ### 离线 Agent 可靠性评测
 
-运行 `python scripts/eval_agent_reliability.py`，结果保存为 `results/agent-reliability.json`（不跟踪）。版本化 19 个协议合同、40 个参数化实例覆盖生成异常、工具清理、交付 Guard、数据库原子性和 owner 隔离。报告保留分子 / 分母、Git SHA、案例与源码哈希；这是离线 fixture 协议评测，不是模型准确率。CI 同步执行并上传报告。
+运行 `python scripts/eval_agent_reliability.py`，结果保存为 `results/agent-reliability.json`（不跟踪）。当前 v2 含 38 个协议合同、92 个参数化实例，覆盖生成异常、固定计算进程回收、原生工具请求、调用计量、交付 Guard、数据库原子性和 owner 隔离；v1 历史19合同/40实例保留。报告公开分子/分母、Git SHA、案例与源码哈希；这是离线 fixture 协议评测，不是模型准确率。CI 同步执行并上传报告。
 
 ### 多领域数值实验首版
 
@@ -241,6 +241,10 @@ results/                        # 本地生成证据，不跟踪
 
 本轮交付和后续路线见 [A3 与多领域数值实验回执](planning/agent-engineering-2026-10/delivery-a3-numerical.md)。
 
-S1/A4.1 与 S2/A6.1/A4.2 已交付 Newton 单路径：实验内问小珞 → 服务端读取真实轨迹 → 用户编辑参数并预览 → 明确保存 → 同页更新。桌面侧栏、手机抽屉、版本检查、每卡三次预览与幂等保存已接入；卡片由服务器组装，尚未实现模型自主工具选择。完整交付与边界见 [S1/S2 回执](planning/agent-engineering-2026-10/delivery-s1-s2.md)。后续顺序：A6.2 计算工具/旧Python退役 → A7 调用计量 → A5 行为与质量评测；A8 持久恢复有条件启动。详见 [聊天与工作区审阅 / 当前日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
+S1/A4.1 与 S2/A6.1/A4.2 已交付 Newton 单路径：实验内问小珞 → 服务端读取真实轨迹 → 用户编辑参数并预览 → 明确保存 → 同页更新。桌面侧栏、手机抽屉、版本检查、每卡三次预览与幂等保存已接入；业务卡片由服务器组装。完整交付与边界见 [S1/S2 回执](planning/agent-engineering-2026-10/delivery-s1-s2.md)。
+
+S3/A6.2 与 S4/A7 已接入普通聊天的原生固定函数 `math_differentiate` / `numerical_run`、最多两轮预算、实际子进程取消/超时/输出回收，以及客户端调用 span、正文首片段时间、提供方 usage 和可选价格版本。模型生成 Python 不再执行。网页“本轮过程”可回看工具与请求、用量覆盖；缺失用量和费用保持未知，不把计算成功当整段数学证明。新计算工具默认关闭，只有实际模型/端点的匹配能力配置才启用；配置与验收见 [S3/S4 回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)。本轮无真实模型能力/真实账单或教学收益验证。
+
+下一步 S5/A5 行为与质量评测；A8 持久恢复有条件启动。详见 [聊天与工作区审阅 / 日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
 
 前一轮补齐章节自检期间共享帮助限制、求根实验缓存重试/历史读取及伴读解释检查，当时离线知识 JSON / API589 / Web45 通过，未重跑前端构建或真实模型。本轮 S1/S2 已另完成上述生产构建与浏览器验收。已打开材料、旧聊天、外部帮助和在途请求不由入口检查完全收回。
