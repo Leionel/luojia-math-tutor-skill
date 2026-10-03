@@ -212,3 +212,5 @@ PLAN VALIDATION: planning/agent-engineering-2026-10/plan.md
 按 A3 → 线性方程组（Jacobi / Gauss–Seidel）→ 数值积分（梯形 / Simpson / 自适应 Simpson）推进。先完成第二个具体模块，再统一实验请求、版本、证据范围、持久化与反馈接口。求根保留原独立测验链路；新模块首版包含参考实验、预测、逐步轨迹和数值结果核对，不自动计入掌握度或迁移求根成绩。跨功能任务快照 A4、真实模型质量 A5 仍另行验收。
 
 A3 命令：`python scripts/eval_agent_reliability.py`。冻结 19 个协议合同、40 个参数化实例；报告公开实际分子分母、案例与源码哈希、Git SHA、工作区修改标记。缺失 / 重复 / 跳过 / 错误实例均失败。数据来自现有生产绑定 fixtures（编译图、Orchestrator、临时 SQLite、HTTP 替身和受控子进程）；不是模型准确率或真实进程强隔离指标。
+
+本轮多领域实验首版已实现，实际范围、残差 / 积分估计合同、评测破坏验证与验证证据见 [A3 与多领域交付](delivery-a3-numerical.md)。不将新实验首版称为新领域的 F1/F4/F8 完整学习闭环；下一步仍按 A4 可信任务快照与独立测验协议推进。
