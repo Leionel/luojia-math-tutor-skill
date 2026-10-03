@@ -1,8 +1,8 @@
 # 珞珈数智助教：Agent 工程升级规划
 
-日期：2026-10-03。目标岗位：AI 应用 / Agent 工程。状态：A0–A2 已实现并本地验收；A3 已实现离线协议评测；A4–A8 为后续规划，其中 A8 有条件启动。
+日期：2026-10-03。目标岗位：AI 应用 / Agent 工程。状态：A0–A2 已实现并本地验收；A3 已实现离线协议评测；S1/A4.1 与 S2/A6.1/A4.2 已交付 Newton 单路径；完整 A4、A6.2、A7、A5、A8 仍待推进，A8 有条件启动。
 
-原规划经用户授权开始实施：A0 已交付并复验，A1 交付检查与 A2 持久执行回执已完成。实际行为和验证见 [A0–A2 交付回执](delivery-a0-a2.md)与 [A3 / 多领域实验交付](delivery-a3-numerical.md)。Runtime 意见见 [第一轮审阅](runtime-review-schedule.md)；随后用户追加聊天与工作区割裂意见，当前顺序以 [聊天衔接审阅与日程](chat-workspace-review.md) 为准。下一批先 A4.1 可信 Newton 实验上下文，再 A6.1/A4.2 业务动作、卡片与内嵌聊天；[A6 计算工具](a6-tool-runtime.md) 随后推进。本轮修复帮助入口不一致并更新规划，未实施 A4–A8。投入估算不是固定交付日期。
+原规划经用户授权开始实施：A0 已交付并复验，A1 交付检查与 A2 持久执行回执已完成。实际行为和验证见 [A0–A2 交付回执](delivery-a0-a2.md)与 [A3 / 多领域实验交付](delivery-a3-numerical.md)。Runtime 意见见 [第一轮审阅](runtime-review-schedule.md)；随后用户追加聊天与工作区割裂意见，当前顺序以 [聊天衔接审阅与日程](chat-workspace-review.md) 为准。用户随后授权 S1、S2，可信 Newton 引用与实验内提问/参数预览/显式保存已落地，详见 [S1/S2 交付](delivery-s1-s2.md)。下一批推进 [A6.2 计算工具](a6-tool-runtime.md) 与旧模型 Python 路径退役。投入估算不是固定交付日期。
 
 ## 1. 推荐路线与完成标准
 
@@ -194,7 +194,7 @@ A4.1 首批可信实验绑定预计 1–2 日；A4.2 与 A6.1 交互合批估 3�
 - 基于 FastAPI / LangGraph / SQLite 实现数学教学工作流可靠性修复，处理模型截断、流式异常结束和不确定意图，避免未完成回答被标记为成功及未确认任务写入学习评估。
 - 为受控数学工具设计类型化执行结果和取消回收机制，区分执行状态、输出与数学验证，补充离线故障回归，保留学生代码静态审阅边界。
 
-**已完成第一里程碑可写：** “实现最终交付 Guard、持久执行回执及版本化离线协议评测”；A3 的 19 个合同 / 40 个实例只用于对应冻结 fixture 口径。A4–A8 的新能力尚未实现，真实模型指标经 A5 完成后才能填入。
+**已完成第一里程碑可写：** “实现最终交付 Guard、持久执行回执及版本化离线协议评测”；A3 的 19 个合同 / 40 个实例只用于对应冻结 fixture 口径。S1/S2 可补充可信实验引用、受控动作与显式保存的工程成果；完整 A4 / A6.2 / A7 / A5 / A8 仍待实现，真实模型指标经 A5 完成后才能填入。
 
 不要写“准确率提升 XX%”“支持任意代码安全执行”“自主多 Agent 协作”“已证明提升学习成绩”，除非各自有独立证据。面试准备重点：为何先确认意图、为什么 EOF 不代表完成、取消如何传播、幂等如何保证、为什么工具成功不等于答案正确，以及为什么选择复用 LangGraph。
 
@@ -215,7 +215,7 @@ PLAN VALIDATION: planning/agent-engineering-2026-10/plan.md
   Verification           npm.cmd test；前端变更另跑 typecheck/lint/build:web
 ```
 
-配套审查：[audit.md](audit.md)、[Runtime 意见审阅](runtime-review-schedule.md)与当前 [聊天衔接审阅](chat-workspace-review.md)。A0–A2 见 [delivery-a0-a2.md](delivery-a0-a2.md)，A3 已交付；A4–A8 保持规划状态，计算工具细节见 [a6-tool-runtime.md](a6-tool-runtime.md)。
+配套审查：[audit.md](audit.md)、[Runtime 意见审阅](runtime-review-schedule.md)与当前 [聊天衔接审阅](chat-workspace-review.md)。A0–A2 见 [delivery-a0-a2.md](delivery-a0-a2.md)，A3 已交付；S1/S2 见 [交付回执](delivery-s1-s2.md)，其余范围继续按规划验收；计算工具细节见 [a6-tool-runtime.md](a6-tool-runtime.md)。
 
 ## 10. 多领域扩展（2026-10-03 用户授权）
 
@@ -224,3 +224,8 @@ PLAN VALIDATION: planning/agent-engineering-2026-10/plan.md
 A3 命令：`python scripts/eval_agent_reliability.py`。冻结 19 个协议合同、40 个参数化实例；报告公开实际分子分母、案例与源码哈希、Git SHA、工作区修改标记。缺失 / 重复 / 跳过 / 错误实例均失败。数据来自现有生产绑定 fixtures（编译图、Orchestrator、临时 SQLite、HTTP 替身和受控子进程）；不是模型准确率或真实进程强隔离指标。
 
 本轮多领域实验首版已实现，实际范围、残差 / 积分估计合同、评测破坏验证与验证证据见 [A3 与多领域交付](delivery-a3-numerical.md)。不将新实验首版称为新领域的 F1/F4/F8 完整学习闭环；后续按第7节拆分的 A4/A6 → A7 → A5 推进，独立测验仍另按研究协议验收。
+
+
+## 11. S1/S2 当前状态（2026-10-03）
+
+用户授权开始S1/S2并要求界面更精致。Newton单路径已实现可信实验引用、版本/owner/步骤检查、侧栏与390px抽屉、成功消息参数卡、用户预览/显式保存/同页更新；笔记和实验共享会话控制，主聊天共享流生命周期和消息渲染。卡片由服务器固定映射组装，并非模型原生工具选择；预览计帮助且从未见probe候选中排除，不写掌握度。完整验证与限制见 [S1/S2回执](delivery-s1-s2.md)。下一步S3/A6.2，再S4/A7、S5/A5；剩余8–12个集中开发日含回归余量，人工gold另计，原第7节12–19日是S1/S2之前的估算。

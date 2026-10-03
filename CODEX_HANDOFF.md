@@ -1,6 +1,15 @@
 # CODEX 交接文档
 
-> 最新交接：2026-10-03（聊天/工作区衔接审阅与帮助保护修复）。A0–A3、多领域实验已完成本地工程验收；当前先读 `planning/agent-engineering-2026-10/chat-workspace-review.md` 与主规划。Runtime约束/a6-tool-runtime.md继续使用，但旧“A6先于A4”顺序已修订。M0/M1见研究文档§27.8，研究主线见§27；下方历史状态仅表示当时进度。
+## 2026-10-03 S1/S2 实验聊天闭环
+
+用户授权S1/S2并要求更精致的界面。已实现Newton保存记录的LearningContextRef与服务端快照，owner/input_hash/runner_version/graph_revision/selected_step重验；最多11行/8KiB，参考讨论不写学生作答、mastery/BKT或独立成绩。桌面小珞侧栏、手机抽屉、指定步骤、刷新/会话映射恢复，以及参数编辑→预览→显式保存→同页更新已落地。卡片关联成功且可见的Guard通过消息/run，24小时过期，每卡3次预览，最多100次迭代；重验帮助边界、版本/哈希与最新预览，幂等保存。未保存的预览也记录help事件并从未见probe候选中排除。
+
+卡片由服务器固定映射组装，默认参数沿用原实验；未实现模型自主工具选择。本引用路径关闭生成Python执行和联网，其他旧Python路径待S3/A6.2退役。笔记/实验共享完整会话控制，主聊天共享ChatLifetime与MathMessage；锁在创建前取得，切换/卸载/退出拒绝旧回调，取消/失败/EOF不能留下可执行卡片，草稿按owner保留。没有新表/迁移/依赖，不改学生成绩规则。新字段用现有JSON，缺少历史预算显式标为legacy_default。
+
+完整离线JSON/API600/Web48、针对46项、A3契约19/19与实例40/40通过；TypeScript/build通过，lint0错误/10既有警告。隔离真实HTTP/编排/Guard/SQLite与固定模型响应验证桌面预览/脏参数锁定/保存回流/刷新/完整聊天步骤恢复、390px抽屉/草稿/取消/Escape与焦点恢复；真实模型与真人学习收益、远端CI/部署另验。截图与日志在ignored results/s1-s2-*。交付细节见planning/agent-engineering-2026-10/delivery-s1-s2.md。下一步S3/A6.2→S4/A7→S5/A5，余8–12个集中开发日含回归余量，人工gold另计；完整A4/F1/F2/F5/F8、跨领域可信引用、A8/C0另估。
+
+
+> 最新交接：2026-10-03（S1/S2实验聊天闭环）。A0–A3、多领域实验已完成本地工程验收；当前先读 `planning/agent-engineering-2026-10/delivery-s1-s2.md` 与主规划。Runtime约束/a6-tool-runtime.md继续使用，但旧“A6先于A4”顺序已修订。M0/M1见研究文档§27.8，研究主线见§27；下方历史状态仅表示当时进度。
 
 ## 2026-10-03 聊天衔接意见与局部修复
 

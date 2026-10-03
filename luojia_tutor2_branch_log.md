@@ -2,7 +2,7 @@
 
 > 面向后续接手本分支的人（人或 AI）。读完这份再动 `app/knowledge/**`、`app/tutor/graph.py`、`app/api/routes_notes.py` 或 `results/**`。
 > 文中所有数字都由 `git log` / `pytest` / 真实教材实跑得出，不是从提交信息里抄的。
-> 最近更新：2026-09-29。
+> 本轮追加：2026-10-03；下方 §0 保留 2026-09-29 的历史坐标，最新进展见文末。
 
 ## 0. 分支坐标
 
@@ -399,3 +399,11 @@ README 旧“A3 尚未完成”已修正；本轮只改文档，A4–A8 未实�
 局部修复612e3a4：共享helper增加进行中章节自检；root-lab新运行/缓存重试/历史读取及伴读选区共用帮助检查。新增检查修复前6失败1通过；修复后针对72项，完整JSON/API589/Web45通过，日志results/chat-integration-review-tests.log。owner隔离、结束/交卷解锁与正常probe提交保留；无迁移/依赖/前端修改/分数与掌握度变化，旧材料与在途/外部帮助不宣称完全锁住。
 
 推荐日程变为A4.1当前Newton实验→A6.1/A4.2最小业务动作/卡片/内嵌聊天→A6.2计算工具/旧Python退役→A7→A5。剩余12–19个集中开发日含回归余量，单人每周约3日约4–7周、人工复核另计；全F1/F2/F5/F8和A8/C0另估。复用现有service/session/episode，不建第二Registry；预览暴露帮助也记事件并用于probe选题。chat-workspace-review.md、主规划、A6/Runtime和README同步，新交互A4–A8尚未实现；A3离线契约19/19、实例40/40通过，报告SHA=612e3a4且文档修改期间tracked_worktree_dirty=true。75个本地链接/锚点与UTF-8检查通过；最终提交/推送以本轮回执为准，未验证远端CI/部署。
+
+## 2026-10-03 S1/S2 实验聊天闭环
+
+用户授权S1/S2并要求更精致的界面。已实现Newton保存记录的LearningContextRef与服务端快照，owner/input_hash/runner_version/graph_revision/selected_step重验；最多11行/8KiB，参考讨论不写学生作答、mastery/BKT或独立成绩。桌面小珞侧栏、手机抽屉、指定步骤、刷新/会话映射恢复，以及参数编辑→预览→显式保存→同页更新已落地。卡片关联成功且可见的Guard通过消息/run，24小时过期，每卡3次预览，最多100次迭代；重验帮助边界、版本/哈希与最新预览，幂等保存。未保存的预览也记录help事件并从未见probe候选中排除。
+
+卡片由服务器固定映射组装，默认参数沿用原实验；未实现模型自主工具选择。本引用路径关闭生成Python执行和联网，其他旧Python路径待S3/A6.2退役。笔记/实验共享完整会话控制，主聊天共享ChatLifetime与MathMessage；锁在创建前取得，切换/卸载/退出拒绝旧回调，取消/失败/EOF不能留下可执行卡片，草稿按owner保留。没有新表/迁移/依赖，不改学生成绩规则。新字段用现有JSON，缺少历史预算显式标为legacy_default。
+
+完整离线JSON/API600/Web48、针对46项、A3契约19/19与实例40/40通过；TypeScript/build通过，lint0错误/10既有警告。隔离真实HTTP/编排/Guard/SQLite与固定模型响应验证桌面预览/脏参数锁定/保存回流/刷新/完整聊天步骤恢复、390px抽屉/草稿/取消/Escape与焦点恢复；真实模型与真人学习收益、远端CI/部署另验。截图与日志在ignored results/s1-s2-*。交付细节见planning/agent-engineering-2026-10/delivery-s1-s2.md。下一步S3/A6.2→S4/A7→S5/A5，余8–12个集中开发日含回归余量，人工gold另计；完整A4/F1/F2/F5/F8、跨领域可信引用、A8/C0另估。

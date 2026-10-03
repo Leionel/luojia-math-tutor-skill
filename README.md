@@ -150,7 +150,7 @@ flowchart LR
 
 ## 验证与评测
 
-截至 **2026-10-03**，本地代码交付验证为：知识 JSON 通过，**API 583 项、前端工具测试 45 项通过**；生产构建和类型检查通过，lint **0 错误、10 条原有警告**。隔离演示库完成学习任务、草稿/版本恢复、实验交互和手机布局检查。多领域实验及 A3 新回执见 [本轮交付](planning/agent-engineering-2026-10/delivery-a3-numerical.md)；此前详细回执见[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)与[实施记录](planning/learning-experience-2026-10/implementation-notes.md)。这是工程验证，不是教师验收或真人学习效果评测。
+截至 **2026-10-03**，本地代码交付验证为：知识 JSON 通过，**API 600 项、前端工具测试 48 项通过**；生产构建和类型检查通过，lint **0 错误、10 条原有警告**。隔离演示库完成学习任务、草稿/版本恢复、实验交互和手机布局检查。多领域实验及 A3 新回执见 [本轮交付](planning/agent-engineering-2026-10/delivery-a3-numerical.md)；此前详细回执见[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)与[实施记录](planning/learning-experience-2026-10/implementation-notes.md)。这是工程验证，不是教师验收或真人学习效果评测。
 
 Windows 根目录：
 
@@ -237,10 +237,10 @@ results/                        # 本地生成证据，不跟踪
 
 新模块支持预测、逐步回放、方法对照、保存参数复用、账户历史与数值答案核对，沿用现有 owner-scoped 学习记录，不新增数据库迁移或依赖。参考帮助不计入独立成绩，不执行学生程序；当前自检 / 独立 probe 未完成时，新模块的参考读取、运行与核对均被服务端阻止。
 
-积分反例 `sin(16*pi*x)^2` 的真实积分为 1/2，但均匀采样可能落在零点，因此“误差估计很小”和“与参考结果相符”不代表正确积分。可改分段数复核。实验问题可复制到聊天，这是用户提供的上下文；服务端可信任务快照 A4 尚未实现。F1/F4/F8 的专门任务、成绩和代码审阅仍以求根为主，不宣称全课程学习闭环完成。
+积分反例 `sin(16*pi*x)^2` 的真实积分为 1/2，但均匀采样可能落在零点，因此“误差估计很小”和“与参考结果相符”不代表正确积分。可改分段数复核。线性/积分实验问题目前仍复制到聊天，属于用户提供的上下文。已保存的 Newton 实验已接入服务端可信引用与实验内聊天。F1/F4/F8 的专门任务、成绩和代码审阅仍以求根为主，不宣称全课程学习闭环完成。
 
 本轮交付和后续路线见 [A3 与多领域数值实验回执](planning/agent-engineering-2026-10/delivery-a3-numerical.md)。
 
-后续先补产品衔接：A4.1 可信 Newton 实验上下文 → A6.1/A4.2 最小业务动作、卡片与内嵌聊天 → A6.2 计算工具/旧Python退役 → A7 调用计量 → A5 行为与质量评测。A8 持久恢复有条件启动；这些新交互仍是规划。详见 [聊天与工作区审阅 / 当前日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
+S1/A4.1 与 S2/A6.1/A4.2 已交付 Newton 单路径：实验内问小珞 → 服务端读取真实轨迹 → 用户编辑参数并预览 → 明确保存 → 同页更新。桌面侧栏、手机抽屉、版本检查、每卡三次预览与幂等保存已接入；卡片由服务器组装，尚未实现模型自主工具选择。完整交付与边界见 [S1/S2 回执](planning/agent-engineering-2026-10/delivery-s1-s2.md)。后续顺序：A6.2 计算工具/旧Python退役 → A7 调用计量 → A5 行为与质量评测；A8 持久恢复有条件启动。详见 [聊天与工作区审阅 / 当前日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
 
-本轮补齐章节自检期间共享帮助限制、求根实验缓存重试/历史读取及伴读解释检查。离线知识 JSON / API589 / Web45 通过；既有前端构建/界面证据见前述交付，本轮没有重跑前端构建或真实模型。已打开材料、旧聊天、外部帮助和在途请求不由本次入口检查完全收回。
+前一轮补齐章节自检期间共享帮助限制、求根实验缓存重试/历史读取及伴读解释检查，当时离线知识 JSON / API589 / Web45 通过，未重跑前端构建或真实模型。本轮 S1/S2 已另完成上述生产构建与浏览器验收。已打开材料、旧聊天、外部帮助和在途请求不由入口检查完全收回。

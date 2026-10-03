@@ -62,3 +62,13 @@
 - 投入：增加卡片/内嵌功能后剩余12–19日，每周约3日约4–7周，人工gold复核另计；全F1/F2/F5/F8和A8/C0另批估。A5对照基线改612e3a4，避免将此前帮助保护差异混入产品衔接收益。
 - 局部修复612e3a4：共享帮助helper原来只管probe；旧root-lab只检查新run、可缓存重试/历史绕过；伴读选区也有单独probe检查。6红/1绿复现，修复后针对72项、完整API589/Web45/JSON通过。保留题目、首次答案、独立成功/掌握度规则，无迁移/依赖/前端改动，不声称收回在途或外部帮助。
 - 新架构仍未实现；本轮只交付上述保护修复及chat-workspace-review.md、日程/README/交接。A3离线契约19/19、实例40/40通过，报告SHA=612e3a4且记录文档修改期间tracked_worktree_dirty=true；75个本地链接/锚点与UTF-8检查通过。日志ignored，最终提交/推送以本轮回执为准；未验证远端CI或部署。
+
+
+### 2026-10-03：S1/S2实现与边界
+
+- 已授权S1/S2，Newton可信引用→当前页聊天→用户参数编辑/预览→显式保存/同页更新已实现，见[交付回执](delivery-s1-s2.md)。
+- 复用既有LearningWorkspace/root_runner/session/run/Guard/learning_records，没有第二Registry、SDK、schema迁移或新增依赖。预览计help曝光与每卡三次预算，未见probe排除已接；不作为学生作答/BKT/独立成绩。
+- 卡片初值沿用原参数，由用户编辑；服务器枚举组装卡片，不宣称模型选择工具。只有成功可见且Guard通过的已提交消息可执行，旧卡片/删除/自检/版本变化重验。保存复用确定性request_id且检查最新预览。
+- 共享抽取以ChatLifetime/MathMessage为底层，NotebookChat与实验共享完整conversation hook/UI；主聊天专有的学习面板、笔记与作答逻辑保留，未宣称三个页面完全使用同一个完整controller。
+- 预算首批是快照8KiB/最多11行、历史和摘录字符上限及每卡3次/100迭代；全局token、真实usage/cost及span仍由A7验收。引用路径不执行模型Python，其他旧路径不因本批闭环完成而延期退役。
+- 本地600 API / 48 Web、A3契约19/19与实例40/40、类型/构建与隔离浏览器验收；模型质量、教学效果、远端CI/部署另验。源码提交eb02a22、7ecd77f；A3回执SHA=7ecd77f且文档收尾期间tracked_worktree_dirty=true。后续S3→S4→S5，8–12集中开发日含回归余量，人工复核另计。
