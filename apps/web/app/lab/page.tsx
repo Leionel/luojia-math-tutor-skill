@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
 import {finiteNumber, learningRequest, stableRequestId, type LabRun, type RootParameters} from "@/lib/learning-api";
 import {LabReflection} from "@/components/learning/lab-reflection";
+import {ExperimentNavigation} from "@/components/learning/experiment-navigation";
 import {LabPlayback} from "@/components/learning/lab-playback";
 
 export default function LabPage() {
@@ -54,6 +55,7 @@ export default function LabPage() {
   }catch(e){setError(e instanceof Error?e.message:"实验失败");}finally{setBusy(false);}};
   const preset=(value:string)=>{setPresetValue(value);setComparison("");if(value==="cycle"){setMethod("newton");setExpression("x^3-2*x+2");setInitial("0");setLeft("-2");setRight("0");setGoal("residual");}if(value==="root"){setMethod("newton");setExpression("x^2-2");setInitial("1");setLeft("1");setRight("2");setGoal("root_error");}if(value==="bisect"){setMethod("bisection");setExpression("x^2-2");setLeft("1");setRight("2");setGoal("root_error");}if(value==="fixed"){setMethod("fixed_point");setExpression("cos(x)-x");setPhi("cos(x)");setInitial("0.5");setLeft("0");setRight("1");setGoal("root_error");}};
   return <LearningShell title="让迭代过程看得见" description="先预测，再运行。改变初值、方法或阈值，对照轨迹与停止依据，最后回到自己的求根练习。">
+    <ExperimentNavigation active="root"/>
     <Notice error={error}/><div className="grid gap-8 lg:grid-cols-[minmax(280px,.8fr)_minmax(0,1.4fr)]">
       <section className={`${learningPanel} self-start`}><label htmlFor="preset" className="block mb-2 font-semibold">从典型现象开始</label><select id="preset" name="preset" value={presetValue} className={`${learningInput} mb-5`} onChange={e=>preset(e.target.value)}><option value="custom">自定义参数</option><option value="cycle">牛顿法：0 → 1 → 0 循环</option><option value="root">牛顿法：逼近 √2</option><option value="bisect">二分法：缩小有根区间</option><option value="fixed">不动点：cos(x) 迭代</option></select>
         <form className="space-y-4" onSubmit={e=>{e.preventDefault();submit();}}>

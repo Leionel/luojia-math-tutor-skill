@@ -18,8 +18,8 @@ export function LearningShell({title, description, children}: {title: string; de
         <div className="flex items-center gap-3"><Link href="/chat" className="text-base sm:text-sm text-olive-700 dark:text-olive-300">对话助教</Link><ThemeToggle /></div>
       </div>
       <nav aria-label="学习工作区" className="mx-auto grid max-w-6xl grid-cols-3 px-5 sm:flex sm:flex-wrap sm:gap-2 sm:px-8">
-        {[["/study", "今日学习"], ["/reading", "教材伴读"], ["/lab", "求根实验"], ["/assessment", "章节自检"], ["/teach-back", "讲给助教听"], ["/code-workshop", "代码作业"]].map(([href, label]) =>
-          <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} className={`shrink-0 border-b-2 px-1 py-3 text-center text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-olive-600 sm:px-3 sm:text-sm ${pathname === href ? "border-olive-600 font-semibold text-olive-700 dark:text-olive-300" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{label}</Link>)}
+        {[["/study", "今日学习"], ["/reading", "教材伴读"], ["/lab", "数值实验"], ["/assessment", "章节自检"], ["/teach-back", "讲给助教听"], ["/code-workshop", "代码作业"]].map(([href, label]) =>
+          <Link key={href} href={href} aria-current={(pathname === href || (href === "/lab" && pathname === "/numerical-lab")) ? "page" : undefined} className={`shrink-0 border-b-2 px-1 py-3 text-center text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-olive-600 sm:px-3 sm:text-sm ${(pathname === href || (href === "/lab" && pathname === "/numerical-lab")) ? "border-olive-600 font-semibold text-olive-700 dark:text-olive-300" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{label}</Link>)}
       </nav>
     </header>
     <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-12">

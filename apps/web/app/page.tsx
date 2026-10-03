@@ -14,7 +14,7 @@ const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outli
 const features = [
   {href:"/study", title:"今日学习", description:"安排 15 或 30 分钟，从到期复习到自己的求根过程。", icon:CalendarDays, detail:"任务与复习"},
   {href:"/reading", title:"教材伴读", description:"带着适用条件读课程摘录，把问题与原文来源一起保存。", icon:BookOpen, detail:"材料与笔记"},
-  {href:"/lab", title:"求根实验台", description:"比较二分、不动点与 Newton 迭代，核对停止依据。", icon:FlaskConical, detail:"参数与轨迹"},
+  {href:"/lab", title:"数值实验台", description:"从求根到线性方程组与积分，逐步观察并核对数值依据。", icon:FlaskConical, detail:"参数与轨迹"},
   {href:"/assessment", title:"章节自检", description:"用六道参考题检查条件理解，交卷后回看薄弱知识点。", icon:ClipboardCheck, detail:"参考评分与解析"},
   {href:"/teach-back", title:"讲给助教听", description:"用自己的话解释公式，逐项对照条件，再补充你的理解。", icon:MessageCircle, detail:"文字讲回首版"},
   {href:"/code-workshop", title:"数值代码作业", description:"审阅限定 Newton 作业，提交手动轨迹，比较修改前后。", icon:Code2, detail:"静态审阅 · 代码未执行"},
