@@ -194,3 +194,16 @@ success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提�
 用户明确授权分批提交并推送，按四个边界：后端学习与教学规则、学习工作区与品牌形象、登录体验、规划及交接记录。提交前重跑npm test：知识JSON/API469/Web40全部通过；最新auth-followup生产build与类型检查通过，lint0错误/10既有警告，diff check通过。git grep sk-检查仅发现说明文字/普通标识符/既有二进制匹配，新增源码/规划未检出匹配的凭证格式。既有egg-info、demo-jiuzhang-hybrid.html、style-explorer.html、ui-proposals、ignored results/数据库/env不纳入。
 
 首版后端包含learning_records表、课程持久库派生路径和tzdata依赖；COURSE_STORE_PATH显式优先，离线测试门控保留。当前分支feature/course-graph-2.0。远端fetch首次因GitHub443连接失败，当前remote-tracking ref不是实时远端证据；推送将在提交后单独尝试并报告，本文不提前宣称已推送。
+
+
+## 2026-10-03 Agent 可靠性修复与实习方向规划
+
+用户要求参考成熟 Agent 项目提升工程能力，目标岗位为 AI 应用 / Agent 工程；随后要求修完后先交规划，已确认可靠性与评测优先。本轮只实施 A0：模型 finish_reason / EOF / 空正文 / 缺配置等 typed failure，不发送假 done；不确定意图在 context 学习写入前确认，仍未确定先澄清；最终 intent 重新选择核验模式；数学工具用类型化结果和退出码判断成功，取消 / 超时 kill、通信回收并清理脚本；缓冲时间改名 generation_buffer_ms。未增加依赖、数据库表或放宽 AST / F8 学生代码执行边界。
+
+最终完整 npm.cmd test 退出 0：知识JSON/API501/Web40全部通过（API较上轮新增32项）；5条既有弃用/绘图警告。首轮两个旧API用例依赖缺配置文案当正常回复，已换显式离线成功fixture并补缺配置/无上下文澄清回归，生产未加fake。日志 results/agent-reliability-tests.log。diff check、规划链接及新增源码凭证格式扫描通过；前端源码未改，未重复build/lint。
+
+规划入口 planning/agent-engineering-2026-10/plan.md，配套 audit.md / implementation-notes.md：A1有界交付Guard → A2本地持久执行回执 → A3离线失败评测为首个里程碑；A4任务快照与可纠正记忆、A5真实模型评测及求职展示随后。参考 LangGraph、OpenAI Agents SDK、Dify、Letta 官方文档，不迁移框架。后续A1–A5尚未实施，先供用户评审；完整数学语义Guard、学生代码C0、教师gold/真人学习收益、远端CI/部署未验证，已有回归通过不代替独立benchmark或真实模型质量。
+
+限定聊天/服务端数学工具两surface的AX审查记录18检查、16唯一规则；12pass/1warn/1fail/4unknown，观测型缺真实交互保持unknown，未夸大整体发布验收。剩余缺口是正文/实际执行证据关联和记忆来源/纠正。六个月求根主线、独立probe帮助保护及原始事件/成绩权限不变。
+
+实现025ec54已推送feature/course-graph-2.0并核对远端SHA；规划与交接另批，最终推送以本轮回执为准。之前12255a5是新版海报/v1归档已推送状态。仅提交清单内内容，保留无关egg-info、三个Web原型目录/文件以及ignored结果、数据库和env。

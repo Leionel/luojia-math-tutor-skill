@@ -2723,3 +2723,16 @@ F1 反馈待确认时锁定输入和新提交，保留幂等重试；F2 原文�
 用户自行提供新版 PNG，并明确要求原海报改名为 v1poster。新附件原样接入根目录 LJ_Tutor_Poster.png；原图归档为 v1poster.png。两图实际1055×1491，SHA256分别为3803c9ed3683cc6dc3c03b0aa85c2c5371ef910531c55095c57e8ee1ceb3a8e4、5935f08d8171c0c8f1042dd0e1c481506ff2db955d42b8bdbabf8edc711e115b，均与各自原文件一致。README 展示新版、折叠保留第一版，poster-update-prompt.md 更新实际交付记录；未重新生图或修改 Logo/小珞素材。
 
 已核对六项功能、代码未执行标注、Newton 四个近似值与先越过再趋近的示意。海报为静态展示，不是生产运行或学习效果验收。文件哈希、文档链接和 diff check 通过；业务源码/配置/冻结数据未改。本轮离线 npm test：知识JSON/API469/Web40全部通过，日志 results/poster-asset-update-tests.log；提交/推送回执单独报告；只提交本轮图片及相关文档，保留既有无关原型/egg-info，未部署或重跑真实模型/教师/真人评测。上一节“未替换海报”是当时历史状态。
+
+
+## 2026-10-03 Agent 可靠性修复与实习方向规划
+
+用户要求参考成熟 Agent 项目提升工程能力，目标岗位为 AI 应用 / Agent 工程；随后要求修完后先交规划，已确认可靠性与评测优先。本轮只实施 A0：模型 finish_reason / EOF / 空正文 / 缺配置等 typed failure，不发送假 done；不确定意图在 context 学习写入前确认，仍未确定先澄清；最终 intent 重新选择核验模式；数学工具用类型化结果和退出码判断成功，取消 / 超时 kill、通信回收并清理脚本；缓冲时间改名 generation_buffer_ms。未增加依赖、数据库表或放宽 AST / F8 学生代码执行边界。
+
+最终完整 npm.cmd test 退出 0：知识JSON/API501/Web40全部通过（API较上轮新增32项）；5条既有弃用/绘图警告。首轮两个旧API用例依赖缺配置文案当正常回复，已换显式离线成功fixture并补缺配置/无上下文澄清回归，生产未加fake。日志 results/agent-reliability-tests.log。diff check、规划链接及新增源码凭证格式扫描通过；前端源码未改，未重复build/lint。
+
+规划入口 planning/agent-engineering-2026-10/plan.md，配套 audit.md / implementation-notes.md：A1有界交付Guard → A2本地持久执行回执 → A3离线失败评测为首个里程碑；A4任务快照与可纠正记忆、A5真实模型评测及求职展示随后。参考 LangGraph、OpenAI Agents SDK、Dify、Letta 官方文档，不迁移框架。后续A1–A5尚未实施，先供用户评审；完整数学语义Guard、学生代码C0、教师gold/真人学习收益、远端CI/部署未验证，已有回归通过不代替独立benchmark或真实模型质量。
+
+限定聊天/服务端数学工具两surface的AX审查记录18检查、16唯一规则；12pass/1warn/1fail/4unknown，观测型缺真实交互保持unknown，未夸大整体发布验收。剩余缺口是正文/实际执行证据关联和记忆来源/纠正。六个月求根主线、独立probe帮助保护及原始事件/成绩权限不变。
+
+实现025ec54已推送feature/course-graph-2.0并核对远端SHA；规划与交接另批，最终推送以本轮回执为准。之前12255a5是新版海报/v1归档已推送状态。仅提交清单内内容，保留无关egg-info、三个Web原型目录/文件以及ignored结果、数据库和env。
