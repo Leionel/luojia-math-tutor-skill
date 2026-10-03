@@ -59,23 +59,25 @@ _SYMBOLIC_MARKERS = (
 )
 
 
-def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
-    intent_decision = route_intent_decision(message, mode)
-    intent = intent_decision.intent
-    detected_subject = detect_subject(message, subject) or subject
-
-    factual = is_external_fact_question(message)
-    if factual:
-        intent = Intent.CONCEPT
-        verification_mode = VerificationMode.NONE
-    elif any(marker in message.lower() for marker in _PROOF_MARKERS):
-        verification_mode = VerificationMode.LLM
+def verification_mode_for(message: str, intent: Intent) -> VerificationMode:
+    """Use the same verification policy after either routing path."""
+    if is_external_fact_question(message):
+        return VerificationMode.NONE
+    if intent is Intent.PROOF_HINT or any(marker in message.lower() for marker in _PROOF_MARKERS):
+        return VerificationMode.LLM
     elif intent is Intent.CHECK_STUDENT_STEP and any(
         marker in message for marker in _SYMBOLIC_MARKERS
     ):
-        verification_mode = VerificationMode.SYMBOLIC
-    else:
-        verification_mode = VerificationMode.NONE
+        return VerificationMode.SYMBOLIC
+    return VerificationMode.NONE
+
+
+def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
+    intent_decision = route_intent_decision(message, mode)
+    detected_subject = detect_subject(message, subject) or subject
+    factual = is_external_fact_question(message)
+    intent = Intent.CONCEPT if factual else intent_decision.intent
+    verification_mode = verification_mode_for(message, intent)
 
     return FastRoute(
         intent=intent,
@@ -89,6 +91,8 @@ def route_fast_path(message: str, mode: str, subject: str) -> FastRoute:
 
 
 def generate_opening(route: FastRoute) -> str:
+    if route.requires_policy_fallback:
+        return "我先结合上下文确认你想完成的任务。"
     openings = {
         Intent.CONCEPT: "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。",
         Intent.SOLVE_STEP_BY_STEP: "我们先确定题型和第一步可用的规则，再继续推进。",

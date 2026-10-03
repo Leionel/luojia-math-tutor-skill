@@ -1,3 +1,4 @@
+from app.agents.tool_result import ToolExecutionResult
 """Offline contracts for teaching policy, evidence, validation and vision pause."""
 import json
 from unittest.mock import AsyncMock
@@ -96,7 +97,7 @@ def test_completed_review_can_find_error_without_saying_passed():
 
 @pytest.mark.asyncio
 async def test_failed_tool_execution_cannot_satisfy_verification_gate(monkeypatch):
-    monkeypatch.setattr("app.tutor.graph.execute_python_code", AsyncMock(return_value="Error: dependency unavailable"))
+    monkeypatch.setattr("app.tutor.graph.execute_python_result", AsyncMock(return_value=ToolExecutionResult("unavailable", stderr="dependency unavailable", error_code="tool_dependency_missing")))
     workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```\n[OUTPUT]draft",
                                        "[OUTPUT]推导说明"]))
     result = await workflow._stream_generation(_state(), None, [{"role": "user", "content": "q"}],
@@ -222,7 +223,7 @@ def test_persona_is_named_but_does_not_claim_human_identity():
 
 @pytest.mark.asyncio
 async def test_successful_unrelated_tool_is_not_presented_as_mathematical_proof(monkeypatch):
-    monkeypatch.setattr("app.tutor.graph.execute_python_code", AsyncMock(return_value="2"))
+    monkeypatch.setattr("app.tutor.graph.execute_python_result", AsyncMock(return_value=ToolExecutionResult("succeeded", stdout="2", exit_code=0)))
     workflow = _workflow_with(FakeLLM(["[VERIFY]\n```python\nprint(2)\n```", "[OUTPUT]一个未经独立核对的结论"]))
     result = await workflow._stream_generation(_state(), None, [{"role":"user","content":"q"}],default_route="teacher",require_verification=True)
     assert result["metrics"]["tool_validation_scope"] == "execution_only"

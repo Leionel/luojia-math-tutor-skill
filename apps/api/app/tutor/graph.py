@@ -10,11 +10,12 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph as CompiledGraph
 
 from app.config import Settings
-from app.agents.code_executor import execute_python_code
+from app.agents.code_executor import execute_python_result
 from app.agents.multimodal import normalize_image_reference
 from app.agents.vision_agent import VisionParser
 from app.knowledge.search import search_knowledge_semantic
 from app.llm.openai_compatible import OpenAICompatibleClient
+from app.llm.completion_protocol import ModelCompletionError
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
@@ -23,6 +24,7 @@ from app.tutor.fast_path import (
     VerificationMode,
     learning_objective_for_intent,
     route_fast_path,
+    verification_mode_for,
 )
 from app.tutor.intent_router import Intent
 from app.tutor.policy_router import PolicyRouter
@@ -64,6 +66,7 @@ class AgentState(TypedDict, total=False):
     web_search: bool
     reasoning_effort: str
     awaiting_vision_confirmation: bool
+    awaiting_intent_clarification: bool
     tool_evidence: list[dict[str, Any]]
     message: str
     session_id: str
@@ -115,8 +118,6 @@ def _needs_llm_verifier(state: AgentState) -> bool:
 
 
 def route_after_context(state: AgentState) -> str:
-    if state.get("requires_policy_fallback"):
-        return "policy_fallback"
     if state.get("intent") == Intent.PROOF_HINT:
         return "verifier"
     if state.get("pedagogical_action") == "generate_exercise":
@@ -127,13 +128,7 @@ def route_after_context(state: AgentState) -> str:
 
 
 def route_after_policy(state: AgentState) -> str:
-    if state.get("intent") == Intent.PROOF_HINT:
-        return "verifier"
-    if state.get("pedagogical_action") == "generate_exercise":
-        return "examiner"
-    if _needs_llm_verifier(state):
-        return "verifier"
-    return "teacher"
+    return "stop" if state.get("awaiting_intent_clarification") else "fast_context"
 
 
 class TutorWorkflow:
@@ -192,14 +187,13 @@ class TutorWorkflow:
         workflow.add_edge("root_diagnostic", END)
         workflow.add_conditional_edges(
             "vision_parse",
-            lambda state: "stop" if state.get("awaiting_vision_confirmation") else "continue",
-            {"stop": END, "continue": "fast_context"},
+            lambda state: "stop" if state.get("awaiting_vision_confirmation") else "policy" if state.get("requires_policy_fallback") else "continue",
+            {"stop": END, "policy": "policy_fallback", "continue": "fast_context"},
         )
         workflow.add_conditional_edges(
             "fast_context",
             route_after_context,
             {
-                "policy_fallback": "policy_fallback",
                 "verifier": "verifier",
                 "teacher": "teacher",
                 "examiner": "examiner",
@@ -210,10 +204,8 @@ class TutorWorkflow:
             "policy_fallback",
             route_after_policy,
             {
-                "verifier": "verifier",
-                "teacher": "teacher",
-                "examiner": "examiner",
-                "proof_tutor": "proof_tutor",
+                "stop": END,
+                "fast_context": "fast_context",
             },
         )
         workflow.add_conditional_edges(
@@ -567,12 +559,14 @@ class TutorWorkflow:
         config: RunnableConfig,
     ) -> dict:
         started = time.perf_counter()
+        # Resolve intent before the context collector can write learning events.
+        history = await asyncio.to_thread(self.repository.list_messages, state["session_id"])
         decision = await self.policy_router.decide_route(
             state["message"],
             state["intent"],
             state.get("user_api_key"),
             state.get("model"),
-            history=self._history_from_messages(state.get("messages", []), state["message"]),
+            history=[item for item in history if item.get("role") in {"user", "assistant"}],
         )
         action = decision.action
         metrics = dict(state.get("metrics", {}))
@@ -586,34 +580,21 @@ class TutorWorkflow:
         metrics["route"] = f"policy_{action.value}"
         metrics["policy_confidence"] = decision.confidence
         metrics["policy_uncertain"] = decision.uncertain
-        decided_state = {
-            **state,
+        if decision.uncertain:
+            clarification = "你想让我讲解概念、检查当前步骤，还是出一道练习？请补充题目或你卡住的那一步，我再继续。"
+            on_token = self._callback(config, "on_token")
+            if on_token:
+                await on_token(sse("message", {"content": clarification}))
+            return {"awaiting_intent_clarification": True, "final_output": clarification,
+                    "requires_policy_fallback": False, "confidence": decision.confidence,
+                    "metrics": {**metrics, "route": "intent_clarification"}}
+        return {
             "intent": decision.intent,
             "learning_objective": learning_objective_for_intent(decision.intent),
             "pedagogical_action": action.value,
+            "verification_mode": verification_mode_for(state["message"], decision.intent).value,
+            "confidence": decision.confidence,
             "requires_policy_fallback": False,
-        }
-        messages = self._build_base_messages(
-            decided_state,
-            self._history_from_messages(
-                state.get("messages", []),
-                state["message"],
-            ),
-            state.get("hits", []),
-            state.get("document_chunks", []),
-            state["verifier_result"],
-            state.get("mistake"),
-            state.get("mastery_score", 0.5),
-            state.get("hint_level", 0),
-            action.value,
-            evidence_pack=state.get("evidence_pack"),
-        )
-        return {
-            "intent": decision.intent,
-            "pedagogical_action": action.value,
-            "learning_objective": decided_state["learning_objective"],
-            "requires_policy_fallback": False,
-            "messages": messages,
             "metrics": metrics,
         }
 
@@ -774,12 +755,11 @@ class TutorWorkflow:
 
                 results = []
                 for code in code_blocks[:1]:
-                    result = await execute_python_code(
+                    result = await execute_python_result(
                         code,
                         timeout=self.settings.tool_timeout_seconds,
                     )
-                    success = bool(result.strip()) and "Error:" not in result and "no output" not in result
-                    record = {"code": code, "result": result, "execution_succeeded": success}
+                    record = {"code": code, "result": result.to_legacy_text(), **result.to_dict()}
                     results.append(record)
                     tool_evidence.append(record)
                 prompt = [
@@ -800,8 +780,10 @@ class TutorWorkflow:
             # Observable verification outcome: a required-but-missing sandbox
             # run, or an upstream verifier failure, is surfaced to the student
             # instead of silently flowing into the final answer.
+            if not response_text.strip():
+                raise ModelCompletionError("model_empty_output")
             upstream_failure = (state.get("verification_result") or {}).get("verified") is False
-            usable_tools = [item for item in tool_evidence if item["execution_succeeded"]]
+            usable_tools = [item for item in tool_evidence if item["execution_succeeded"] and item["has_output"]]
             if (require_verification and not usable_tools) or (tool_evidence and not usable_tools):
                 response_text = (
                     "⚠️ 本轮未能完成符号验算，以下内容未经确定性验证，请仔细核对。\n\n"
@@ -823,7 +805,7 @@ class TutorWorkflow:
 
             metrics["sandbox_tool_calls"] = len(tool_evidence)
             metrics["sandbox_successful_calls"] = len(usable_tools)
-            metrics["teacher_first_token_ms"] = round(
+            metrics["generation_buffer_ms"] = round(
                 (time.perf_counter() - started) * 1000,
                 2,
             )

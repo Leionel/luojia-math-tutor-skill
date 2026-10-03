@@ -9,6 +9,7 @@ from app.config import Settings
 from app.search.policy import decide_search
 from app.search.web_search import search_status_text
 from app.llm.openai_compatible import OpenAICompatibleClient
+from app.llm.completion_protocol import ModelCompletionError
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
@@ -38,6 +39,8 @@ class TutorOrchestrator:
 
     @staticmethod
     def _build_plan_progress(state: dict) -> str:
+        if state.get("requires_policy_fallback"):
+            return "[PLAN]\n正在结合会话历史确认任务；确认前不评估掌握度。"
         learning_objective = state.get("learning_objective") or ""
         pedagogical_action = state.get("pedagogical_action") or ""
         action_descriptions = {
@@ -314,7 +317,7 @@ class TutorOrchestrator:
                 "symbolic_verify_ms": 0.0,
                 "policy_fallback_ms": 0.0,
                 "verifier_ms": 0.0,
-                "teacher_first_token_ms": 0.0,
+                "generation_buffer_ms": 0.0,
                 "vision_parse_ms": 0.0,
                 "sandbox_tool_calls": 0,
                 "total_ms": 0.0,
@@ -394,7 +397,10 @@ class TutorOrchestrator:
                 exc_info=True,
             )
             code, message, recoverable = "generation_failed", "本轮生成暂时失败，请稍后重试。", True
-            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (401, 403):
+            if isinstance(exc, ModelCompletionError):
+                code, message = exc.code, str(exc)
+                recoverable = code != "model_not_configured"
+            elif isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (401, 403):
                 code, message, recoverable = "model_auth_failed", "模型服务鉴权失败，请核对所选模型、接口地址与 API Key。", False
             elif isinstance(exc, (httpx.TimeoutException, asyncio.TimeoutError)):
                 code, message = "model_timeout", "模型响应超时，本轮未生成完整回答；可降低运思强度后重试。"
@@ -421,8 +427,10 @@ class TutorOrchestrator:
 
         # Build thinking summary and calculate elapsed_ms
         awaiting_vision = final_state.get("awaiting_vision_confirmation", False)
-        thinking_summary = "图片核对阶段，本轮未开始解题或评估掌握度。" if awaiting_vision else self._build_thinking_summary(final_state)
-        if awaiting_vision:
+        awaiting_intent = final_state.get("awaiting_intent_clarification", False)
+        awaiting_input = awaiting_vision or awaiting_intent
+        thinking_summary = "任务待澄清，本轮未开始解题或评估掌握度。" if awaiting_intent else "图片核对阶段，本轮未开始解题或评估掌握度。" if awaiting_vision else self._build_thinking_summary(final_state)
+        if awaiting_input:
             await asyncio.to_thread(self.repository.ensure_user, user_id)
             await asyncio.to_thread(self.repository.add_message, session_id, "user", message)
         if first_token_time is not None:
@@ -445,7 +453,7 @@ class TutorOrchestrator:
         explicit_concepts = extract_explicit_concepts(
             f"{message}\n{visible_output}"
         )
-        if explicit_concepts and not awaiting_vision:
+        if explicit_concepts and not awaiting_input:
             final_state = {
                 **final_state,
                 "concepts": explicit_concepts,
@@ -468,6 +476,13 @@ class TutorOrchestrator:
                              "concept_items": [], "awaiting_confirmation": True,
                              "vision_draft": draft, "verification_kind": "none",
                              "mistake": None, "verifier_summary": "图片核对阶段，尚未开始解题"}
+        if awaiting_intent:
+            learning_meta = {"intent": "intent_clarification", "subject": subject,
+                             "verified": False, "is_correct": None, "concepts": [],
+                             "concept_items": [], "awaiting_intent_clarification": True,
+                             "verification_kind": "none", "mastery_delta": 0,
+                             "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
+                             "route": "intent_clarification"}
         intent = learning_meta["intent"]
         message_id = await asyncio.to_thread(
             self.repository.add_message,
@@ -486,7 +501,7 @@ class TutorOrchestrator:
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None and not awaiting_vision and not search.factual and not root_submission:
+        if workflow_owner is not None and not awaiting_input and not search.factual and not root_submission:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

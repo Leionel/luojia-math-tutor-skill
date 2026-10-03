@@ -6,6 +6,7 @@ from typing import Any, AsyncIterator
 import httpx
 
 from app.config import Settings, PROVIDER_BASE_URLS, configured_model_catalog
+from app.llm.completion_protocol import ModelCompletionError, validate_finish_reason
 
 logger = logging.getLogger(__name__)
 
@@ -126,14 +127,7 @@ class OpenAICompatibleClient:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
         base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
-            yield {
-                "type": "content",
-                "content": (
-                    "⚠️ 当前服务未配置模型 API Key，因此没有生成数学解答。"
-                    "请由管理员设置 LLM_API_KEY 后重试。"
-                ),
-            }
-            return
+            raise ModelCompletionError("model_not_configured")
 
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = self.build_request_payload(
@@ -146,25 +140,51 @@ class OpenAICompatibleClient:
         )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         client = self.get_http_client()
+        terminal = False
+        has_content = False
         async with client.stream("POST", url, json=payload, headers=headers, timeout=60.0) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
-                if not line.startswith("data: "):
+                if not line.startswith("data:"):
                     continue
-                data = line.removeprefix("data: ").strip()
+                data = line.removeprefix("data:").strip()
                 if data == "[DONE]":
+                    terminal = True
                     break
                 try:
                     chunk = json.loads(data)
-                    delta = chunk["choices"][0].get("delta", {})
-                    content = delta.get("content")
-                    reasoning_content = delta.get("reasoning_content")
-                    if reasoning_content:
-                        yield {"type": "reasoning", "content": reasoning_content}
-                    if content:
-                        yield {"type": "content", "content": content}
-                except Exception:
+                except (ValueError, TypeError) as exc:
+                    raise ModelCompletionError("model_response_invalid") from exc
+                if not isinstance(chunk, dict):
+                    raise ModelCompletionError("model_response_invalid")
+                if chunk.get("error"):
+                    # Never copy a vendor error payload (which can contain credentials).
+                    raise ModelCompletionError("model_provider_error")
+                choices = chunk.get("choices")
+                if choices == [] and "usage" in chunk:
                     continue
+                if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                    raise ModelCompletionError("model_response_invalid")
+                choice = choices[0]
+                terminal = validate_finish_reason(choice.get("finish_reason")) or terminal
+                delta = choice.get("delta", {})
+                if not isinstance(delta, dict):
+                    raise ModelCompletionError("model_response_invalid")
+                content = delta.get("content")
+                reasoning_content = delta.get("reasoning_content")
+                if reasoning_content:
+                    if not isinstance(reasoning_content, str):
+                        raise ModelCompletionError("model_response_invalid")
+                    yield {"type": "reasoning", "content": reasoning_content}
+                if content:
+                    if not isinstance(content, str):
+                        raise ModelCompletionError("model_response_invalid")
+                    has_content = has_content or bool(content.strip())
+                    yield {"type": "content", "content": content}
+        if not terminal:
+            raise ModelCompletionError("model_stream_incomplete")
+        if not has_content:
+            raise ModelCompletionError("model_empty_output")
 
     async def chat_completion(
         self,
@@ -177,9 +197,7 @@ class OpenAICompatibleClient:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
         base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
-            raise RuntimeError(
-                "未配置模型 API Key。请在服务端设置 LLM_API_KEY。"
-            )
+            raise ModelCompletionError("model_not_configured")
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = self.build_request_payload(
             model=model,
@@ -194,8 +212,23 @@ class OpenAICompatibleClient:
             client = self.get_http_client()
             response = await client.post(url, json=payload, headers=headers, timeout=60.0)
             response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"].strip()
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ModelCompletionError("model_response_invalid") from exc
+            if not isinstance(data, dict):
+                raise ModelCompletionError("model_response_invalid")
+            if data.get("error"):
+                raise ModelCompletionError("model_provider_error")
+            try:
+                choice = data["choices"][0]
+                validate_finish_reason(choice.get("finish_reason"))
+                content = choice["message"]["content"]
+            except (KeyError, IndexError, TypeError, AttributeError) as exc:
+                raise ModelCompletionError("model_response_invalid") from exc
+            if not isinstance(content, str) or not content.strip():
+                raise ModelCompletionError("model_empty_output")
+            return content.strip()
         except Exception as e:
             logger.error("chat_completion failed: %s", e)
             raise

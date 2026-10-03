@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.agents.tool_result import ToolExecutionResult
 from app.config import get_settings
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
@@ -10,7 +11,8 @@ from app.tutor.graph import (
     TutorWorkflow,
     route_after_context,
 )
-from app.tutor.policy_router import PedagogicalAction
+from app.tutor.policy_router import PedagogicalAction, PolicyDecision
+from app.tutor.intent_router import Intent
 
 
 def make_repository() -> MagicMock:
@@ -201,8 +203,8 @@ async def test_complex_proof_is_reviewed_before_tutoring():
 @pytest.mark.asyncio
 async def test_policy_fallback_does_not_duplicate_user_prompt():
     workflow = TutorWorkflow(get_settings(), make_repository())
-    workflow.policy_router.decide_action = AsyncMock(
-        return_value=PedagogicalAction.EXPLAIN
+    workflow.policy_router.decide_route = AsyncMock(
+        return_value=PolicyDecision(Intent.CONCEPT, PedagogicalAction.EXPLAIN, 0.9, False)
     )
     captured_prompt = []
 
@@ -225,6 +227,57 @@ async def test_policy_fallback_does_not_duplicate_user_prompt():
     ]
     assert len(repeated) == 1
     assert final_state["metrics"]["llm_call_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_uncertain_policy_stops_before_learning_writes_or_generation():
+    repository = make_repository()
+    workflow = TutorWorkflow(get_settings(), repository)
+    workflow.policy_router.decide_route = AsyncMock(return_value=PolicyDecision(
+        Intent.SOLVE_STEP_BY_STEP, PedagogicalAction.HINT, 0.2, True))
+    workflow.context_collector.collect = AsyncMock(side_effect=AssertionError("must not collect"))
+    workflow.llm.stream = MagicMock(side_effect=AssertionError("must not generate"))
+    state = make_state("？")
+    final = await workflow.workflow.ainvoke(state, config=make_config())
+    assert final["awaiting_intent_clarification"]
+    assert final["metrics"]["route"] == "intent_clarification"
+    assert final["mastery_delta"] == 0
+    workflow.context_collector.collect.assert_not_awaited()
+    repository.add_attempt.assert_not_called()
+    repository.upsert_mastery.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("intent,action,verification", [
+    (Intent.CHECK_STUDENT_STEP, PedagogicalAction.ASK_QUESTION, "symbolic"),
+    (Intent.PROOF_HINT, PedagogicalAction.PROVIDE_HINT, "llm"),
+])
+async def test_resolved_policy_recomputes_verification_before_context(intent, action, verification):
+    repository = make_repository()
+    repository.list_messages.return_value = [{"role": "user", "content": "请检查下一步"}]
+    workflow = TutorWorkflow(get_settings(), repository)
+    workflow.policy_router.decide_route = AsyncMock(return_value=PolicyDecision(intent, action, 0.9, False))
+    workflow.context_collector.collect = AsyncMock(side_effect=RuntimeError("context reached"))
+    state = make_state("x = 2")
+    state.update(requires_policy_fallback=True, verification_mode="none")
+    with pytest.raises(RuntimeError, match="context reached"):
+        await workflow.workflow.ainvoke(state, config=make_config())
+    resolved = workflow.context_collector.collect.call_args.args[0]
+    assert resolved["intent"] is intent and resolved["verification_mode"] == verification
+    assert not resolved["requires_policy_fallback"]
+    assert workflow.policy_router.decide_route.call_args.kwargs["history"] == repository.list_messages.return_value
+
+
+@pytest.mark.asyncio
+async def test_protocol_only_draft_is_not_delivered_as_an_answer():
+    from app.llm.completion_protocol import ModelCompletionError
+    workflow = TutorWorkflow(get_settings(), make_repository())
+    install_fake_stream(workflow, "[PLAN] 我会继续考虑。")
+    config = make_config()
+    with pytest.raises(ModelCompletionError) as error:
+        await workflow.workflow.ainvoke(make_state("什么是导数？"), config=config)
+    assert error.value.code == "model_empty_output"
+    config["configurable"]["on_token"].assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -261,8 +314,8 @@ async def test_teacher_executes_requested_verification_before_showing_output(mon
     async def fake_stream(messages, api_key=None, model=None, **kwargs):
         yield {"type": "content", "content": next(responses)}
 
-    execute = AsyncMock(return_value="Output:\n4")
-    monkeypatch.setattr("app.tutor.graph.execute_python_code", execute)
+    execute = AsyncMock(return_value=ToolExecutionResult("succeeded", stdout="4", exit_code=0))
+    monkeypatch.setattr("app.tutor.graph.execute_python_result", execute)
     workflow.llm.stream = fake_stream
     state = make_state("请核对 2+2")
     state["messages"] = [{"role": "system", "content": "skill"}, {"role": "user", "content": state["message"]}]
