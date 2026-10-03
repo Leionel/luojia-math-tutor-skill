@@ -383,3 +383,11 @@ A3 全量复验：知识 JSON、API 563 / Web 43 均通过（results/a3-full-tes
 A3 已实现，终止门控 / Guard 两次临时破坏均被 CLI 检出，源码已恢复。线性方程组（Jacobi / Gauss–Seidel）及积分（梯形 / Simpson / 自适应 Simpson）共用 numerical-lab-v1 请求 / 结果与既有 owner 学习记录，入口 /numerical-lab。支持预测、步进 / 播放、方法对照、历史 / 参数复用、数值核对；source hash 与幂等请求 ID，自检 / probe 未完成时阻止参考读取、运行及核对。无新依赖 / 迁移 / 学生代码执行 / 独立成绩更新。积分估计不是严格界，sin(16*pi*x)^2 提供采样遗漏反例。聊天入口仍是复制用户上下文，A4 可信任务快照与 A5 真实模型评测未完成。交付细节见 planning/agent-engineering-2026-10/delivery-a3-numerical.md。
 
 最终全量：知识 JSON、API 583 / Web 45；生产 build / typecheck 通过，lint 0 错误 / 10 既有警告。新实验计入首页实验记录总数，保留 owner 隔离；无数学掌握度写入。隔离浏览器完成迭代 / 积分 / 参数复用 / 刷新 / 390px 与反例分段对照；截图 results/numerical-lab-desktop.jpg 不提交，演示 DB 与服务均保持隔离。
+
+### 2026-10-03 Runtime 意见审阅与排期（仅文档）
+
+用户要求完成此前开发后审阅外部 Runtime 意见并加入日程。以当前 150553b 核对，来稿 ee373ae 早于多领域实验：A3 已交付；类型化实验尚未成为 Agent 工具/可信聊天快照。采纳工具 Runtime、上下文预算/来源、真实 usage/span 与分层评测；持久恢复不当作普通问答的无条件 P0，checkpoint 不能替代 owner/幂等或保证恰好一次写入。
+
+推荐 A6 类型化工具/受限符号操作/旧模型 Python 路径退役 → A4 实验快照 → A7 调用计量/必要能力 → A5 E1/E2 与可选真实 E3。A8 单路径暂停恢复 PoC 条件启动，C0/MCP/dashboard 另行评估。剩余11–17个集中开发日含回归余量，每周约3日为4–6周，人工复核另计，A8 PoC后重估集成。日程、验收、预算、停止/回滚见 planning/agent-engineering-2026-10/runtime-review-schedule.md；首批可执行切片见 a6-tool-runtime.md，主规划与 Deviations 同步。
+
+README 旧“A3 尚未完成”已修正；本轮只改文档，A4–A8 未实施，无模型调用/数据库迁移/生产部署。提交前完整npm.cmd test：知识JSON/API583/Web45通过（results/runtime-planning-tests.log）；65个本地文档链接/锚点、UTF-8、范围和diff check通过。前端源码未改，未重复build/lint；提交/推送以本轮最终回执为准，保留既有无关原型/egg-info/ignored results/env/数据库。

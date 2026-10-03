@@ -146,7 +146,7 @@ flowchart LR
 
 每轮生成 UUID 执行记录，保存有限公共步骤和终态，回答与终态在同一 SQLite 事务中提交。聊天旁可折叠回看过程；浏览器停止生成会触发服务端图任务与工具清理，刷新可恢复取消 / 中断记录。过期运行只标记 interrupted，不自动重放。缺少 provider usage 时保存 null，不推算成本。
 
-新增 schema migration 6，已有部署启用前应使用 SQLite backup API 备份实际数据库；代码回滚保留新表。设计、回归和限制见 [A0–A2 交付回执](planning/agent-engineering-2026-10/delivery-a0-a2.md)，后续见 [Agent 工程规划](planning/agent-engineering-2026-10/plan.md)。独立评测 CLI（A3）和真实模型质量对照（A5）尚未完成。
+新增 schema migration 6，已有部署启用前应使用 SQLite backup API 备份实际数据库；代码回滚保留新表。设计、回归和限制见 [A0–A2 交付回执](planning/agent-engineering-2026-10/delivery-a0-a2.md)，后续见 [Agent 工程规划](planning/agent-engineering-2026-10/plan.md)。A3 离线协议评测 CLI 已完成，冻结 19 个合同 / 40 个实例；真实模型质量对照（A5）尚未完成，协议通过率不代表模型正确率。
 
 ## 验证与评测
 
@@ -240,3 +240,5 @@ results/                        # 本地生成证据，不跟踪
 积分反例 `sin(16*pi*x)^2` 的真实积分为 1/2，但均匀采样可能落在零点，因此“误差估计很小”和“与参考结果相符”不代表正确积分。可改分段数复核。实验问题可复制到聊天，这是用户提供的上下文；服务端可信任务快照 A4 尚未实现。F1/F4/F8 的专门任务、成绩和代码审阅仍以求根为主，不宣称全课程学习闭环完成。
 
 本轮交付和后续路线见 [A3 与多领域数值实验回执](planning/agent-engineering-2026-10/delivery-a3-numerical.md)。
+
+Agent Runtime 后续规划已审阅并合并：A6 类型化工具 → A4 可信实验上下文 → A7 调用追踪 / 用量 → A5 行为与质量评测；持久暂停恢复 A8 有条件启动。详见 [意见审阅与日程](planning/agent-engineering-2026-10/runtime-review-schedule.md)及 [A6 首批切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。这些能力目前仍是规划。

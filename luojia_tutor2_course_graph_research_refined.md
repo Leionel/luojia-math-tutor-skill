@@ -2758,3 +2758,13 @@ A3 全量复验：知识 JSON、API 563 / Web 43 均通过（results/a3-full-tes
 A3 已实现，终止门控 / Guard 两次临时破坏均被 CLI 检出，源码已恢复。线性方程组（Jacobi / Gauss–Seidel）及积分（梯形 / Simpson / 自适应 Simpson）共用 numerical-lab-v1 请求 / 结果与既有 owner 学习记录，入口 /numerical-lab。支持预测、步进 / 播放、方法对照、历史 / 参数复用、数值核对；source hash 与幂等请求 ID，自检 / probe 未完成时阻止参考读取、运行及核对。无新依赖 / 迁移 / 学生代码执行 / 独立成绩更新。积分估计不是严格界，sin(16*pi*x)^2 提供采样遗漏反例。聊天入口仍是复制用户上下文，A4 可信任务快照与 A5 真实模型评测未完成。交付细节见 planning/agent-engineering-2026-10/delivery-a3-numerical.md。
 
 最终全量：知识 JSON、API 583 / Web 45；生产 build / typecheck 通过，lint 0 错误 / 10 既有警告。新实验计入首页实验记录总数，保留 owner 隔离；无数学掌握度写入。隔离浏览器完成迭代 / 积分 / 参数复用 / 刷新 / 390px 与反例分段对照；截图 results/numerical-lab-desktop.jpg 不提交，演示 DB 与服务均保持隔离。
+
+### 2026-10-03 Runtime 意见审阅与六个月主线衔接
+
+以当前150553b审阅用户提供的意见（其代码基线ee373ae），确认模型生成Python文本协议、usage丢弃、无图checkpoint为实际缺口；新线性/积分实验已交付但尚未形成可信实验聊天快照。意见不是实现授权，本轮只更新规划/README与交接，不实施A4–A8。
+
+推荐 A6 工具类型/权限/预算/计算证据 → A4 可信实验快照与统一上下文预算 → A7 span/真实用量/必要模型能力 → A5 E1/E2/可选真实E3，原A4/A5编号保留。A8单路径持久暂停恢复PoC有条件启动，不叠加会话/学习事实权威；interrupt恢复会重执行节点，需崩溃注入、owner、过期和重复恢复幂等验证。C0学生程序执行仍独立验收。
+
+主线11–17个集中开发日含回归余量，单人每周约3日为4–6周；人工数学gold复核另计，收费批量受预算/Key/价格与用量条件约束。S1工具、S2跨领域讨论可分阶段展示。E0合同通过、E1工具行为、E2数学教学质量和E3模型辅助任务完成分别报告，均不替代教师gold、学生无AI独立测验与延迟保持效果；数值参考/积分误差估计不抬升独立成绩。
+
+详见planning/agent-engineering-2026-10/runtime-review-schedule.md、a6-tool-runtime.md与主规划第7节；README“A3尚未完成”已修正，代码/配置/研究冻结材料不变。本轮提交前完整npm.cmd test：知识JSON/API583/Web45通过，日志results/runtime-planning-tests.log；65个本地文档链接/锚点、UTF-8、范围和diff check通过。仅文档变更，未重复build/lint；提交/推送以最终回执为准，无新增真实模型/教学收益/远端CI/部署证据。

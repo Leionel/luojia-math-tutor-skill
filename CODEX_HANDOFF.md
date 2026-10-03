@@ -1,6 +1,14 @@
 # CODEX 交接文档
 
-> 最新交接：2026-10-03（用户新版海报接入、v1 归档）。写给要接手本仓库的 Codex。M0/M1 最新实测见研究文档 §27.8 与 `COURSE_GRAPH_M0_M1.md`；诊断/研究主线见 §27，新增功能规划见 §28 与下方入口；本文下方按日期保留历史工作记录。
+> 最新交接：2026-10-03（Agent Runtime 意见审阅与后续排期）。写给要接手本仓库的 Codex。A0–A3 与多领域实验已完成本地工程验收；最新规划先读 `planning/agent-engineering-2026-10/runtime-review-schedule.md` 与 `a6-tool-runtime.md`。M0/M1 最新实测见研究文档 §27.8 与 `COURSE_GRAPH_M0_M1.md`；诊断/研究主线见 §27；下方历史状态仅表示当时进度。
+
+## 2026-10-03 Runtime 审阅与日程合并（仅文档）
+
+用户要求此前开发完成后审阅所贴 Agent Runtime 意见并加入日程。审阅基线 `150553b`，来稿基于更早的 `ee373ae`。当前 A3 协议 CLI 和线性/积分实验已交付；无可信实验聊天快照、原生工具调用、真实 usage/span 或图 checkpoint。README“A3 尚未完成”旧句本轮修正。
+
+推荐剩余顺序 A6 类型化工具 → A4 实验快照/预算/来源 → A7 span/usage/必要 capability → A5 E1/E2 与可选真实 E3。保持已有 A4/A5 编号；A8 仅在恢复需求成立后做单路径持久暂停 PoC，学生代码 C0/MCP/专门 dashboard 另行评估。计划 11–17 个集中开发日含回归余量，单人每周约3日为4–6周；人工复核另计，无固定截止日。A6 首批一条既有 numerical.run 垂直路径，再受限符号工具/旧模型 Python 路径退役；schema/timeout 不等于数学证明或 OS 强隔离。
+
+本轮仅规划、README 与交接修订，未实施 A4–A8、调用真实模型或迁移数据库。详见上述两文档与 `implementation-notes.md` 的 Deviations。提交前完整 npm.cmd test：知识 JSON / API583 / Web45 通过，日志 results/runtime-planning-tests.log；65个本地文档链接/锚点、UTF-8与变更范围检查通过，diff check通过。前端源码未改，未重复build/lint；提交/推送以本轮最终回执为准，远端 CI/部署/教学效果无新增证据。保留现有无关原型/egg-info/ignored results、env 和数据库。
 
 ## 2026-10-03 新版海报接入与 v1 归档
 

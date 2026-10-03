@@ -41,3 +41,15 @@
 最终本地离线 API559 / Web43 / 知识JSON、typecheck、lint（0 error / 10 现存 warning）、build 通过；浏览器桌面与390px、修复 / 拦截 / 断连取消 / 刷新历史 / 键盘 / 48px 摘要检查通过。运行日志 ignored。A3–A5 未实施；没有真实模型或教学效果 / 部署 / 远端 CI 验收。
 
 本轮代码提交：A1 `5197ddf`；A2 `f7c865a`。文档回执另批提交；远端分支以最终推送核对为准。
+
+## Deviations
+
+### 2026-10-03：审阅 Runtime 意见并修订后续日程
+
+- 原计划：A3 后直接 A4 → A5；持久恢复仅作为延后项。
+- 当前证据：基线 `150553b` 已交付 A3 与线性/积分实验，来稿基于更早的 `ee373ae`；实验还未接入 Agent。模型生成 Python 仍经 `[VERIFY]` 抽取，usage-only chunk 被忽略，现有持久记录是回执而非 checkpoint。
+- 选择：A6 类型化工具与威胁收缩先行；A4 合并可信实验快照、预算与来源；A7 最小 span/usage/capability 后供 A5 E1/E2/E3 对照。A8 单路径恢复 PoC 有条件启动，C0/MCP/专门 dashboard 仍独立评估。
+- 细化范围：先一条已有数值计算贯通图/Guard/run，再受限符号工具和旧代码路径退役；不要求一次建全功能 registry 或换 SDK。A4 首批不等于 F1/F2/F8 和推断记忆全部完成。
+- 投入修订：剩余 11–17 个集中开发日含 2–3 日回归余量；按每周 3 日约 4–6 周，真实人工复核另计；A8 PoC 1–2 日后重估集成，不计入主线。不是固定截止日或五小时额度内完成承诺。
+- 交付：`runtime-review-schedule.md`、`a6-tool-runtime.md`，主规划 / README / 三份项目记忆同步。修正 README 的“A3 尚未完成”旧句。本轮无运行时代码、数据库或模型调用变更。
+- 验证：完整 npm.cmd test 知识JSON/API583/Web45通过，日志 results/runtime-planning-tests.log；65个本地文档链接/锚点、UTF-8、范围和diff check通过。没有重复前端build/lint、真实模型/持久恢复PoC、远端CI或部署验收；提交/推送以本轮最终回执为准。
