@@ -96,7 +96,7 @@ class LearningWorkspace:
                            "practice": sum(t["state"] == "assisted_complete" for t in tasks),
                            "independent": sum(t["state"] == "verified_complete" for t in tasks),
                            "notes": len(self.store.learning_records(owner, self.course_id, "reading_note")),
-                           "labs": len(self.store.learning_records(owner, self.course_id, "lab")),
+                           "labs": len(self.store.learning_records(owner, self.course_id, "lab")) + len(self.store.learning_records(owner, self.course_id, "numerical_lab")),
                            "teach_backs": len(self.store.learning_records(owner, self.course_id, "teach_back")),
                            "code_submissions": len(self.store.learning_records(owner, self.course_id, "code_submission"))},
                 "active_assessment": {"id": active["id"], "answered": len(active["answers"]), "total": len(active["questions"])} if active else None,
