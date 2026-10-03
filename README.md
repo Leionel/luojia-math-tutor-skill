@@ -220,3 +220,7 @@ results/                        # 本地生成证据，不跟踪
 ## 许可证
 
 核心代码、脚本及 Skill 配置采用 [MIT License](LICENSE)。教材文件和引用材料遵循各自的授权范围；仓库代码许可证不自动授予教材内容的使用权限。
+
+### 离线 Agent 可靠性评测
+
+运行 `python scripts/eval_agent_reliability.py`，结果保存为 `results/agent-reliability.json`（不跟踪）。版本化 19 个协议合同、40 个参数化实例覆盖生成异常、工具清理、交付 Guard、数据库原子性和 owner 隔离。报告保留分子 / 分母、Git SHA、案例与源码哈希；这是离线 fixture 协议评测，不是模型准确率。CI 同步执行并上传报告。

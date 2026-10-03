@@ -20,6 +20,13 @@ jobs:
         run: python -m pytest -q
         env:
           LUOJIA_NO_DOTENV: '1'
+      - name: Offline Agent reliability contracts
+        run: python scripts/eval_agent_reliability.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-reliability
+          path: results/agent-reliability.json
 
   knowledge-data:
     runs-on: ubuntu-latest
