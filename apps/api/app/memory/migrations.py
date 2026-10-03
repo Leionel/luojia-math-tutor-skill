@@ -118,12 +118,29 @@ def _migration_005_document_chunk_bigram_index(conn: sqlite3.Connection) -> None
         )
 
 
+def _migration_006_agent_runs(conn: sqlite3.Connection) -> None:
+    # execute (not executescript) preserves the caller's transaction/rollback.
+    if not conn.in_transaction:
+        conn.execute("begin")
+    conn.execute("""create table agent_runs (
+        id text primary key, session_id text not null references sessions(id) on delete cascade,
+        user_id text not null, message_id text references messages(id) on delete set null,
+        parent_run_id text references agent_runs(id) on delete set null,
+        model_alias text, hidden integer not null default 0,
+        status text not null check(status in ('running','succeeded','clarification','failed','cancelled','interrupted')),
+        seq integer not null default 0, steps text not null default '[]', truncated integer not null default 0,
+        prompt_version text not null, guard_version text not null,
+        created_at text not null, updated_at text not null)""")
+    conn.execute("create index agent_runs_owner_session on agent_runs(user_id,session_id,created_at)")
+
+
 MIGRATIONS: tuple[tuple[int, str, Callable[[sqlite3.Connection], None]], ...] = (
     (1, "message_metadata", _migration_001_message_metadata),
     (2, "auth_credentials", _migration_002_auth_credentials),
     (3, "shared_runtime_state", _migration_003_shared_runtime_state),
     (4, "document_markdown", _migration_004_document_markdown),
     (5, "document_chunk_bigram_index", _migration_005_document_chunk_bigram_index),
+    (6, "agent_runs", _migration_006_agent_runs),
 )
 
 

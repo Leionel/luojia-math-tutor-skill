@@ -167,8 +167,12 @@ class TutorWorkflow:
             raise
         await asyncio.to_thread(self.repository.ensure_user, state["user_id"])
         await asyncio.to_thread(self.repository.add_message, state["session_id"], "user", state["message"])
-        output = feedback_text(report)
-        delivery = check_root_contract(report, output)
+        try:
+            output = feedback_text(report)
+            delivery = check_root_contract(report, output)
+        except Exception:
+            await asyncio.to_thread(service.delivery_interrupted, state["user_id"], state["session_id"], report["episode_id"], submission.attempt_id)
+            raise
         on_token = self._callback(config, "on_token")
         if on_token:
             await on_token(sse("message", {"content": output}))
@@ -177,16 +181,43 @@ class TutorWorkflow:
                 "requires_policy_fallback": False, "concepts": report["unit_ids"],
                 "hint_level": report["help_level"], "metrics": {**state.get("metrics", {}), "route": "root_diagnostic"}}
 
+    def _traced_node(self, node, phase):
+        async def traced(state, config):
+            if phase == "vision" and not state.get("image_urls"):
+                return await node(state,config)
+            callback = self._callback(config,"on_run_event")
+            started = time.perf_counter()
+            if callback:
+                await callback(phase,"started")
+            try:
+                result = await node(state,config)
+            except asyncio.CancelledError:
+                if callback:
+                    await callback(phase,"cancelled",duration_ms=(time.perf_counter()-started)*1000)
+                raise
+            except Exception as exc:
+                if callback:
+                    await callback(phase,"failed",duration_ms=(time.perf_counter()-started)*1000,
+                                   error_code=exc.code if isinstance(exc,(ModelCompletionError,AnswerDeliveryError)) else "workflow_failed")
+                raise
+            if callback:
+                status = "clarification" if result.get("awaiting_intent_clarification") or result.get("awaiting_vision_confirmation") else "succeeded"
+                if phase == "review" and (result.get("verification_result") or {}).get("verified") is False:
+                    status = "degraded"
+                await callback(phase,status,duration_ms=(time.perf_counter()-started)*1000)
+            return result
+        return traced
+
     def build_tutor_graph(self) -> CompiledGraph:
         workflow = StateGraph(AgentState)
-        workflow.add_node("root_diagnostic", self.root_diagnostic_node)
-        workflow.add_node("vision_parse", self.vision_parse_node)
-        workflow.add_node("fast_context", self.fast_context_node)
-        workflow.add_node("policy_fallback", self.policy_fallback_node)
-        workflow.add_node("verifier", self.verifier_node)
-        workflow.add_node("teacher", self.teacher_node)
-        workflow.add_node("examiner", self.examiner_node)
-        workflow.add_node("proof_tutor", self.proof_tutor_node)
+        workflow.add_node("root_diagnostic", self._traced_node(self.root_diagnostic_node,"review"))
+        workflow.add_node("vision_parse", self._traced_node(self.vision_parse_node,"vision"))
+        workflow.add_node("fast_context", self._traced_node(self.fast_context_node,"context"))
+        workflow.add_node("policy_fallback", self._traced_node(self.policy_fallback_node,"routing"))
+        workflow.add_node("verifier", self._traced_node(self.verifier_node,"review"))
+        workflow.add_node("teacher", self._traced_node(self.teacher_node,"generation"))
+        workflow.add_node("examiner", self._traced_node(self.examiner_node,"generation"))
+        workflow.add_node("proof_tutor", self._traced_node(self.proof_tutor_node,"generation"))
 
         workflow.add_conditional_edges(START, lambda state: "root" if state.get("root_submission") else "normal", {"root": "root_diagnostic", "normal": "vision_parse"})
         workflow.add_edge("root_diagnostic", END)
@@ -717,7 +748,10 @@ class TutorWorkflow:
 
         try:
             max_rounds = max(0, min(self.settings.tool_max_rounds, 2))
+            run_event = self._callback(config,"on_run_event")
             for tool_round in range(max_rounds + 1):
+                if run_event:
+                    await run_event("model","started",round=tool_round)
                 candidate = await self._collect_model_response(
                     prompt,
                     state.get("user_api_key"),
@@ -725,6 +759,8 @@ class TutorWorkflow:
                     effort=state.get("reasoning_effort", "medium"),
                     enable_search=False,
                 )
+                if run_event:
+                    await run_event("model","succeeded",round=tool_round)
                 metrics["llm_call_count"] = (
                     int(metrics.get("llm_call_count", 0)) + 1
                 )
@@ -760,10 +796,14 @@ class TutorWorkflow:
 
                 results = []
                 for code in code_blocks[:1]:
+                    if run_event:
+                        await run_event("tool","started",round=tool_round)
                     result = await execute_python_result(
                         code,
                         timeout=self.settings.tool_timeout_seconds,
                     )
+                    if run_event:
+                        await run_event("tool","succeeded" if result.execution_succeeded else "degraded",round=tool_round,duration_ms=result.duration_ms,error_code=result.error_code)
                     record = {"code": code, "result": result.to_legacy_text(), **result.to_dict()}
                     results.append(record)
                     tool_evidence.append(record)
@@ -789,7 +829,17 @@ class TutorWorkflow:
                 raise ModelCompletionError("model_empty_output")
             upstream_failure = (state.get("verification_result") or {}).get("verified") is False
             usable_tools = [item for item in tool_evidence if item["execution_succeeded"] and item["has_output"]]
-            response_text, delivery = await self._guard_answer(response_text, prompt, state, bool(usable_tools), metrics)
+            if run_event:
+                await run_event("guard","started")
+            try:
+                response_text, delivery = await self._guard_answer(response_text, prompt, state,
+                    any(item["execution_succeeded"] for item in tool_evidence), metrics)
+            except AnswerDeliveryError:
+                if run_event:
+                    await run_event("guard","failed")
+                raise
+            if run_event:
+                await run_event("guard","succeeded" if delivery["status"] in ("passed","repaired") else "degraded")
             if (require_verification and not usable_tools) or (tool_evidence and not usable_tools):
                 response_text = (
                     "⚠️ 本轮未能完成符号验算，以下内容未经确定性验证，请仔细核对。\n\n"

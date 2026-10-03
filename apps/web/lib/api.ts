@@ -1,3 +1,4 @@
+import { parseAgentRun, type AgentRun } from "./agent-run";
 import { readTutorEvents } from "./tutor-stream";
 import { getAuthHeaders, getCurrentUserId } from "./demo-auth";
 
@@ -34,6 +35,7 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  agent_run?: AgentRun;
   answer_guard?: import("./delivery-guard").DeliveryGuard;
   teaching_mode?: TutorMode;
   root_diagnosis?: RootDiagnosis;
@@ -250,8 +252,15 @@ export async function testModel(userApiKey: string | null, model?: string) {
   return res.json() as Promise<{ ok: boolean; message: string }>;
 }
 
+export async function getAgentRun(sessionId:string,runId:string) {
+  const response=await fetch(`${API_BASE}/api/sessions/${encodeURIComponent(sessionId)}/runs/${encodeURIComponent(runId)}`,{headers:headers(),signal:AbortSignal.timeout(1500)});
+  if (!response.ok) return undefined;
+  return parseAgentRun(await response.json());
+}
+
 export async function streamTutor(
   payload: {
+    parent_run_id?: string;
     root_submission?: RootSubmission;
     session_id: string;
     message: string;
@@ -271,7 +280,8 @@ export async function streamTutor(
   onThinkingChain?: (chain: string) => void,
   onOpening?: (content: string) => void,
   onThinkingEnd?: (data: { summary: string; elapsedMs: number }) => void,
-  onVisionConfirmation?: (draft: string) => void
+  onVisionConfirmation?: (draft: string) => void,
+  onRun?: (run: AgentRun) => void
 ) {
   const { abortSignal, user_api_key: userApiKey, ...restPayload } = payload;
   const res = await fetch(`${API_BASE}/api/tutor/stream`, {
@@ -284,6 +294,7 @@ export async function streamTutor(
 
   let thinkingChain = "";
   await readTutorEvents(res.body.getReader(), (event, data) => {
+    if (event === "run_event") { const run=parseAgentRun(data); if (run) onRun?.(run); }
     if (event === "meta" || event === "meta_update") onMeta(data as TutorMeta);
     if (event === "error" && data.learning_meta && typeof data.learning_meta === "object") onMeta(data.learning_meta as TutorMeta);
     if (event === "opening") {

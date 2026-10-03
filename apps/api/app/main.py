@@ -38,6 +38,7 @@ async def lifespan(_app: FastAPI):
     settings = get_settings()
     settings.validate_runtime()
     orchestrator = get_orchestrator()
+    await asyncio.to_thread(orchestrator.repository.recover_stale_agent_runs)
     await orchestrator.workflow_owner.start_background_worker()
     try:
         yield

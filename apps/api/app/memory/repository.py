@@ -12,6 +12,7 @@ from app.config import Settings
 from app.knowledge.concepts import extract_explicit_concepts
 from app.knowledge.schema import KnowledgeHit, KnowledgeItem
 from app.memory.migrations import apply_migrations
+from app.memory.agent_runs import AgentRunRepository
 from app.memory.models import new_id, now_iso
 from app.memory.text_index import cjk_bigram_text, cjk_query_groups
 
@@ -22,7 +23,7 @@ def _sqlite_path(database_url: str) -> Path:
     raise ValueError("MVP only supports sqlite:/// database URLs")
 
 
-class Repository:
+class Repository(AgentRunRepository):
     def __init__(self, settings: Settings):
         self.db_path = _sqlite_path(settings.database_url)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -206,10 +207,17 @@ class Repository:
         thinking_summary: str | None = None,
         thinking_elapsed_ms: int | None = None,
         learning_meta: dict[str, Any] | None = None,
+        *,
+        agent_run_finish: dict | None = None,
     ) -> str:
         message_id = new_id("msg")
         ts = now_iso()
         with self.connect() as conn:
+            if agent_run_finish:
+                run_id, owner, status = (agent_run_finish[key] for key in ("run_id", "user_id", "status"))
+                row = conn.execute("select session_id from agent_runs where id=? and user_id=? and status='running'", (run_id, owner)).fetchone()
+                if row is None or row[0] != session_id:
+                    raise ValueError("execution already terminal or unavailable")
             conn.execute(
                 """
                 insert into messages(
@@ -235,6 +243,8 @@ class Repository:
                 ),
             )
             conn.execute("update sessions set updated_at = ? where id = ?", (ts, session_id))
+            if agent_run_finish and not self._finish_agent_run(conn,run_id,owner,status,message_id):
+                raise ValueError("execution terminal conflict")
         return message_id
 
     def list_messages(self, session_id: str) -> list[dict[str, Any]]:
@@ -358,14 +368,20 @@ class Repository:
 
     def truncate_messages_after(self, session_id: str, message_id: str) -> None:
         with self.connect() as conn:
+            # A retry must not resurrect a receipt whose answer was truncated.
+            conn.execute("""update agent_runs set hidden=1 where session_id=? and (created_at >= (
+                         select created_at from messages where id=? and session_id=?) or message_id in (
+                         select id from messages where session_id=? and created_at >= (
+                         select created_at from messages where id=? and session_id=?)))""",
+                         (session_id,message_id,session_id,session_id,message_id,session_id))
             conn.execute(
                 """
                 delete from messages
                 where session_id = ? and created_at >= (
-                  select created_at from messages where id = ?
+                  select created_at from messages where id = ? and session_id = ?
                 )
                 """,
-                (session_id, message_id),
+                (session_id, message_id, session_id),
             )
 
     def add_attempt(

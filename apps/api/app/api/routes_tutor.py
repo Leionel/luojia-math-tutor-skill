@@ -1,8 +1,8 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict
-from starlette.responses import StreamingResponse
+from pydantic import BaseModel, ConfigDict, Field
+from app.api.tutor_streaming import TutorStreamingResponse
 
 from app.auth import (
     Principal,
@@ -23,6 +23,7 @@ router = APIRouter(prefix="/api/tutor", tags=["tutor"])
 class TutorStreamRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     root_submission: RootSubmission | None = None
+    parent_run_id: str | None = Field(default=None,pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$")
     session_id: str
     user_id: str = "demo-user"
     message: str
@@ -57,7 +58,7 @@ async def stream_tutor(
         except (ValueError, TypeError):
             raise HTTPException(status_code=422, detail="求根数据格式无效，请核对 root-attempt JSON。")
     ensure_reference_help_allowed(user_id, submission.episode_id if submission else None)
-    return StreamingResponse(
+    return TutorStreamingResponse(
         orchestrator.stream_reply(
             session_id=payload.session_id,
             user_id=user_id,
@@ -72,6 +73,7 @@ async def stream_tutor(
             web_search_mode=payload.web_search_mode,
             reasoning_effort=payload.reasoning_effort,
             root_submission=submission.model_dump(mode="json") if submission else None,
+            parent_run_id=payload.parent_run_id,
         ),
         media_type="text/event-stream",
     )

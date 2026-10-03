@@ -123,3 +123,45 @@ def test_guard_metadata_does_not_assert_mathematical_correctness():
     state["answer_guard"] = guard_report("passed")
     meta = TutorOrchestrator._build_learning_meta(state)
     assert not meta["verified"] and meta["is_correct"] is None
+
+
+@pytest.mark.asyncio
+async def test_repair_tool_request_is_withheld_without_executing(monkeypatch):
+    workflow = TutorWorkflow(get_settings(),make_repository())
+    async def stream(*args,**kwargs):
+        yield {"type":"content","content":"[VERIFY]\n```python\nprint(2)\n```\n[OUTPUT]\n提示"}
+    workflow.llm.stream=stream
+    tool=AsyncMock()
+    monkeypatch.setattr("app.tutor.graph.execute_python_result",tool)
+    with pytest.raises(AnswerDeliveryError):
+        await workflow._guard_answer("我已运行你的代码。",[],make_state("什么是导数"),False,{})
+    tool.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_disabled_guard_is_unavailable_and_empty_completion_gate_survives():
+    from app.llm.completion_protocol import ModelCompletionError
+    workflow=TutorWorkflow(get_settings().model_copy(update={"answer_guard_enabled":False}),make_repository())
+    _, report=await workflow._guard_answer("文字",[],make_state("什么是导数"),False,{})
+    assert not report["enabled"] and report["status"]=="unavailable"
+    async def empty(*args,**kwargs):
+        yield {"type":"content","content":""}
+    workflow.llm.stream=empty
+    with pytest.raises(ModelCompletionError):
+        await workflow.workflow.ainvoke(make_state("什么是导数"),config=make_config())
+
+
+@pytest.mark.asyncio
+async def test_success_without_stdout_is_execution_evidence_but_not_math_evidence(monkeypatch):
+    from app.agents.tool_result import ToolExecutionResult
+    workflow=TutorWorkflow(get_settings(),make_repository())
+    responses=iter(["[VERIFY]\n```python\npass\n```\n[OUTPUT]\n核对中", "已执行代码，本次没有输出。"])
+    async def stream(*args,**kwargs):
+        yield {"type":"content","content":next(responses)}
+    workflow.llm.stream=stream
+    monkeypatch.setattr("app.tutor.graph.execute_python_result",AsyncMock(return_value=ToolExecutionResult("succeeded",exit_code=0)))
+    result=await workflow.workflow.ainvoke(make_state("什么是导数？"),config=make_config())
+    assert result["answer_guard"]["status"]=="passed"
+    assert result["metrics"]["llm_call_count"]==2
+    assert result["metrics"]["sandbox_successful_calls"]==0
+    assert "未经确定性验证" in result["final_output"]

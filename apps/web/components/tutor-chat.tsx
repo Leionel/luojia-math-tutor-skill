@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode, RootSubmission, RootDiagnosis } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
+import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
@@ -100,6 +101,16 @@ const MAX_WIDTH = 600;
 const DEFAULT_SIDEBAR_WIDTH = 260;
 const DEFAULT_LEARNING_WIDTH = 320;
 
+function ResizeHandle({target,className="",onStart}:{target:string;className?:string;onStart:(target:string)=>void}) {
+  return <div
+    className={`group relative z-10 w-1.5 cursor-col-resize transition-colors hover:bg-olive-400/50 active:bg-olive-500/70 ${className}`}
+    onMouseDown={event=>{event.preventDefault();onStart(target);}}
+  >
+    <div className="absolute inset-y-0 -left-2 -right-2" />
+    <div className="absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-[var(--border-primary)] opacity-0 transition-opacity group-hover:opacity-100" />
+  </div>;
+}
+
 export function TutorChat() {
   const [sessions, setSessions] = useState<Array<{ id: string; title: string; subject: string; user_id: string; created_at: string; updated_at: string }>>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -130,6 +141,7 @@ export function TutorChat() {
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const activeRunRef = useRef<AgentRun | undefined>(undefined);
 
   const [webSearch, setWebSearch] = useState<WebSearchMode>("auto");
   useEffect(() => {
@@ -358,7 +370,7 @@ export function TutorChat() {
     }
   }
 
-  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission) {
+  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission, parentRunId?:string) {
     setVisionDraft(null);
     let activeSession = sessionId;
     if (!activeSession) {
@@ -377,6 +389,7 @@ export function TutorChat() {
     setMeta(null);
     setThinkingChains({});
     setThinkingElapsed(0);
+    activeRunRef.current = undefined;
     abortControllerRef.current = new AbortController();
 
     try {
@@ -391,6 +404,7 @@ export function TutorChat() {
       await streamTutor(
         {
           root_submission: rootSubmission,
+          parent_run_id:parentRunId,
           session_id: activeSession,
           message: value,
           subject: "auto",
@@ -405,7 +419,7 @@ export function TutorChat() {
         },
         (nextMeta) => {
           setMeta(nextMeta);
-          setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, learningMeta: nextMeta } : message));
+          setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, learningMeta: {...nextMeta,agent_run:mergeAgentRun(message.learningMeta?.agent_run,nextMeta.agent_run)} } : message));
         },
         (token) => {
           setMessages((current) =>
@@ -449,7 +463,10 @@ export function TutorChat() {
             return next;
           });
         },
-        (draft) => setVisionDraft(draft)
+        (draft) => setVisionDraft(draft),
+        (run) => { activeRunRef.current=run; setMessages(current=>current.map(message=>message.id===assistantId ? {
+          ...message, learningMeta:{...(message.learningMeta || {intent:"pending",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮进行中"}),agent_run:mergeAgentRun(message.learningMeta?.agent_run,run)}
+        }:message)); }
       );
       const [refreshedSessions, refreshedMistakes] = await Promise.all([
         listSessions().catch(() => sessions),
@@ -457,15 +474,32 @@ export function TutorChat() {
       ]);
       setSessions(refreshedSessions);
       setMistakes(refreshedMistakes);
+      const history = await listMessages(activeSession);
+      setMessages(mapServerMessages(history));
     } catch (error) {
+      const cancelled = abortControllerRef.current?.signal.aborted || (error instanceof Error && error.name === "AbortError");
+      const failureText = cancelled ? "已停止生成，本轮没有收到完整回答。" : error instanceof Error ? error.message : "未知错误";
       setMessages((current) =>
         current.map((message) =>
           message.id === assistantId
-            ? { ...message, content: `${message.content}\n\n本轮未完成：${error instanceof Error ? error.message : "未知错误"}`, learningMeta: {...message.learningMeta,intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:message.learningMeta?.error || {code:"stream_failed",message:error instanceof Error ? error.message : "未知错误"}} }
+            ? { ...message, content: `${message.content}\n\n本轮未完成：${failureText}`, learningMeta: {...message.learningMeta,intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:message.learningMeta?.error || {code:cancelled ? "client_cancelled" : "stream_failed",message:failureText}} }
             : message
         )
       );
     } finally {
+      const run = activeRunRef.current as AgentRun | undefined;
+      if (run?.status === "running") {
+        let saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
+        if (saved?.status === "running") {
+          // The disconnect listener may still be draining owned work. One
+          // bounded recheck keeps the UI honest without waiting indefinitely.
+          await new Promise(resolve=>setTimeout(resolve,150));
+          saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
+        }
+        if (saved) setMessages(current=>current.map(message=>message.id===assistantId && message.learningMeta ? {
+          ...message, learningMeta:{...message.learningMeta,agent_run:mergeAgentRun(message.learningMeta.agent_run,saved)}
+        }:message));
+      }
       setThinkingChains(current => { const next = {...current}; delete next[assistantId]; return next; });
       setIsStreaming(false);
       setMessages((current) =>
@@ -537,19 +571,6 @@ export function TutorChat() {
     document.addEventListener("fullscreenchange", handleFSChange);
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
-
-  const ResizeHandle = ({ target, className = "" }: { target: string; className?: string }) => (
-    <div
-      className={`group relative z-10 w-1.5 cursor-col-resize transition-colors hover:bg-blue-400/50 active:bg-blue-500/70 ${className}`}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        setIsResizing(target);
-      }}
-    >
-      <div className="absolute inset-y-0 -left-2 -right-2" />
-      <div className="absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
-    </div>
-  );
 
   const rightPanelContent = <>
             <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
@@ -720,7 +741,7 @@ export function TutorChat() {
             </button>
           </div>
         )}
-        {!isZenMode && !isSidebarCollapsed && <ResizeHandle target="sidebar" className="hidden lg:block" />}
+        {!isZenMode && !isSidebarCollapsed && <ResizeHandle onStart={setIsResizing} target="sidebar" className="hidden lg:block" />}
 
         {!isZenMode && isSidebarCollapsed && (
           <button
@@ -755,6 +776,7 @@ export function TutorChat() {
                     thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
                     webSearchReport={message.learningMeta?.web_search}
                     answerGuard={message.learningMeta?.answer_guard}
+                    agentRun={message.learningMeta?.agent_run}
                     isIncomplete={!!message.learningMeta?.error}
                     rootDiagnosis={message.learningMeta?.root_diagnosis}
                     sessionId={sessionId || ""}
@@ -782,7 +804,7 @@ export function TutorChat() {
                         const msgs = await listMessages(sessionId);
                         setMessages(mapServerMessages(msgs));
                         setMeta(latestLearningMeta(msgs));
-                        void submit(prevUserMsg.content);
+                        void submit(prevUserMsg.content,undefined,false,undefined,undefined,message.learningMeta?.agent_run?.run_id);
                       }
                     } : undefined}
                     onSimilar={() => {
@@ -873,7 +895,7 @@ export function TutorChat() {
           </div>
         </main>
 
-        {!isZenMode && !isLearningCollapsed && <ResizeHandle target="learning" className="hidden xl:block" />}
+        {!isZenMode && !isLearningCollapsed && <ResizeHandle onStart={setIsResizing} target="learning" className="hidden xl:block" />}
         {!isZenMode && !isLearningCollapsed && (
           <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
             {rightPanelContent}

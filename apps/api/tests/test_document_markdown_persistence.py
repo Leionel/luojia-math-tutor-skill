@@ -88,4 +88,4 @@ def test_migrations_are_registered_in_order():
     versions = [version for version, _, _ in MIGRATIONS]
     assert versions == sorted(versions)
     assert len(set(versions)) == len(versions)
-    assert versions[-1] == 5
+    assert versions[-1] == 6

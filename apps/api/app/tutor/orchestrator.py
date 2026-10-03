@@ -18,6 +18,7 @@ from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
 from app.tutor.prompt_policy import load_teaching_prompt
 from app.tutor.answer_guard import AnswerDeliveryError
+from app.tutor.run_trace import durable_call
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +230,57 @@ class TutorOrchestrator:
             "answer_guard": state.get("answer_guard"),
         }
 
-    async def stream_reply(
+    async def stream_reply(self, session_id: str, user_id: str, message: str,
+                           subject: str = "auto", mode: str = "socratic",
+                           user_api_key: str | None = None, model: str | None = None,
+                           requested_hint: bool = False, image_urls: list[str] | None = None,
+                           web_search: bool = False, web_search_mode: str = "auto",
+                           reasoning_effort: str = "medium", root_submission: dict | None = None,
+                           parent_run_id: str | None = None) -> AsyncIterator[str]:
+        from app.tutor.run_trace import RunTrace
+        trace = RunTrace(self.repository, session_id, user_id,parent_run_id,
+                         model or getattr(getattr(self,"settings",None),"llm_model",None))
+        inner = self._stream_reply(session_id,user_id,message,subject,mode,user_api_key,model,
+                                   requested_hint,image_urls,web_search,web_search_mode,reasoning_effort,root_submission,trace)
+        heartbeat = None
+        interrupted = False
+        try:
+            # Preserve immediate opening and do not start work if it is never consumed.
+            yield await anext(inner)
+            await trace.start()
+            await trace.step("routing","succeeded")
+            heartbeat = asyncio.create_task(trace.heartbeat())
+            yield await anext(inner)
+            yield sse("run_event", trace.snapshot())
+            async for event in inner:
+                if heartbeat.done():
+                    await heartbeat  # observability storage failure must not fake success
+                yield event
+        except (asyncio.CancelledError, GeneratorExit):
+            interrupted = True
+            raise
+        except Exception:
+            logger.exception("Could not complete execution receipt")
+            await inner.aclose()
+            if trace.started:
+                try:
+                    await trace.finish("failed")
+                except Exception:
+                    logger.exception("Could not persist failed execution terminal")
+            yield sse("error", {"code":"execution_record_failed", "message":"本轮执行记录未能完成，请稍后重试。", "recoverable":True})
+        finally:
+            # Close the graph and its owned child processes before recording cancellation.
+            await inner.aclose()
+            if heartbeat:
+                heartbeat.cancel()
+                await asyncio.gather(heartbeat,return_exceptions=True)
+            if trace.started and trace.status == "running":
+                try:
+                    await trace.finish("cancelled" if interrupted else "failed")
+                except Exception:
+                    logger.exception("Execution terminal persistence unavailable")
+
+    async def _stream_reply(
         self,
         session_id: str,
         user_id: str,
@@ -244,6 +295,7 @@ class TutorOrchestrator:
         web_search_mode: str = "auto",
         reasoning_effort: str = "medium",
         root_submission: dict | None = None,
+        trace=None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
         request_id = current_request_id()
@@ -348,9 +400,14 @@ class TutorOrchestrator:
                     sse("thinking", {"content": f"{normalized}\n\n"})
                 )
 
+        async def on_run_event(phase, status, **fields):
+            await trace.step(phase,status,**fields)
+            await queue.put(sse("run_event",trace.snapshot()))
+
         config = {
             "configurable": {
                 "thread_id": session_id,
+                "on_run_event": on_run_event,
                 "on_token": on_token,
                 "on_thinking": on_thinking,
                 "on_progress": on_progress,
@@ -361,9 +418,8 @@ class TutorOrchestrator:
         )
         queue_get: asyncio.Task[str] | None = None
 
-        yield sse("thinking", {"content": f"{plan_progress}\n\n"})
-
         try:
+            yield sse("thinking", {"content": f"{plan_progress}\n\n"})
             while True:
                 if not queue.empty():
                     yield queue.get_nowait()
@@ -416,11 +472,17 @@ class TutorOrchestrator:
             failure_meta = {"error": {"code": code, "message": message}, "verified": False, "is_correct": None, "intent": "generation_failed", "verification_kind": "none", "subject": subject, "concepts": [], "mistake": None, "verifier_summary": "本轮未完成"}
             if isinstance(exc, AnswerDeliveryError):
                 failure_meta["answer_guard"] = exc.report
+            await trace.step("delivery","started",error_code=code)
+            failure_meta["agent_run"] = trace.terminal_snapshot("failed")
             failure_id = None
             try:
-                failure_id = await asyncio.to_thread(self.repository.add_message, session_id, "assistant", f"{opening}\n\n本轮未完成：{message}", "generation_failed", "本轮生成失败，尚未完成验证。", None, failure_meta)
+                failure_id = await durable_call(self.repository.add_message, session_id, "assistant", f"{opening}\n\n本轮未完成：{message}", "generation_failed", "本轮生成失败，尚未完成验证。", None, failure_meta, agent_run_finish=trace.finish_args("failed"))
+                trace.committed("failed")
             except Exception:
                 logger.exception("Could not persist failed response metadata")
+            if trace.status == "running":
+                await trace.finish("failed")
+            yield sse("run_event",trace.snapshot(message_id=failure_id))
             yield sse("error", {"message": message, "code": code, "recoverable": recoverable, "message_id": failure_id, "learning_meta": failure_meta})
             return
         finally:
@@ -490,7 +552,10 @@ class TutorOrchestrator:
                              "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
                              "route": "intent_clarification"}
         intent = learning_meta["intent"]
-        message_id = await asyncio.to_thread(
+        await trace.step("delivery","started")
+        terminal_status = "clarification" if awaiting_input else "succeeded"
+        learning_meta["agent_run"] = trace.terminal_snapshot(terminal_status)
+        message_id = await durable_call(
             self.repository.add_message,
             session_id,
             "assistant",
@@ -499,7 +564,11 @@ class TutorOrchestrator:
             thinking_summary,
             thinking_elapsed_ms,
             learning_meta,
+            agent_run_finish=trace.finish_args(terminal_status),
         )
+        trace.committed(terminal_status)
+        learning_meta["agent_run"] = trace.snapshot(message_id=message_id)
+        yield sse("run_event",learning_meta["agent_run"])
         yield sse("meta_update", learning_meta)
         metrics = dict(final_state.get("metrics", {}))
         metrics["total_ms"] = round(

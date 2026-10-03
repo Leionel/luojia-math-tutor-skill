@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX, Search, Terminal, Cpu, ListChecks, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme-context";
+import { AgentRunReceipt } from "./agent-run-receipt";
 import { deliveryGuardLabel, type DeliveryGuard } from "@/lib/delivery-guard";
 
 function cleanMathForSpeech(text: string) {
@@ -272,6 +273,7 @@ export function MathMessage({
   thinkingElapsedMs,
   webSearchReport,
   answerGuard,
+  agentRun,
   reviewData,
   onSimilar,
   onEdit,
@@ -293,6 +295,7 @@ export function MathMessage({
   thinkingElapsedMs?: number;
   webSearchReport?: WebSearchReport;
   answerGuard?: DeliveryGuard;
+  agentRun?: unknown;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
@@ -404,6 +407,8 @@ export function MathMessage({
               onToggle={() => setIsChainExpanded(!isChainExpanded)}
             />
           )}
+
+          {!isUser && <AgentRunReceipt value={agentRun} disconnected={isIncomplete} />}
 
           {!isUser && deliveryGuardLabel(answerGuard) && (
             <p className="mb-3 text-base sm:text-xs leading-relaxed text-[var(--text-secondary)]" role="status">
