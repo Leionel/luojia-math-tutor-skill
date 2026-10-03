@@ -241,4 +241,6 @@ results/                        # 本地生成证据，不跟踪
 
 本轮交付和后续路线见 [A3 与多领域数值实验回执](planning/agent-engineering-2026-10/delivery-a3-numerical.md)。
 
-Agent Runtime 后续规划已审阅并合并：A6 类型化工具 → A4 可信实验上下文 → A7 调用追踪 / 用量 → A5 行为与质量评测；持久暂停恢复 A8 有条件启动。详见 [意见审阅与日程](planning/agent-engineering-2026-10/runtime-review-schedule.md)及 [A6 首批切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。这些能力目前仍是规划。
+后续先补产品衔接：A4.1 可信 Newton 实验上下文 → A6.1/A4.2 最小业务动作、卡片与内嵌聊天 → A6.2 计算工具/旧Python退役 → A7 调用计量 → A5 行为与质量评测。A8 持久恢复有条件启动；这些新交互仍是规划。详见 [聊天与工作区审阅 / 当前日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
+
+本轮补齐章节自检期间共享帮助限制、求根实验缓存重试/历史读取及伴读解释检查。离线知识 JSON / API589 / Web45 通过；既有前端构建/界面证据见前述交付，本轮没有重跑前端构建或真实模型。已打开材料、旧聊天、外部帮助和在途请求不由本次入口检查完全收回。

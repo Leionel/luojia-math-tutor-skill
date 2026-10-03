@@ -1,6 +1,14 @@
 # CODEX 交接文档
 
-> 最新交接：2026-10-03（Agent Runtime 意见审阅与后续排期）。写给要接手本仓库的 Codex。A0–A3 与多领域实验已完成本地工程验收；最新规划先读 `planning/agent-engineering-2026-10/runtime-review-schedule.md` 与 `a6-tool-runtime.md`。M0/M1 最新实测见研究文档 §27.8 与 `COURSE_GRAPH_M0_M1.md`；诊断/研究主线见 §27；下方历史状态仅表示当时进度。
+> 最新交接：2026-10-03（聊天/工作区衔接审阅与帮助保护修复）。A0–A3、多领域实验已完成本地工程验收；当前先读 `planning/agent-engineering-2026-10/chat-workspace-review.md` 与主规划。Runtime约束/a6-tool-runtime.md继续使用，但旧“A6先于A4”顺序已修订。M0/M1见研究文档§27.8，研究主线见§27；下方历史状态仅表示当时进度。
+
+## 2026-10-03 聊天衔接意见与局部修复
+
+用户追加“让新功能长进聊天”意见，要求核对。主要缺口成立：stream没有统一学习引用，numerical-lab仍复制后跳/chat，工作区未共享当前任务。但聊天已有root submission/诊断卡/probe/run，notebook也有内嵌聊天，不能宣称只有Markdown。来稿Newton示意第一步-1.75错误，实际-2→-1.8→-1.769948187。审阅基线0340c49。
+
+发现并复现帮助保护不一致，按此前“可以改的直接改”局部修复612e3a4：共享helper增加进行中章节自检；求根新运行在缓存复用前保护，历史两个GET经service保护，伴读选区改共享helper。6失败/1通过的新增检查复现后，针对72项通过；完整知识JSON/API589/Web45通过（results/chat-integration-review-tests.log）。无数据库迁移、分数/独立成功/掌握度规则变化，未重复前端build/lint或UI演示。入口检查不能收回已打开帮助、旧聊天、外部帮助或全部在途请求。
+
+规划改为A4.1可信Newton实验引用→A6.1/A4.2最小业务动作/卡片/内嵌聊天→A6.2计算工具与旧Python退役→A7→A5。A4–A8未实现；保留既有线性/积分。首批一个实验讨论/参数预览/显式保存闭环，LearningAction共用A6合同，不建第二Registry；预览仍记帮助曝光并被probe选题读取，不计独立成绩。12–19个集中开发日含回归余量，单人每周约3日约4–7周、人工复核另计；全F1/F2/F5/F8接入与A8/C0另估。A5基线改为帮助修复后的612e3a4。A3离线契约19/19、实例40/40通过，报告源码SHA=612e3a4且文档修改期间tracked_worktree_dirty=true；75个本地链接/锚点与UTF-8检查通过。详见新审阅、主规划与Deviations，最终提交/推送以本轮回执为准，远端CI/部署未验证。
 
 ## 2026-10-03 Runtime 审阅与日程合并（仅文档）
 

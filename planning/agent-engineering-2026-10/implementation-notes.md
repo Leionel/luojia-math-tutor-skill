@@ -53,3 +53,12 @@
 - 投入修订：剩余 11–17 个集中开发日含 2–3 日回归余量；按每周 3 日约 4–6 周，真实人工复核另计；A8 PoC 1–2 日后重估集成，不计入主线。不是固定截止日或五小时额度内完成承诺。
 - 交付：`runtime-review-schedule.md`、`a6-tool-runtime.md`，主规划 / README / 三份项目记忆同步。修正 README 的“A3 尚未完成”旧句。本轮无运行时代码、数据库或模型调用变更。
 - 验证：完整 npm.cmd test 知识JSON/API583/Web45通过，日志 results/runtime-planning-tests.log；65个本地文档链接/锚点、UTF-8、范围和diff check通过。没有重复前端build/lint、真实模型/持久恢复PoC、远端CI或部署验收；提交/推送以本轮最终回执为准。
+
+### 2026-10-03：追加聊天衔接意见、先产品闭环再泛化
+
+- 前版：A6独立numerical.run工具先于A4，剩余11–17日。
+- 证据：stream没有统一学习引用，实验页面需复制再跳聊天；已有RootDiagnosticCard、run与NotebookChat，故“只有Markdown/只有chat有助教”过度描述。现有task/session/episode/service可以复用。
+- 选择：A4.1当前Newton实验→A6.1/A4.2业务动作/卡片/内嵌聊天→A6.2计算工具/旧Python退役→A7→A5。先一个实验讨论/预览/显式保存闭环；不重写六页面，不建平行LearningAction registry，纯预览也要计帮助暴露并用于probe选题，不污染学生证据/成绩。
+- 投入：增加卡片/内嵌功能后剩余12–19日，每周约3日约4–7周，人工gold复核另计；全F1/F2/F5/F8和A8/C0另批估。A5对照基线改612e3a4，避免将此前帮助保护差异混入产品衔接收益。
+- 局部修复612e3a4：共享帮助helper原来只管probe；旧root-lab只检查新run、可缓存重试/历史绕过；伴读选区也有单独probe检查。6红/1绿复现，修复后针对72项、完整API589/Web45/JSON通过。保留题目、首次答案、独立成功/掌握度规则，无迁移/依赖/前端改动，不声称收回在途或外部帮助。
+- 新架构仍未实现；本轮只交付上述保护修复及chat-workspace-review.md、日程/README/交接。A3离线契约19/19、实例40/40通过，报告SHA=612e3a4且记录文档修改期间tracked_worktree_dirty=true；75个本地链接/锚点与UTF-8检查通过。日志ignored，最终提交/推送以本轮回执为准；未验证远端CI或部署。

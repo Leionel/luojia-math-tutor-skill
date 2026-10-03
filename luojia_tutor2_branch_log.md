@@ -391,3 +391,11 @@ A3 已实现，终止门控 / Guard 两次临时破坏均被 CLI 检出，源码
 推荐 A6 类型化工具/受限符号操作/旧模型 Python 路径退役 → A4 实验快照 → A7 调用计量/必要能力 → A5 E1/E2 与可选真实 E3。A8 单路径暂停恢复 PoC 条件启动，C0/MCP/dashboard 另行评估。剩余11–17个集中开发日含回归余量，每周约3日为4–6周，人工复核另计，A8 PoC后重估集成。日程、验收、预算、停止/回滚见 planning/agent-engineering-2026-10/runtime-review-schedule.md；首批可执行切片见 a6-tool-runtime.md，主规划与 Deviations 同步。
 
 README 旧“A3 尚未完成”已修正；本轮只改文档，A4–A8 未实施，无模型调用/数据库迁移/生产部署。提交前完整npm.cmd test：知识JSON/API583/Web45通过（results/runtime-planning-tests.log）；65个本地文档链接/锚点、UTF-8、范围和diff check通过。前端源码未改，未重复build/lint；提交/推送以本轮最终回执为准，保留既有无关原型/egg-info/ignored results/env/数据库。
+
+### 2026-10-03 聊天/工作区衔接意见与帮助保护修复
+
+用户要求核对新产品意见。成立：缺可信当前任务/实验上下文、业务动作卡片和工作区内嵌聊天；过度描述：现有聊天已有求根提交/诊断/probe/run，NotebookChat也已嵌入笔记。来稿Newton从-2出发第一步应-1.8。审阅基线0340c49。
+
+局部修复612e3a4：共享helper增加进行中章节自检；root-lab新运行/缓存重试/历史读取及伴读选区共用帮助检查。新增检查修复前6失败1通过；修复后针对72项，完整JSON/API589/Web45通过，日志results/chat-integration-review-tests.log。owner隔离、结束/交卷解锁与正常probe提交保留；无迁移/依赖/前端修改/分数与掌握度变化，旧材料与在途/外部帮助不宣称完全锁住。
+
+推荐日程变为A4.1当前Newton实验→A6.1/A4.2最小业务动作/卡片/内嵌聊天→A6.2计算工具/旧Python退役→A7→A5。剩余12–19个集中开发日含回归余量，单人每周约3日约4–7周、人工复核另计；全F1/F2/F5/F8和A8/C0另估。复用现有service/session/episode，不建第二Registry；预览暴露帮助也记事件并用于probe选题。chat-workspace-review.md、主规划、A6/Runtime和README同步，新交互A4–A8尚未实现；A3离线契约19/19、实例40/40通过，报告SHA=612e3a4且文档修改期间tracked_worktree_dirty=true。75个本地链接/锚点与UTF-8检查通过；最终提交/推送以本轮回执为准，未验证远端CI/部署。
