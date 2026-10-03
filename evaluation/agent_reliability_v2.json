@@ -1,0 +1,234 @@
+{
+  "version": "agent-reliability-v2",
+  "scope": "offline_protocol_fixtures",
+  "cases": [
+    {
+      "id": "model_failures",
+      "selector": "tests/test_completion_protocol.py::test_provider_failures_cannot_complete",
+      "expected_instances": 7,
+      "contract": "provider classification"
+    },
+    {
+      "id": "normal_completion",
+      "selector": "tests/test_completion_protocol.py::test_explicit_terminal_and_usage_chunks_complete",
+      "expected_instances": 3,
+      "contract": "explicit completion"
+    },
+    {
+      "id": "uncertain_intent",
+      "selector": "tests/test_agent_graph.py::test_uncertain_policy_stops_before_learning_writes_or_generation",
+      "expected_instances": 1,
+      "contract": "no unconfirmed learning writes"
+    },
+    {
+      "id": "route_change",
+      "selector": "tests/test_agent_graph.py::test_resolved_policy_recomputes_verification_before_context",
+      "expected_instances": 2,
+      "contract": "verification follows final route"
+    },
+    {
+      "id": "empty_visible",
+      "selector": "tests/test_agent_graph.py::test_protocol_only_draft_is_not_delivered_as_an_answer",
+      "expected_instances": 1,
+      "contract": "no empty delivery"
+    },
+    {
+      "id": "guard_repair",
+      "selector": "tests/test_answer_guard.py::test_guard_repairs_once_without_executing_tool_and_before_delivery",
+      "expected_instances": 1,
+      "contract": "one repair before delivery"
+    },
+    {
+      "id": "guard_withhold",
+      "selector": "tests/test_answer_guard.py::test_second_violation_withholds_without_third_call_or_candidate_delivery",
+      "expected_instances": 1,
+      "contract": "bounded repair"
+    },
+    {
+      "id": "guard_false_positive",
+      "selector": "tests/test_answer_guard.py::test_negation_quotations_and_code_examples_are_not_assertions",
+      "expected_instances": 12,
+      "contract": "fixture false positives"
+    },
+    {
+      "id": "durable_delivery",
+      "selector": "tests/test_agent_runs.py::test_success_and_guard_failure_persist_real_sqlite_receipts",
+      "expected_instances": 1,
+      "contract": "SQLite terminal consistency"
+    },
+    {
+      "id": "storage_failure",
+      "selector": "tests/test_agent_runs.py::test_storage_failure_is_error_without_done_or_completed_answer",
+      "expected_instances": 1,
+      "contract": "no false done on failed write"
+    },
+    {
+      "id": "duplicate_events",
+      "selector": "tests/test_agent_runs.py::test_steps_are_monotonic_bounded_and_whitelisted",
+      "expected_instances": 1,
+      "contract": "no duplicate steps or sensitive receipt"
+    },
+    {
+      "id": "atomic_commit",
+      "selector": "tests/test_agent_runs.py::test_answer_and_terminal_commit_together_and_failure_rolls_back",
+      "expected_instances": 1,
+      "contract": "atomic result and terminal"
+    },
+    {
+      "id": "disconnect",
+      "selector": "tests/test_agent_runs.py::test_asgi_disconnect_cancels_buffered_model_without_next_chunk",
+      "expected_instances": 2,
+      "contract": "ASGI disconnect cancels"
+    },
+    {
+      "id": "ownership",
+      "selector": "tests/test_agent_runs.py::test_owner_and_session_are_checked_at_creation_and_read",
+      "expected_instances": 1,
+      "contract": "owner isolation"
+    },
+    {
+      "id": "restart",
+      "selector": "tests/test_agent_runs.py::test_restart_only_recovers_expired_leases_and_never_replays",
+      "expected_instances": 1,
+      "contract": "expired lease interrupted"
+    },
+    {
+      "id": "compiled_graph",
+      "selector": "tests/test_agent_runs.py::test_compiled_graph_emits_phase_receipts_and_guard_repair",
+      "expected_instances": 1,
+      "contract": "compiled graph receipts"
+    },
+    {
+      "id": "symbolic_attack_budget",
+      "selector": "tests/test_typed_math_runtime.py::test_symbolic_attack_budget",
+      "expected_instances": 15,
+      "contract": "bounded symbolic whitelist"
+    },
+    {
+      "id": "unknown_tool_fields_never_spawn",
+      "selector": "tests/test_typed_math_runtime.py::test_unknown_tool_fields_never_spawn",
+      "expected_instances": 4,
+      "contract": "strict argument projection"
+    },
+    {
+      "id": "fixed_derivative_and_numerical_worker",
+      "selector": "tests/test_typed_math_runtime.py::test_fixed_derivative_and_numerical_worker",
+      "expected_instances": 1,
+      "contract": "actual fixed mathematical worker"
+    },
+    {
+      "id": "actual_child_is_reaped",
+      "selector": "tests/test_typed_math_runtime.py::test_actual_child_is_reaped",
+      "expected_instances": 3,
+      "contract": "actual child cancellation timeout and output cap"
+    },
+    {
+      "id": "tool_policy_budget_duplicate_and_probe",
+      "selector": "tests/test_typed_math_runtime.py::test_tool_policy_budget_duplicate_and_probe",
+      "expected_instances": 1,
+      "contract": "policy budget idempotency"
+    },
+    {
+      "id": "partial_or_invalid_native_calls_cannot_execute",
+      "selector": "tests/test_typed_math_runtime.py::test_partial_or_invalid_native_calls_cannot_execute",
+      "expected_instances": 5,
+      "contract": "terminal native call assembly"
+    },
+    {
+      "id": "unknown_capability_and_wrong_endpoint_stay_disabled",
+      "selector": "tests/test_typed_math_runtime.py::test_unknown_capability_and_wrong_endpoint_stay_disabled",
+      "expected_instances": 1,
+      "contract": "exact capability binding"
+    },
+    {
+      "id": "native_graph_guard_and_sqlite_delivery",
+      "selector": "tests/test_typed_math_runtime.py::test_native_graph_guard_and_sqlite_delivery",
+      "expected_instances": 1,
+      "contract": "native graph and durable scoped delivery"
+    },
+    {
+      "id": "native_envelope_budgets_fail_closed",
+      "selector": "tests/test_typed_math_runtime.py::test_native_envelope_budgets_fail_closed",
+      "expected_instances": 4,
+      "contract": "duplicate parallel oversized and late calls"
+    },
+    {
+      "id": "argument_correction_is_bounded_and_tool_spans_have_causal_parent",
+      "selector": "tests/test_typed_math_runtime.py::test_argument_correction_is_bounded_and_tool_spans_have_causal_parent",
+      "expected_instances": 1,
+      "contract": "bounded correction and causal spans"
+    },
+    {
+      "id": "probe_started_during_actual_worker_withholds_result",
+      "selector": "tests/test_typed_math_runtime.py::test_probe_started_during_actual_worker_withholds_result",
+      "expected_instances": 1,
+      "contract": "help protection after calculation"
+    },
+    {
+      "id": "integral_sampling_counterexample_keeps_estimate_scope",
+      "selector": "tests/test_typed_math_runtime.py::test_integral_sampling_counterexample_keeps_estimate_scope",
+      "expected_instances": 1,
+      "contract": "sampling estimate cannot certify integral accuracy"
+    },
+    {
+      "id": "invalid_usage_is_missing",
+      "selector": "tests/test_call_observation.py::test_invalid_usage_is_missing",
+      "expected_instances": 7,
+      "contract": "missing usage never invented"
+    },
+    {
+      "id": "usage_and_content_delta_are_not_private_reasoning",
+      "selector": "tests/test_call_observation.py::test_usage_and_content_delta_are_not_private_reasoning",
+      "expected_instances": 2,
+      "contract": "content delta timing and private reasoning exclusion"
+    },
+    {
+      "id": "nonstream_is_not_reported_as_stream_ttft",
+      "selector": "tests/test_call_observation.py::test_nonstream_is_not_reported_as_stream_ttft",
+      "expected_instances": 1,
+      "contract": "no synthetic nonstream TTFT"
+    },
+    {
+      "id": "guard_repair_usage_and_refresh_match",
+      "selector": "tests/test_call_observation.py::test_guard_repair_usage_and_refresh_match",
+      "expected_instances": 1,
+      "contract": "repair count pricing and refreshed receipt"
+    },
+    {
+      "id": "native_tool_failure_repair_never_executes_repair_tools",
+      "selector": "tests/test_call_observation.py::test_native_tool_failure_repair_never_executes_repair_tools",
+      "expected_instances": 1,
+      "contract": "failed tool evidence and toolless repair"
+    },
+    {
+      "id": "cancelled_model_has_closed_span_and_no_usage",
+      "selector": "tests/test_call_observation.py::test_cancelled_model_has_closed_span_and_no_usage",
+      "expected_instances": 1,
+      "contract": "cancelled call closes span"
+    },
+    {
+      "id": "restart_closes_open_spans_and_old_receipts_remain_readable",
+      "selector": "tests/test_call_observation.py::test_restart_closes_open_spans_and_old_receipts_remain_readable",
+      "expected_instances": 1,
+      "contract": "restart closure and old receipt compatibility"
+    },
+    {
+      "id": "cached_or_reasoning_pricing_stays_unknown",
+      "selector": "tests/test_call_observation.py::test_cached_or_reasoning_pricing_stays_unknown",
+      "expected_instances": 1,
+      "contract": "unsupported pricing stays unknown"
+    },
+    {
+      "id": "cancel_during_receipt_commit_does_not_lose_sequence",
+      "selector": "tests/test_call_observation.py::test_cancel_during_receipt_commit_does_not_lose_sequence",
+      "expected_instances": 1,
+      "contract": "repeated cancellation during SQLite commit"
+    },
+    {
+      "id": "malformed_nested_receipt_fields_are_projected_out",
+      "selector": "tests/test_call_observation.py::test_malformed_nested_receipt_fields_are_projected_out",
+      "expected_instances": 1,
+      "contract": "nested safe projection"
+    }
+  ]
+}

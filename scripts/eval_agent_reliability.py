@@ -61,8 +61,9 @@ def summarize(manifest, xml):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "results/agent-reliability.json")
+    parser.add_argument("--manifest", type=Path, default=ROOT / "evaluation/agent_reliability_v2.json")
     args = parser.parse_args()
-    manifest_path = ROOT / "evaluation/agent_reliability_v1.json"
+    manifest_path = args.manifest.resolve()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     env = {k: v for k, v in os.environ.items() if not k.endswith("API_KEY")}
     env.update(LUOJIA_NO_DOTENV="1", PYTHONUTF8="1", PYTEST_ADDOPTS="")
@@ -89,7 +90,7 @@ def main():
     report = {"version": manifest["version"], "scope": manifest["scope"],
               "git_sha": git.stdout.strip() if git.returncode == 0 else None,
               "tracked_worktree_dirty": bool(dirty.stdout.strip()), "python": sys.version.split()[0],
-              "command": "python scripts/eval_agent_reliability.py", "duration_seconds": round(time.monotonic()-started, 3),
+              "command": f"python scripts/eval_agent_reliability.py --manifest {manifest_path.relative_to(ROOT).as_posix()}", "duration_seconds": round(time.monotonic()-started, 3),
               "manifest_sha256": digest(manifest_path),
               "source_sha256": {p.relative_to(ROOT).as_posix(): digest(p) for p in sources}, **summary}
     args.output.parent.mkdir(parents=True, exist_ok=True)
