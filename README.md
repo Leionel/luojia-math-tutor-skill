@@ -1,317 +1,208 @@
-# 珞珈数智助教 (Luojia Math Tutor)
+# 珞珈数智助教 · Luojia Math Tutor
+
+<img src="apps/web/public/brand/luojia-logo.png" width="64" alt="珞珈数智 Logo" align="left" />
+
+**把条件讲清，把过程算明。**
+
+陪你读教材、做数值实验的 AI 数学助教。当前学习工作区聚焦**非线性方程求根：二分法、不动点迭代与 Newton 法**；对话同时保留高等数学、线性代数与概率统计的辅导入口。
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-v0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg?logo=next.js&logoColor=white)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Agent](https://img.shields.io/badge/Agent-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
-[![Pedagogy](https://img.shields.io/badge/Pedagogy-Socratic-blueviolet.svg)](#🧠-learning-loop-基于-bkt-的动态掌握度追踪)
+[![Stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Next.js%2016-40513b)](apps/web/package.json)
 
-![Luojia Math Tutor Poster](LJ_Tutor_Poster.png)
+[功能与学习路径](#功能与学习路径) · [快速开始](#快速开始) · [验证与评测](#验证与评测) · [当前边界](#当前边界) · [规划与交接](#规划与交接)
 
-**面向 STEM 教育的可验证学习智能体 (Verifiable Learning Agent)**
+## 快速开始
 
-传统 AI 辅导系统的通病是“越俎代庖”——学生一问，AI 就忍不住直接给出完整计算过程。这不仅剥夺了学生的思考机会，在面对复杂数学推导时也极易产生大模型固有的“幻觉”。
+以下命令适用于 **Windows / PowerShell**，从仓库根目录执行。CI 使用 Node.js 24、Python 3.12；前端声明 Node.js ≥20.9，后端声明 Python ≥3.10。建议使用项目虚拟环境安装 Python 依赖。
 
-珞珈数智助教将单纯的“AI 问答”重构为**具有持久化记忆、弱点洞察与教学步骤验证的自适应辅导系统**。项目采用双轨执行引擎，完美平衡了“大模型的启发式引导”与“符号引擎的确定性校验”。
+### 1. 安装依赖
 
----
+```powershell
+npm.cmd ci
+npm.cmd --prefix apps/web ci
+python -m pip install -e ./apps/api
+```
 
-## 🎯 The Problem: 为什么不用直接问 ChatGPT/DeepSeek？
+### 2. 配置本地环境
 
-当学生向通用大模型提问数学题时，往往面临两大死穴：
-1. **直接泄露答案 (Direct Answer Leak)**：大模型基于自回归的概率引擎，天然倾向于“给出最终答案”以讨好用户。
-2. **逻辑幻觉 (Logical Hallucination)**：复杂的微积分与线性代数推导中，一旦中间一步算错，后续全部崩溃。
+仅在文件不存在时复制示例，保留你已有的配置：
 
-本项目提出了一种全新的解法：**将大模型的“教学”与“解题”职责彻底剥离**。
+```powershell
+if (!(Test-Path apps/api/.env)) {
+    Copy-Item apps/api/.env.example apps/api/.env
+}
+if (!(Test-Path apps/web/.env.local)) {
+    Set-Content apps/web/.env.local 'NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000'
+}
+```
 
----
+编辑 `apps/api/.env`，让 `LLM_PROVIDER`、`LLM_BASE_URL`、`LLM_MODEL` 和 `LLM_API_KEY` 对应你的模型服务。完整设置见 [.env.example](apps/api/.env.example)。密钥与数据库均不应提交。
 
-## 💡 Architecture: 快速主路径 + 按需验证
+没有模型密钥时，受控求根实验、过程诊断、章节参考自检和静态代码审阅仍可使用；模型聊天、模型伴读解释等能力需要有效配置，不能把无模型的来源对照当作模型生成。
 
-本项目保留 Planner、Policy、Verifier、Teacher、Examiner、RAG、BKT 与 Memory 的角色边界，但不再让所有 Agent 成为每轮请求的固定串行步骤。LangGraph 根据风险和置信度按需调度：
+### 3. 分别启动两个终端
+
+终端 A：
+
+```powershell
+npm.cmd run dev:api
+```
+
+终端 B：
+
+```powershell
+npm.cmd run dev:web
+```
+
+打开 [本地首页](http://localhost:3000)，API 文档位于 [本地 Swagger](http://127.0.0.1:8000/docs)。根目录的 `dev:*` 与 `npm test` 脚本使用 `npm.cmd`；其他系统请在 `apps/api` 手动启动 uvicorn，在 `apps/web` 使用 npm 启动前端。
+
+### 4. 选择账号或本地演示
+
+本地示例为 `APP_ENV=local`、`AUTH_REQUIRED=false`，未登录请求使用演示身份。注册账号为 3–64 位字母、数字或 `_.@-`，首字符为字母或数字；密码至少 10 个字符。登录或注册成功后进入今日学习。
+
+账号凭证保存在当前浏览器。退出清除本地凭证并卸载当前页面，保留本地学习草稿；**尚未提供密码找回、邮箱验证、令牌刷新或服务端会话撤销**。
+
+## 功能与学习路径
+
+<img src="apps/web/public/brand/xiaoluo.png" width="160" alt="小珞：手持教材与笔的 AI 数学学姐形象" align="right" />
+
+**小珞**是珞珈数智的 AI 助教形象：数学学姐的交流风格，陪你辨清公式条件、观察迭代过程、解释自己的理解。首页使用全身立绘，聊天欢迎区使用缩小布局。
+
+从一项任务开始：**读材料 → 做实验 → 提交自己的过程 → 确认反馈 → 换题检验 → 到期复习**。系统生成的实验轨迹是参考帮助；你自己的提交和独立检验分别记录。
+
+| 功能 | 页面 | 当前可以做什么 |
+| --- | --- | --- |
+| F1 今日学习 | `/study` | 安排 15/30 分钟任务，继续跨日未完成记录，提交求根轨迹、确认反馈、换题检验与间隔复习。反馈待确认时防止覆盖提交。 |
+| F2 教材伴读 | `/reading` | 阅读课程摘录或自己的已上传材料，核对适用条件、选择原文段落提问，把摘录和问题保存为带来源的笔记。 |
+| F3 求根实验 | `/lab` | 先预测再运行三类受控参考算法；逐步查看、播放/暂停轨迹，对照历史实验，记录本地复盘。 |
+| F4 章节自检 | `/assessment` | 六道开发参考题；草稿恢复、题号导航、首次作答确认，交卷后查看参考解析和复习入口。 |
+| F5 讲给助教听 | `/teach-back` | 用自己的话解释条件，将原句对应到条件，保存补充版本；模型可用时提供明确标注的审阅意见。 |
+| F8 数值代码作业 | `/code-workshop` | 限定 Newton 作业的 Python AST 静态审阅、代码行定位、保存版本对照；手动轨迹单独诊断。**学生代码不执行。** |
+
+F6 视频伴学与 F7 教师简报仍在规划，见[扩展功能与启动条件](planning/learning-experience-2026-10/04-extensions.md)。
+
+已有的对话助教 `/chat`、错题本 `/mistake-book`、随堂笔记 `/notebook` 和课程图谱 `/graph` 继续保留。默认给予适量提示；直接讲解或明确请求完整解答时可给完整过程。练习出题与答案披露分别处理。
+
+## 一个可复现的体验例子
+
+1. 打开求根实验，选择“牛顿法：0 → 1 → 0 循环”。写下对 `f(x)=x³−2x+2`、`x₀=0` 的预测，再运行参考实验。
+2. 用滑块、前后步按钮或播放观察循环。把初值改为 `−2`，写下新预测，保持函数、目标和阈值一致后运行，再对照两次记录。
+3. 在教材伴读选择牛顿法，核对“初值足够接近根”等条件，将所选原文加入笔记。也可以到讲回页面解释这些条件。
+4. 在今日学习提交**自己计算**的指定轨迹和停止依据，读完反馈后确认结果。练习成功可以换题检验；独立检验期间，已接入保护的聊天、伴读解释、参考实验等入口阻止新的帮助请求。
+5. 用章节自检复习条件与误差判断，或进入代码作业修订模板。章节参考分、静态提示和手动轨迹都不等于已证明掌握。
+
+小残差、相邻差小与根误差小是不同判断；一次数值实验也不能证明一般收敛。
+
+## 实现与证据边界
 
 ```mermaid
-flowchart TD
-    User(["学生请求"]) --> Opening["安全且相关的 opening<br/>目标：本地小于 150ms"]
-    Opening --> Router{"本地 Fast Path Router"}
-
-    subgraph Context ["350ms Fast Context 截止时间"]
-        History["SQLite 会话与 Memory"]
-        BKT["BKT 掌握度"]
-        BM25["本地 BM25"]
-        SymPy["按需 SymPy 校验"]
-    end
-
-    Router --> Context
-    Context --> Gate{"Verification Gate"}
-    Gate -->|"普通请求"| Teacher["Teacher 流式生成<br/>1 次 LLM"]
-    Gate -->|"出题"| Examiner["Examiner 流式生成<br/>1 次 LLM"]
-    Gate -->|"复杂证明或本地无法判定"| Verifier["Verifier LLM"]
-    Verifier --> Teacher
-    Router -. "低置信度" .-> Policy["Policy LLM fallback"]
-    Policy --> Gate
-    Teacher --> User
-    Examiner --> User
+flowchart LR
+    Student[学生] --> Chat[对话请求]
+    Student --> Workspace[学习工作区]
+    Chat --> Policy[意图与答案披露策略]
+    Policy --> Context[课程检索与历史上下文]
+    Context --> Check[按需符号检查或模型审阅]
+    Check --> Answer[流式回答与逐消息检查状态]
+    Workspace --> Root[受控求根轨迹与规则诊断]
+    Workspace --> Source[原文范围与来源哈希]
+    Workspace --> Code[代码静态解析与版本记录]
+    Root --> Feedback[反馈确认与练习结果]
+    Feedback --> Probe[新题独立检验与复习安排]
+    Answer --> Store[持久记录]
+    Source --> Store
+    Code --> Store
+    Probe --> Store
 ```
 
-普通概念讲解和明确教学请求只需要一次 Teacher 流式调用；可由 SymPy 判定的学生步骤也直接进入 Teacher。只有复杂证明、开放推导或本地校验不确定时才调用 Verifier LLM。这样既保留“教学与验证分工”，又消除了无意义的多模型排队。
+- **对话**：LangGraph 按请求调用教学策略、课程检索、受限 math/SymPy 工具或模型审阅。工具执行成功只说明计算代码运行成功；模型审阅仍是意见，不能把整段解释标成数学证明。
+- **求根过程**：受控表达式解析、轨迹诊断与 RootEpisodeService 分开处理更新、停止依据和反馈确认。系统参考实验不计为独立完成；未知结果不计成功。
+- **材料**：课程知识包与个人上传原文分别呈现。选段保留字符范围与来源哈希；抽样生成的教材笔记明确标注覆盖限制。
+- **学习记录**：SQLite 保存会话、课程与学习任务。BKT 后验是基于观测和参数的估计，复习阶段是调度规则；二者都不替代无 AI 的迁移测验或延迟保持证据。
+- **帮助保护**：未完成的独立检验阻止应用中新请求的讲解、参考实验等帮助；历史内容和外部工具不能据此排除。
 
-可编辑架构图：[FigJam - 珞珈数智助教低延迟解答链路](https://www.figma.com/board/xVpZVU6mWcDQbjwVHi2RBU)
+### 存储与配置
 
-### 延迟预算与调用上限
+| 配置 | 作用 |
+| --- | --- |
+| `DATABASE_URL` | 主应用数据库，默认使用 SQLite。 |
+| `COURSE_STORE_PATH` | 显式指定课程与学习工作区持久库；路径相对 API 工作目录。文件 SQLite 未指定时派生 `<数据库路径>.course.db`；内存库不保证重启恢复。 |
+| `AUTH_REQUIRED` / `AUTH_TOKEN_SECRET` | 控制鉴权及令牌签名。生产环境要求鉴权与独立配置的签名密钥。 |
+| `LLM_PROVIDER` / `LLM_BASE_URL` / `LLM_MODEL` / `LLM_API_KEY` | 服务端模型配置。 |
+| `ALLOW_USER_API_KEY` | 是否接受当前请求转发的用户模型密钥，示例默认关闭。 |
+| `MINERU_API_KEY` | PDF/Word 上传解析配置；课程摘录与已有 Markdown 伴读不要求重新上传。 |
+| `NEXT_PUBLIC_API_BASE_URL` | 前端访问后端的地址，构建时注入。 |
 
-- `opening_ms`：本地目标小于 150ms；集成环境 P95 首段有意义内容小于 1 秒。
-- `fast_context_ms`：本地历史、BKT、BM25、文档检索和 SymPy 使用 350ms 可选任务截止时间。
-- 普通请求与 SymPy 已确认请求：`llm_call_count == 1`。
-- 高风险验证请求：`llm_call_count <= 2`。
-- SQLite 同步访问通过 `asyncio.to_thread` 移出事件循环；客户端取消 SSE 时，未完成的图任务会同步取消。
+任务、答案和保存版本由服务端控制；未确认选项、实验复盘及部分编辑草稿保存在当前浏览器，不能承诺跨设备同步。生产部署需要同时配置 `APP_ENV=production`、`AUTH_REQUIRED=true`、独立随机签名密钥和明确的 `CORS_ORIGINS`；本地演示配置不能直接作为线上配置。
 
-### 公开思考状态与刷新恢复
+### 搜索与图示
 
-Tutor SSE 依次使用 `opening -> thinking -> meta/message -> thinking_end -> done`。`opening` 只负责快速给出有意义的开场，不会结束思考计时；首个正式 `message` token 到达后，界面从“思考中”切换为流式回答。
+聊天联网检索支持自动、开启和关闭。搜索摘要是来源线索，不等于全文核实或证明验证。逐轮检索状态与来源保存在消息元数据中；旧回答不补造检索记录。
 
-`thinking` 事件仅包含 `[PLAN]`、`[隐式 RAG]`、`[VERIFY]`、`[OUTPUT]` 四类公开过程摘要，不发送或保存模型原始 `reasoning_content`。最终摘要和首个正式 token 前的耗时写入消息记录，因此刷新或重新进入会话后仍可展开查看。
+公式与静态图示用于辅助理解。完成的动态 HTML 可主动运行于独立 iframe，并可停止/重启；禁止外联和父页面 DOM 访问，30 秒定时卸载。**该定时器不能保证强制终止同步 JavaScript 死循环**；动态预览不进入数学验证或学习计分。
 
----
+## 验证与评测
 
-## 🧠 Learning Loop: 基于 BKT 的动态掌握度追踪
+截至 **2026-10-03**，本地代码交付验证为：知识 JSON 通过，**API 469 项、前端工具测试 40 项通过**；生产构建和类型检查通过，lint **0 错误、10 条原有警告**。隔离演示库完成学习任务、草稿/版本恢复、实验交互和手机布局检查。详细回执见[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)与[实施记录](planning/learning-experience-2026-10/implementation-notes.md)。这是工程验证，不是教师验收或真人学习效果评测。
 
-漂亮的 UI 不等于学生建模 (Student Modeling)。本项目引入了真实的教育学算法来动态衡量和量化学生的学习效果。
+Windows 根目录：
 
-```mermaid
-sequenceDiagram
-    participant Student as 学生 (User)
-    participant Planner as 规划器 (Learning Planner)
-    participant Engine as BKT 引擎 (BKT Engine)
-    participant Generator as 出题器 (Quiz Generator)
-    
-    Student->>Planner: 交互与解题记录 (带提示获取频率)
-    Planner->>Engine: 提取隐性行为，更新状态变量
-    Engine-->>Planner: 返回该考点动态掌握概率 P(L|obs)
-    
-    alt 知识点 P(L) < 0.6
-        Planner->>Student: 触发苏格拉底式纠错复习
-        Planner->>Generator: 生成考点同源的全新复练题
-    else 知识点 P(L) >= 0.8
-        Planner->>Student: 恭喜掌握，推荐进入下一阶
-    end
+```powershell
+npm.cmd test
+npm.cmd run test:knowledge
+npm.cmd run test:api
+npm.cmd run test:web:ui
+npm.cmd --prefix apps/web run typecheck
+npm.cmd --prefix apps/web run lint
+npm.cmd run build:web
 ```
 
-- **贝叶斯知识追踪 (Bayesian Knowledge Tracing, BKT)**：彻底摒弃简单粗暴的 `正确数 / 总数` 算分。算法内核基于标准的四个动态参数计算后验掌握概率 `P(L|obs)`：
-  - **$P(L_0)$ 初始掌握率**: 设定为 0.5 作为中立基准。
-  - **$P(S)$ 粗心失误率**: 设定为 0.1（即便真正掌握，也有小概率算错）。
-  - **$P(G)$ 猜测猜中率 / $P(T)$ 知识转移率**: 我们将其设计为 **自适应动态变量**。当系统检测到学生是“独立正确解答”时，$P(G)=0.1, P(T)=0.15$；若是“借助大量提示（Hint Level=2+）才解答”，则强行提高猜测率 $P(G)=0.8$ 且降低转移率 $P(T)=0.0$，从而严格防止“被动喂饭”导致的分数虚高。
-- **动态教学规划 (Learning Planner)**：常见请求由本地确定性规则结合 BKT 状态生成目标；只有低置信度请求才升级为远程 Policy/Planner 判断。
-- **举一反三 (Quiz Gen)**：对于错题，系统从按「概念 × 难度」组织的静态核心题库中抽取同源复练题，帮助学生换个数值重新练习同一知识点。
+构建前先停止正在服务的 Web 开发/预览进程，避免 `.next` 被同时写入。`pytest` 必须从 `apps/api` 运行；离线测试门控会禁用 dotenv 和真实模型密钥，不应移除。
 
----
+仓库保留[LuojiaMathBench V8 样本](data/LuojiaMathBench_v8.jsonl)及[旧评测归档](evaluation/report_v5_archive.md)。旧 README 报告过 20 条 V8 样本的教学合规率 90% 和直接答案泄露率 5%；这些是**历史运行结果**，本轮未重新运行模型评测，不能作为当前求根工作区的效果或泛化结论。逐样本结果生成在忽略的 `results/`，干净克隆不包含这些运行文件。
 
-## 📊 Evaluation: LuojiaMathBench V8 评测基准
+## 当前边界
 
-没有数据证据链的结论都是空谈。本项目专门构建了教育场景评测集 `LuojiaMathBench V8`。评测集、逐样本评测结果与汇总脚本均完全公开可复现。
+- 数学语义 Answer Guard 尚未形成覆盖全部回答的闭环；不能承诺“绝对正确”或“零幻觉”。
+- F8 的学生代码隔离执行环境（C0）尚未验收，首版仅作静态审阅；支持的手动轨迹不能证明程序运行正确。
+- F4 为开发版章节参考练习；F5 原句对应与模型意见都不直接增加独立成功。
+- F1 仍以受控 Newton 任务为主，F2 仍是课程摘录与 Markdown 原文伴读；完整 PDF 标注、跨设备草稿、完整教师后台仍待实现。
+- 密码找回、邮箱验证、服务端会话撤销、真实模型质量、教师核对及真人学习效果仍需后续验证。
 
-**数据集与证据链**：
-- 评测集：[`data/LuojiaMathBench_v8.jsonl`](data/LuojiaMathBench_v8.jsonl) — 共 **20 条** 样本（微积分 7 / 线性代数 7 / 概率论 6），每条包含学生作答 `student_solution`、预设错因（`error_code` / `error_step`）、期望教学动作 `pedagogical_action` 等字段；
-- 逐样本结果：[`results/v8_eval_results.jsonl`](results/v8_eval_results.jsonl) — **每次运行恰好 20 行**，与评测集一一对应；失败生成或评测异常的样本带 `error` 字段且不计入分母；
-- 汇总脚本：`python apps/api/scripts/summarize_eval.py` 一条命令重算全部指标；
-- 历史运行归档于 `results/history/`。
-
-### 评测结果横向对比
-
-| 架构 / 模型 | 教学引导合规率 (Passed) | 答案泄露/代替思考率 (Leak) | 状态 |
-| :--- | :--- | :--- | :--- |
-| **GPT-4o (Baseline)** | 未评测 | 未评测 | 🚧 规划中：裸模型 baseline（同 20 条、同 Rubric、不走 Orchestrator）尚待运行 |
-| **DeepSeek V3/R1 (Baseline)** | 未评测 | 未评测 | 🚧 规划中：同上 |
-| **Luojia Tutor (Dual-Agent)** | **90.0% (18/20)** | **5.0% (1/20)** | ✅ 已评测，见 `results/v8_eval_results.jsonl` |
-
-*上一代基准（V5 时代，Total 38 / Passed 12）的中途快照已归档至 [`evaluation/report_v5_archive.md`](evaluation/report_v5_archive.md)，与 V8 结果不具可比性。*
-
----
-
-## 🧩 Skill Schema Design (Agent 技能范式)
-
-作为一个标准化的教育智能体，本项目在核心的 `luojia-math-tutor/SKILL.md` 中严格定义了 Skill 的边界与工作流：
+## 项目结构
 
 ```text
-Skill:
-  Name: Math Tutoring (启发式数学助教)
-
-Input Profile:
-  - Problem Context (题目与科目)
-  - Student Mastery Vector (基于 BKT 计算的学生状态)
-  - Conversation History
-
-Workflow:
-  1. Fast Routing: 本地判定请求模式、教学动作和验证风险。
-  2. Fast Context: 并行读取 BKT/Memory、本地 BM25，并按需执行 SymPy。
-  3. Verification Gate: 仅在本地无法确定时调用 Verifier LLM。
-  4. Socratic Streaming: Teacher 或 Examiner 流式生成非泄露式引导。
-
-Tool Binding:
-  - SymPy Sandbox (代数验证器)
-  - Vector+BM25 RAG (知识检索器)
-  - BKT Engine (记忆追踪器)
-
-Iron Constraints (不可突破的底线):
-  - 永远不得直接输出完整的解题过程或最终结果。
-  - 必须通过提问让学生自己说出关键步骤。
+apps/api/app/api/                # FastAPI 路由与鉴权入口
+apps/api/app/tutor/              # 教学编排、求根任务、伴读及代码静态审阅
+apps/api/app/knowledge/          # 课程图谱、持久记录与复习策略
+apps/api/app/math_tools/         # 表达式解析、求根诊断与参考轨迹
+apps/api/tests/                  # 离线后端回归测试
+apps/web/app/                    # 首页、对话、六类学习入口与账号页面
+apps/web/components/learning/    # 共享学习界面与轨迹回放
+apps/web/lib/                    # 请求、输入校验与前端工具测试
+apps/web/public/brand/           # 用户提供的 Logo 与小珞立绘
+luojia-math-tutor/               # 助教 Skill 与课程参考资料
+planning/learning-experience-2026-10/ # 六个月功能规划与实施回执
+scripts/                        # 评测、数据校验与维护脚本
+results/                        # 本地生成证据，不跟踪
 ```
 
----
+## 规划与交接
 
-## 📺 System UI & Demos (系统界面预览)
+- [六个月功能规划](planning/learning-experience-2026-10/README.md)：F1–F8 的范围、启动条件与主线衔接。
+- [F1–F4 首版](planning/learning-experience-2026-10/f1-f4-delivery.md)、[首页及 F5/F8](planning/learning-experience-2026-10/home-f5-f8-delivery.md)、[小珞与流程加强](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)：实现与验收边界。
+- [M0/M1 课程图谱](COURSE_GRAPH_M0_M1.md)、[M2/M3 求根过程](COURSE_GRAPH_M2_M3.md)：课程与研究主线。
+- [分支日志](luojia_tutor2_branch_log.md)、[研究规划](luojia_tutor2_course_graph_research_refined.md)、[交接文档](CODEX_HANDOFF.md)、[贡献约定](AGENTS.md)。
+- [海报更新提示词](planning/learning-experience-2026-10/poster-update-prompt.md)：现有视觉材料的更新说明。
 
-为了提供顶级的交互体验，系统采用了极致优雅的“书院中国风 (Zen Academy Style)”，并配备了完善的教育学组件。
+<details>
+<summary>早期视觉海报（待按当前功能更新）</summary>
 
-*(由于 GitHub 单文件体积限制，高清视频演示已被移出仓库。你可以在本地运行以查看真实效果，或参考下方核心组件说明)*
+![早期珞珈数智助教海报，内容不代表当前验收范围](LJ_Tutor_Poster.png)
 
-*   **🎛️ 智能双栏工作台**：左侧为苏格拉底对话框，右侧实时显示当前考点、验算状态、错因、掌握度和动态复习建议；这些教学状态会随助教消息持久化，刷新或切换会话后仍可恢复。
-*   **📊 全局掌握度进度条**：学习面板直接读取后台概念掌握度、评估次数与平均水平；掌握度只在可验算的学生解题步骤中更新，普通概念问答不会虚增分数。
-*   **📑 会话专属随堂笔记**：笔记由当前会话的问题、回答、考点、验算结果和掌握度生成，并自动保存到 `/notebook`，不再使用固定内容模板。
-*   **📝 交互式草稿板与 OCR**：内置的 Whiteboard 允许手写推导公式，支持一键拍照搜题，由 MinerU 引擎负责复杂公式提取。
+该图保留历史视觉设计。图中的性能数字、绝对验证措辞和旧功能排列不作为当前能力说明；当前功能与限制以上文为准。
 
----
+</details>
 
-## 🛠️ 其他辅助工程特性
+## 许可证
 
-虽然核心在于 Agent Workflow，但本项目同样具备完善的工业级全栈实现：
-
-*   **分层 RAG 检索引擎**：本地 BM25 位于首字热路径，不依赖网络；Semantic Embedding 在当前回答结束后异步增强并缓存，失败不会影响本轮输出。
-*   **全栈交互体验**：Next.js 16 (App Router) + React 19 + FastAPI + SQLite。支持上传解析、公式渲染、掌握度雷达、随堂笔记和用户自带模型配置。
-*   **智能动态标签 (Dynamic Tagging)**：显式数学术语、上一轮会话状态与本地知识检索共同确定考点；短跟进会优先继承上下文，避免“好的，继续”触发无关知识点漂移。
-
----
-
-## 📁 项目目录结构
-
-```text
-├── apps/web                     # Next.js 16 前端项目 (React 19, TypeScript, Tailwind)
-│   ├── app/                     # App Router 路由 (chat, mistake-book, notebook, dashboard)
-│   ├── components/              # 核心 UI 组件 (草稿板, 公式键盘, 消息泡, 学习面板等)
-│   └── lib/                     # API 请求与前端封装
-├── apps/api                     # FastAPI 后端项目 (Python, SymPy, SQLite)
-│   ├── app/
-│   │   ├── api/                 # API 路由接口 (会话, 错题, 掌握度, RAG, Bilibili)
-│   │   ├── agents/              # 智能体组件 (Harness 质量评估器, Vision 识图)
-│   │   ├── memory/              # SQLite 数据库模型与仓储 (repository.py, mastery.py BKT引擎)
-│   │   └── tutor/               # 条件调度中枢 (fast_path.py, fast_context.py, graph.py)
-│   └── pyproject.toml           # 依赖与打包配置
-└── luojia-math-tutor/           # 珞珈数智助教核心 Skill 定义文件夹
-    ├── SKILL.md                 # 助教的核心工作流提示词与平台联动指令
-    └── references/              # 本地数学概念参考知识库与工具使用指南
-```
-
----
-
-## ⚙️ 本地快速部署
-
-### 1. 前置准备
-*   安装 [Node.js](https://nodejs.org/)（Next.js 最低 v20.9；本仓库测试与 CI 使用 v24）
-*   安装 [Python](https://www.python.org/) (v3.10+)
-
-### 2. 配置环境变量
-
-**后端配置**：在 `apps/api/` 下创建 `.env`，参考 `apps/api/.env.example`：
-```env
-APP_ENV=local
-DATABASE_URL=sqlite:///./luojia_tutor.db
-LLM_PROVIDER=deepseek
-LLM_BASE_URL=https://api.deepseek.com/v1
-LLM_API_KEY=your_deepseek_api_key
-LLM_MODEL=deepseek-v4-flash
-ALLOW_USER_API_KEY=true
-
-# 文档解析（PDF/Word 上传）。在 https://mineru.net/apiManage 创建 token。
-# ⚠️ MinerU token 有效期只有 ~90 天，到期后上传会报 401/403，
-# 需重新生成并替换 MINERU_API_KEY。
-MINERU_API_KEY=your_mineru_api_key
-```
-
-**前端配置**：在 `apps/web/` 下创建 `.env.local`：
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-```
-
-### 3. 安装与运行
-
-在根目录下使用以下命令启动全栈服务：
-
-```bash
-# 1. 安装前端依赖并运行
-cd apps/web
-npm install
-npm run dev
-
-# 2. 安装后端依赖并运行 (新终端)
-cd apps/api
-pip install -e .
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-你也可以在根目录下直接使用脚本：
-*   启动 API 端：`npm run dev:api`
-*   启动 Web 端：`npm run dev:web`
-
-启动成功后，打开浏览器访问 [http://localhost:3000](http://localhost:3000) 即可开启学习之旅。
-
----
-
-## 🧪 自动化测试与质量校验
-
-项目内置了完整的校验链条，可以通过根目录的测试指令验证系统正确性：
-
-```bash
-# 执行全部校验 (包含知识库 JSON 格式自检与 API 端 pytest)
-npm test
-
-# 仅执行数学知识库 JSON 校验
-npm run test:knowledge
-
-# 仅运行后端 API 测试
-npm run test:api
-
-# Run frontend helper/security tests
-npm run test:web:ui
-
-# 生成路由类型并检查 TypeScript；独立运行 ESLint
-npm --prefix apps/web run typecheck
-npm --prefix apps/web run lint
-
-# Build and type-check the frontend (先停止 Web dev server)
-npm run build:web
-```
-
----
-
-## 💡 经典演示路径 (演示建议)
-
-你可以使用以下数学典型问题来体验完整的“启发式引导 + 错题记录 + 掌握度分析”闭环：
-
-1.  **初次试探（触发引导）**：输入 `“我算 ∫ x^2 dx = x^3，对吗？”`
-    *   *AI 表现*：后台会静默通过 SymPy 验算得出错误，识别原因为“漏掉常数项或系数算错”，并在前端给出考点分析，以苏格拉底式提问引导你发现漏了什么（不直接说答案）。
-2.  **查看面板**：右侧学习面板会展现被识别的考点（幂函数积分）、后台验算结论、当前考点掌握度和下一步建议；刷新页面后状态仍然保留。
-3.  **整理随堂笔记**：点击“生成本节课专属笔记”，系统会按当前会话整理学习问题、核心方法、易错提醒与复习建议，并自动保存到 `/notebook`。
-4.  **错题本与掌握度**：访问 `/mistake-book` 查看错因记录；右侧学习面板会用进度条展示各概念的真实掌握度和累计评估次数。
-5.  **举一反三**：在错题本卡片上点击“举一反三”，系统将基于该错题考点自动生成一道相似计算，测试你是否真正掌握。
-
----
-
-## 👥 许可证与说明
-
-*   本项目核心代码、脚本及 Skill 配置遵循 [MIT License](LICENSE)。
-*   `luojia-math-tutor/references/textbook/` 下的教材 PDF 仅供本地科研与学习参考，请在遵守法律的前提下合规使用。
-
-### 联网检索
-
-聊天输入区提供“自动 / 开启 / 关闭”，设置保存在本机。自动模式在新闻、明确搜索请求、机构宣称的证明与猜想进展问题上检索；关闭优先，不触发任何搜索。API 可传 `web_search_mode=auto|on|off`；兼容旧 `web_search=true`（强制开启）。
-
-服务端可在忽略的 `apps/api/.env` 配置 `TAVILY_API_KEY`，优先使用 Tavily；未配置或失败时尝试 DuckDuckGo HTML、Bing RSS。后两者是尽力而为的公共通道，可能限流、改版或返回不相关结果。每轮检索总预算10秒，不延长本地检索子预算。**搜索摘要不等于全文核实或证明验证**；失败、超时、无结果均明确呈现，不能由此断言某项成果不存在。逐轮状态、来源、提供方尝试和耗时保存到回答的 `learning_meta.web_search`，历史无状态的旧回答不补造记录。
-
-
-### 求根过程验证与动态图示
-
-聊天输入区的“求根过程验证”可提交Newton、二分法或不动点迭代的公式、轨迹与停止依据，定位偏差并修订重验。根误差和残差目标分别验证；帮助后成功与首次服务器独立探针分开记录，单次成功不等于掌握度。开发验收、输入例子、权限/持久化和教师复核边界见[实施说明](COURSE_GRAPH_M2_M3.md)。
-
-模型可输出闭合html围栏生成DOM/Canvas动画，完成后点击“运行动态预览”；独立iframe禁外联和父页面DOM访问，可停止/重启，30秒定时结束。静态SVG/裸HTML保持禁脚本。动态JS不进入数学验证或学习计分；浏览器定时器不提供同步死循环的硬CPU隔离。
+核心代码、脚本及 Skill 配置采用 [MIT License](LICENSE)。教材文件和引用材料遵循各自的授权范围；仓库代码许可证不自动授予教材内容的使用权限。

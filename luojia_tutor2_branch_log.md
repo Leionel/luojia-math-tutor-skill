@@ -330,3 +330,12 @@ F1 反馈待确认时锁定输入和新提交，保留幂等重试；F2 原文�
 用户明确授权分批提交并推送，按四个边界：后端学习与教学规则、学习工作区与品牌形象、登录体验、规划及交接记录。提交前重跑npm test：知识JSON/API469/Web40全部通过；最新auth-followup生产build与类型检查通过，lint0错误/10既有警告，diff check通过。git grep sk-检查仅发现说明文字/普通标识符/既有二进制匹配，新增源码/规划未检出匹配的凭证格式。既有egg-info、demo-jiuzhang-hybrid.html、style-explorer.html、ui-proposals、ignored results/数据库/env不纳入。
 
 首版后端包含learning_records表、课程持久库派生路径和tzdata依赖；COURSE_STORE_PATH显式优先，离线测试门控保留。当前分支feature/course-graph-2.0。远端fetch首次因GitHub443连接失败，当前remote-tracking ref不是实时远端证据；推送将在提交后单独尝试并报告，本文不提前宣称已推送。
+
+
+## 2026-10-03 README 更新与海报提示词交接
+
+用户要求更新 README 与海报提示词，后要求直接生图，再明确表示海报由自己生成。README 改为当前六入口 F1–F5/F8、快速开始、Newton 循环/收敛体验例与能力边界；历史 V8 样本结果不冒充当前求根效果。`.env.example` 只更正课程库派生持久路径的旧注释，没有修改配置值、业务源码或冻结数据。完整/精简生图请求保存于 planning/learning-experience-2026-10，入口 poster-update-prompt.md。
+
+本轮 npm test：知识JSON/API469/Web40通过；本地文档链接无缺失、Newton 示例离线核对与diff check通过。日志 results/readme-update-tests.log。未从干净环境重装依赖，未重复build/真实模型/教师gold/真人评测。内置imagegen两次网络错误，第三次请求按用户指示停止；没有新图，旧海报/原Logo/原小珞保留。交付PNG与视觉核验由后续生成结果决定，不承诺提示词分辨率、可编辑文字层或效果。
+
+此前四批047f134/f875b3e/381c0d6/65ece36已推送，fetch核对本轮开始时本地与远端feature/course-graph-2.0一致。当前文档及提示词按明确清单提交，提交/推送回执在最终交付分别报告；无关原型/egg-info、ignored results、数据库/env不纳入。研究主线、教师/独立与延迟测验门槛不变；没有远端CI或部署证据。
