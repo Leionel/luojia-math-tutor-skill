@@ -19,7 +19,7 @@ from app.tutor.graph import TutorWorkflow
 from app.tutor.prompt_policy import load_teaching_prompt
 from app.tutor.answer_guard import AnswerDeliveryError
 from app.tutor.run_trace import durable_call
-from app.tutor.learning_context import LearningContextRef, resolve_learning_context
+from app.tutor.learning_context import LearningContextRef, ReferenceContext, resolve_learning_context
 from app.tutor.intent_router import Intent
 
 logger = logging.getLogger(__name__)
@@ -241,7 +241,7 @@ class TutorOrchestrator:
                            requested_hint: bool = False, image_urls: list[str] | None = None,
                            web_search: bool = False, web_search_mode: str = "auto",
                            reasoning_effort: str = "medium", root_submission: dict | None = None,
-                           parent_run_id: str | None = None, learning_context: LearningContextRef | None = None,
+                           parent_run_id: str | None = None, learning_context: ReferenceContext | None = None,
                            learning_workspace=None) -> AsyncIterator[str]:
         from app.tutor.run_trace import RunTrace
         trace = RunTrace(self.repository, session_id, user_id,parent_run_id,
@@ -303,7 +303,7 @@ class TutorOrchestrator:
         reasoning_effort: str = "medium",
         root_submission: dict | None = None,
         trace=None,
-        learning_context: LearningContextRef | None = None,
+        learning_context: ReferenceContext | None = None,
         learning_workspace=None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
@@ -315,7 +315,7 @@ class TutorOrchestrator:
         )
         route = route_fast_path(message, mode, subject)
         search = decide_search(message, "off" if learning_context else web_search_mode, False if learning_context else web_search)
-        opening = "我先读取并核对这次参考实验，再讨论你关心的步骤。" if learning_context else "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
+        opening = "我先核对本轮引用的来源，再讨论你的问题。" if learning_context else "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
             2,
@@ -399,7 +399,7 @@ class TutorOrchestrator:
             # Reference trajectories cannot be graded as the student's own work.
             initial_state.update(learning_context=snapshot, intent=Intent.CONCEPT,
                                  detected_subject="数值分析", pedagogical_action="explain",
-                                 learning_objective="讨论当前保存的 Newton 参考实验",
+                                 learning_objective=f"讨论当前引用：{snapshot['title']}",
                                  verification_mode="none", requires_policy_fallback=False, confidence=1.0)
 
         queue: asyncio.Queue[str] = asyncio.Queue()
@@ -563,7 +563,7 @@ class TutorOrchestrator:
             learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,
                                  verification_kind="none", mastery_delta=0,
                                  verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
-            if (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
+            if snapshot["ref"]["kind"]=="root_lab" and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
                 from app.tutor.learning_actions import root_proposal
                 learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id)]
         if final_state.get("root_diagnosis"):

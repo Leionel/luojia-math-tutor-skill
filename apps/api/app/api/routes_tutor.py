@@ -15,7 +15,8 @@ from app.config import Settings
 from app.main_deps import get_app_settings, get_orchestrator, ensure_reference_help_allowed, get_learning_workspace
 from app.tutor.orchestrator import TutorOrchestrator
 from app.tutor.root_diagnostics import RootSubmission, extract_submission
-from app.tutor.learning_context import LearningContextRef, resolve_learning_context
+from app.tutor.learning_context import LearningContextRef, ReferenceContext, resolve_learning_context
+from app.tutor.study_summary import read_study_summary, stream_study_summary, study_requested
 from app.tutor.learning_actions import LearningActions, PreviewActionRequest, SavePreviewRequest
 
 
@@ -25,7 +26,8 @@ router = APIRouter(prefix="/api/tutor", tags=["tutor"])
 class TutorStreamRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     root_submission: RootSubmission | None = None
-    learning_context: LearningContextRef | None = None
+    learning_context: ReferenceContext | None = None
+    study_action: Literal["current_tasks"] | None = None
     parent_run_id: str | None = Field(default=None,pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$")
     session_id: str
     user_id: str = "demo-user"
@@ -51,6 +53,12 @@ async def stream_tutor(
 ):
     user_id = resolve_user_id(principal, payload.user_id, settings)
     ensure_session_access(payload.session_id, principal, settings, orchestrator.repository)
+    task_read=payload.study_action=='current_tasks' or (not payload.learning_context and not payload.root_submission and not payload.image_urls and study_requested(payload.message))
+    if task_read:
+        if payload.learning_context or payload.root_submission or payload.image_urls:
+            raise HTTPException(422,'请移除当前引用/作答/图片后读取任务。')
+        return TutorStreamingResponse(stream_study_summary(orchestrator.repository,learning_workspace,user_id,payload.session_id,payload.message),media_type='text/event-stream')
+
     try:
         settings.resolve_model(payload.model)
     except ValueError as exc:
@@ -64,11 +72,11 @@ async def stream_tutor(
     ensure_reference_help_allowed(user_id, submission.episode_id if submission else None)
     if payload.learning_context:
         if submission or payload.image_urls:
-            raise HTTPException(422, "实验参考讨论与作答/图片核对请分开发送。")
+            raise HTTPException(422, "引用讨论与作答/图片核对请分开发送。")
         try:
             resolve_learning_context(learning_workspace, user_id, payload.learning_context)
         except KeyError as exc:
-            raise HTTPException(404, "实验不存在或无权访问") from exc
+            raise HTTPException(404, "引用来源不存在或无权访问") from exc
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from exc
     return TutorStreamingResponse(
@@ -94,13 +102,18 @@ async def stream_tutor(
     )
 
 
+@router.get("/study")
+def study_state(principal: Principal=Depends(get_principal),workspace=Depends(get_learning_workspace)):
+    return read_study_summary(workspace,principal.user_id)
+
+
 @router.post("/context")
-def learning_context(ref: LearningContextRef, principal: Principal = Depends(get_principal),
+def learning_context(ref: ReferenceContext, principal: Principal = Depends(get_principal),
                      workspace=Depends(get_learning_workspace)):
     try:
         return resolve_learning_context(workspace, principal.user_id, ref)
     except KeyError as exc:
-        raise HTTPException(404, "实验不存在或无权访问") from exc
+        raise HTTPException(404, "引用来源不存在或无权访问") from exc
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 

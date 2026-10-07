@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import os
+import ast
 
 from s5_quality import build_report, digest, load_json, validate_manifest, valid_sha
 
@@ -118,7 +119,7 @@ def main(argv=None) -> int:
         report['preflight'] = {'planned_runs': planned_runs, 'worst_case_requests_without_probe': proposed_requests,
                                'per_run_assumed_request_cap': 6, 'protocol_probe_requests': 0,
                                'profile': profile_summary, 'live_ready': False, 'pending': pending}
-        report['profile_versions'] = {'prompt': 'teaching-v2.6', 'guard': 'delivery-v2', 'checker': 'step-v1',
+        report['profile_versions'] = {'prompt': next(n.value.value for n in ast.parse((ROOT/'apps/api/app/tutor/prompt_policy.py').read_text(encoding='utf-8-sig')).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='PROMPT_VERSION' for t in n.targets) and isinstance(n.value,ast.Constant)), 'guard': 'delivery-v2', 'checker': 'step-v1',
                                       'meaning': 'current source contracts; replay is not a live run under these versions'}
         if args.review_packet_output:
             packet=prepare_review_packet(args.manifest)
