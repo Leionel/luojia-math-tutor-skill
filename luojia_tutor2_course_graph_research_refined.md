@@ -1,5 +1,33 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-07 S5.2材料与工程流程首版
+
+用户授权开始5.2。新增8道公开dev独立解答/逐题rubric（agent_prepared_only，真人审核/二审pending）、严格内容/输入/rubric/版本绑定、未签署review worksheet、仅caller-supplied-unverified的录制回答导入与输出覆盖保护。新增2条固定模型实际ASGI/SSE完整流程，独立临时库与合成Principal：Newton引用/预览/显式save/重试/新引用/保护；普通数值Chat候选修订/输入保存/metadata恢复/两sink不写。共3run18阶段通过，不等于真实JWT、模型数学内容或真人学习效果。矩阵分支没有请求自动单步核验，输入绑定来自真实用户消息；不伪造step_hash。
+
+根知识JSON/API780/Web56通过；S5.2新增31回归、targeted80，E0 v2 38/92与S5.2 11/31通过。无生产代码/表/接口/依赖/UI改动，不重复前端构建。详见planning/agent-v3-2026-10/12-delivery-s5-2.md、evaluation/s5/README.md和review-protocol.md；results/s5-2-*为ignored生成证据。16保护文件不变，HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850；未commit/push/deploy/live消费。
+
+下一步真实审核/二审与评分仍pending，4个确认register仅空名额无假hash，不称封存题；S5.3需独立供应商/预算/授权。linear可信引用、C0/C1及真人研究未由本轮升级。S5.2材料与工程首版交付不等于全质量验收。
+
+## 2026-10-07 三份规划统一入口（仅文档）
+
+用户询问learning-experience与agent-engineering后续。新增planning/README.md，保留产品六个月F1–F8、工程A/S历史与v3当前S5三种视角；同步旧入口/implementation-notes。不重复排已完成首版。下一S5.2内容/流程证据，产品候选linear只读Chat，S5.3 live/预算有条件；F6/F7/C0/C1/A8保留启动门槛。读源码确认可信LearningContext仍限定Newton，原回执用于交付范围、本轮不重做全功能验收。保留07和runtime原dirty，无业务改动/提交/推送。
+
+## 2026-10-07 S5.1首版与弹出菜单实色修复
+
+用户启动S5.1并要求深入审视其内容。已实现offline/dry-run/replay、4类固定模型真实compiled graph/worker采集、独立临时SQLite与写入/保存恢复观察、固定分母/hash/人工来源合同、Markdown解释报告。来源为fixture，不计入真实模型数学质量；8道公开dev输入/rubric仍pending，真人二审/4道封存/2流程/live预算未完成。核心目标及case取舍见planning/agent-v3-2026-10/11-s5-1-evaluation-rationale.md，交付回执10，接口evaluation/s5/README.md。
+
+教学模式/工具和同根因思考弹出菜单改实色主题背景，去透明变量后缀与模糊，说明文字加深。HTTP/构建CSS验证实底；浏览器UI访问被工具URL策略拒绝，无新截图验收。3000端口保留生产预览。根测试知识JSON/API749/Web56通过（新增S5.1 49）；E0 v2 38/92、S5.0 10/45通过；Web类型/lint/build通过，lint10既有警告。16保护文件hash不变。
+
+HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850，保存原dirty；未commit/push/deploy/真实模型消费。下一步S5.2先作者解答/rubric审核，补实际观察adapter和完整流程；无已复核真实失败时不凭空扩Reasoner。不得把fixture合同通过写成模型准确率或教学增益。
+
+## 2026-10-07 S5.0 与首页/文案交付（工作区）
+
+用户授权开始S5.0，追加页面去AI味文案与fancy首页。已完成有界AST学生检查、固定私有worker/独立最多5秒预算、输入与候选重绑定、来源/范围/unknown、mistake/mastery双sink资格、帮助锁执行期监视与子进程回收、legacy历史prompt/展示；teaching-v2.6，无新表或模型权限扩张。首页加入深橄榄曲线区、光晕/脉冲、暂停/离屏/减少动态支持，操作提示改具体文字。实际手机焦点引起overflow内部滚动问题改为clip。
+
+根npm test知识JSON/API700/Web56通过，E0 v2 38合同92实例，独立S5.0 addendum10合同45实例；Web typecheck/lint/build通过（lint10已有警告）。真实compiled graph/临时SQLite/SSE与真实worker回收均有测试；浏览器fixture为固定模型、隔离库、外部HTTP禁用，不是live质量/教学评测。16保护文件哈希一致。完整行为、降级范围和证据见planning/agent-v3-2026-10/09-delivery-s5-0.md；results/s5-0-*和s5-0-ui保存本机证据。
+
+HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850，保留此前dirty，未commit/push/deploy、正式库迁移或真实模型消费。下一批S5.1/S5.2聚焦runner/gold仍pending；linear只读引用与独立Evidence尚未实施。旧审计“G1/G2未修复”是历史快照，不能作为当前运行真相，也不能把公开E0通过当质量准确率。
+
 > **项目仓库**：`Leionel/luojia-math-tutor-skill`
 > **试点课程**：《数值分析》
 > **首单元建议**：非线性方程求根（Bisection / Fixed Point / Newton）
@@ -2797,3 +2825,23 @@ S4在实际客户端调用边界记录span/call/parent、起止/状态/耗时、
 本地最终知识JSON/API655/Web51、v2合同38/38实例92/92、TypeScript/lint0error10既有warning/build通过。v1历史19/40保留。隔离真实HTTP/编译图/worker/Guard/SQLite网页验证3请求2报告、一次求导和一次修复、刷新一致、390px无横向溢出；费用仅合成测试数据。现有两库SQLite backup integrity_check=ok后恢复API8000/Web3000，私密env未改。详见planning/agent-engineering-2026-10/delivery-s3-s4.md；不是模型准确率、真实供应商验证、账单或教学收益，远端CI/部署未验收。
 
 下一步S5/A5任务冻结、旧基线对照与人工gold，再按明确配置/预算运行E3真实模型烟测；S5及回归预计4–6集中开发日，人工gold另计。全功能引用、A8/C0另估；工程成果可如实写固定工具Runtime/调用回执/离线失败注入，不补造模型质量指标。提交/推送证据以本轮最终回执为准；保留无关runtime文档修改、原型、egg-info与ignored results。
+
+## 2026-10-04 Agent v3 研究与工程主线重审
+
+预约 prompt 已完整读取，审计对象为本目录 HEAD `52373b632013e0808f8939b1fd8876edbc5e2850` 与保留原有修改的工作区。七份主规划与两份审计附录见 `planning/agent-v3-2026-10/`，本轮只做审计与文档更新，未实施生产功能、运行真实模型或修改学习计分规则。
+
+重新验证知识 JSON / API 655 / Web 51 与 E0 v2 契约 38/38、实例 92/92 通过；这验证工程合同，不验证开放证明、真实模型数学准确率或学生学习收益。固定探针确认旧学生单步 SymPy 字符串解析的执行边界缺口，以及定义域、洛必达条件与文字误概念规则的核验语义问题，均尚未修复。新增 S5.0 安全/语义前置修复，先使 unsupported/unknown 和确定证据分开，再开展 S5 模型质量与任务路径评测。
+
+Course Graph 目前支持结构检索、任务路由和条件候选；条件仍是 `not_checked`，不能当成本题前提成立或形式证明。主线不升级成完整 Reasoning Graph；VerificationEvidence 是下一候选，先绑定 claim/input hash、前提、范围、checker、来源与 outcome。仅当 S5 有独立复核的多步依赖失败簇且公开 step 清单消融有效，才试单 run 的 ReasoningState；不保存隐藏思维链，也不将参考轨迹、LLM review 或 heuristic 当作独立学习证据。
+
+S5 计划 E1 32 任务、E2 36 题、E3 8 episode，dev/held-out 分离、gold 双人复核；历史共有能力对照与新增能力 coverage 分开。开发者合成契约、人工数学 gold、真实模型结果、未见题无 AI 迁移和延迟保持继续分别报告。预算数值是未来运行配置建议，未授权自动付费评测。完整 S5 估计 6–9 集中开发日，人工复核 10–14 小时另计；四至六周优先评测 → 一个 Evidence/有界反例或 linear 上下文切片 → 复评演示。A8 持久 checkpoint、全面 Lean 与全科泛化暂不启动，来源/版本/帮助/学生作答边界沿用现有合同。
+
+## 2026-10-07 按独立审阅修订Agent v3规划
+
+用户授权修改方案，本轮仅文档：新增08核验/学习资格执行合同，重写02/04，同步00/01/03/05/06、README、旧索引与CODEX_HANDOFF。07独立审阅及用户runtime/原型/egg-info保持原样；修改前17份文档在ignored results/agent-v3-plan-revision-20261007-before留快照，源码HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850。
+
+两周只承诺S5.0诚实核验：正常一元等价/导数候选与有限表示、独立核验deadline、输入/域/候选绑定、代算/heuristic/unknown/reference_help不冒充学习证据、mistake/mastery双sink、旧消息legacy/来源提示及UI状态。正常子集全unknown不能验收。初始核验最多5秒需校准；4–7开发日预算含跨层回归，不是实测或保证。历史聚合学习记录不精确重算。
+
+gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、2 dev流程，原32/36/8与历史adapter移backlog。固定分母、完成/正确/恰当弃权/coverage、干预状态重置及新封存确认一起报告。协议probe不等全题库，但需隔离预算/profile及另行live授权；51只适用3 probe＋8单run×6，费用上界未知则硬预算live不运行。
+
+默认下一产品片linear只读可信Chat，保留原编辑/运行/保存，新参数卡后排。scope/origin/候选资格先复用现有字段，多结果误指及多消费者需求证实后才抽Evidence；ProofState/IR/Lean/A8继续条件延期。完整原S5情景10–17日包含S5.0，人工出题/二审/盲评/供应商等待另计，首片与首4题后校准。没有生产代码、测试、配置/数据迁移或新模型质量成果；10月4日655/51、38/92为历史回执，本轮只做文档与保护范围检查，不commit/push/deploy。

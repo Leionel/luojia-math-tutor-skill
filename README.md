@@ -1,5 +1,15 @@
 # 珞珈数智助教 · Luojia Math Tutor
 
+> S5.2当前交付：[8道dev材料与2条ASGI流程首版](planning/agent-v3-2026-10/12-delivery-s5-2.md)，API780/Web56与E0合同通过。内容为agent准备、真人审核/真实模型质量仍pending；[题解与rubric](evaluation/s5/development-content-v1.md)可直接审阅。
+
+规划入口：[产品、Agent工程与S5共同排期](planning/README.md)。
+
+> 当前S5.1首版：[离线评测/实际图fixture与解释报告](planning/agent-v3-2026-10/10-delivery-s5-1.md)已实现，API749/Web56与E0合同通过；[验证目标](planning/agent-v3-2026-10/11-s5-1-evaluation-rationale.md)说明case取舍和后续启动条件。8道dev草案gold仍pending，无真实模型质量或教学收益结论。模式/工具弹出面板已改实色背景。
+
+> 当前交付（2026-10-07）：[S5.0本步核验与学习资格](planning/agent-v3-2026-10/09-delivery-s5-0.md)已在工作区实现：有界AST、固定worker、输入/候选绑定、双学习写入资格、历史范围标注；API700/Web56，E0 v2 38/92及增量10/45均通过，Web构建通过。首页曲线动画和操作文案已更新。后续质量runner/gold和linear引用按[日程](planning/agent-v3-2026-10/04-roadmap.md)推进，未宣称真实模型质量或教学收益。下方旧回执数字保留历史日期。
+
+> 当前规划（2026-10-07修订）：A0–A3、S1–S4为既有工程交付；2026-10-04离线回执为API655/Web51、E0 v2 38合同/92实例。下一步先完成[S5.0核验与学习资格合同](planning/agent-v3-2026-10/08-s5-0-verifier-contract.md)，再做聚焦评测和linear只读实验引用，见[修订日程](planning/agent-v3-2026-10/04-roadmap.md)。该段为实施前规划快照；当前S5.0交付见上方，质量评测/产品接入仍待做。
+
 <img src="apps/web/public/brand/luojia-logo.png" width="64" alt="珞珈数智 Logo" align="left" />
 
 **把条件讲清，把过程算明。**
@@ -146,11 +156,11 @@ flowchart LR
 
 每轮生成 UUID 执行记录，保存有限公共步骤和终态，回答与终态在同一 SQLite 事务中提交。聊天旁可折叠回看过程；浏览器停止生成会触发服务端图任务与工具清理，刷新可恢复取消 / 中断记录。过期运行只标记 interrupted，不自动重放。缺少 provider usage 时保存 null，不推算成本。
 
-新增 schema migration 6，已有部署启用前应使用 SQLite backup API 备份实际数据库；代码回滚保留新表。设计、回归和限制见 [A0–A2 交付回执](planning/agent-engineering-2026-10/delivery-a0-a2.md)，后续见 [Agent 工程规划](planning/agent-engineering-2026-10/plan.md)。A3 离线协议评测 CLI 已完成，冻结 19 个合同 / 40 个实例；真实模型质量对照（A5）尚未完成，协议通过率不代表模型正确率。
+新增 schema migration 6，已有部署启用前应使用 SQLite backup API 备份实际数据库；代码回滚保留新表。A0–A3、S1–S4工程交付见 [A0–A2 回执](planning/agent-engineering-2026-10/delivery-a0-a2.md)和[S3/S4 回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)。离线评测 CLI 默认 v2，冻结 **38 个协议合同 / 92 个参数化实例**；v1 的19/40保留为历史版本。真实模型行为/数学质量对照（S5/A5）尚未完成，协议通过率不代表模型正确率。受控工具链已接普通Chat，但默认关闭，需精确模型/端点能力声明；缺usage不补零。旧学生表达式核验的解析与范围缺口尚待S5.0修复，不能把新typed路径的安全边界泛化到所有入口。
 
 ## 验证与评测
 
-截至 **2026-10-03**，本地代码交付验证为：知识 JSON 通过，**API 600 项、前端工具测试 48 项通过**；生产构建和类型检查通过，lint **0 错误、10 条原有警告**。隔离演示库完成学习任务、草稿/版本恢复、实验交互和手机布局检查。多领域实验及 A3 新回执见 [本轮交付](planning/agent-engineering-2026-10/delivery-a3-numerical.md)；此前详细回执见[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)与[实施记录](planning/learning-experience-2026-10/implementation-notes.md)。这是工程验证，不是教师验收或真人学习效果评测。
+截至 **2026-10-04**，本轮重新跑通知识 JSON、**API 655 项、前端工具测试 51 项**，E0 v2为 **38/38协议合同、92/92实例**。生产构建、类型检查、lint **0错误/10条既有warning**及隔离桌面/手机页面验收是此前[S3/S4交付回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)中的验证，本次文档审计未重复执行。完整口径见[当前基线](planning/agent-v3-2026-10/00-current-baseline.md)；历史多领域实验回执和[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)保留当时结果。这些是工程验证，不是教师gold、真实供应商验收或真人学习效果评测。
 
 Windows 根目录：
 
