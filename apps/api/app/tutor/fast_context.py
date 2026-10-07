@@ -9,7 +9,8 @@ from app.config import Settings, get_settings
 from app.knowledge.schema import KnowledgeHit, EvidencePack
 from app.knowledge.search import search_evidence_pack
 from app.knowledge.concepts import extract_explicit_concepts
-from app.math_tools.step_checker import check_step
+from app.math_tools.step_checker import digest
+from app.math_tools.step_runtime import verify_student_step
 from app.math_tools.verifier import VerifyResult
 from app.memory.mastery import mastery_label, update_mastery
 from app.memory.repository import Repository
@@ -120,6 +121,7 @@ class FastContextCollector:
         self.timeout_seconds = timeout_seconds
         self.local_search = local_search
         self.settings = settings or get_settings()
+        self.symbolic_timeout_seconds = self.settings.step_verification_timeout_seconds
 
     async def collect(self, state: dict[str, Any]) -> FastContext:
         started = time.perf_counter()
@@ -140,8 +142,13 @@ class FastContextCollector:
             asyncio.create_task(
                 self._collect_document_chunks(document_id, state["message"])
             ): "document_chunks",
-            asyncio.create_task(self._collect_symbolic_result(state)): "symbolic",
         }
+        # The optional retrieval deadline must not cancel a cold fixed-worker check.
+        symbolic_state = {**state, "verification_deadline": min(
+            started + self.symbolic_timeout_seconds,
+            state.get("request_deadline", float("inf")),
+        )}
+        symbolic_task = asyncio.create_task(self._collect_symbolic_result(symbolic_state))
         web_task = (asyncio.create_task(self._collect_web_hits(state["message"]))
                     if state.get("web_search") else None)
         try:
@@ -162,6 +169,8 @@ class FastContextCollector:
                 task.cancel()
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
+            symbolic_result, symbolic_ms = await symbolic_task
+            results["symbolic"], durations["symbolic"] = symbolic_result, symbolic_ms
 
             pack = results.get("hits", None)
             hits = pack.direct_hits + pack.graph_hits if pack else []
@@ -196,6 +205,13 @@ class FastContextCollector:
                 mistake,
                 previous_concepts,
             )
+            if not concepts and not state.get("external_fact_question"):
+                # Mathematical notation may contain no Chinese concept keywords.
+                operation_concept = {"derivative": "导数", "integral_candidate": "不定积分",
+                                     "expression_equivalence": "代数运算", "determinant_2x2": "二阶行列式",
+                                     "indeterminate_form": "洛必达法则"}.get(verifier_result.scope)
+                if operation_concept:
+                    concepts = [operation_concept]
             concept_items = self._build_concept_items(
                 message=state["message"],
                 concepts=concepts,
@@ -204,8 +220,7 @@ class FastContextCollector:
                 previous_items=previous_concept_items,
                 assessed=(
                     state.get("intent") is Intent.CHECK_STUDENT_STEP
-                    and verifier_result.verified
-                    and verifier_result.is_correct is not None
+                    and self._learning_eligible(state, verifier_result)
                 ),
             )
             learning_state = {
@@ -248,7 +263,7 @@ class FastContextCollector:
                 web_search_report=web_report,
             )
         finally:
-            owned_tasks = [*tasks, *([web_task] if web_task else [])]
+            owned_tasks = [*tasks, symbolic_task, *([web_task] if web_task else [])]
             for task in owned_tasks:
                 if not task.done():
                     task.cancel()
@@ -267,10 +282,20 @@ class FastContextCollector:
     ]:
         self.repository.ensure_user(user_id)
         db_messages = self.repository.list_messages(session_id)
-        history = [
-            {"role": item["role"], "content": item["content"]}
-            for item in db_messages
-        ]
+        history = []
+        for item in db_messages:
+            content = item["content"]
+            if item["role"] == "assistant":
+                meta = item.get("learning_meta") or {}
+                if not isinstance(meta, dict): meta = {}
+                check = meta.get("step_check") or {}
+                if not isinstance(check, dict): check = {}
+                if check.get("version") != "step-v1":
+                    content = "[历史回答：未记录本步核验来源/范围，不能作为当前已核验事实。]\n" + content
+                else:
+                    content = ("[历史核验仅作背景，需按当前候选重新检查；来源=" + str(check.get("origin", "unknown"))[:40]
+                               + "，范围=" + str(check.get("scope", "unknown"))[:60] + "]\n" + content)
+            history.append({"role": item["role"], "content": content})
         previous_concepts: list[str] = []
         previous_concept_items: list[dict[str, Any]] = []
         for item in reversed(db_messages):
@@ -390,14 +415,20 @@ class FastContextCollector:
             )
         else:
             try:
-                result = await asyncio.to_thread(
-                    check_step,
-                    state["message"],
-                )
+                remaining = min(self.symbolic_timeout_seconds,
+                    state.get("verification_deadline", started + self.symbolic_timeout_seconds) - time.perf_counter())
+                if remaining <= 0:
+                    raise asyncio.TimeoutError
+                result = await asyncio.wait_for(
+                    verify_student_step(state["message"], remaining, state.get("user_id")), remaining)
+            except asyncio.TimeoutError:
+                result = (VerifyResult(False, None, "本步核验超时，未判定学生错误。", input_hash=digest(state["message"]),
+                                       execution_status="timeout", unknown_reason="verification_deadline"), None)
             except Exception:
                 logger.exception("Symbolic step checking failed")
                 result = (
-                    VerifyResult(False, None, "自动符号验证失败。"),
+                    VerifyResult(False, None, "自动符号验证失败，未判定学生错误。",
+                                 execution_status="failed", unknown_reason="verification_failed"),
                     None,
                 )
         return result, (time.perf_counter() - started) * 1000
@@ -587,12 +618,36 @@ class FastContextCollector:
 
         return result
 
-    def _finalize_learning_state(
+    @staticmethod
+    def _learning_eligible(state, result):
+        return bool(not state.get("learning_context") and state.get("intent") is Intent.CHECK_STUDENT_STEP
+                    and result.eligible_learning_evidence and result.verified and result.is_correct is not None
+                    and result.scope_complete and result.origin == "student_claim" and result.candidate_hash
+                    and result.input_hash == digest(state["message"]))
+
+    def _finalize_learning_state(self, state, concepts, verifier_result, mistake):
+        eligible = self._learning_eligible(state, verifier_result)
+        if eligible:
+            from app.knowledge.course_service import get_course_service
+            from app.tutor.help_boundary import assert_reference_help_allowed
+            course = get_course_service("numerical_analysis")
+            # Assessment creation shares this store lock; both sinks see the same boundary.
+            with course.store.transaction():
+                try:
+                    assert_reference_help_allowed(state["user_id"], course)
+                except ValueError:
+                    verifier_result.eligible_learning_evidence = False
+                    return self._finalize_learning_state_unlocked(state, concepts, verifier_result, None, False)
+                return self._finalize_learning_state_unlocked(state, concepts, verifier_result, mistake, True)
+        return self._finalize_learning_state_unlocked(state, concepts, verifier_result, mistake, False)
+
+    def _finalize_learning_state_unlocked(
         self,
         state: dict[str, Any],
         concepts: list[str],
         verifier_result: VerifyResult,
         mistake: Mistake | None,
+        eligible: bool,
     ) -> dict[str, float | int | str]:
         mastery_score = self.settings.initial_mastery
         mastery_delta = 0.0
@@ -602,7 +657,7 @@ class FastContextCollector:
             return {"mastery_score": mastery_score, "mastery_delta": 0.0,
                     "mastery_label_str": mastery_label(mastery_score), "hint_level": 3}
 
-        if mistake:
+        if eligible and verifier_result.is_correct is False and mistake:
             try:
                 self.repository.add_mistake_event(
                     user_id=state["user_id"],
@@ -627,9 +682,7 @@ class FastContextCollector:
             )
 
             if (
-                verifier_result.verified
-                and verifier_result.is_correct is not None
-                and state.get("intent") is Intent.CHECK_STUDENT_STEP
+                eligible
             ):
                 from app.memory.mastery import LearningEvent
                 event = LearningEvent(

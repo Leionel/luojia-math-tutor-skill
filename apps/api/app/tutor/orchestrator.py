@@ -111,7 +111,7 @@ class TutorOrchestrator:
         if isinstance(verifier_result, VerifyResult):
             if verifier_result.verified:
                 if verifier_result.is_correct is True:
-                    verify_items.append("SymPy 符号验证已通过")
+                    verify_items.append(verifier_result.summary or "已核对指定候选与范围")
                 elif verifier_result.is_correct is False:
                     verify_items.append(
                         verifier_result.summary
@@ -201,6 +201,7 @@ class TutorOrchestrator:
                 and verified
                 and is_correct is not None
                 and intent == "check_student_step"
+                and getattr(verifier_result, "eligible_learning_evidence", False)
             )
             item.setdefault("path", [])
             item.setdefault("description", "")
@@ -222,6 +223,8 @@ class TutorOrchestrator:
             "is_correct": is_correct,
             "mistake": getattr(mistake, "label", mistake),
             "verifier_summary": verifier_summary or "",
+            "step_check": verifier_result.public() if isinstance(verifier_result, VerifyResult) else None,
+            "mastery_estimate_notice": "掌握度是聚合估计，历史更新缺少逐条核验来源，不等于独立检验成绩。",
             "hint_level": state.get("hint_level", 0),
             "mastery_score": state.get("mastery_score", 0.5),
             "mastery_label": state.get("mastery_label_str", "一般"),
@@ -406,7 +409,7 @@ class TutorOrchestrator:
         async def on_token(event_str: str) -> None:
             nonlocal first_token_time
             await validate_reference()
-            if any(step.get("tool_name") for step in trace.steps):
+            if not root_submission:
                 from app.tutor.help_boundary import assert_reference_help_allowed
                 await asyncio.to_thread(assert_reference_help_allowed, user_id)
             if first_token_time is None:
@@ -588,7 +591,7 @@ class TutorOrchestrator:
                              "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
                              "route": "intent_clarification"}
         intent = learning_meta["intent"]
-        if final_state.get("tool_evidence"):
+        if not root_submission:
             from app.tutor.help_boundary import assert_reference_help_allowed
             await asyncio.to_thread(assert_reference_help_allowed, user_id)
         await trace.step("delivery","started")

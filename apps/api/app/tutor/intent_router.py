@@ -71,6 +71,8 @@ def route_intent_decision(message: str, mode: str = "socratic") -> IntentDecisio
             matched.append(intent)
 
     if not matched:
+        if re.search(r"(?:d\(.+\)/dx|d/dx[^=]+)\s*=", text):
+            return IntentDecision(Intent.CHECK_STUDENT_STEP, 0.9, False, ())
         if mode == "practice":
             if "=" in text or re.fullmatch(r"[-+\d.,\s]+", text):
                 return IntentDecision(Intent.CHECK_STUDENT_STEP, 0.55, True, ())

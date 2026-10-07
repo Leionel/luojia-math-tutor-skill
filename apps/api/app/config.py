@@ -157,6 +157,7 @@ class Settings(BaseModel):
         os.getenv("SEMANTIC_WORKER_POLL_SECONDS", "1.0")
     )
     tool_timeout_seconds: int = int(os.getenv("TOOL_TIMEOUT_SECONDS", "8"))
+    step_verification_timeout_seconds: float = float(os.getenv("STEP_VERIFICATION_TIMEOUT_SECONDS", "5"))
     tool_max_rounds: int = int(os.getenv("TOOL_MAX_ROUNDS", "2"))
     typed_math_tools_enabled: bool = os.getenv("TYPED_MATH_TOOLS_ENABLED", "false").lower() == "true"
     llm_capabilities_json: str = os.getenv("LLM_CAPABILITIES_JSON", "{}")
@@ -232,6 +233,8 @@ class Settings(BaseModel):
         return origins
 
     def validate_runtime(self) -> None:
+        if not 0.01 <= self.step_verification_timeout_seconds <= 5:
+            raise ValueError("STEP_VERIFICATION_TIMEOUT_SECONDS must be between 0.01 and 5")
         self.resolve_model(None)
         self.resolve_model(self.vision_model)
         if self.auth_required and len(self.auth_token_secret) < 32:

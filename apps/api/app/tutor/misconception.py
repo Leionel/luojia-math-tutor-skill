@@ -57,7 +57,9 @@ def detect_mistake(message: str, verifier_summary: str = "") -> Mistake | None:
                 return MISTAKES["LHOPITAL_WITHOUT_INDETERMINATE_FORM"]
         if "未确认未定式" in verifier_summary or "不满足洛必达法则使用条件" in verifier_summary:
             return MISTAKES["LHOPITAL_WITHOUT_INDETERMINATE_FORM"]
-    if "互斥" in text and "独立" in text:
+    if "互斥" in text and "独立" in text and not any(
+        phrase in text for phrase in ("不是一回事", "不等于", "≠", "不能推出", "不一定独立")
+    ):
         return MISTAKES["INDEPENDENCE_CONFUSION"]
     if "条件概率" in text and ("分母" in text or "P(A)" in text or "P(B)" in text):
         return MISTAKES["CONDITIONAL_PROBABILITY_DENOMINATOR_ERROR"]

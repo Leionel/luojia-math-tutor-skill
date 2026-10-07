@@ -47,6 +47,14 @@ def main():
         if len(packet) > MAX_INPUT: raise ValueError("input_budget")
         data = json.loads(packet)
         if set(data) != {"name", "arguments"}: raise ValueError("fields")
+        if data["name"] == "student_step_check":
+            from dataclasses import asdict
+            from app.math_tools.step_checker import StepCheckRequest, check_step
+            request = StepCheckRequest.model_validate(data["arguments"], strict=True)
+            verification, mistake = check_step(request.message)
+            print(json.dumps({"verification": asdict(verification), "mistake_code": mistake.code if mistake else None},
+                             ensure_ascii=True, allow_nan=False))
+            return
         call = ToolCall(call_id="worker", **data)
         args = validate_call(call)
         if call.name == "math_differentiate":

@@ -1,0 +1,66 @@
+{
+  "version": "agent-reliability-s5-0-v1",
+  "scope": "offline_step_check_contract_fixtures",
+  "cases": [
+    {
+      "id": "normal_and_scope",
+      "selector": "tests/test_s5_step_verification.py::test_normal_matrix_and_source_qualification",
+      "expected_instances": 19,
+      "contract": "normal capability, domain scope and learner qualification"
+    },
+    {
+      "id": "syntax_boundary",
+      "selector": "tests/test_s5_step_verification.py::test_student_syntax_has_no_python_capability",
+      "expected_instances": 9,
+      "contract": "student expressions have no Python capability"
+    },
+    {
+      "id": "private_operation",
+      "selector": "tests/test_s5_step_verification.py::test_private_operation_cannot_be_selected_by_a_model",
+      "expected_instances": 1,
+      "contract": "private checker is not a model tool"
+    },
+    {
+      "id": "separate_deadline",
+      "selector": "tests/test_s5_step_verification.py::test_fixed_worker_preserves_normal_checks_beyond_retrieval_deadline",
+      "expected_instances": 1,
+      "contract": "retrieval deadline does not swallow valid verification"
+    },
+    {
+      "id": "parent_deadline",
+      "selector": "tests/test_s5_step_verification.py::test_parent_deadline_is_not_reset",
+      "expected_instances": 1,
+      "contract": "parent deadline is respected"
+    },
+    {
+      "id": "learning_sinks",
+      "selector": "tests/test_s5_step_verification.py::test_both_learning_sinks_fail_closed",
+      "expected_instances": 5,
+      "contract": "both learner writes require bound determinate student evidence"
+    },
+    {
+      "id": "response_binding",
+      "selector": "tests/test_s5_step_verification.py::test_worker_response_cannot_rebind_another_input",
+      "expected_instances": 2,
+      "contract": "stale or wrong input cannot authorize evidence"
+    },
+    {
+      "id": "worker_cleanup",
+      "selector": "tests/test_s5_step_verification.py::test_private_worker_is_reaped_on_cancel_or_help_change",
+      "expected_instances": 2,
+      "contract": "actual owned worker is reaped on cancellation and help lock"
+    },
+    {
+      "id": "graph_sqlite",
+      "selector": "tests/test_s5_step_verification.py::test_real_graph_sqlite_and_saved_metadata",
+      "expected_instances": 3,
+      "contract": "compiled graph and SQLite preserve source and learning eligibility"
+    },
+    {
+      "id": "authenticated_stream",
+      "selector": "tests/test_s5_step_verification.py::test_authenticated_sse_persists_the_same_scoped_result",
+      "expected_instances": 2,
+      "contract": "authenticated SSE equals saved scoped result"
+    }
+  ]
+}

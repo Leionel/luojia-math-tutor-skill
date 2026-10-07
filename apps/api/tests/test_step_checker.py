@@ -40,8 +40,9 @@ def test_detects_lhopital_without_indeterminate():
     result, mistake = check_step("这个极限能直接用洛必达吗：lim x->1 x/x")
     assert result.verified
     assert result.is_correct is False
-    assert mistake is not None
-    assert mistake.code == "LHOPITAL_WITHOUT_INDETERMINATE_FORM"
+    assert mistake is None
+    assert result.scope == "indeterminate_form"
+    assert not result.eligible_learning_evidence
 
 
 def test_detects_determinant_sign_error():

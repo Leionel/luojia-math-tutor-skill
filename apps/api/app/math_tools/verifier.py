@@ -1,16 +1,12 @@
-from dataclasses import dataclass
+"""Scoped deterministic checks. Public requests execute these in the fixed worker."""
+from dataclasses import dataclass, field
+import math
 import re
 
 import sympy as sp
-from sympy.parsing.sympy_parser import (
-    convert_xor,
-    implicit_multiplication_application,
-    parse_expr,
-    standard_transformations,
-)
+from app.math_tools.safe_symbolic import MathSyntaxError, math_tree, normalize_math, parse_bounded
 
-
-TRANSFORMS = standard_transformations + (implicit_multiplication_application, convert_xor)
+CHECKER_VERSION = "step-v1"
 
 
 @dataclass
@@ -21,264 +17,185 @@ class VerifyResult:
     details: str = ""
     expected: str | None = None
     actual: str | None = None
+    version: str = CHECKER_VERSION
+    execution_status: str = "not_requested"
+    origin: str = "none"
+    scope: str = "none"
+    assumptions: list[str] = field(default_factory=list)
+    scope_complete: bool = False
+    input_hash: str | None = None
+    candidate_hash: str | None = None
+    eligible_learning_evidence: bool = False
+    unknown_reason: str = ""
 
-
-def normalize_math(text: str) -> str:
-    text = text.strip()
-    text = text.replace("$", "")
-    text = text.replace("\\left", "").replace("\\right", "")
-    replacements = {
-        "\\cdot": "*",
-        "\\times": "*",
-        "\\pi": "pi",
-        "\\sin": "sin",
-        "\\cos": "cos",
-        "\\tan": "tan",
-        "\\ln": "log",
-        "\\sqrt": "sqrt",
-    }
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    # Convert Unicode superscript digits to ^ notation for SymPy compatibility
-    superscript_map = {
-        "¹": "1", "²": "2", "³": "3",
-        "⁴": "4", "⁵": "5", "⁶": "6",
-        "⁷": "7", "⁸": "8", "⁹": "9", "⁰": "0",
-        "⁻": "-",
-    }
-    for uni, ascii_digit in superscript_map.items():
-        text = text.replace(uni, "^" + ascii_digit)
-    text = re.sub(r"\\frac\{([^{}]+)\}\{([^{}]+)\}", r"((\1)/(\2))", text)
-    text = re.sub(r"\^\{([^{}]+)\}", r"^(\1)", text)
-    text = text.replace("{", "(").replace("}", ")")
-    text = text.replace("，", ",")
-    return text
+    def public(self):
+        return {key: getattr(self, key) for key in (
+            "version", "execution_status", "origin", "scope", "assumptions", "scope_complete",
+            "input_hash", "candidate_hash", "eligible_learning_evidence", "unknown_reason")}
 
 
 def parse_math(expr: str) -> sp.Expr:
-    normalized = normalize_math(expr)
-    return parse_expr(normalized, transformations=TRANSFORMS, evaluate=True)
+    # Compatibility helper; construction uses a finite AST, never parse_expr/sympify(str).
+    return parse_bounded(expr)[0]
+
+
+def _unknown(reason, scope="none", *, status="rejected"):
+    return VerifyResult(False, None, "本步自动核验未确定：" + reason + "；不会据此判学生错误。",
+                        execution_status=status, scope=scope, unknown_reason=reason)
+
+
+def _condition_text(condition):
+    if hasattr(condition, "rel_op"):
+        return f"{condition.lhs} {'≠' if condition.rel_op == '!=' else condition.rel_op} {condition.rhs}"
+    return str(condition)
+
+
+def _checked(left, right, conditions, scope, *, expected=None, actual=None):
+    conditions = list(dict.fromkeys(conditions))
+    diff = sp.simplify(left - right)
+    ok = True if diff == 0 or diff.is_zero is True else None
+    witness = ""
+    if ok is None:
+        x = sp.Symbol("x", real=True)
+        for point in (sp.Integer(0), sp.Integer(1), sp.Integer(-1), sp.Integer(2), sp.Integer(-2), sp.Rational(1, 2)):
+            if not all(condition.subs(x, point) is sp.true for condition in conditions):
+                continue
+            value = sp.simplify(diff.subs(x, point))
+            if not value.has(sp.zoo, sp.nan, sp.oo, -sp.oo) and value.is_zero is False:
+                ok, witness = False, f"实数见证 x={point}，差为 {value}"
+                break
+    assumptions = ["x为实数；只核对所述表达式/操作，不证明整题。"] + [_condition_text(c) for c in conditions]
+    if ok is None:
+        result = _unknown("未能确定等价或找到有效差异见证", scope, status="succeeded")
+        result.assumptions = assumptions
+        return result
+    result = VerifyResult(True, ok, "核验通过。" if ok else "核验不通过。",
+                          details=witness or str(diff), expected=expected, actual=actual,
+                          execution_status="succeeded", scope=scope, assumptions=assumptions,
+                          scope_complete=not conditions)
+    return result
 
 
 def verify_equivalent(lhs: str, rhs: str) -> VerifyResult:
     try:
-        lhs_expr = sp.nsimplify(parse_math(lhs), rational=True)
-        rhs_expr = sp.nsimplify(parse_math(rhs), rational=True)
-        diff = sp.simplify(lhs_expr - rhs_expr)
-        equals = lhs_expr.equals(rhs_expr)
-        ok = diff == 0 or equals is True
-        return VerifyResult(
-            verified=True,
-            is_correct=bool(ok),
-            summary="两个表达式等价。" if ok else f"两个表达式不等价，化简差为 {sp.sstr(diff)}。",
-            details=sp.sstr(diff),
-        )
-    except Exception as exc:
-        return VerifyResult(False, None, f"表达式等价验证失败：{exc}")
+        left, lc = parse_bounded(lhs)
+        right, rc = parse_bounded(rhs)
+        result = _checked(left, right, lc + rc, "expression_equivalence")
+        if result.verified:
+            result.summary = ("两个表达式在共同实数定义域内等价。" if result.is_correct else "两个表达式在共同实数定义域内不等价。")
+            if lc or rc:
+                result.summary += " 原式条件/排除点：" + "; ".join(map(_condition_text, dict.fromkeys(lc + rc))) + "；未核对全域同定义域的主张。"
+        return result
+    except Exception:
+        return _unknown("表达式超出受控语法或定义域", "expression_equivalence")
 
 
-def verify_derivative(expr: str, variable: str, expected: str) -> VerifyResult:
+def verify_derivative(expr: str, variable: str, expected: str | None) -> VerifyResult:
+    if variable != "x":
+        return _unknown("首版只支持实数单变量x", "derivative")
     try:
-        var = sp.Symbol(variable)
-        derivative = sp.diff(parse_math(expr), var)
-        expected_expr = parse_math(expected)
-        diff = sp.simplify(derivative - expected_expr)
-        ok = diff == 0
-        return VerifyResult(
-            verified=True,
-            is_correct=bool(ok),
-            summary=(
-                f"求导验证通过，导数为 {sp.sstr(derivative)}。"
-                if ok
-                else f"求导验证不通过，实际导数为 {sp.sstr(derivative)}。"
-            ),
-            expected=sp.sstr(expected_expr),
-            actual=sp.sstr(derivative),
-        )
-    except Exception as exc:
-        return VerifyResult(False, None, f"求导验证失败：{exc}")
+        value, conditions = parse_bounded(expr, derivative=True)
+        derivative = sp.diff(value, sp.Symbol("x", real=True))
+        if len(str(derivative)) > 8192:
+            raise MathSyntaxError("output_budget")
+        if expected is None:
+            return VerifyResult(False, None, f"已计算参考导数 {derivative}；没有学生候选，未核对学生答案。",
+                                actual=str(derivative), execution_status="succeeded", origin="system_calculation",
+                                scope="derivative", assumptions=["x为实数，仅在原式有定义且可微的区域适用。"] + list(map(_condition_text, conditions)))
+        candidate, cc = parse_bounded(expected)
+        result = _checked(derivative, candidate, conditions + cc, "derivative", expected=str(candidate), actual=str(derivative))
+        if result.verified:
+            result.summary = f"求导验证{'通过' if result.is_correct else '不通过'}，实际导数为 {derivative}。"
+            if conditions or cc: result.summary += " 仅在条件 " + "; ".join(map(_condition_text, dict.fromkeys(conditions + cc))) + " 下适用。"
+        return result
+    except Exception:
+        return _unknown("求导输入超出受控语法或实数可微范围", "derivative")
 
 
 def verify_integral(integrand: str, variable: str, candidate: str) -> VerifyResult:
+    if variable != "x": return _unknown("首版只支持实数单变量x", "integral_candidate")
     try:
-        var = sp.Symbol(variable)
-        clean_candidate = re.sub(r"\+?\s*C\b", "", candidate)
-        derivative = sp.diff(parse_math(clean_candidate), var)
-        integrand_expr = parse_math(integrand)
-        diff = sp.simplify(derivative - integrand_expr)
-        ok = diff == 0
-        return VerifyResult(
-            verified=True,
-            is_correct=bool(ok),
-            summary=(
-                f"积分候选验证通过，对候选结果求导得到 {sp.sstr(derivative)}。"
-                if ok
-                else f"积分候选验证不通过，对候选结果求导得到 {sp.sstr(derivative)}，不是 {sp.sstr(integrand_expr)}。"
-            ),
-            expected=sp.sstr(integrand_expr),
-            actual=sp.sstr(derivative),
-        )
-    except Exception as exc:
-        return VerifyResult(False, None, f"积分验证失败：{exc}")
+        value, conditions = parse_bounded(candidate, allow_constant=True, derivative=True)
+        derivative = sp.diff(value, sp.Symbol("x", real=True))
+        target, tc = parse_bounded(integrand)
+        result = _checked(derivative, target, conditions + tc, "integral_candidate", expected=str(target), actual=str(derivative))
+        if result.verified:
+            result.summary = f"积分候选验证{'通过' if result.is_correct else '不通过'}，对候选求导得到 {derivative}，被积函数为 {target}；只检查反导数候选，不核对一般通解/积分常数。"
+        return result
+    except Exception:
+        return _unknown("积分候选超出受控语法或实数可微范围", "integral_candidate")
 
 
-def compute_matrix_product(left: list[list[float]], right: list[list[float]]) -> VerifyResult:
+def _matrix(value):
+    if not isinstance(value, list) or not 1 <= len(value) <= 8:
+        raise ValueError("matrix_budget")
+    columns = len(value[0]) if isinstance(value[0], list) else 0
+    if not 1 <= columns <= 8 or any(not isinstance(row, list) or len(row) != columns for row in value):
+        raise ValueError("matrix_shape")
+    if any(type(n) not in {int, float} or abs(n) > 1e12 or not math.isfinite(n) for row in value for n in row):
+        raise ValueError("matrix_numbers")
+    return sp.Matrix([[sp.Rational(str(n)) for n in row] for row in value])
+
+
+def compute_matrix_product(left, right) -> VerifyResult:
     try:
-        result = sp.Matrix(left) * sp.Matrix(right)
-        return VerifyResult(True, True, f"矩阵乘法结果为 {result.tolist()}。", actual=str(result.tolist()))
-    except Exception as exc:
-        return VerifyResult(False, None, f"矩阵计算失败：{exc}")
+        value = _matrix(left) * _matrix(right)
+        return VerifyResult(False, None, f"参考矩阵乘法结果为 {value.tolist()}；没有学生候选。", actual=str(value.tolist()),
+                            origin="system_calculation", execution_status="succeeded", scope="matrix_product")
+    except Exception:
+        return _unknown("矩阵输入无效或超出预算", "matrix_product")
 
 
-def verify_determinant_2x2(matrix: list[list[float]], candidate: str) -> VerifyResult:
+def verify_determinant_2x2(matrix, candidate: str | None) -> VerifyResult:
     try:
-        a, b, c, d = matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]
-        expected_val = a * d - b * c
-        expected_expr = sp.simplify(expected_val)
-        candidate_expr = parse_math(candidate)
-        diff = sp.simplify(candidate_expr - expected_expr)
-        ok = diff == 0
-        return VerifyResult(
-            verified=True,
-            is_correct=bool(ok),
-            summary=(
-                f"二阶行列式验证通过，值为 {expected_expr}。"
-                if ok
-                else f"二阶行列式验证不通过，正确值应为 {expected_expr}。"
-            ),
-            expected=str(expected_expr),
-            actual=str(candidate_expr),
-        )
-    except Exception as exc:
-        return VerifyResult(False, None, f"行列式验证失败：{exc}")
+        value = _matrix(matrix)
+        if value.shape != (2, 2): raise ValueError("matrix_shape")
+        target = value.det()
+        if candidate is None:
+            return VerifyResult(False, None, f"参考行列式值为 {target}；没有学生候选。", actual=str(target),
+                                origin="system_calculation", execution_status="succeeded", scope="determinant_2x2")
+        answer, conditions = parse_bounded(candidate)
+        if answer.free_symbols: raise ValueError("numeric_candidate_required")
+        result = _checked(target, answer, conditions, "determinant_2x2", expected=str(target), actual=str(answer))
+        if result.verified: result.summary = f"二阶行列式验证{'通过' if result.is_correct else '不通过'}，正确值为 {target}。"
+        return result
+    except Exception:
+        return _unknown("行列式或候选输入不受支持", "determinant_2x2")
 
 
-_LIMIT_HEADING = re.compile(
-    r"lim(?:it)?\s*(?:_\{?\s*)?(?P<var>[a-zA-Z])\s*(?:\\to|->|→)\s*(?P<point>[^\s,，;；]+)\s*\}?\s*[:：]?\s*(?P<expr>[^;；\n]+)",
-    re.IGNORECASE,
-)
-
-# Keyword mentions only mark a candidate for symbolic checking; they can never
-# decide the outcome by themselves.
-_CJK_TOKEN = re.compile(r"[\u4e00-\u9fff，。！？：；、（）]")
-
-
-def _prepare_expr_text(text: str) -> str:
-    # Implicit multiplication cannot turn "sinx" into sin(x), so expand the
-    # common compact forms before parsing. The lookahead stops at ASCII
-    # letters only, so Chinese text directly after the x still matches.
-    text = re.sub(r"sin\s*x(?![a-zA-Z])", "sin(x)", text)
-    text = re.sub(r"cos\s*x(?![a-zA-Z])", "cos(x)", text)
-    text = re.sub(r"tan\s*x(?![a-zA-Z])", "tan(x)", text)
-    return text
-
-
-def _parse_prefix_candidate(expr_text: str) -> sp.Expr | None:
-    """Parse the leading math tokens of free-text trailing a limit heading.
-
-    Trailing natural-language tokens (which may contain the student's own
-    "0/0" claim) are excluded: only the expression itself may be parsed.
-    """
-    math_tokens: list[str] = []
-    for token in expr_text.split():
-        if _CJK_TOKEN.search(token):
-            break
-        math_tokens.append(token)
-    for end in range(len(math_tokens), 0, -1):
-        candidate = _prepare_expr_text(" ".join(math_tokens[:end]))
-        if not candidate.strip():
-            continue
-        try:
-            return parse_math(candidate)
-        except Exception:
-            continue
-    return None
-
-
-def _classify_indeterminate(
-    expr: sp.Expr,
-    var_name: str,
-    point_text: str,
-) -> tuple[str | None, str, str]:
-    """Compute the numerator/denominator limits and classify the form.
-
-    Returns (form, num_limit_str, den_limit_str); form is None when the
-    limit is not an indeterminate 0/0 or ∞/∞ form (or cannot be computed).
-    """
-    x = sp.Symbol(var_name)
-    cleaned_point = point_text.lstrip("+").replace("∞", "oo").replace("\\infty", "oo").replace("infty", "oo")
-    point = parse_math(cleaned_point) if cleaned_point != "oo" else sp.oo
-    num, den = sp.fraction(sp.together(expr))
-    num_lim = sp.limit(num, x, point)
-    den_lim = sp.limit(den, x, point)
-
-    num_zero = sp.simplify(num_lim) == 0
-    den_zero = sp.simplify(den_lim) == 0
-    num_inf = sp.Abs(num_lim) == sp.oo
-    den_inf = sp.Abs(den_lim) == sp.oo
-
-    if num_zero and den_zero:
-        return "0/0", sp.sstr(num_lim), sp.sstr(den_lim)
-    if num_inf and den_inf:
-        return "∞/∞", sp.sstr(num_lim), sp.sstr(den_lim)
-    return None, sp.sstr(num_lim), sp.sstr(den_lim)
+_LIMIT_HEADING = re.compile(r"lim(?:it)?\s*(?:_\{?\s*)?(?P<var>[a-zA-Z])\s*(?:\\to|->|→)\s*(?P<point>[^\s,，;；]+)\s*\}?\s*[:：]?\s*(?P<expr>[^;；\n]+)", re.IGNORECASE)
 
 
 def verify_lhopital_conditions(message: str) -> VerifyResult:
-    """Deterministically decide whether the limit in `message` is indeterminate.
-
-    The decision is made by SymPy limit evaluation on the expression found in
-    the message. Keyword mentions like "0/0" only indicate that a check is
-    being requested; they never substitute for the symbolic verdict.
-    """
+    """Only classify an unsimplified quotient's form, never certify L'Hopital."""
     match = _LIMIT_HEADING.search(message)
-    if not match:
-        return VerifyResult(
-            verified=False,
-            is_correct=None,
-            summary=(
-                "未能在消息中解析出形如 lim x->a f(x) 的极限表达式，"
-                "无法确定性判定未定式类型，不能据此确认洛必达法则的使用条件。"
-            ),
-        )
-
-    var_name = match.group("var")
-    point_text = match.group("point").strip("）)")
+    if not match or match['var'] != 'x':
+        return _unknown("无法解析受支持的单变量极限，未核对洛必达条件", "indeterminate_form")
     try:
-        expr = _parse_prefix_candidate(match.group("expr"))
-        if expr is None:
-            raise ValueError("expression parse failed")
-        form, num_lim, den_lim = _classify_indeterminate(expr, var_name, point_text)
-    except Exception as exc:
-        return VerifyResult(
-            verified=False,
-            is_correct=None,
-            summary=f"极限表达式解析或求极限失败，无法判定未定式类型：{exc}",
-        )
-
-    if form == "0/0":
-        return VerifyResult(
-            verified=True,
-            is_correct=True,
-            summary=(
-                f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
-                "属于 0/0 型未定式，满足洛必达法则使用条件。"
-            ),
-        )
-    if form == "∞/∞":
-        return VerifyResult(
-            verified=True,
-            is_correct=True,
-            summary=(
-                f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
-                "属于 ∞/∞ 型未定式，满足洛必达法则使用条件。"
-            ),
-        )
-    return VerifyResult(
-        verified=True,
-        is_correct=False,
-        summary=(
-            f"SymPy 计算分子极限为 {num_lim}、分母极限为 {den_lim}，"
-            "该极限不是 0/0 或 ∞/∞ 型未定式，不满足洛必达法则使用条件。"
-        ),
-    )
+        expr_text = re.split(r"[\u4e00-\u9fff，。！？?]", match['expr'], maxsplit=1)[0].strip()
+        tree = math_tree(expr_text)
+        import ast
+        if not isinstance(tree.body, ast.BinOp) or not isinstance(tree.body.op, ast.Div):
+            raise ValueError("explicit_quotient_required")
+        from app.math_tools.safe_symbolic import construct_math
+        # Keep numerator and denominator separate before any cancellation.
+        num, _ = construct_math(ast.Expression(tree.body.left))
+        den, _ = construct_math(ast.Expression(tree.body.right))
+        point_text = match['point'].strip("})）").replace(r"\infty", "oo").replace("∞", "oo")
+        point = {"oo": sp.oo, "+oo": sp.oo, "-oo": -sp.oo}.get(point_text)
+        if point is None:
+            point = parse_math(point_text)
+            if point.free_symbols: raise ValueError("numeric_point_required")
+        x = sp.Symbol("x", real=True)
+        n, d = sp.limit(num, x, point), sp.limit(den, x, point)
+        form = "0/0" if n == 0 and d == 0 else "∞/∞" if sp.Abs(n) == sp.oo and sp.Abs(d) == sp.oo else None
+        result = VerifyResult(True, None if form else False,
+                              f"已检查分子极限为 {n}、分母极限为 {d}；" +
+                              (f"属于 {form} 型未定式；" if form else "不是0/0或∞/∞型未定式，不满足该必要条件；") +
+                              "仅核对未定式分类，未核对可导性、分母导数非零及导数比极限，不能确认洛必达法则适用。",
+                              actual=form, origin="classification", execution_status="succeeded", scope="indeterminate_form",
+                              assumptions=["x为实数；仅计算默认右侧/无穷极限，未确认双侧定理条件。"],
+                              unknown_reason="theorem_conditions_not_checked" if form else "")
+        return result
+    except Exception:
+        return _unknown("极限表达式或求极限不受支持；未核对洛必达条件", "indeterminate_form")

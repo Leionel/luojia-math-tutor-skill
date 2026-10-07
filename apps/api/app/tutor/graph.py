@@ -63,6 +63,7 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    request_deadline: float
     learning_context: dict[str, Any]
     root_submission: dict[str, Any]
     root_diagnosis: dict[str, Any]
@@ -114,13 +115,18 @@ class AgentState(TypedDict, total=False):
     metrics: dict[str, float | int | str | bool]
 
 
+def _has_completed_math_operation(result) -> bool:
+    return bool(isinstance(result, VerifyResult) and (result.verified or
+                result.origin == "system_calculation" and result.execution_status == "succeeded"))
+
+
 def _needs_llm_verifier(state: AgentState) -> bool:
     verification_mode = state.get("verification_mode")
     if verification_mode == VerificationMode.LLM.value:
         return True
     if verification_mode == VerificationMode.SYMBOLIC.value:
         result = state.get("verifier_result")
-        return not result or not result.verified
+        return not _has_completed_math_operation(result)
     return False
 
 
@@ -441,6 +447,7 @@ class TutorWorkflow:
                             else None
                         ),
                         "verifier_summary": context.verifier_result.summary,
+                        "step_check": context.verifier_result.public(),
                         "hint_level": context.hint_level,
                         "mastery_score": context.mastery_score,
                         "mastery_label": context.mastery_label_str,
@@ -479,14 +486,14 @@ class TutorWorkflow:
 
             verifier_result = context.verifier_result
             if verifier_result.verified and verifier_result.is_correct is True:
-                verify_text = "SymPy 符号验证已通过。"
+                verify_text = verifier_result.summary
             elif verifier_result.verified and verifier_result.is_correct is False:
                 verify_text = (
                     verifier_result.summary
                     or "SymPy 符号验证发现当前步骤与标准结果不一致。"
                 )
             else:
-                verify_text = "本轮未触发符号校验。"
+                verify_text = verifier_result.summary or "本轮未请求自动核验。"
             await on_progress(f"[VERIFY]\n{verify_text}")
 
         return {
@@ -687,7 +694,7 @@ class TutorWorkflow:
         # native calls supply scoped results rather than whole-answer proofs.
         require_verification = (
             state.get("verification_mode") == VerificationMode.SYMBOLIC.value
-            and not getattr(state.get("verifier_result"), "verified", False)
+            and not _has_completed_math_operation(state.get("verifier_result"))
         )
         return await self._stream_generation(
             state,

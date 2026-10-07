@@ -28,8 +28,9 @@ def test_chain_rule_derivative():
 
 def test_matrix_product():
     result = compute_matrix_product([[1, 2]], [[3], [4]])
-    assert result.verified
-    assert result.is_correct is True
+    assert result.execution_status == "succeeded"
+    assert result.is_correct is None
+    assert result.origin == "system_calculation"
     assert "[[11]]" in result.actual
 
 
@@ -46,10 +47,12 @@ def test_determinant_2x2_wrong():
     assert "-2" in result.summary
 
 
-def test_lhopital_condition_satisfied():
+def test_lhopital_checks_form_without_certifying_theorem():
     result = verify_lhopital_conditions("lim x->0 sinx/x 能直接用洛必达吗？")
     assert result.verified
-    assert result.is_correct is True
+    assert result.is_correct is None
+    assert result.actual == "0/0"
+    assert result.scope == "indeterminate_form"
 
 
 def test_lhopital_condition_unsatisfied():

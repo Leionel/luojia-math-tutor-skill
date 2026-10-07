@@ -22,7 +22,8 @@ def test_lhopital_text_claims_00_but_limit_is_not_indeterminate():
 def test_lhopital_genuine_00_is_confirmed():
     result = verify_lhopital_conditions("lim x->0 sinx/x 能直接用洛必达吗？")
     assert result.verified
-    assert result.is_correct is True
+    assert result.is_correct is None
+    assert result.actual == "0/0"
     assert "0/0" in result.summary
 
 
@@ -31,7 +32,8 @@ def test_lhopital_genuine_infty_over_infty_is_confirmed():
         "lim x->+\\infty (3x^2+2)/(5x^2+1) 是 ∞/∞ 型未定式"
     )
     assert result.verified
-    assert result.is_correct is True
+    assert result.is_correct is None
+    assert result.actual == "∞/∞"
     assert "∞/∞" in result.summary
 
 
