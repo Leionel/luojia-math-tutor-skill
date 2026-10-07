@@ -1,5 +1,11 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-07 分步提交与S5.3离线预算
+
+用户授权继续下一步并分步提交。已有4批：988e65c核验、f90cc2e界面、085b9e6评测、dd95458规划。原回执“未commit”是实施当时快照，不改旧HEAD证明。新S5.3离线预算预留组件/SQLite账本只允许MockTransport，固定纯文字endpoint/model/output，并发/费用/取消/失败/重启/重定向/变更profile/ledger损坏均受控，actual_cost未知，无真实供应商消费。仅synthetic价格合同，未验证真实token/额外费用，不称live硬预算已启用。生产client/协议probe/live继续pending。
+
+根知识JSON/API819/Web56通过，新增预算39项；S5.3 E0 16合同39实例。源码/测试/manifest hash在results/s5-3-budget-proof.json；全日志s5-3-*。新预算切片另批提交，最终Git hash见log与本轮回执。细节planning/agent-v3-2026-10/13-delivery-s5-3-offline-and-commits.md。原runtime dirty、egg-info/public原型保留，07原文不改；无push/deploy/正式库更改，不重复UI构建。下一候选linear只读可信Chat；S5.2真人复核仍pending。
+
 ## 2026-10-07 S5.2材料与工程流程首版
 
 用户授权开始5.2。新增8道公开dev独立解答/逐题rubric（agent_prepared_only，真人审核/二审pending）、严格内容/输入/rubric/版本绑定、未签署review worksheet、仅caller-supplied-unverified的录制回答导入与输出覆盖保护。新增2条固定模型实际ASGI/SSE完整流程，独立临时库与合成Principal：Newton引用/预览/显式save/重试/新引用/保护；普通数值Chat候选修订/输入保存/metadata恢复/两sink不写。共3run18阶段通过，不等于真实JWT、模型数学内容或真人学习效果。矩阵分支没有请求自动单步核验，输入绑定来自真实用户消息；不伪造step_hash。

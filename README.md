@@ -1,5 +1,7 @@
 # 珞珈数智助教 · Luojia Math Tutor
 
+> 分批提交与[S5.3离线预算切片](planning/agent-v3-2026-10/13-delivery-s5-3-offline-and-commits.md)：API819/Web56通过；模拟传输预留/并发/取消/恢复等合同已验收，真实供应商能力、费用上界与live仍关闭。
+
 > S5.2当前交付：[8道dev材料与2条ASGI流程首版](planning/agent-v3-2026-10/12-delivery-s5-2.md)，API780/Web56与E0合同通过。内容为agent准备、真人审核/真实模型质量仍pending；[题解与rubric](evaluation/s5/development-content-v1.md)可直接审阅。
 
 规划入口：[产品、Agent工程与S5共同排期](planning/README.md)。

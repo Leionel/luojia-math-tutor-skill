@@ -1,5 +1,7 @@
 # Agent v3执行记录
 
+> 2026-10-07 S5.3 offline预算切片已交付并分批提交，见[13回执](13-delivery-s5-3-offline-and-commits.md)。发送前预留、并发/取消/恢复/重定向等39实例通过；只允许MockTransport，供应商probe/计费上界/live未验收。API819/Web56通过；旧“未commit”段落为历史工作区快照。
+
 > 2026-10-07 S5.2首版更新：[12交付回执](12-delivery-s5-2.md)。8道公开dev逐题解答/rubric已准备并绑定（agent_prepared_only），2条固定模型ASGI流程/3个run/18项阶段通过；真人审核、独立二审、真实模型内容与4道确认题仍pending。工程/API780/Web56与E0合同通过，不能转写成数学准确率或teacher gold。
 
 > 2026-10-07 S5.1首版更新：offline/dry-run/replay、四类真实图固定fixture采集及解释报告已实现，见[10交付回执](10-delivery-s5-1.md)和[11验证目标](11-s5-1-evaluation-rationale.md)。8道development输入/rubric仍是待复核草案；S5.2内容质量与真人二审、S5.3 live/预算未完成。旧“CLI不存在”或“仅规划”描述以下方日期为历史快照，不代表当前入口。

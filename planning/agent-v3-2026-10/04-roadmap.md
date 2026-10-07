@@ -1,5 +1,7 @@
 # Agent v3：修订后的实施日程
 
+> 2026-10-07 S5.3 offline预算切片已交付并分批提交，见[13回执](13-delivery-s5-3-offline-and-commits.md)。发送前预留、并发/取消/恢复/重定向等39实例通过；只允许MockTransport，供应商probe/计费上界/live未验收。API819/Web56通过；旧“未commit”段落为历史工作区快照。
+
 > 2026-10-07 S5.2首版更新：[12交付回执](12-delivery-s5-2.md)。8道公开dev逐题解答/rubric已准备并绑定（agent_prepared_only），2条固定模型ASGI流程/3个run/18项阶段通过；真人审核、独立二审、真实模型内容与4道确认题仍pending。工程/API780/Web56与E0合同通过，不能转写成数学准确率或teacher gold。
 
 > 共同排期入口：[项目规划总索引](../README.md)。产品F1–F8与工程A/S是同一项目的映射；原估算/时间段以下方修订日期为历史情景，不重复安排已交付S5.0/S5.1首版。

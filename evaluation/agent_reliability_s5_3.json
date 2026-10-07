@@ -1,0 +1,102 @@
+{
+  "version": "agent-reliability-s5-3-offline-v1",
+  "scope": "offline_mock_pre_send_budget_contracts",
+  "cases": [
+    {
+      "id": "send_gate",
+      "selector": "tests/test_s5_budget.py::test_52nd_request_is_not_sent",
+      "expected_instances": 1,
+      "contract": "send_gate"
+    },
+    {
+      "id": "concurrency",
+      "selector": "tests/test_s5_budget.py::test_concurrent_reservations_cannot_overspend",
+      "expected_instances": 1,
+      "contract": "concurrency"
+    },
+    {
+      "id": "failure_no_refund",
+      "selector": "tests/test_s5_budget.py::test_failure_unknown_usage_and_retry_do_not_refund",
+      "expected_instances": 1,
+      "contract": "failure_no_refund"
+    },
+    {
+      "id": "persistent_reservations",
+      "selector": "tests/test_s5_budget.py::test_reopen_preserves_cap_and_crash_reservations",
+      "expected_instances": 1,
+      "contract": "persistent_reservations"
+    },
+    {
+      "id": "policy_integrity",
+      "selector": "tests/test_s5_budget.py::test_mutated_policy_and_corrupt_ledger_fail_closed",
+      "expected_instances": 1,
+      "contract": "policy_integrity"
+    },
+    {
+      "id": "endpoint_policy",
+      "selector": "tests/test_s5_budget.py::test_bad_policy_destinations",
+      "expected_instances": 5,
+      "contract": "endpoint_policy"
+    },
+    {
+      "id": "payload_bounds",
+      "selector": "tests/test_s5_budget.py::test_payload_bounds_reject_before_reservation",
+      "expected_instances": 9,
+      "contract": "payload_bounds"
+    },
+    {
+      "id": "request_destination",
+      "selector": "tests/test_s5_budget.py::test_destination_mismatch_cannot_send",
+      "expected_instances": 3,
+      "contract": "request_destination"
+    },
+    {
+      "id": "redirect",
+      "selector": "tests/test_s5_budget.py::test_redirect_is_not_followed_or_refunded",
+      "expected_instances": 1,
+      "contract": "redirect"
+    },
+    {
+      "id": "async_cancel",
+      "selector": "tests/test_s5_budget.py::test_async_cancel_is_reserved_and_reopen_does_not_reset",
+      "expected_instances": 1,
+      "contract": "async_cancel"
+    },
+    {
+      "id": "unknown_usage",
+      "selector": "tests/test_s5_budget.py::test_async_success_keeps_unknown_usage_and_reservation",
+      "expected_instances": 1,
+      "contract": "unknown_usage"
+    },
+    {
+      "id": "money_boundary",
+      "selector": "tests/test_s5_budget.py::test_exact_amount_boundary",
+      "expected_instances": 6,
+      "contract": "money_boundary"
+    },
+    {
+      "id": "unverified_cost",
+      "selector": "tests/test_s5_budget.py::test_unknown_provider_fee_contract_cannot_enable_transport",
+      "expected_instances": 5,
+      "contract": "unverified_cost"
+    },
+    {
+      "id": "real_transport_disabled",
+      "selector": "tests/test_s5_budget.py::test_real_network_transport_is_never_enabled",
+      "expected_instances": 1,
+      "contract": "real_transport_disabled"
+    },
+    {
+      "id": "json_budget",
+      "selector": "tests/test_s5_budget.py::test_duplicate_json_and_byte_limits",
+      "expected_instances": 1,
+      "contract": "json_budget"
+    },
+    {
+      "id": "terminal_privacy",
+      "selector": "tests/test_s5_budget.py::test_terminal_status_cannot_regress_or_expose_prompt",
+      "expected_instances": 1,
+      "contract": "terminal_privacy"
+    }
+  ]
+}
