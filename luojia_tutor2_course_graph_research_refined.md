@@ -1,5 +1,13 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-07 完整补充升级计划（只规划）
+
+用户澄清为planning/README.md“还需要补什么”的升级，选择先完整计划、逐功能可验收切片/保留全部目标。本轮未做原先猜测的linear业务实现。新增planning/complete-upgrade-2026-10/README.md、18个独立切片草案、register与implementation-notes；重整总索引并链接旧目录。先U01真实linear引用，再U02选段/U03任务续接，U16图示安全降级尽早，其余接续/条件启动。F1–F8、Agent、六个月研究与原扩展目标保留，不许全并行或虚构六个月交付保证。
+
+基线d9b9c849bf160a29f7d45efd330601b1083493b7。规划核实root context只Newton、numerical记录source_hash/schema但无统一graph revision、现有共享会话、阅读scope、代码静态无独立rule version、注册先写用户再签发、HMAC两段token v1非JWT、动态图30秒timer非CPU强杀。docker/wsl CLI存在不代表daemon/C0。真人gold、供应商/费用、PDF/字幕/真实授权、剩余开发产能待验证；条件阶段Feasibility4/5，未假签全5/5。
+
+344个业务/测试/工具/评测文件hash本轮前后不变；只检查文档链接/覆盖/保护文件，不重跑业务测试，不消费模型，不派发外部任务。原runtime dirty/egg-info/public原型保留，07原文不改。后续用户选择切片才实施，不把此计划当功能完成回执。
+
 ## 2026-10-07 分步提交与S5.3离线预算
 
 用户授权继续下一步并分步提交。已有4批：988e65c核验、f90cc2e界面、085b9e6评测、dd95458规划。原回执“未commit”是实施当时快照，不改旧HEAD证明。新S5.3离线预算预留组件/SQLite账本只允许MockTransport，固定纯文字endpoint/model/output，并发/费用/取消/失败/重启/重定向/变更profile/ledger损坏均受控，actual_cost未知，无真实供应商消费。仅synthetic价格合同，未验证真实token/额外费用，不称live硬预算已启用。生产client/协议probe/live继续pending。

@@ -1,0 +1,132 @@
+{
+  "version": "complete-upgrade-draft-v1",
+  "status": "plan_only_no_work_dispatched",
+  "slices": [
+    {
+      "id": "U01",
+      "file": "slices/01-linear-context.md",
+      "title": "在线性实验旁讨论真实迭代",
+      "priority": "优先",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U02",
+      "file": "slices/02-reading-context.md",
+      "title": "教材选段与聊天共享来源",
+      "priority": "优先",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U03",
+      "file": "slices/03-study-continuity.md",
+      "title": "聊天可查看并续接当前学习任务",
+      "priority": "优先",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U04",
+      "file": "slices/04-integration-context.md",
+      "title": "积分实验可在同页解释误差估计",
+      "priority": "接续",
+      "blocked_by": "无；优先级在U01/U02后，不是硬依赖"
+    },
+    {
+      "id": "U05",
+      "file": "slices/05-code-static.md",
+      "title": "静态代码审阅可追溯到版本并讨论",
+      "priority": "接续",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U06",
+      "file": "slices/06-teachback.md",
+      "title": "讲回评语绑定原句与条件",
+      "priority": "接续",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U07",
+      "file": "slices/07-assessment-content.md",
+      "title": "章节参考自检有版本化解答与复核",
+      "priority": "接续",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U08",
+      "file": "slices/08-account-sessions.md",
+      "title": "账户注册失败不残留并可真实退出",
+      "priority": "近期",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U09",
+      "file": "slices/09-teacher-summary.md",
+      "title": "教师可回查授权范围内的学习证据",
+      "priority": "条件启动",
+      "blocked_by": "无；真实启用须已有实际认证与明确授权名单"
+    },
+    {
+      "id": "U10",
+      "file": "slices/10-pdf-source.md",
+      "title": "教材原PDF可定位且笔记不丢",
+      "priority": "条件启动",
+      "blocked_by": "无；须能安全取回原文件"
+    },
+    {
+      "id": "U11",
+      "file": "slices/11-video-transcript.md",
+      "title": "视频问题可回到真实字幕时间点",
+      "priority": "条件启动",
+      "blocked_by": "无；须有可用且有使用范围的字幕"
+    },
+    {
+      "id": "U12",
+      "file": "slices/12-provider-live.md",
+      "title": "获准的小规模模型运行有真实准入和预算",
+      "priority": "条件启动",
+      "blocked_by": "无；真实供应商、计费上界与消费授权为外部gate"
+    },
+    {
+      "id": "U13",
+      "file": "slices/13-code-isolation.md",
+      "title": "限定学生程序的隔离能力先可证明",
+      "priority": "条件启动",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U14",
+      "file": "slices/14-code-execution.md",
+      "title": "限定Newton代码作业有运行反馈",
+      "priority": "条件启动",
+      "blocked_by": "U13正式C0通过＋教师作业测试规范"
+    },
+    {
+      "id": "U15",
+      "file": "slices/15-execution-resume.md",
+      "title": "确有需求的一条执行路径可恢复且不重放副作用",
+      "priority": "条件启动",
+      "blocked_by": "无；需先观察到真实恢复需求"
+    },
+    {
+      "id": "U16",
+      "file": "slices/16-artifact-fallback.md",
+      "title": "生成图示无法安全运行时仍能恢复聊天",
+      "priority": "近期",
+      "blocked_by": "无"
+    },
+    {
+      "id": "U17",
+      "file": "slices/17-identity-recovery.md",
+      "title": "账号可验证身份后找回凭证",
+      "priority": "条件启动",
+      "blocked_by": "U08＋实际邮件/身份校验方案"
+    },
+    {
+      "id": "U18",
+      "file": "slices/18-linear-study.md",
+      "title": "线性任务可进入今日计划并做独立训练",
+      "priority": "后续",
+      "blocked_by": "经审题目/独立oracle/帮助规则；无U01硬依赖"
+    }
+  ]
+}
