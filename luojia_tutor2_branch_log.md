@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## U01–U03 首版交付与接续
+
+用户授权实施并 commit。线性实验同页固定引用、课程/私有Markdown选段Chat、只读已有任务续接已实现；保持旧Newton动作与独立帮助边界。API847/Web最终64、原E0 38/92、新增13/28、生产构建通过；桌面/390px及选段/任务刷新用隔离临时库和固定模型验收，无真实模型消费或学习效果结论。具体边界和日志见 planning/complete-upgrade-2026-10/delivery-u01-u03.md。原runtime dirty、原型/egg-info、07审阅保护不动。用户随后授权接续U04–U06，逐片验证并提交。
+
 ## 2026-10-07 完整补充升级计划（只规划）
 
 用户澄清为planning/README.md“还需要补什么”的升级，选择先完整计划、逐功能可验收切片/保留全部目标。本轮未做原先猜测的linear业务实现。新增planning/complete-upgrade-2026-10/README.md、18个独立切片草案、register与implementation-notes；重整总索引并链接旧目录。先U01真实linear引用，再U02选段/U03任务续接，U16图示安全降级尽早，其余接续/条件启动。F1–F8、Agent、六个月研究与原扩展目标保留，不许全并行或虚构六个月交付保证。

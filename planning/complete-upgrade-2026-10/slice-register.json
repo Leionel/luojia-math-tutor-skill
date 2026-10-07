@@ -1,27 +1,33 @@
 {
   "version": "complete-upgrade-draft-v1",
-  "status": "plan_only_no_work_dispatched",
+  "status": "u01_u03_first_version_delivered_remaining_planned",
   "slices": [
     {
       "id": "U01",
       "file": "slices/01-linear-context.md",
       "title": "在线性实验旁讨论真实迭代",
       "priority": "优先",
-      "blocked_by": "无"
+      "blocked_by": "无",
+      "status": "first_version_delivered",
+      "receipt": "delivery-u01-u03.md"
     },
     {
       "id": "U02",
       "file": "slices/02-reading-context.md",
       "title": "教材选段与聊天共享来源",
       "priority": "优先",
-      "blocked_by": "无"
+      "blocked_by": "无",
+      "status": "first_version_delivered",
+      "receipt": "delivery-u01-u03.md"
     },
     {
       "id": "U03",
       "file": "slices/03-study-continuity.md",
       "title": "聊天可查看并续接当前学习任务",
       "priority": "优先",
-      "blocked_by": "无"
+      "blocked_by": "无",
+      "status": "first_version_delivered",
+      "receipt": "delivery-u01-u03.md"
     },
     {
       "id": "U04",

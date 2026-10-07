@@ -1,5 +1,7 @@
 # 珞珈数智助教 · Luojia Math Tutor
 
+> 新交付：[U01–U03](planning/complete-upgrade-2026-10/delivery-u01-u03.md)：线性实验同页讨论、教材选段引用与只读任务续接；API847/Web64及来源/可靠性回归通过。实际网页以固定模型和临时库验收，真实模型质量与教学收益仍待验证。
+
 后续补充升级：[完整计划与18个可验收切片](planning/complete-upgrade-2026-10/README.md)（本轮只规划，尚未实现）。
 
 > 分批提交与[S5.3离线预算切片](planning/agent-v3-2026-10/13-delivery-s5-3-offline-and-commits.md)：API819/Web56通过；模拟传输预留/并发/取消/恢复等合同已验收，真实供应商能力、费用上界与live仍关闭。

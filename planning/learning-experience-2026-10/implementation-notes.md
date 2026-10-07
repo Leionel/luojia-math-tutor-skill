@@ -1,5 +1,9 @@
 # 实施记录与计划偏离
 
+## U01–U03 首版交付与接续
+
+用户授权实施并 commit。线性实验同页固定引用、课程/私有Markdown选段Chat、只读已有任务续接已实现；保持旧Newton动作与独立帮助边界。API847/Web最终64、原E0 38/92、新增13/28、生产构建通过；桌面/390px及选段/任务刷新用隔离临时库和固定模型验收，无真实模型消费或学习效果结论。具体边界和日志见 planning/complete-upgrade-2026-10/delivery-u01-u03.md。原runtime dirty、原型/egg-info、07审阅保护不动。用户随后授权接续U04–U06，逐片验证并提交。
+
 ## 2026-10-07 统一产品与工程排期（文档）
 
 用户询问两目录如何继续。新增planning/README.md作为共同索引：产品目录保留六个月F1–F8与内容/研究门槛，工程目录保留A0–A8/S1–S4历史设计与回执，v3承接当前S5实现与评测。补两入口当前摘要，避免将历史未完成描述重复立项。源码确认LearningContext仍限root_lab/Newton；linear/integration/reading等页面可用不等于可信Chat已接完。
