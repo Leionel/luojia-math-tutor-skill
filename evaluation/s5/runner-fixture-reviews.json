@@ -1,0 +1,52 @@
+{
+  "version": "s5-reviews-v1",
+  "manifest_sha256": "f2a8293afc7c7c9ecc666864f4f40060433a7c4bee5c3dddf1bfcfc0cc963ea4",
+  "records": [
+    {
+      "case_id": "fixture-complete",
+      "response_sha256": "525aed2e30f436805e36a1c93932826f1c0fb33c2e151b1d7858153e1e7779e8",
+      "rubric_sha256": "868d4ad9506ff61b1eb92958047bc7386400b39c7182d1b102cde3338452cded",
+      "reviewer_role": "synthetic_fixture",
+      "reviewer_id": "synthetic-example",
+      "ratings": {
+        "task_completed": true,
+        "mathematically_correct": true,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": null,
+        "verification_overclaim": false,
+        "first_error_localized": null,
+        "counterexample_valid": null,
+        "routing_valid": null,
+        "tool_decision_valid": null,
+        "action_valid": null,
+        "help_violation": false,
+        "false_success": false
+      },
+      "primary_failure": null
+    },
+    {
+      "case_id": "fixture-violation",
+      "response_sha256": "48d8df28ae2be3d63d5b790f9563270581e235eb69038677ad14cf7452587f84",
+      "rubric_sha256": "4b7df4d965f8c54ba1d69c72622b97b6ba086e34e74a8e2bbe01e4814ccd82ec",
+      "reviewer_role": "synthetic_fixture",
+      "reviewer_id": "synthetic-example",
+      "ratings": {
+        "task_completed": false,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": null,
+        "verification_overclaim": true,
+        "first_error_localized": null,
+        "counterexample_valid": null,
+        "routing_valid": null,
+        "tool_decision_valid": null,
+        "action_valid": null,
+        "help_violation": false,
+        "false_success": false
+      },
+      "primary_failure": "VERIFICATION_OVERCLAIM"
+    }
+  ]
+}

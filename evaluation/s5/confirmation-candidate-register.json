@@ -1,0 +1,42 @@
+{
+  "version": "s5-confirmation-register-v1",
+  "status": "unallocated_slots_not_sealed_cases",
+  "cases": [
+    {
+      "id": "confirm-01",
+      "input_sha256": null,
+      "rubric_sha256": null,
+      "author_id": null,
+      "reviewer_id": null,
+      "frozen": false,
+      "status": "pending_real_independent_preparation"
+    },
+    {
+      "id": "confirm-02",
+      "input_sha256": null,
+      "rubric_sha256": null,
+      "author_id": null,
+      "reviewer_id": null,
+      "frozen": false,
+      "status": "pending_real_independent_preparation"
+    },
+    {
+      "id": "confirm-03",
+      "input_sha256": null,
+      "rubric_sha256": null,
+      "author_id": null,
+      "reviewer_id": null,
+      "frozen": false,
+      "status": "pending_real_independent_preparation"
+    },
+    {
+      "id": "confirm-04",
+      "input_sha256": null,
+      "rubric_sha256": null,
+      "author_id": null,
+      "reviewer_id": null,
+      "frozen": false,
+      "status": "pending_real_independent_preparation"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "version": "agent-reliability-s5-2-v1",
+  "scope": "offline_content_binding_and_asgi_episode_contracts",
+  "cases": [
+    {
+      "id": "content_contract",
+      "selector": "tests/test_s5_content_episodes.py::test_eight_cases_have_specific_derivations_and_no_human_gold",
+      "expected_instances": 1,
+      "contract": "content_contract"
+    },
+    {
+      "id": "independent_arithmetic",
+      "selector": "tests/test_s5_content_episodes.py::test_exact_witness_checks_do_not_use_app_checker",
+      "expected_instances": 1,
+      "contract": "independent_arithmetic"
+    },
+    {
+      "id": "unsigned_review",
+      "selector": "tests/test_s5_content_episodes.py::test_review_worksheet_is_unsigned_and_cannot_be_imported_as_scores",
+      "expected_instances": 1,
+      "contract": "unsigned_review"
+    },
+    {
+      "id": "content_binding",
+      "selector": "tests/test_s5_content_episodes.py::test_content_drift_or_fake_gold_is_rejected",
+      "expected_instances": 8,
+      "contract": "content_binding"
+    },
+    {
+      "id": "output_protection",
+      "selector": "tests/test_s5_content_episodes.py::test_cli_cannot_overwrite_bound_inputs",
+      "expected_instances": 1,
+      "contract": "output_protection"
+    },
+    {
+      "id": "actual_asgi_episodes",
+      "selector": "tests/test_s5_content_episodes.py::test_real_asgi_sse_episodes_preserve_confirmation_and_input",
+      "expected_instances": 2,
+      "contract": "actual_asgi_episodes"
+    },
+    {
+      "id": "stage_denominators",
+      "selector": "tests/test_s5_content_episodes.py::test_episode_bad_sequence_or_write_is_not_averaged",
+      "expected_instances": 4,
+      "contract": "stage_denominators"
+    },
+    {
+      "id": "episode_schema",
+      "selector": "tests/test_s5_content_episodes.py::test_episode_schema_does_not_admit_fake_confirmation",
+      "expected_instances": 5,
+      "contract": "episode_schema"
+    },
+    {
+      "id": "episode_allowlist",
+      "selector": "tests/test_s5_content_episodes.py::test_episode_capture_cannot_run_arbitrary_development_cases",
+      "expected_instances": 1,
+      "contract": "episode_allowlist"
+    },
+    {
+      "id": "recorded_adapter_boundary",
+      "selector": "tests/test_s5_content_episodes.py::test_recording_adapter_rejects_stale_or_sensitive_schema",
+      "expected_instances": 6,
+      "contract": "recorded_adapter_boundary"
+    },
+    {
+      "id": "recorded_missing_cases",
+      "selector": "tests/test_s5_content_episodes.py::test_recording_adapter_hashes_answer_and_keeps_missing_cases",
+      "expected_instances": 1,
+      "contract": "recorded_missing_cases"
+    }
+  ]
+}

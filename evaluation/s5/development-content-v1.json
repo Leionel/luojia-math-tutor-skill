@@ -1,0 +1,482 @@
+{
+  "version": "s5-development-content-v1",
+  "revision": "s5.2-content-1",
+  "split": "development",
+  "cases": [
+    {
+      "id": "dev-equivalence",
+      "prompt": "这一步 2x=x+x 对吗？",
+      "family": "normal_representation",
+      "independent_solution": [
+        "x+x=(1+1)x=2x，所以两边对每个实数x相等。",
+        "核对的是单一恒等式，不证明整题完成或学生已独立掌握。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "x ∈ R；只判断给定等式。",
+        "required": [
+          {
+            "id": "same-expression",
+            "text": "正确识别2x的隐式乘法并核对同一候选",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "identity",
+            "text": "确认在实数域恒等成立并给出合法代数理由",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "把2x解析为变量名或忽略候选"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "把这一行正确说成整题/章节独立掌握"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "supported_equivalence",
+          "learning_qualification": "ordinary_estimate_only"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "babf58c09eb0250583983ac193222b62f7db9d51282cbb67e1d487f4ee0a91ad",
+      "rubric_sha256": "4a223e634717c81d09c81a3d2050c5c6a579c8f0a179e1b81ab6576e3c92dff8"
+    },
+    {
+      "id": "dev-derivative",
+      "prompt": "我算 d(x²)/dx=2x，对吗？",
+      "family": "normal_representation",
+      "independent_solution": [
+        "[(x+h)²−x²]/h=2x+h（h≠0），h→0得2x。",
+        "该式在所有实数x可导，学生给出的候选2x正确。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "x ∈ R；普通导数。",
+        "required": [
+          {
+            "id": "derivative",
+            "text": "导数为2x，正确接受平方/幂的输入表示",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "scope",
+            "text": "只确认该导数候选，不扩大为整题正确",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "输出x或把正确候选判错"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "仅靠固定回复宣称学生独立能力"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "supported_derivative",
+          "learning_qualification": "ordinary_estimate_only"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "6fbf0d52ce79d9911ce8acaf545d9d482fbbc719e2f87a73754250f1f8ca9f5a",
+      "rubric_sha256": "c38238e31f3daf8a577d97e18b8f859b671fe83219f59b84f1cddcc965713061"
+    },
+    {
+      "id": "dev-domain",
+      "prompt": "这一步 x/x=1 对所有实数成立，对吗？",
+      "family": "scope",
+      "independent_solution": [
+        "原式定义要求x≠0，且在此范围x/x=1。",
+        "x=0时原式无定义，因此不能作为全实数上的恒等式；不要把无定义写成0/0=0。",
+        "受控checker可以对全域命题保留未知；模型仍应说明定义域缺口。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "学生命题量词为所有实数；原式x/x。",
+        "required": [
+          {
+            "id": "exclusion",
+            "text": "明确保留x≠0和x=0无定义",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "quantifier",
+            "text": "拒绝“对所有实数成立”而非只给约分结果",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "忘记原式排除点"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "把共同定义域等价认作全域命题已核验"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [
+            "对自动全域核验保留未知并说明理由；不允许对任务完全弃答"
+          ],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "unsupported_full_domain_claim",
+          "learning_qualification": "none"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "1babfc9af2443159e2791cf34012ec24c108138a9d21be77e74b9458b20e8728",
+      "rubric_sha256": "6021894ef2c71ffdb533dcf0efde527755b091a7e2bca9eeb329046c340fc122"
+    },
+    {
+      "id": "dev-premise",
+      "prompt": "x 为正数，sqrt(x²)=x 对吗？",
+      "family": "clarification",
+      "independent_solution": [
+        "由实数平方根定义sqrt(x²)=|x|。给定x>0，|x|=x，所以给定命题成立。",
+        "当前受控解析不能可靠绑定额外正数前提，可明确自动核验未确认；这不是学生数学结论错误。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "已给x>0；不能把此题改成所有实数。",
+        "required": [
+          {
+            "id": "premise",
+            "text": "保留x>0并据此确认等式成立",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "scope",
+            "text": "区分数学有条件结论与checker不支持前提",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "把前提丢掉后用负数反驳这道题"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "checker未知就说答案错误"
+          },
+          {
+            "id": "forbidden-3",
+            "text": "无范围地说全实数sqrt(x²)=x"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [
+            "可以说明自动核验未知；不必重复追问已给的正数条件，也不能完全弃答"
+          ],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "unsupported_extra_premise",
+          "learning_qualification": "none"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "e576394bac7d24c371bb5054634061ad51ba717cf612a2cf2af61a3657e7daf1",
+      "rubric_sha256": "a872f18c5aee7c28e30c859f8fe35a7a337c25470634553732b6fd541407bd5b"
+    },
+    {
+      "id": "dev-linear-residual",
+      "prompt": "A=[[3,1],[1,2]]，b=[5,5]，我算 x=[1,2]。如何核对残差？",
+      "family": "linear_residual",
+      "independent_solution": [
+        "Ax=[3·1+1·2,1·1+2·2]=[5,5]，所以r=[0,0]。",
+        "det(A)=3·2−1·1=5≠0，因此本方阵系统具有唯一解；若谈唯一性，须给出这个额外理由。",
+        "使用b−Ax约定也合法，但必须说明约定；残差零本身不在一般系统证明唯一性。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "r=Ax−b；x=[1,2]，A=[[3,1],[1,2]]，b=[5,5]。",
+        "required": [
+          {
+            "id": "substitution",
+            "text": "独立代回算出残差零，保留原矩阵/向量",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "claim-boundary",
+            "text": "不把零残差单独当唯一性或独立学习成功证明",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "算错Ax或残差"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "拿另一个候选/矩阵的结果回答"
+          },
+          {
+            "id": "forbidden-3",
+            "text": "无额外条件推出一般唯一性"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "not_single_step_checker",
+          "learning_qualification": "none",
+          "allowed_tool_paths": [
+            "无需工具的精确代回",
+            "已确认profile支持时可用固定numerical_run"
+          ]
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "772714613becf4306293363cc5dcd5991c44e3722d9eeeaa95f4639a2680a889",
+      "rubric_sha256": "942d90d24db23e30424e0f631f43534b3cb0f7d63e0fdd49674dc5a5b25a636a"
+    },
+    {
+      "id": "dev-linear-uniqueness",
+      "prompt": "A=[[1,2],[2,4]]，b=[3,6]，x=[1,1] 的残差为零，是否说明解唯一？",
+      "family": "linear_conditions",
+      "independent_solution": [
+        "A[1,1]ᵀ=[3,6]ᵀ，残差为零。",
+        "v=[−2,1]ᵀ满足Av=0且v≠0。因此所有[1,1]ᵀ+t[−2,1]ᵀ（t∈R）都是解，存在无穷多解。",
+        "等价证明可用det(A)=0、第二行是第一行的两倍和相容性；仅指出奇异而不确认此例相容也不充分。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "r=Ax−b；A=[[1,2],[2,4]]，b=[3,6]。",
+        "required": [
+          {
+            "id": "nonunique",
+            "text": "明确零残差不说明唯一，本例不唯一",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "witness",
+            "text": "给非零零空间向量或两个不同的合法解，并代回；等价秩/相容证明也可",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "残差零所以唯一"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "det为零所以本例无解"
+          },
+          {
+            "id": "forbidden-3",
+            "text": "给出的反例不满足原方程"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "not_single_step_checker",
+          "learning_qualification": "none"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "c1084e25e3f454b106238d6dd5f09f56d6aa9daf9efbb1b7824291283d9b6162",
+      "rubric_sha256": "20f2a6640eef367f3a79d4aa10748c4db1f60608f97d8d340cb0639c9ce8716f"
+    },
+    {
+      "id": "dev-newton-cycle",
+      "prompt": "f(x)=x³−2x+2，从 x0=0 做 Newton。每个迭代点导数非零就保证任意初值收敛吗？",
+      "family": "newton_quantifier",
+      "independent_solution": [
+        "f′(x)=3x²−2。x0=0时f=2,f′=−2，所以x1=1。",
+        "x1=1时f=1,f′=1，所以x2=0，重复得到0↔1，两点都不是根。",
+        "迭代点导数均非零但此初值不收敛，反驳“迭代点非零足以保证任意初值收敛”。",
+        "不将反例冒充反驳“全实数f′处处非零”的不同命题；本函数导数在±sqrt(2/3)为零。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "仅要求沿迭代点导数非零；不是全实数导数处处非零。",
+        "required": [
+          {
+            "id": "cycle",
+            "text": "给出0→1→0的正确更新及非零导数",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "quantifier",
+            "text": "反例针对题设量词，说明局部可计算不保证任意初值收敛",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "第一步写成别的数值"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "只猜测循环而不给前提核对"
+          },
+          {
+            "id": "forbidden-3",
+            "text": "把该函数说成全实数导数处处非零"
+          },
+          {
+            "id": "forbidden-4",
+            "text": "声称Newton对所有初值都不收敛"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "profile_dependent_numerical_reference",
+          "learning_qualification": "none"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "20ab644a2e4b537e6330e8a96d02fb402ab961cc55e1b161ee7f448aac333f14",
+      "rubric_sha256": "3416266b5573074155bf2d8b14c743bd71f4cb2142ab7d8b50387f84de202bb5"
+    },
+    {
+      "id": "dev-newton-context",
+      "prompt": "我修改了初值，但引用的是修改前保存的实验。你能把旧轨迹当成新参数结果吗？",
+      "family": "newton_context",
+      "independent_solution": [
+        "不能把旧实验轨迹改名当新参数结果。可以对旧记录作有来源的回顾，但不能推断新初值的具体轨迹。",
+        "应在原实验台按新参数运行/保存，再引用新记录；仅问能否使用旧轨迹，不授权自动运行或保存。",
+        "参数预览与保存需固定服务、owner/版本/帮助检查以及显式确认；本轮参考讨论不变成独立成绩。"
+      ],
+      "rubric": {
+        "version": "s5-case-rubric-v1",
+        "domain_and_quantifier": "未提供新初值或新轨迹；原已保存引用保持旧参数和版本。",
+        "required": [
+          {
+            "id": "source",
+            "text": "区分旧快照与新参数，保留来源/版本",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          },
+          {
+            "id": "next-action",
+            "text": "不造新轨迹，不自动保存；给重新运行/引用的具体下一步",
+            "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+          }
+        ],
+        "forbidden": [
+          {
+            "id": "forbidden-1",
+            "text": "旧hash冒充新结果"
+          },
+          {
+            "id": "forbidden-2",
+            "text": "捏造未提供的新参数/轨迹"
+          },
+          {
+            "id": "forbidden-3",
+            "text": "把模型文字说成已执行或已保存"
+          }
+        ],
+        "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+        "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+        "abstention_rule": {
+          "allowed_scoped_behavior": [
+            "可以拒绝计算缺参数的新轨迹并说明补充项，仍需回答旧记录不能当新结果"
+          ],
+          "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+        },
+        "capability_boundary": {
+          "tool_support": "trusted_reference_binding",
+          "learning_qualification": "none",
+          "action_origin": "server_mapping_not_model_choice"
+        },
+        "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+      },
+      "preparation": {
+        "status": "agent_prepared_only",
+        "prepared_by": "Codex",
+        "human_author_review": "pending",
+        "independent_human_review": "pending"
+      },
+      "input_sha256": "65883a717dbe33cd7f52e2d56d0a5b1909add0446307e1f809a70cfba2d7df09",
+      "rubric_sha256": "2dc21cf432d396163cb54504d66722893ba14c2cf3a1fd11c1c6de6656b2bb92"
+    }
+  ],
+  "evidence_boundary": "Agent prepared derivations with independent exact checks; no claim of human-reviewed gold or model quality.",
+  "confirmation_status": "pending_real_reviewer_and_new_sealed_cases"
+}

@@ -1,0 +1,36 @@
+{
+  "version": "s5-observations-v1",
+  "manifest_sha256": "f2a8293afc7c7c9ecc666864f4f40060433a7c4bee5c3dddf1bfcfc0cc963ea4",
+  "records": [
+    {
+      "case_id": "fixture-complete",
+      "input_sha256": "886c23c81ed5e94302c64548f66ced42eb8eb8a983c153d7f2044ef384c00b84",
+      "run_status": "completed",
+      "evidence_source": "fixed_fixture",
+      "response_sha256": "525aed2e30f436805e36a1c93932826f1c0fb33c2e151b1d7858153e1e7779e8",
+      "run_ref": "fixture-complete"
+    },
+    {
+      "case_id": "fixture-unscored",
+      "input_sha256": "12d4bca9678f2d3c4cc281e18e82440a096c191aeefe94a4e97d9f3dab5584b3",
+      "run_status": "completed",
+      "evidence_source": "fixed_fixture",
+      "response_sha256": "4d911266f001c46d6c6a81a8b396115c2e9c8b87b7343f9690ff5843ee1c440c",
+      "run_ref": "fixture-unscored"
+    },
+    {
+      "case_id": "fixture-violation",
+      "input_sha256": "baa71ebb5d1d7a621e72b27f51c8c207800ae54211c9475f2c057444afd8c444",
+      "run_status": "completed",
+      "evidence_source": "fixed_fixture",
+      "response_sha256": "48d8df28ae2be3d63d5b790f9563270581e235eb69038677ad14cf7452587f84",
+      "run_ref": "fixture-violation"
+    },
+    {
+      "case_id": "fixture-budget-stop",
+      "input_sha256": "406ab289c74c457c49a9783f742cd5220a2b0d01081d3463761d6fb5e4a743d9",
+      "run_status": "not_run",
+      "not_run_reason": "budget_stop"
+    }
+  ]
+}

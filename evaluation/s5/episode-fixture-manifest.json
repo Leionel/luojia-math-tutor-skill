@@ -1,0 +1,75 @@
+{
+  "version": "s5-manifest-v1",
+  "split": "runner_fixture",
+  "scope": "two_development_flow_fixtures",
+  "cases": [
+    {
+      "id": "episode-newton-reference",
+      "kind": "episode",
+      "planned_runs": 1,
+      "input_sha256": "5105528431fe1a365cee181e1e7d51d9ca76f58c409b9259ecc44756e2e4717d",
+      "rubric_sha256": "64ba6561f66233038be913d34b6d43676829a75afb515e420f6bf1213f139b2c",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": true,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture",
+      "required_stage_ids": [
+        "context_loaded",
+        "reply_saved",
+        "preview_created",
+        "preview_retry",
+        "explicit_save",
+        "save_retry",
+        "new_reference",
+        "stale_rejected",
+        "owner_rejected",
+        "help_locked",
+        "reference_not_graded"
+      ]
+    },
+    {
+      "id": "episode-linear-revision",
+      "kind": "episode",
+      "planned_runs": 2,
+      "input_sha256": "a48ccea9e4f022edeeed25bc68ef52e57252b5bf58405546100d93dc2fecfa52",
+      "rubric_sha256": "7d6c7acfee8e85acfd4c4838197770be3a847c707e3d776f11f3ed54e86b5129",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture",
+      "required_stage_ids": [
+        "first_reply_saved",
+        "second_reply_saved",
+        "two_user_turns_preserved",
+        "per_turn_input_bound",
+        "responses_distinct",
+        "saved_meta_matches_sse",
+        "no_learning_grade"
+      ]
+    }
+  ]
+}
