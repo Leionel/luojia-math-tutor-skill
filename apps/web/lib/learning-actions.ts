@@ -1,19 +1,19 @@
-import type {LearningContextRef} from "./learning-context";
+import type {LearningContextRef,RootContextRef} from "./learning-context";
 import type {LabRun} from "./learning-api";
 
 export type PreviewParameters = {initial_value: number; tolerance: number; max_iterations: number};
 export type RootProposal = {
   version: "tutor-artifact-v1"; kind: "root_parameter_proposal"; action: "preview_root_lab";
-  artifact_id: string; run_id: string; origin: "server"; context: LearningContextRef;
+  artifact_id: string; run_id: string; origin: "server"; context: RootContextRef;
   parameters: PreviewParameters; created_at: string; expires_at: string;
   evidence_kind: "reference_help"; independent_success: false; preview_budget: number;
 };
-export type RootPreview = Omit<LabRun, "prediction"> & {context: LearningContextRef; max_iterations: number};
+export type RootPreview = Omit<LabRun, "prediction"> & {context: RootContextRef; max_iterations: number};
 export type RootActionState = {state: "proposed" | "previewed" | "saved" | "expired";
   preview_ids: string[]; preview_budget: number; used_help: number; preview: RootPreview | null; saved_run: LabRun | null};
 
 export function sameContext(a: LearningContextRef | undefined, b: LearningContextRef | undefined) {
-  return !!a && !!b && a.kind === b.kind && a.record_id === b.record_id && a.input_hash === b.input_hash
+  return !!a && !!b && a.kind === "root_lab" && b.kind === "root_lab" && a.record_id === b.record_id && a.input_hash === b.input_hash
     && a.runner_version === b.runner_version && a.graph_revision === b.graph_revision && a.selected_step === b.selected_step;
 }
 export function parseRootProposals(value: unknown): RootProposal[] {

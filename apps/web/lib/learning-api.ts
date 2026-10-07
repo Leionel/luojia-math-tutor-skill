@@ -23,6 +23,7 @@ export type StudyToday = {
   reviews: {id: string; stage: number; due_at: string}[];
 };
 export type ReadingUnit = {
+  graph_revision: string;
   id: string; title: string; quote: string; latex: string; source_hash: string;
   conditions: string[]; question: string; options: string[]; source_span?: string | null;
   page_start?: number | null; source_document_id?: string | null;

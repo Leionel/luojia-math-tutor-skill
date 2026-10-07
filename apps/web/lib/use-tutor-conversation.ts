@@ -1,4 +1,5 @@
 "use client";
+import {studyRequested} from "./learning-context";
 import {useEffect, useRef, useState} from "react";
 import {createSession, getAgentRun, listMessages, streamTutor, type Message, type TutorMeta, type TutorMode} from "./api";
 import {mergeAgentRun, type AgentRun} from "./agent-run";
@@ -59,7 +60,7 @@ export function useTutorConversation({sessionId, scope, subject, context, onSess
       setMessages(items=>[...items, {...base,id:crypto.randomUUID(),role:"user",content:value},
         {...base,id:assistantId,role:"assistant",content:"",status:"thinking"}]);
       await streamTutor({session_id:session, message:value, subject, mode, learning_context:context,
-        web_search_mode:context?"off":"auto", user_api_key:getUserApiKey()||null, model:getPreferredModel(), abortSignal:lease.controller.signal},
+        web_search_mode:context?"off":"auto", study_action:!context&&studyRequested(value)?"current_tasks":undefined,user_api_key:!context&&studyRequested(value)?null:getUserApiKey()||null, model:!context&&studyRequested(value)?undefined:getPreferredModel(), abortSignal:lease.controller.signal},
         meta=>update(m=>({...m,learning_meta:{...meta,agent_run:mergeAgentRun(m.learning_meta?.agent_run,meta.agent_run)}})),
         token=>update(m=>({...m,content:m.content+token,status:"typing"})),
         chain=>update(m=>({...m,thinkingChain:chain})),

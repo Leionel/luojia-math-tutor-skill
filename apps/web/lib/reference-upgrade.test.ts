@@ -1,0 +1,21 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference} from "./learning-context.ts";
+import {studyTaskHref} from "./study-summary.ts";
+import type {NumericalRun} from "./numerical-lab.ts";
+const run={id:"record",source_hash:"a".repeat(64),schema_version:"numerical-lab-v1",task:{domain:"linear_system"},rows:[{k:0},{k:1}]} as unknown as NumericalRun;
+test("reading refresh restores the exact span and rejects changed sources or invalid storage",()=>{
+ const source={source_id:"course",source_hash:"a".repeat(64),section_id:null,graph_revision:"v1"};
+ const ref={kind:"reading",...source,start:3,end:8};
+ assert.deepEqual(restoreReadingReference(JSON.stringify(ref),source,10),ref);
+ for(const changed of [{...ref,source_hash:"b".repeat(64)},{...ref,graph_revision:"v2"},{...ref,end:11},{...ref,start:-1}])assert.equal(restoreReadingReference(JSON.stringify(changed),source,10),null);
+ assert.equal(restoreReadingReference("null",source,10),null);
+ assert.equal(restoreReadingReference("broken",source,10),null);
+});
+test("explicit iteration reference is immutable while playback changes",()=>{const ref=linearContextRef(run,1);run.rows.push({k:2} as NumericalRun["rows"][number]);assert.equal(ref.selected_step,1);assert.equal(ref.record_id,"record");});
+test("linear reference rejects old versions and invalid steps",()=>{assert.throws(()=>linearContextRef({...run,schema_version:"old"},0));assert.throws(()=>linearContextRef(run,100));});
+test("reading offsets use codepoints and retain the second repeated passage",()=>{const text="甲📘乙重复乙重复";assert.deepEqual(selectionRange(text,6,9),{start:5,end:8});assert.equal(Array.from(text).slice(5,8).join(""),"乙重复");});
+test("source discussion cache cannot cross owners or namespaces",()=>{const ref=linearContextRef(run,0);assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("bob",ref));assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("alice",{kind:"reading",source_id:"record",source_hash:"a".repeat(64),section_id:"0",start:0,end:1,graph_revision:null}));});
+test("task navigation is a bounded command instead of math keyword interception",()=>{assert.ok(studyRequested("今天学什么？"));assert.ok(!studyRequested("今天学什么，并求x²=2"));});
+test("stale or missing-session task cannot become a resume link",()=>{const t={id:"task1",title:"任务",state:"in_progress",stale:false,session_available:true,kind:"practice"};assert.equal(studyTaskHref(t),"/study?task=task1");assert.equal(studyTaskHref({...t,stale:true}),null);assert.equal(studyTaskHref({...t,session_available:false}),null);assert.equal(studyTaskHref({...t,id:"../private"}),null);});
+test("reading source link uses section without invented page numbers",()=>{const s={version:"learning-context-v1",title:"source",evidence_kind:"reference_help",independent_success:false,ref:{kind:"reading",source_id:"record",source_hash:"a".repeat(64),section_id:"2",start:0,end:1,graph_revision:null},citation:{quote:"q",start:0,end:1,conditions:[]},source_kind:"uploaded_markdown"} as const;assert.equal(referenceHref(s as unknown as Parameters<typeof referenceHref>[0]),"/reading?document=record&section=2");});

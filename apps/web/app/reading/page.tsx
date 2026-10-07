@@ -6,6 +6,7 @@ import {MathMarkdown, MathView} from "@/components/math-view";
 import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
 import {learningRequest, stableRequestId, type ReadingUnit, type ReadingDocument, type ReadingNote} from "@/lib/learning-api";
 import {getCurrentUserId} from "@/lib/demo-auth";
+import {ReadingDiscussion} from "@/components/learning/reading-discussion";
 import {ReadingExplanation} from "@/components/learning/reading-explanation";
 
 export default function ReadingPage() {
@@ -62,6 +63,7 @@ export default function ReadingPage() {
             setNote(next);if(draftKey)localStorage.setItem(draftKey,next);
             document.getElementById("note")?.focus();
           }}/>}
+          {sourceId&&sourceHash&&<ReadingDiscussion sourceId={sourceId} sourceHash={sourceHash} sectionId={doc?sectionId:null} quote={doc?section?.quote??"":unit?.quote??""} graphRevision={doc?null:unit?.graph_revision??null}/>}
           <form className="mt-8 border-t border-[var(--border-subtle)] pt-6" onSubmit={e=>{e.preventDefault();act(async()=>{const saved=await learningRequest<ReadingNote>("/reading/notes",{request_id:stableRequestId(localStorage,`note-request:${getCurrentUserId()}:${sourceId}:${sectionId}`,{note,sourceHash},()=>crypto.randomUUID()),source_id:sourceId,source_hash:sourceHash,section_id:doc ? sectionId : null,content:note});setNotes(previous=>[...previous.filter(n=>n.id!==saved.id),saved]);setNote("");if(draftKey)localStorage.removeItem(draftKey);});}}><label htmlFor="note" className="block mb-3 text-xl font-semibold">留下一个问题或理解</label><textarea id="note" name="note" required maxLength={4000} rows={4} className={learningInput} value={note} onChange={e=>{setNote(e.target.value);if(draftKey)localStorage.setItem(draftKey,e.target.value);}} placeholder="这一步用了什么条件？为什么小残差还不够？"/><button type="submit" disabled={busy || !note.trim()} className={`${learningButton} mt-3`}>保存笔记与来源</button></form>
           {visibleNotes.length>0 && <div className="mt-7"><h3 className="font-semibold">本章节的伴读笔记</h3>{visibleNotes.map(n=><div key={n.id} className="border-b border-[var(--border-subtle)] py-4"><p className="whitespace-pre-wrap leading-7">{n.content}</p><time className="text-base sm:text-xs text-[var(--text-muted)]">{new Date(n.created_at).toLocaleString("zh-CN")}</time></div>)}</div>}
         </>}

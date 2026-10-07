@@ -5,7 +5,7 @@ import {learningButton} from "./learning-shell";
 
 const format = (value: number | null) => value === null ? "—" : value.toExponential(5);
 
-export function NumericalPlayback({run, comparison}: {run: NumericalRun; comparison?: NumericalRun}) {
+export function NumericalPlayback({run, comparison, onDiscuss}: {run: NumericalRun; comparison?: NumericalRun; onDiscuss?:(step:number)=>void}) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const last = run.rows.length - 1;
@@ -40,6 +40,7 @@ export function NumericalPlayback({run, comparison}: {run: NumericalRun; compari
     <label className="mt-4 block" htmlFor="numerical-step">选择观察步骤</label>
     <input id="numerical-step" type="range" min={0} max={Math.max(last, 1)} step={1} value={step} disabled={last === 0} onChange={e => move(Number(e.target.value))} className="h-12 w-full accent-olive-700"/>
     <div className="flex flex-wrap gap-2"><button className={learningButton} disabled={step === 0} onClick={() => move(step-1)}>上一步</button><button className={learningButton} disabled={last === 0} onClick={() => {if (playing && step < last) setPlaying(false); else {if (step === last) setStep(0); setPlaying(true);}}}>{playing && step < last ? "暂停" : "播放"}</button><button className={learningButton} disabled={step === last} onClick={() => move(step+1)}>下一步</button></div>
+    {onDiscuss && <button type="button" className={`${learningButton} mt-3`} onClick={()=>onDiscuss(step)}>讨论第 {row.k} 步</button>}
     <dl className="mt-5 grid grid-cols-2 gap-4 text-base"><div className="col-span-2"><dt>{linear ? "近似解向量" : "积分近似值"}</dt><dd className="mt-1 break-all font-mono">{row.vector ? `[${row.vector.map(v => v.toPrecision(7)).join(", ")}]` : row.value?.toPrecision(10)}</dd></div><div><dt>{linear ? "绝对残差" : "误差估计"}</dt><dd className="mt-1 font-mono">{format(metric(row))}</dd></div><div><dt>{linear ? "相邻步差" : "函数求值次数"}</dt><dd className="mt-1 font-mono">{linear ? format(row.step) : row.work}</dd></div>{row.error_bound !== null && <div className="col-span-2"><dt>解误差界公式的浮点值（不含舍入误差）</dt><dd className="mt-1 font-mono">{format(row.error_bound)}</dd></div>}</dl>
   </section>;
 }

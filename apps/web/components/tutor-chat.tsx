@@ -24,7 +24,7 @@ import { GlobalSearchModal } from "./global-search-modal";
 import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
 import {learningRequest, type LabRun} from "@/lib/learning-api";
-import {rootContextRef, labChatKey, type LearningTaskSnapshot} from "@/lib/learning-context";
+import {rootContextRef, referenceChatKey, studyRequested, type LearningContextRef, type LearningTaskSnapshot} from "@/lib/learning-context";
 import {getCurrentUserId} from "@/lib/demo-auth";
 import {ChatLifetime} from "@/lib/chat-lifetime";
 import {ContextBanner} from "./learning/context-banner";
@@ -317,17 +317,17 @@ export function TutorChat() {
     const existing=await listSessions().catch(()=>[]);
     if(!valid())return;
     setSessions(existing);
-    const params=new URLSearchParams(window.location.search),labId=params.get("lab");
-    if(labId){
+    const params=new URLSearchParams(window.location.search),labId=params.get("lab"),encodedRef=params.get("ref");
+    if(labId||encodedRef){
       try{
-        const run=await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000));
         const step=params.get("step");
-        const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",rootContextRef(run,step===null?null:Number(step)),AbortSignal.timeout(15000));
+        const requested:LearningContextRef=labId?rootContextRef(await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000)),step===null?null:Number(step)):JSON.parse(encodedRef!);
+        const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",requested,AbortSignal.timeout(15000));
         if(!valid())return;
-        const mapped=localStorage.getItem(labChatKey(owner,labId));
+        const mapped=localStorage.getItem(referenceChatKey(owner,snapshot.ref));
         if(mapped&&existing.some(s=>s.id===mapped)) await selectSession(mapped,snapshot);
-        else {resetToDraftSession();setLearningContext(snapshot);setContextLoading(false);window.history.replaceState(null,"",`/chat?lab=${encodeURIComponent(labId)}${step===null?"":`&step=${step}`}`);}
-      }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"实验引用不可用");setContextLoading(false);}}
+        else {resetToDraftSession();setLearningContext(snapshot);setContextLoading(false);}
+      }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"来源引用不可用");setContextLoading(false);}}
       return;
     }
     const selected=existing.find(s=>s.id===params.get("session"))??existing[0];
@@ -382,7 +382,7 @@ export function TutorChat() {
     if(!valid())return;
     setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
     const query=new URLSearchParams({session:nextSessionId});
-    if(snapshot){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));localStorage.setItem(labChatKey(owner,snapshot.ref.record_id),nextSessionId);}
+    if(snapshot){if(snapshot.ref.kind==="root_lab"){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));}else{query.set("ref",JSON.stringify(snapshot.ref));}localStorage.setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
     window.history.replaceState(null,"",`/chat?${query}`);
     if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {
@@ -439,12 +439,12 @@ export function TutorChat() {
         if(!valid())return;
         activeSession=created.session_id;setSessionId(activeSession);
       }
-      if(learningContext)localStorage.setItem(labChatKey(getCurrentUserId(),learningContext.ref.record_id),activeSession);
+      if(learningContext)localStorage.setItem(referenceChatKey(getCurrentUserId(),learningContext.ref),activeSession);
       const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
       setMessages(current=>[...current,userMessage,{id:assistantId,role:"assistant",content:"",status:"thinking"}]);
       setMeta(null);setThinkingChains({});setThinkingElapsed(0);activeRunRef.current=undefined;
       const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 0;
-      if (isFirstUserMessage) {
+      if (isFirstUserMessage && !studyRequested(value)) {
         generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async ({ title: autoTitle, label: autoLabel }) => {
           if(!valid())return;
           await renameSession(activeSession!, autoTitle, autoLabel).catch(() => {});
@@ -454,6 +454,7 @@ export function TutorChat() {
 
       await streamTutor(
         {
+          study_action: !learningContext && !rootSubmission && !imageUrls?.length && studyRequested(value)?"current_tasks":undefined,
           root_submission: rootSubmission,
           learning_context: learningContext?.ref,
           parent_run_id:parentRunId,
@@ -461,8 +462,8 @@ export function TutorChat() {
           message: value,
           subject: "auto",
           mode: forcedMode || mode,
-          user_api_key: getUserApiKey() || null,
-          model: getPreferredModel(),
+          user_api_key: !learningContext && studyRequested(value)?null:getUserApiKey() || null,
+          model: !learningContext && studyRequested(value)?undefined:getPreferredModel(),
           requested_hint: requestedHint,
           image_urls: imageUrls,
           abortSignal: abortControllerRef.current.signal,
@@ -898,7 +899,7 @@ export function TutorChat() {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:PROMPT_SUGGESTIONS).map((item, pIdx) => (
+                    {(learningContext&&learningContext.ref.kind!=="root_lab"?[{category:"当前引用",icon:"↗",title:"解释当前来源",desc:"区分原文、条件与推断",prompt:"请只依据本轮引用解释必要条件与不能确定的结论。"}]:learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:[{category:"今日学习",icon:"✓",title:"查看今日任务",desc:"读取已有计划，不自动创建",prompt:"今天学什么"},...PROMPT_SUGGESTIONS]).map((item, pIdx) => (
                       <button
                         key={pIdx}
                         onClick={() => void submit(item.prompt)}

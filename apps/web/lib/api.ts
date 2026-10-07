@@ -35,6 +35,7 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  study_summary?: import("./study-summary").StudySummary;
   step_check?: StepCheck | null;
   mastery_estimate_notice?: string;
   tutor_artifacts?: unknown[];
@@ -278,6 +279,7 @@ export async function getAgentRun(sessionId:string,runId:string) {
 
 export async function streamTutor(
   payload: {
+    study_action?: "current_tasks";
     learning_context?: import("./learning-context").LearningContextRef;
     parent_run_id?: string;
     root_submission?: RootSubmission;

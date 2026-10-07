@@ -3,6 +3,8 @@ import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
 import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
 import {ExperimentNavigation} from "@/components/learning/experiment-navigation";
+import {ReferenceTutor} from "@/components/learning/reference-tutor";
+import {linearContextRef,type LinearContextRef} from "@/lib/learning-context";
 import {NumericalPlayback} from "@/components/learning/numerical-playback";
 import {learningRequest, stableRequestId} from "@/lib/learning-api";
 import {getCurrentUserId} from "@/lib/demo-auth";
@@ -34,6 +36,10 @@ export default function NumericalLabPage() {
   const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [reference,setReference]=useState<LinearContextRef|null>(null),[mobileOpen,setMobileOpen]=useState(false),[wide,setWide]=useState(false);
+  const dialog=useRef<HTMLDialogElement>(null);
+  useEffect(()=>{const media=window.matchMedia("(min-width:1280px)");const change=()=>{setWide(media.matches);setMobileOpen(false);};change();media.addEventListener("change",change);return()=>media.removeEventListener("change",change);},[]);
+  useEffect(()=>{if(mobileOpen&&!wide&&reference){if(!dialog.current?.open)dialog.current?.showModal();}else if(dialog.current?.open)dialog.current.close();},[mobileOpen,wide,reference]);
   const operation = useRef(false);
   useEffect(() => {
     const controller = new AbortController();
@@ -42,14 +48,17 @@ export default function NumericalLabPage() {
       setRuns(data.runs);
       const id = new URLSearchParams(window.location.search).get("id");
       const selected = id ? await learningRequest<NumericalRun>(`/numerical-lab/runs/${encodeURIComponent(id)}`, undefined, signal) : data.runs.at(-1);
-      if (!controller.signal.aborted && selected) {setRun(selected); setDomain(selected.task.domain);}
+      if (!controller.signal.aborted && selected) {setRun(selected); setDomain(selected.task.domain);
+        const params=new URLSearchParams(window.location.search);if(selected.task.domain==="linear_system"&&(params.get("discuss")==="1"||params.has("step"))){setReference(linearContextRef(selected,params.has("step")?Number(params.get("step")):null));}
+      }
     }).catch(e => {if (!controller.signal.aborted) setError(e.message);}).finally(() => {if (!controller.signal.aborted) setLoading(false);});
     return () => controller.abort();
   }, []);
   const comparison = runs.find(value => value.id === compareId);
   const comparable = run && comparison && comparableNumerical(run, comparison);
   const scalar = (text: string) => numericVector(text, 1)[0];
-  function show(value: NumericalRun) {setRun(value); setFeedback(null); setAnswer(""); setCopied(false); setCompareId(""); window.history.replaceState(null, "", `/numerical-lab?id=${encodeURIComponent(value.id)}`);}
+  function show(value: NumericalRun) {setReference(null);setMobileOpen(false);setRun(value); setFeedback(null); setAnswer(""); setCopied(false); setCompareId(""); window.history.replaceState(null, "", `/numerical-lab?id=${encodeURIComponent(value.id)}`);}
+  function discuss(step:number|null){if(!run)return;try{setReference(linearContextRef(run,step));setMobileOpen(!wide);window.history.replaceState(null,"",`/numerical-lab?id=${encodeURIComponent(run.id)}&discuss=1${step===null?"":`&step=${step}`}`);}catch(e){setError(e instanceof Error?e.message:"引用不可用");}}
   function loadParameters(value: NumericalRun) {
     const task = value.task;
     setDomain(task.domain); setTolerance(String(task.tolerance)); setLimit(String(task.limit)); setPrediction(value.prediction);
@@ -83,10 +92,10 @@ export default function NumericalLabPage() {
     catch (e) {setError(e instanceof Error ? e.message : "核对失败");}
     finally {operation.current = false; setChecking(false);}
   }
-  return <LearningShell title="数值实验 · 从迭代到积分" description="先预测，逐步观察，再核对数值依据。求根、线性方程组和数值积分各有自己的验证范围。">
+  return <LearningShell wide title="数值实验 · 从迭代到积分" description="先预测，逐步观察，再核对数值依据。求根、线性方程组和数值积分各有自己的验证范围。">
     <ExperimentNavigation active="numerical"/><Notice error={error}/>
     <div className="mb-6 flex flex-wrap gap-3" role="group" aria-label="选择数值任务">{[{id: "linear_system", title: "线性方程组"}, {id: "integration", title: "数值积分"}].map(item => <button key={item.id} disabled={busy || checking || loading} aria-pressed={domain === item.id} className={`${learningButton} ${domain !== item.id ? "opacity-70" : ""}`} onClick={() => {setDomain(item.id as typeof domain); setError("");}}>{item.title}</button>)}</div>
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+    <div className={`grid items-start gap-6 ${reference&&wide?"xl:grid-cols-[280px_minmax(0,1fr)_360px]":"lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"}`}>
       <section className={learningPanel}><h2 className="text-xl font-semibold">{domain === "linear_system" ? "解 Ax = b" : "近似计算定积分"}</h2><p className="mt-2 text-sm text-[var(--text-secondary)]">下方用于新实验。回看历史时，可从右侧载入原参数再改一个变量。</p>
         <p className="my-4 leading-7 text-[var(--text-secondary)]">{domain === "linear_system" ? "观察新分量是否立即参与下一次更新；比较残差与相邻差。默认例子的解为 (0.1, 0.6)，用于校准实验。" : "比较均匀加密与局部细分。默认 exp(x) 在 [0, 1] 的积分为 e−1，可用解析值复核。"}</p>
         <button disabled={busy || checking || loading} className="mb-4 min-h-11 text-olive-700 underline dark:text-olive-300" onClick={() => {if (domain === "linear_system") {setMatrix("1 2\n2 1"); setRhs("1 2"); setInitial("0 0");} else {setExpression("sin(16*pi*x)^2"); setLeft("0"); setRight("1"); setIntervals("4");} setPrediction("");}}>换一个需要警惕的例子</button>
@@ -104,13 +113,15 @@ export default function NumericalLabPage() {
           <ul className="mt-3 list-disc space-y-2 pl-5 leading-7 text-[var(--text-secondary)]">{run.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul>
           <label htmlFor="num-comparison" className="mb-2 mt-4 block">选择另一种方法对照</label><select id="num-comparison" className={learningInput} value={compareId} onChange={e => setCompareId(e.target.value)}><option value="">不对照</option>{runs.filter(value => value.id !== run.id).map(value => <option key={value.id} value={value.id}>{methodNames[value.task.method]} · {value.prediction.slice(0, 20)}</option>)}</select>{comparison && !comparable && <p className="mt-2 leading-7 text-ochre-700 dark:text-ochre-300">问题、初始向量或阈值不同，暂不叠加轨迹。</p>}
           {comparable && comparison && <p className="mt-3 break-all leading-7">对照末值：{comparison.rows.at(-1)?.vector?.map(v => v.toPrecision(7)).join(", ") ?? comparison.rows.at(-1)?.value?.toPrecision(9)}；{comparison.stop_detail}</p>}
-          <NumericalPlayback key={run.id} run={run} comparison={comparable ? comparison : undefined}/>
+          <NumericalPlayback key={run.id} run={run} comparison={comparable ? comparison : undefined} onDiscuss={run.task.domain==="linear_system"?discuss:undefined}/>{run.task.domain==="linear_system"&&<><button type="button" className="mt-3 min-h-12 text-olive-700 underline dark:text-olive-300" onClick={()=>discuss(null)}>讨论整个已保存实验</button>{reference&&<p className="mt-2 text-sm leading-6">聊天固定引用{reference.selected_step===null?"这次已保存实验":`第 ${reference.selected_step} 步`}；播放或编辑参数不会改变引用。{!wide&&<button type="button" className="ml-2 min-h-12 underline" onClick={()=>setMobileOpen(true)}>打开讨论</button>}</p>}</>}
           <form onSubmit={check} className="mt-6 space-y-3 border-t border-[var(--border-subtle)] pt-5"><label htmlFor="num-answer" className="block font-semibold">核对自己的数值结果（已参考帮助）</label><input id="num-answer" required maxLength={500} value={answer} onChange={e => {setAnswer(e.target.value); setFeedback(null);}} className={learningInput} placeholder={run.task.domain === "linear_system" ? "例如：0.1 0.6" : "填写一个积分近似值"}/><button disabled={checking || busy || loading} className={learningButton}>{checking ? "正在核对…" : "核对数值依据"}</button></form>
           {feedback && <div role="status" className="mt-4 rounded-lg bg-[var(--bg-tertiary)] p-4 leading-7"><p>{feedback.matches ? "与本次核对规则相符" : "暂未与本次核对规则相符"} · {feedback.residual !== undefined ? `残差 ${feedback.residual.toExponential(5)}` : `与参考值差 ${feedback.difference?.toExponential(5)}`}</p><p>{feedback.message}</p></div>}
           <p className="mt-5 leading-7 text-[var(--text-secondary)]">参考实验和结果核对均不计为独立完成，不更新求根成绩，也不执行学生程序。</p>
           <button className="mt-4 min-h-11 text-olive-700 underline dark:text-olive-300" onClick={async () => {try {await navigator.clipboard.writeText(discussionDraft(run)); setCopied(true);} catch {setError("复制不可用，请从保存参数中选取内容");}}}>{copied ? "已复制实验问题，可粘贴到对话" : "复制实验问题，向小珞讨论"}</button><Link href="/chat" className="ml-4 inline-block min-h-11 py-3 text-olive-700 underline dark:text-olive-300">打开对话 →</Link>
         </>}
       </section>
+      {reference&&wide&&<aside className="sticky top-4 h-[780px] min-w-0"><ReferenceTutor reference={reference}/></aside>}
     </div>
+    {reference&&!wide&&<dialog ref={dialog} onCancel={()=>setMobileOpen(false)} aria-label="与小珞讨论已保存的实验" className="fixed inset-0 m-0 h-[100dvh] w-screen max-w-none bg-[var(--bg-primary)] p-3 text-[var(--text-primary)] backdrop:bg-dai-950/50"><div className="flex h-full flex-col"><button type="button" className="mb-2 min-h-12 self-end px-3 underline" onClick={()=>setMobileOpen(false)}>关闭讨论</button>{mobileOpen&&<div className="min-h-0 flex-1"><ReferenceTutor reference={reference}/></div>}</div></dialog>}
   </LearningShell>;
 }

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 const intentMap: Record<string, string> = {
+  study_resume: "查看学习任务",
   concept: "概念讲解",
   solve_step_by_step: "分步引导",
   check_student_step: "步骤检查",
