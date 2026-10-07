@@ -278,11 +278,11 @@ export function SettingsDrawer() {
                     <ul className="space-y-3">
                       <li className="flex items-start gap-2">
                         <span className="text-[#617a55] mt-0.5">🌿</span>
-                        <span><strong>智能笔记与出卷：</strong> 聊天界面点击右上角可一键提炼本节课精华笔记，并支持基于笔记自动出卷测验。</span>
+                        <span><strong>笔记与练习：</strong> 聊天界面点击右上角可整理本次对话笔记，并支持基于笔记自动出卷测验。</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#617a55] mt-0.5">🧘</span>
-                        <span><strong>沉浸模式 (Zen Mode)：</strong> 点击顶栏靶心图标进入全屏无干扰模式，隐藏侧边栏与学习面板。</span>
+                        <span><strong>全屏学习：</strong> 点击顶栏靶心图标展开聊天区域（浏览器支持时进入全屏），隐藏侧边栏与学习面板。</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#617a55] mt-0.5">🎯</span>

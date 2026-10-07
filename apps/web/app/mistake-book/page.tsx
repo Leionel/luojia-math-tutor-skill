@@ -88,7 +88,7 @@ export default function MistakeBookPage() {
             错题<span className="text-cinnabar-500">归真册</span>
           </h1>
           <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto leading-relaxed mb-7">
-            每一次偏差都是重构数学洞察的契机，在此复盘推导节点，生成针对性迁移试题。
+            回看已记录的错误，修改步骤，再做同类练习。
           </p>
 
           <div className="flex justify-center mb-8">

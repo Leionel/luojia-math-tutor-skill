@@ -19,7 +19,7 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 h-7 sm:h-7.5 px-2.5 sm:px-3 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]/90 hover:bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-primary)] transition-all shadow-xs group shrink-0"
+        className="flex items-center gap-1.5 h-7 sm:h-7.5 px-2.5 sm:px-3 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-primary)] transition-all shadow-xs group shrink-0"
         title="切换助教教学模式"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-olive-500 animate-pulse" />
@@ -31,7 +31,7 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full right-0 mb-2 w-72 bg-[var(--bg-card)]/95 backdrop-blur-xl border border-[var(--border-subtle)] shadow-xl rounded-2xl p-2 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-full right-0 mb-2 w-72 bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-xl rounded-2xl p-2 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono border-b border-[var(--border-subtle)] pb-1.5 mb-0.5">
               教学交互模式选择
             </div>
@@ -59,7 +59,7 @@ export function ModeSwitcher({ value, onChange }: { value: TutorMode; onChange: 
                       {mode.label}
                       {isSelected && <Check className="w-3.5 h-3.5 text-olive-600 dark:text-olive-400" />}
                     </span>
-                    <span className="block mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)] line-clamp-2">
+                    <span className="block mt-0.5 text-[11px] leading-relaxed text-[var(--text-secondary)]">
                       {mode.desc}
                     </span>
                   </div>

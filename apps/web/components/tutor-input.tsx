@@ -14,10 +14,10 @@ import type { TutorMode } from "@/lib/api";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const EFFORT_OPTIONS = [
-  { value: "off", label: "直答 (Off)", desc: "极速响应，不展开思考链" },
-  { value: "low", label: "轻敏 (Low)", desc: "轻量梳理，快速切入" },
-  { value: "medium", label: "深思 (Medium)", desc: "严谨推演，循循善诱 (默认)" },
-  { value: "max", label: "格物 (Max)", desc: "极限思维深度，定理全盘剖析" },
+  { value: "off", label: "快速回答", desc: "关闭额外思考，是否支持取决于模型" },
+  { value: "low", label: "少量思考", desc: "请求较少思考，适合简单问题" },
+  { value: "medium", label: "标准思考", desc: "默认设置，适合一般学习问题" },
+  { value: "max", label: "更多思考", desc: "请求更多思考，可能需要等待更久" },
 ] as const;
 
 export type ReasoningEffortLevel = "off" | "low" | "medium" | "high" | "max";
@@ -360,7 +360,7 @@ export function TutorInput({
               {/* Toolbar */}
               <div className="flex flex-wrap items-center justify-between p-3 px-5 border-b border-[var(--border-subtle)] bg-[#f2efe9] dark:bg-[#242421]">
                 <div className="flex items-center gap-4">
-                  <h3 className="font-title font-bold text-lg text-[var(--text-primary)] mr-2 hidden sm:block">智能草稿板</h3>
+                  <h3 className="font-title font-bold text-lg text-[var(--text-primary)] mr-2 hidden sm:block">草稿板</h3>
 
                   {/* Colors */}
                   <div className="flex items-center gap-1.5 bg-white/50 dark:bg-black/20 p-1.5 rounded-full border border-[var(--border-subtle)]">
@@ -493,9 +493,9 @@ export function TutorInput({
               {showToolsMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowToolsMenu(false)} />
-                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--bg-card)]/95 backdrop-blur-xl border border-[var(--border-subtle)] shadow-xl rounded-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-xl rounded-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
                     <div className="px-2.5 py-1 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">
-                      输入与推演工具
+                      输入工具
                     </div>
 
                     <button
@@ -538,7 +538,7 @@ export function TutorInput({
                     >
                       <PenTool className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                       <div className="flex flex-col">
-                        <span className="font-semibold text-xs">智能草稿板</span>
+                        <span className="font-semibold text-xs">草稿板</span>
                         <span className="text-[10px] text-[var(--text-muted)]">手绘推导演草白板</span>
                       </div>
                     </button>
@@ -632,10 +632,10 @@ export function TutorInput({
                     ? "bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30"
                     : "text-[var(--text-secondary)] hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10 border-transparent"
                 }`}
-                title="调整模型运思强度与深度"
+                title="调整思考强度，支持情况取决于模型"
               >
                 <BrainCircuit className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span><span className="hidden sm:inline">运思:</span>{reasoningEffort === "off" ? "直答" : reasoningEffort === "low" ? "轻敏" : reasoningEffort === "max" ? "格物" : "深思"}</span>
+                <span><span className="hidden sm:inline">思考:</span>{reasoningEffort === "off" ? "快速" : reasoningEffort === "low" ? "少量" : reasoningEffort === "max" ? "更多" : "标准"}</span>
                 <svg className={`w-3 h-3 ml-0.5 transition-transform duration-200 ${showEffortMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -643,9 +643,9 @@ export function TutorInput({
               {showEffortMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowEffortMenu(false)} />
-                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--bg-card)]/95 backdrop-blur-xl border border-[var(--border-subtle)] shadow-xl rounded-2xl p-1.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-xl rounded-2xl p-1.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
                     <div className="px-2.5 py-1 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-                      运思推演深度 (Reasoning)
+                      思考强度
                     </div>
                     {EFFORT_OPTIONS.map((opt) => (
                       <button

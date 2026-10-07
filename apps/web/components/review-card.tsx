@@ -13,6 +13,9 @@ export type ReviewData = {
   mastery_delta: number;
   verification_kind?: string;
   verifier_summary?: string;
+  legacy_scope?: boolean;
+  mastery_estimate_notice?: string;
+  learning_update_eligible?: boolean;
 };
 
 export function ReviewCard({
@@ -23,6 +26,7 @@ export function ReviewCard({
   onSimilar?: () => void;
 }) {
   const isCorrect = data.is_correct;
+  const isLegacy = data.legacy_scope && data.verification_kind !== "root_oracle" && data.verification_kind !== "llm_review";
   const deltaPercent = Math.abs(Math.round(data.mastery_delta * 100));
   const { t } = useTheme();
   const [isCompExpanded, setIsCompExpanded] = useState(true);
@@ -32,10 +36,10 @@ export function ReviewCard({
       {/* 顶栏：复盘状态与印签 */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#f4eee1] dark:bg-[#272824] border-b border-[#e6deca] dark:border-[#383a32]">
         <div className="flex items-center gap-2">
-          {isCorrect ? (
+          {isLegacy ? <span className="text-xs text-ochre-700 dark:text-ochre-300">历史核对（范围未记录）</span> : isCorrect ? (
             <span className="flex items-center gap-1.5 text-xs font-bold text-olive-700 dark:text-olive-300">
               <CheckCircle2 className="w-4 h-4 text-olive-600 dark:text-olive-400" />
-              <span>{data.verification_kind === "llm_review" ? t("审查认为本步正确", "Review Suggests This Step Is Correct") : t("本步核对通过", "This Step Passed the Check")}</span>
+              <span>{data.verification_kind === "llm_review" ? t("审查认为本步正确", "Review Suggests This Step Is Correct") : t("本步核对通过（限指定范围）", "Check Passed Within Its Scope")}</span>
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-xs font-bold text-cinnabar-700 dark:text-cinnabar-300">
@@ -45,14 +49,14 @@ export function ReviewCard({
           )}
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-[var(--text-secondary)]">
-            掌握度估计 {Math.round(data.mastery_score * 100)}% ({data.mastery_label})
+        {data.learning_update_eligible !== false && <div className="flex items-center gap-2 font-mono text-xs">
+          <span title={data.mastery_estimate_notice || "历史聚合估计，缺少逐条核验来源，不等于独立检验成绩。"} className="text-[var(--text-secondary)]">
+            掌握度估计（含历史）{Math.round(data.mastery_score * 100)}% ({data.mastery_label})
           </span>
           <span className={`font-semibold ${data.mastery_delta >= 0 ? "text-olive-600 dark:text-olive-400" : "text-cinnabar-600 dark:text-cinnabar-400"}`}>
             {data.mastery_delta >= 0 ? "↑" : "↓"}{deltaPercent}%
           </span>
-        </div>
+        </div>}
       </div>
 
       <div className="p-4 space-y-3">

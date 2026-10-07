@@ -225,6 +225,9 @@ export function TutorChat() {
       mastery_delta: meta.mastery_delta ?? 0,
       verification_kind: meta.verification_kind,
       verifier_summary: meta.verifier_summary,
+      legacy_scope: !meta.step_check,
+      mastery_estimate_notice: meta.mastery_estimate_notice,
+      learning_update_eligible: meta.step_check?.eligible_learning_evidence,
     };
   }, [meta]);
 
@@ -691,7 +694,7 @@ export function TutorChat() {
                           <FileText className="w-8 h-8 text-[var(--accent)] opacity-60" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
+                          <h3 className="font-bold text-[var(--text-primary)]">本次笔记</h3>
                           <p className="text-xs">复习完当前内容后，点击下方按钮，AI将为你提炼核心考点与易错陷阱。</p>
                         </div>
                         <button
@@ -722,7 +725,7 @@ export function TutorChat() {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                 >
                   <FileText className="w-4 h-4" />
-                  生成本节课专属笔记
+                  整理本次笔记
                 </button>
               </div>
             )}
@@ -738,7 +741,7 @@ export function TutorChat() {
           className="fixed top-6 left-6 z-50 text-white/50 hover:text-white hover:bg-white/10 transition-colors rounded-full px-4"
         >
           <Minimize className="w-4 h-4 mr-2" />
-          退出沉浸模式
+          退出全屏学习
         </Button>
       )}
 
@@ -891,7 +894,7 @@ export function TutorChat() {
                   <div className="flex items-center gap-2 mb-4">
                     <span className="w-1.5 h-4 rounded-full bg-olive-500" />
                     <span className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
-                      启发式探究推荐 · 点击即刻开启探讨
+                      从这些问题开始
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1018,11 +1021,11 @@ export function TutorChat() {
               <div className="w-12 h-12 rounded-full bg-[var(--accent-light)] flex items-center justify-center mb-4 text-[var(--text-accent)]">
                 <Target className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入心流模式</h3>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入全屏学习</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
-                沉浸模式将全屏并隐藏侧边栏与学习面板，带给你无干扰的极致心流体验。
+                展开聊天区域，隐藏侧栏和学习面板。浏览器支持时会进入全屏。
                 <br/><br/>
-                ✨ 附带专注番茄钟（支持自定义时长）与白噪音（右上角）。
+                可在右上角设置计时和背景音。
                 <br/>
                 <span className="text-[var(--text-muted)] italic">提示：随时可以按 ESC 键，或点击右上角的“退出”按钮恢复原状。</span>
               </p>

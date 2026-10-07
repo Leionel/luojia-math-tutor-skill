@@ -1,4 +1,5 @@
 "use client";
+import { verificationLabel } from "@/lib/message-status";
 
 import { useEffect, useMemo, useState } from "react";
 import type { MasteryItem, TutorMeta } from "@/lib/api";
@@ -97,19 +98,15 @@ type Mistake = {
   concept: string;
 };
 
-function verificationLabel(meta: TutorMeta | null) {
-  if (!meta) return "尚未开始";
-  if (!meta.verified) return "未完成本步检查";
-  if (meta.verification_kind === "llm_review") return meta.is_correct ? "模型复核通过" : "模型复核发现偏差";
-  return meta.is_correct ? "验算正确" : "发现偏差";
-}
-
 function nextStepAdvice(
   meta: TutorMeta | null,
   mastery: MasteryItem[],
 ) {
   if (!meta) {
     return "输入一道题或写下你的推导步骤，面板会随本轮学习自动更新。";
+  }
+  if (meta.verification_kind !== "root_oracle" && !meta.step_check?.eligible_learning_evidence) {
+    return "先核对本轮说明的范围，补齐你自己的步骤或候选；参考计算、模型意见和历史回答不代表独立完成。";
   }
   const concept = meta.concepts?.[0]
     || meta.learning_objective
@@ -119,7 +116,7 @@ function nextStepAdvice(
     return `先根据对话中的提示修正“${concept}”这一步，再独立重做一道同类题。`;
   }
   if (meta.verified && meta.is_correct === true) {
-    return `本轮验算已通过。建议继续完成一道稍高难度的“${concept}”题，检验能否迁移。`;
+    return `这一步在说明范围内通过。接着做一道同类的“${concept}”题，检查是否能自己完成。`;
   }
   if ((meta.hint_level ?? 0) > 0) {
     return `沿着当前提示继续写出“${concept}”的下一步，并把你的推导发回来检查。`;
@@ -261,19 +258,27 @@ export function LearningPanel({
                 "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold",
                 meta?.verified && meta.is_correct
                   ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
-                  : meta?.verified
+                  : meta?.verified && meta.is_correct === false
                     ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
                     : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)]",
               )}
             >
               {meta?.verified && meta.is_correct ? (
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              ) : meta?.verified ? (
+              ) : meta?.verified && meta.is_correct === false ? (
                 <XCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
               ) : null}
               {verificationLabel(meta)}
             </span>
           </div>
+
+          {meta?.step_check && meta.step_check.execution_status !== "not_requested" && (
+            <div className="rounded-xl border border-olive-500/20 bg-olive-500/5 p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
+              <p>{meta.verifier_summary || "本次检查仅覆盖已声明的范围。"}</p>
+              {meta.step_check.assumptions.map((condition, index) => <p key={index} className="mt-1">{condition}</p>)}
+              {!meta.step_check.eligible_learning_evidence && <p className="mt-2 text-[var(--text-muted)]">本次结果不作为学生候选的学习更新。</p>}
+            </div>
+          )}
 
           {meta?.mistake && (
             <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300 leading-relaxed shadow-xs">
@@ -282,11 +287,11 @@ export function LearningPanel({
             </div>
           )}
 
-          {meta?.verified && !!meta.concepts?.length && meta.mastery_score !== undefined && (
+          {meta?.verified && !!meta.concepts?.length && meta.mastery_score !== undefined && (!meta.step_check || meta.step_check.eligible_learning_evidence) && (
             <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
-                  考点掌握度估计
+                  <span title={meta.mastery_estimate_notice || "历史聚合估计：缺少逐条核验来源，不等于独立检验成绩。"}>考点掌握度估计 · 含历史记录</span>
                 </div>
                 <div className="text-base font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(meta.mastery_score * 100)}%

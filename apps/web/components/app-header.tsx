@@ -158,7 +158,7 @@ export function AppHeader({
             size="icon"
             onClick={onToggleZenMode}
             className="hidden sm:inline-flex h-8 w-8 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/50 text-[var(--text-secondary)] hover:text-[#617a55] dark:hover:text-[#879f7a] hover:bg-[var(--accent-light)] transition-all shadow-sm"
-            title="开启沉浸禅意模式"
+            title="进入全屏学习"
           >
             <Target className="w-3.5 h-3.5" />
           </Button>
@@ -198,7 +198,7 @@ export function AppHeader({
             <Link className="block rounded-lg p-3 hover:bg-[var(--bg-hover)]" href="/notebook">笔记本</Link>
             <Link className="block rounded-lg p-3 hover:bg-[var(--bg-hover)]" href="/mistake-book">错题本</Link>
             <button type="button" className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={signOut}>退出当前会话</button>
-            <button className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); onToggleZenMode?.(); }}>沉浸模式</button>
+            <button className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); onToggleZenMode?.(); }}>全屏学习</button>
             <div className="flex items-center justify-between border-t border-[var(--border-subtle)] p-3"><span>切换主题</span><ThemeToggle /></div>
           </div>
         </details>

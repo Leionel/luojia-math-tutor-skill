@@ -184,7 +184,7 @@ export function GlobalSearchModal({ isOpen, onClose, onSelectResult }: GlobalSea
             <div className="py-12 text-center text-[var(--text-secondary)]">
               <p className="text-sm font-medium">未检索到与 &quot;{query}&quot; 匹配的内容</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                可尝试搜索教材核心名词，或在下方开启“联网探微”获取全网资料。
+                试试教材中的关键词，也可以在下方开启联网搜索。
               </p>
             </div>
           )}

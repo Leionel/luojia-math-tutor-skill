@@ -89,10 +89,10 @@ function parseThinkingChain(text: string): ThinkingStep[] {
 
 function displayThinkingTitle(title: string) {
   const labels: Record<string, string> = {
-    PLAN: "审题立意 · 策略规划",
-    "隐式 RAG": "知识图谱 · 脉络与学情",
-    VERIFY: "符号推求 · 代数公理验算",
-    OUTPUT: "落笔点拨 · 启发式讲解",
+    PLAN: "读取问题",
+    "隐式 RAG": "查找资料",
+    VERIFY: "检查这一步",
+    OUTPUT: "生成回答",
   };
   return labels[title] || title;
 }
@@ -139,7 +139,7 @@ function ThinkingProgressBanner({
       <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/25 text-xs text-olive-800 dark:text-olive-300 font-serif shadow-xs">
         <BrainCircuit className="w-3.5 h-3.5 text-olive-700 dark:text-olive-400 animate-spin" style={{ animationDuration: '4s' }} />
         <span className="font-semibold tracking-wide">
-          珞珈师说：推演构思中（{elapsed}s）{dots}
+          小珞正在处理问题（{elapsed}s）{dots}
         </span>
         {steps.length > 0 && (
           <button
@@ -210,7 +210,7 @@ function ThinkingSummaryView({
         onClick={onToggle}
       >
         <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isExpanded && "rotate-90")} />
-        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">推导演绎链路</span>
+        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">处理步骤</span>
         {elapsedMs ? (
           <span className="text-[10px] text-[var(--text-muted)] font-mono">
             {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
@@ -361,7 +361,7 @@ export function MathMessage({
             {isUser ? (
               <>
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#3e3f36] text-[#faf7f2] dark:bg-[#2b2c26] shadow-xs">
-                  「学子立论」
+                  你的问题与步骤
                 </span>
                 <span className="text-[11px] font-mono text-[var(--text-muted)]">
                   {learningContext?"围绕参考实验的提问":"你的提问与过程"}
@@ -464,7 +464,7 @@ export function MathMessage({
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
                   <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />
-                  <span>正在提笔运思展开...</span>
+                  <span>正在生成回答…</span>
                 </span>
               )}
             </div>
@@ -492,7 +492,7 @@ export function MathMessage({
               <button
                 onClick={onEdit}
                 className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-                title="重新编辑本步立论"
+                title="编辑这条消息"
               >
                 <Edit2 className="w-3.5 h-3.5" />
                 <span>编辑</span>
@@ -517,7 +517,7 @@ export function MathMessage({
               <button
                 onClick={onRetry}
                 className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-                title="以此步骤重新推导"
+                title="重新生成回答"
               >
                 <RefreshCcw className="w-3.5 h-3.5" />
                 <span>重试</span>

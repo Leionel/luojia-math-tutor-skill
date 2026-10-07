@@ -35,6 +35,8 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  step_check?: StepCheck | null;
+  mastery_estimate_notice?: string;
   tutor_artifacts?: unknown[];
   learning_context?: import("./learning-context").LearningTaskSnapshot;
   agent_run?: AgentRun;
@@ -61,6 +63,19 @@ export type TutorMeta = {
   pedagogical_action?: string;
   learning_objective?: string;
   route?: string;
+};
+
+export type StepCheck = {
+  version: string;
+  execution_status: "not_requested" | "succeeded" | "rejected" | "timeout" | "failed";
+  origin: string;
+  scope: string;
+  assumptions: string[];
+  scope_complete: boolean;
+  eligible_learning_evidence: boolean;
+  input_hash: string | null;
+  candidate_hash: string | null;
+  unknown_reason: string;
 };
 
 export type ConceptPrerequisite = {

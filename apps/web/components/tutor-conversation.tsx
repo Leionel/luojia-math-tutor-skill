@@ -2,6 +2,7 @@
 import {useEffect, useRef, useState} from "react";
 import {Loader2, Send, Square, RotateCcw} from "lucide-react";
 import {MathMessage} from "./math-message";
+import {messageStatus} from "@/lib/message-status";
 import type {TutorMode} from "@/lib/api";
 import type {LabRun} from "@/lib/learning-api";
 import type {LearningContextRef} from "@/lib/learning-context";
@@ -37,6 +38,7 @@ export function TutorConversation({sessionId, scope, subject, context, onSession
       {chat.loading?<p role="status" className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Loader2 aria-hidden="true" className="size-4 animate-spin"/>正在恢复讨论…</p>:chat.messages.length===0?<div className="py-5"><p className="font-serif text-xl leading-8">从你想弄清的那一步开始。</p><p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">{context?"小珞会读取已保存的真实轨迹。你可以先问原因，再改变参数验证自己的想法。":"围绕当前笔记提问，或从下面的建议开始讨论。"}</p></div>:chat.messages.map(m=><MathMessage key={m.id} content={m.content} role={m.role} sessionId={chat.sessionId}
         isThinking={m.status==="thinking"} isGenerating={chat.busy && (m.status==="thinking"||m.status==="typing")}
         isIncomplete={m.status==="error"||!!m.learning_meta?.error} rootDiagnosis={m.learning_meta?.root_diagnosis}
+        status={m.role==="assistant" && m.status!=="thinking" ? messageStatus(m.learning_meta) : undefined}
         thinkingChain={m.thinkingChain} thinkingSummary={m.thinking_summary} thinkingElapsedMs={m.thinking_elapsed_ms}
         answerGuard={m.learning_meta?.answer_guard} agentRun={m.learning_meta?.agent_run} learningMeta={m.learning_meta}
         messageId={m.id} learningContext={context} actionsDisabled={blocked||chat.busy} onLabSaved={onLabSaved}/>)}

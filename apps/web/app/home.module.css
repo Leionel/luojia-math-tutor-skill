@@ -1,0 +1,6 @@
+.page {background-image: radial-gradient(ellipse at 15% 12%, #617a5510, transparent 38%), radial-gradient(ellipse at 85% 6%, #cba8630d, transparent 32%);}
+.titleAccent {color: var(--text-accent);}
+.feature {position: relative; overflow: hidden; background: var(--bg-card); transition: transform 220ms cubic-bezier(.22,1,.36,1), border-color 180ms ease-out;}
+.feature::after {content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: radial-gradient(ellipse at 100% 0%, #617a5520, transparent 65%); opacity: 0; transition: opacity 200ms ease-out;}
+@media (hover: hover) and (pointer: fine) {.feature:hover {transform: translateY(-4px); border-color: #617a55;} .feature:hover::after {opacity: 1;}}
+@media (prefers-reduced-motion: reduce) {.feature, .feature::after {transition: none;} .feature:hover {transform: none;}}
