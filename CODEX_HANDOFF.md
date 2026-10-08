@@ -1,5 +1,21 @@
 # CODEX 交接文档
 
+## 2026-10-08 R1-A A0–A2 本地实现（R0 Gate 未过）
+
+用户在冻结规划后明确要求启动 A0–A2。`evaluation/r1/` 固定 16 个 agent 准备的开发案例和 D0/D1 对照边界；`apps/api/app/tutor/learning_context.py` 让 Newton 已保存解释/修订经 owner、活动/run/hash/版本/帮助锁重验后进入 Chat，普通轨迹讨论不带原话。前端活动增加显式“检查原话”入口与返回 Lab；D1 用已有 Root Runner/固定题精确代入暂行，D2 仍待验证。回执 `planning/r1-a0-a2-delivery.md`：本地 npm test 知识 JSON、API907/Web72，Web typecheck 与 lint 0 error/10 既有 warning；3000 开发服务器运行，未 build、未浏览正式库、未调用付费模型。远端目标 SHA CI、真实模型质量、A5 体验与 R0 仍 pending；未 commit/push/deploy。原工作区修改保留。
+
+## 2026-10-08 R1 实施基线冻结（局部修订）
+
+`planning/r1-math-tutor-core-2026-10-08.md` 已冻结为 R1 实施基线，`planning/README.md` 仍是唯一当前状态入口。Newton 已揭示步骤曲线/切线、防剧透和 Chat↔Lab 原对象续接纳入 A5 工程 Gate，高级动画可选。A2 缺真人审核或真实模型证据时允许 D1 暂行，D2 保持待验证。A5 工程通过后可启动无待审核内容依赖的 B1/B4；R1-A 数学/教学质量单列 Gate，未验收不宣称完成。R0 未完成，R1 仍未实施；本轮未改业务代码、数据库或配置，既有工作区修改保留。
+
+## 2026-10-08 R1-A / R1-B 方案修订（仅规划）
+
+用户要求把 R1 拆为 R1-A Math Agent Core 与其后启动的 R1-B Learning Workspaces Enhancement。已修订 `planning/r1-math-tutor-core-2026-10-08.md` 和唯一状态入口 `planning/README.md`：A 在 Newton、Jacobi/GS、Teach-back 验证共用证据/教学动作边界，保留领域专用检查；先比较直接生成、现有工具增强与结构化 claim review，不预设额外审阅节点。B 纳入 F1 任务推荐、F2 条件推理、F4 分层反馈、F8 限定算法静态诊断，各有内容/审核 Gate。R0 未验收前不启动 R1 实施。本轮不改业务代码、模型配置、数据库或 v4 原文；原工作区修改继续保留。
+
+## 2026-10-08 R1 Math Tutor Core v1 规划（仅文档）
+
+基于本地 `feature/course-graph-2.0` / `da67dd54abd910bca7219b9ed398807c3764cbf5`、v4 路线图及 M1/U/S 回执，新增 `planning/r1-math-tutor-core-2026-10-08.md`，并将 `planning/README.md` 设为唯一当前状态入口。R1 不再把固定 Newton 演示当完整 Agent：先把已保存学生原话与当前来源绑定给真实 Chat，再在现有 TutorWorkflow 内做有范围的教学动作，最后用线性迭代验证复用。R0 由并行工作处理，R1 实施仍受其 Gate 限制；当前只规划，未改生产代码、跑新测试或调用付费模型。原工作区 dirty 保留，v4 原文未改。
+
 ## 2026-10-08 M1 Prompt B 与 Lab 界面
 
 固定 Newton 单题活动已嵌入 `/lab`，预测→受控轨迹→解释→修订可持久恢复；完整答案/跳过记录帮助曝光，不计独立掌握。数值实验中栏、共用 sticky 导航与轻量滚动显现已更新。隔离库浏览器走通主链和换初值；API903/Web71、typecheck/lint0错10既有警告、生产构建通过。390px 浏览器覆盖未生效，移动端仍待补验；真实模型教学质量、正式库与部署未验收。详见 `planning/m1-newton-delivery.md`。原工作区 dirty 保留。

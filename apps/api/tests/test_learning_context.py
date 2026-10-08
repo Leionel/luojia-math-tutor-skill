@@ -8,8 +8,12 @@ from app.auth import Principal, get_principal
 from app.config import Settings
 from app.api.routes_tutor import router
 from app.main_deps import get_learning_workspace
-from app.tutor.learning_context import LearningContextRef, resolve_learning_context
+from app.tutor.learning_context import LearningContextRef, NewtonActivityClaimRef, resolve_learning_context
+from app.tutor.newton_activity import NewtonActivity, ACTIVITY_ID, ACTIVITY_VERSION
 from app.tutor.orchestrator import TutorOrchestrator
+from app.tutor.prompt_builder import build_messages
+from app.math_tools.verifier import VerifyResult
+from app.tutor.intent_router import Intent
 from app.math_tools.root_runner import LabRequest
 from test_learning_workspace import workspace
 from test_orchestrator import parse_event
@@ -24,6 +28,116 @@ def saved(workspace, function="x^3-2*x+2", initial=0, request_id="context-run"):
 def reference(run, **patch):
     return LearningContextRef(kind="root_lab", record_id=run["id"], **{
         k:run[k] for k in ("input_hash", "runner_version", "graph_revision")}, **patch)
+
+
+def saved_claim(workspace):
+    activity = NewtonActivity(workspace)
+    activity.predict("alice", "predict-a1", "我猜会逐渐收敛", "导数非零")
+    state = activity.reveal("alice", "reveal-a1", "observe")
+    run = state["run"]
+    activity.explain("alice", "explain-a1", run["id"], run["input_hash"],
+                     "x₁=1 是对的，所以任意初值都收敛。")
+    claim = NewtonActivityClaimRef(activity_id=ACTIVITY_ID, activity_version=ACTIVITY_VERSION,
+                                   claim_kind="explanation", request_id="explain-a1", revision_count=0)
+    return activity, run, reference(run, activity_claim=claim)
+
+
+def test_selected_activity_claim_is_server_read_and_stale_versions_fail_closed(workspace):
+    activity, run, ref = saved_claim(workspace)
+    plain = resolve_learning_context(workspace, "alice", reference(run))
+    assert "student_claim" not in plain and "exact_check" not in plain
+    before = workspace.store.list_events("alice", workspace.course_id)
+    snap = resolve_learning_context(workspace, "alice", ref)
+    assert snap["student_claim"]["text"] == "x₁=1 是对的，所以任意初值都收敛。"
+    assert snap["student_claim"]["review_status"] == "unreviewed"
+    assert snap["student_claim"]["evidence_kind"] == "student_process"
+    assert snap["exact_check"]["scope"].startswith("仅对本题")
+    assert snap["independent_success"] is False
+    assert workspace.store.list_events("alice", workspace.course_id) == before
+    assert workspace.repository.list_mastery("alice") == []
+    with pytest.raises(KeyError): resolve_learning_context(workspace, "bob", ref)
+    with pytest.raises(ValueError, match="版本"):
+        resolve_learning_context(workspace, "alice", ref.model_copy(update={"input_hash": "0"*64}))
+    with pytest.raises(ValueError, match="选择"):
+        resolve_learning_context(workspace, "alice", ref.model_copy(update={"activity_claim":
+            ref.activity_claim.model_copy(update={"request_id": "wrong"})}))
+    activity.revise("alice", "revise-a1", run["id"], run["input_hash"], "现在只知道这个初值发生往复。")
+    with pytest.raises(ValueError, match="修订版本"):
+        resolve_learning_context(workspace, "alice", ref)
+    revised_ref = reference(run, activity_claim=NewtonActivityClaimRef(
+        activity_id=ACTIVITY_ID, activity_version=ACTIVITY_VERSION, claim_kind="revision",
+        request_id="revise-a1", revision_count=1))
+    revised = resolve_learning_context(workspace, "alice", revised_ref)
+    assert revised["student_claim"]["text"].startswith("现在只知道")
+    workspace.new_assessment("alice")
+    with pytest.raises(ValueError, match="参考帮助"):
+        resolve_learning_context(workspace, "alice", revised_ref)
+
+
+def test_a2_offline_d0_d1_prompts_share_the_same_claim_and_only_d1_has_exact_check(workspace):
+    _, _, ref = saved_claim(workspace)
+    d1 = resolve_learning_context(workspace, "alice", ref)
+    d0 = {key: value for key, value in d1.items() if key != "exact_check"}
+    def runtime(snapshot):
+        messages = build_messages("离线固定教学指令", "请检查我选中的解释。", Intent.CHECK_STUDENT_STEP,
+            "数值分析", [], VerifyResult(False, None, "本轮未触发自动验证。"), None, "socratic",
+            pedagogical_action="ask_question", learning_context=snapshot)
+        developer = next(item["content"] for item in messages if item["role"] == "developer")
+        return json.loads(developer.split("[RUNTIME_CONTEXT]\n", 1)[1].split("\n[/RUNTIME_CONTEXT]", 1)[0])
+    direct, tool_enhanced = runtime(d0), runtime(d1)
+    assert direct["learning_task"]["student_claim"] == tool_enhanced["learning_task"]["student_claim"]
+    assert direct["learning_task"]["rows"] == tool_enhanced["learning_task"]["rows"]
+    assert "exact_check" not in direct["learning_task"]
+    assert tool_enhanced["learning_task"]["exact_check"]["scope"].startswith("仅对本题")
+    assert direct["intent"] == tool_enhanced["intent"] == "check_student_step"
+
+
+def test_activity_claim_http_ref_never_accepts_browser_supplied_text(workspace):
+    activity, run, ref = saved_claim(workspace)
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[get_learning_workspace] = lambda: workspace
+    app.dependency_overrides[get_principal] = lambda: Principal("alice", True)
+    with TestClient(app) as client:
+        payload = ref.model_dump(mode="json")
+        assert client.post("/api/tutor/context", json=payload).json()["student_claim"]["text"].startswith("x₁=1")
+        assert client.post("/api/tutor/context", json={**payload, "student_claim": {"text": "伪造"}}).status_code == 422
+        forged = {**payload, "activity_claim": {**payload["activity_claim"], "text": "伪造"}}
+        assert client.post("/api/tutor/context", json=forged).status_code == 422
+        app.dependency_overrides[get_principal] = lambda: Principal("bob", True)
+        assert client.post("/api/tutor/context", json=payload).status_code == 404
+        app.dependency_overrides[get_principal] = lambda: Principal("alice", True)
+        activity.revise("alice", "revise-http", run["id"], run["input_hash"], "现在知道局部条件还需核对。")
+        assert client.post("/api/tutor/context", json=payload).status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_selected_claim_reaches_teacher_as_unreviewed_text_without_grading(workspace, monkeypatch):
+    _, _, ref = saved_claim(workspace)
+    session = workspace.repository.create_session("alice", "数值分析")["session_id"]
+    tutor = TutorOrchestrator(Settings(database_url=f"sqlite:///{workspace.repository.db_path}"), workspace.repository)
+    workflow = tutor.workflow_owner
+    async def no_hits(*args, **kwargs): return None
+    monkeypatch.setattr(workflow.context_collector, "_course_graph_pack", no_hits)
+    monkeypatch.setattr(workflow.context_collector, "_budgeted_local_pack", no_hits)
+    prompts = []
+    async def response(messages, *args, **kwargs):
+        prompts.append(messages)
+        return "x₁=1 有精确代入支持；任意初值收敛不能由此推出。请检查局部定理条件。"
+    monkeypatch.setattr(workflow, "_collect_model_response", response)
+    events = [parse_event(e) async for e in tutor.stream_reply(
+        session, "alice", "请检查我选中的解释。", learning_context=ref, learning_workspace=workspace)]
+    assert any(name == "done" for name, _ in events)
+    prompt = "\n".join(item["content"] for turn in prompts for item in turn)
+    assert "x₁=1 是对的，所以任意初值都收敛" in prompt
+    assert "student_claim 是服务器从学生明确选中的活动版本读取的原话" in prompt
+    assert "f(0)=2" in prompt
+    meta = tutor.repository.list_messages(session)[-1]["learning_meta"]
+    assert meta["intent"] == "check_student_step"
+    assert meta["learning_context"]["student_claim"]["review_status"] == "unreviewed"
+    assert not meta.get("tutor_artifacts")
+    assert meta["verified"] is False and meta["is_correct"] is None
+    assert workspace.repository.list_mastery("alice") == []
 
 
 def test_context_is_owned_versioned_bounded_and_not_a_learning_write(workspace):

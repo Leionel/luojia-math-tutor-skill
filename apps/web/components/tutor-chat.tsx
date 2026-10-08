@@ -382,7 +382,7 @@ export function TutorChat() {
     if(!valid())return;
     setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
     const query=new URLSearchParams({session:nextSessionId});
-    if(snapshot){if(snapshot.ref.kind==="root_lab"){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));}else{query.set("ref",JSON.stringify(snapshot.ref));}localStorage.setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
+    if(snapshot){if(snapshot.ref.kind==="root_lab"&&!snapshot.ref.activity_claim){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));}else{query.set("ref",JSON.stringify(snapshot.ref));}localStorage.setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
     window.history.replaceState(null,"",`/chat?${query}`);
     if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {

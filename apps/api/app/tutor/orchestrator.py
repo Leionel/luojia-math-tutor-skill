@@ -397,9 +397,13 @@ class TutorOrchestrator:
         }
         if snapshot:
             # Reference trajectories cannot be graded as the student's own work.
-            initial_state.update(learning_context=snapshot, intent=Intent.CONCEPT,
-                                 detected_subject="数值分析", pedagogical_action="explain",
-                                 learning_objective=f"讨论当前引用：{snapshot['title']}",
+            claim_selected = bool(snapshot.get("student_claim"))
+            initial_state.update(learning_context=snapshot,
+                                 intent=Intent.CHECK_STUDENT_STEP if claim_selected else Intent.CONCEPT,
+                                 detected_subject="数值分析",
+                                 pedagogical_action="ask_question" if claim_selected else "explain",
+                                 learning_objective=("审阅已保存的学生解释，并区分确定性证据与待核验条件"
+                                                     if claim_selected else f"讨论当前引用：{snapshot['title']}"),
                                  verification_mode="none", requires_policy_fallback=False, confidence=1.0)
 
         queue: asyncio.Queue[str] = asyncio.Queue()
@@ -563,7 +567,7 @@ class TutorOrchestrator:
             learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,
                                  verification_kind="none", mastery_delta=0,
                                  verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
-            if snapshot["ref"]["kind"]=="root_lab" and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
+            if snapshot["ref"]["kind"]=="root_lab" and not snapshot.get("student_claim") and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
                 from app.tutor.learning_actions import root_proposal
                 learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id)]
         if final_state.get("root_diagnosis"):

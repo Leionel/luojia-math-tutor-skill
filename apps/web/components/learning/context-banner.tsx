@@ -12,6 +12,7 @@ export function ContextBanner({snapshot, onRemove, disabled=false}: {
       <p className="font-medium">正在讨论 · {snapshot.title}</p>
       <p className="mt-1 break-all font-mono text-sm leading-6">{referenceDescription(snapshot)}</p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">参考帮助 · 不计掌握度{"omitted_rows" in snapshot && snapshot.omitted_rows > 0 ? ` · 引用 ${snapshot.rows.length}/${snapshot.total_rows} 步` : ""}</p>
+      {"student_claim" in snapshot && snapshot.student_claim && <div className="mt-2 rounded-lg border border-olive-500/20 bg-[var(--bg-card)] p-3 text-sm"><p className="text-xs text-[var(--text-muted)]">学生选中的原话 · 尚未审核</p><p className="mt-1 whitespace-pre-wrap break-words leading-6">{snapshot.student_claim.text}</p></div>}
       {"content_review_status" in snapshot && <p className="mt-1 text-xs">{snapshot.content_review_status==="development_card"?"开发条件卡，尚非教师金标":"上传来源内容未作数学核验"}</p>}
       {"task" in snapshot && snapshot.task.domain==="linear_system" && <details className="mt-2 text-sm"><summary className="min-h-12 cursor-pointer py-3">查看引用中的矩阵与右端项</summary><pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all">{JSON.stringify({A:snapshot.task.matrix,b:snapshot.task.rhs,x0:snapshot.task.initial},null,2)}</pre></details>}
       {"citation" in snapshot && <details className="mt-2 text-sm"><summary className="min-h-12 cursor-pointer py-3">查看本轮完整选段</summary><pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words">{snapshot.citation.quote}</pre></details>}

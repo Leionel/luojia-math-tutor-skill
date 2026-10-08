@@ -1,5 +1,13 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-08 R1-A A0–A2 证据边界
+
+A0 固定 16 个 agent 准备的公开数学/权限案例，算术用独立分数运算复核，但无人审 gold。A1 将 Newton 活动保存的学生原话与 Root Runner 轨迹区分：服务器按 owner、活动请求、修订计数及 run/hash/graph 版本重读；模型输出不自动更新掌握。A2 仅比较 D0/D1 prompt 合同，暂用含本题精确代入的 D1，不把固定模型或协议回归算作真实数学质量；D2 待验证。R0 CI 与 A5/质量 Gate 未过，详见 `planning/r1-a0-a2-delivery.md` 和唯一状态入口 `planning/README.md`。
+
+## 2026-10-08 R1 实施基线冻结（仅规划）
+
+R1-A 共用证据与教学动作边界而非复制领域 Agent；Newton 已揭示步骤切线、防剧透、Chat↔Lab 续接列入 A5 工程 Gate。A2 可在真人审核/真实模型质量证据不足时用现有工具增强 D1 暂行，结构化 D2 不预设增益。A5 工程通过可接不依赖待审核内容的 B1/B4，数学/教学质量 Gate 仍未验收；R0 Gate 前不实施。唯一当前状态入口 `planning/README.md`，细节 `planning/r1-math-tutor-core-2026-10-08.md`。
+
 ## 2026-10-08 M1 活动边界
 
 本轮 Newton 单题活动复用现有课程图版本绑定与 Root Runner，没有新增课程图节点、关系或审核状态。活动记录保留原始学生文字与参考帮助来源，不推断掌握度；课程图审查仍按 G0 边界单独推进。见 `planning/m1-newton-delivery.md`。
@@ -2887,3 +2895,11 @@ S5 计划 E1 32 任务、E2 36 题、E3 8 episode，dev/held-out 分离、gold �
 gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、2 dev流程，原32/36/8与历史adapter移backlog。固定分母、完成/正确/恰当弃权/coverage、干预状态重置及新封存确认一起报告。协议probe不等全题库，但需隔离预算/profile及另行live授权；51只适用3 probe＋8单run×6，费用上界未知则硬预算live不运行。
 
 默认下一产品片linear只读可信Chat，保留原编辑/运行/保存，新参数卡后排。scope/origin/候选资格先复用现有字段，多结果误指及多消费者需求证实后才抽Evidence；ProofState/IR/Lean/A8继续条件延期。完整原S5情景10–17日包含S5.0，人工出题/二审/盲评/供应商等待另计，首片与首4题后校准。没有生产代码、测试、配置/数据迁移或新模型质量成果；10月4日655/51、38/92为历史回执，本轮只做文档与保护范围检查，不commit/push/deploy。
+
+### 2026-10-08 R1 规划与 Course Graph 的边界
+
+本地 `da67dd54abd910bca7219b9ed398807c3764cbf5` 审阅后，R1 规划见 `planning/r1-math-tutor-core-2026-10-08.md`。Graph 已由 `CourseEvidenceBuilder` 提供 Case、条件候选、边界与来源，条件详情仍为 `not_checked`；Case 命中和检索分数不能证明本题前提或学生错误。R1 先记录命中/缺失并做同题 Graph on/off 条件定位消融，再决定是否加强 Graph；不预建 Reasoning Graph 或长期 Memory。当前 Newton 活动有学生原话与真实 run，但 `root_lab` 引用只含 run、步骤和停止摘要，Chat 仍缺原话绑定和有范围的教学动作。v4 远端旧 SHA/CI 观察不代表本地当前状态；R0 并行验收及真人数学质量另行进行。本轮仅规划，无源码或知识图谱数据变更。
+
+### 2026-10-08 R1 两阶段修订：Graph 与条件推理
+
+修订方案见 `planning/r1-math-tutor-core-2026-10-08.md`。R1-A 的 Newton、Jacobi/GS 与 Teach-back 共用“学生主张、来源、数学证据范围、教学动作、unknown”边界，保留 Root Runner、numerical_lab、逐条件讲回各自的数学检查；不让 Course Graph 的 Case 命中或 `not_checked` 条件自动成为前提证明。R1-B 正式纳入 F2 教材条件推理与 F4 经审分层反馈，先处理 `development_card`/rubric 审核状态，不把原文条件与题目已满足条件混为一谈。同题 Graph on/off 和 D0/D1/D2 对照后再决定新抽象；长期 Memory、Reasoning Graph、ProofState 仍无默认实施授权。R0 Gate 前仅规划，无图谱数据或业务代码改动。

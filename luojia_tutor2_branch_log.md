@@ -1,5 +1,13 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-08 R1-A A0–A2 本地工程切片
+
+用户明确授权在 R0 Gate 未完成时先做 A0–A2 本地开发。16 个公开案例仅 agent 准备；Newton 已保存解释/修订经服务器重读和版本/owner/帮助锁绑定进入 Chat，普通轨迹问答不带原话。D1 复用固定题精确代入暂行，D2 与真实数学质量待验证。知识 JSON/API907/Web72、typecheck、lint0错10既有警告；开发服务器监听3000，未 build/付费模型/正式库/commit/push/deploy。`planning/README.md` 为唯一状态入口，细节见 `planning/r1-a0-a2-delivery.md`。
+
+## 2026-10-08 R1 实施基线冻结（仅规划）
+
+R1-A/A5 的 Newton 已揭示步骤切线、防剧透和 Chat↔Lab 续接改为工程必验；A2 无可靠真人审核或真实模型证据时用 D1 暂行，D2 待验证。A5 工程 Gate 过后只放行无待审核内容依赖的 R1-B 切片，A 的质量 Gate 独立记录。计划入口 `planning/README.md`，细节 `planning/r1-math-tutor-core-2026-10-08.md`；R0 未完成，R1 未实施，未改业务代码。
+
 ## 2026-10-08 M1 Prompt B：Newton 参与式活动
 
 在现有求根实验台加入固定单题四步流程，预测/解释/修订分别保存，参考轨迹沿用 Root Runner；活动和旧自由实验分开回看，防止刷新时提前展开轨迹。数值实验中栏、吸顶导航和中栏滚动显现同步调整。隔离库实测主流程；完整离线测试 API903/Web71，类型检查、lint 0 错误、Web 生产构建通过。帮助和代数结论范围见 `planning/m1-newton-delivery.md`；390px 页面交互及真实模型教学质量未验收。
@@ -508,3 +516,11 @@ S4在实际客户端调用边界记录span/call/parent、起止/状态/耗时、
 gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、2 dev流程，原32/36/8与历史adapter移backlog。固定分母、完成/正确/恰当弃权/coverage、干预状态重置及新封存确认一起报告。协议probe不等全题库，但需隔离预算/profile及另行live授权；51只适用3 probe＋8单run×6，费用上界未知则硬预算live不运行。
 
 默认下一产品片linear只读可信Chat，保留原编辑/运行/保存，新参数卡后排。scope/origin/候选资格先复用现有字段，多结果误指及多消费者需求证实后才抽Evidence；ProofState/IR/Lean/A8继续条件延期。完整原S5情景10–17日包含S5.0，人工出题/二审/盲评/供应商等待另计，首片与首4题后校准。没有生产代码、测试、配置/数据迁移或新模型质量成果；10月4日655/51、38/92为历史回执，本轮只做文档与保护范围检查，不commit/push/deploy。
+
+### 2026-10-08 R1 Math Tutor Core v1 细化规划
+
+用户要求结合 v4 与新的 Math Tutor Core 建议，先调研、规划而不实施。基线 `feature/course-graph-2.0` / `da67dd54abd910bca7219b9ed398807c3764cbf5`，ahead 7；已有 dirty、未跟踪文件及 v4 原文保留。新增 `planning/r1-math-tutor-core-2026-10-08.md`，更新 `planning/README.md` 的 Now/Next/Blocked 入口和 `CODEX_HANDOFF.md`。M1 Newton 预测/解释/修订已保存，真正缺口是保存的学生主张未随活动来源进入 Chat；现有引用讨论强制概念解释且不作核验。R1 建议同一 TutorWorkflow 中建立有界主张—来源—动作链，Newton 首片、线性第二场景，Graph/Memory/新 Agent 框架只按消融证据再决定。R0 并行 Gate、人工 gold、真实模型质量与正式库验收均未在本轮完成；未改生产代码、未跑新测试、未付费、未提交/推送/部署。
+
+### 2026-10-08 R1-A / R1-B 范围修订
+
+仅规划。`planning/r1-math-tutor-core-2026-10-08.md` 已把 R1-A（Newton、Jacobi/GS、Teach-back 的可信主张/来源/教学动作）与 R1-B（F1 推荐、F2 条件推理、F4 分层反馈、F8 限定静态数学诊断）分开，A 阶段验收前 B 不启动。结构化 claim review 从默认实现降为与直接生成、现有工具增强同题对照的候选；格式有效不能证明数学判断正确，若误判/成本/延迟无净增益则不加节点。现有 U01–U06、M1 和 S5 工程合同继续复用，内容审核、真实模型质量、正式库与 R0 Gate 各自保持待验。没有业务代码、测试、付费模型、提交/推送/部署变更；旧 dirty 保留。

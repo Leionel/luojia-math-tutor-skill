@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession} from "./learning-context.ts";
+import {selectionRange,linearContextRef,newtonActivityContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession} from "./learning-context.ts";
 import {studyTaskHref} from "./study-summary.ts";
 import type {NumericalRun} from "./numerical-lab.ts";
+import type {NewtonActivityState} from "./learning-api.ts";
 const run={id:"record",source_hash:"a".repeat(64),schema_version:"numerical-lab-v1",task:{domain:"linear_system"},rows:[{k:0},{k:1}]} as unknown as NumericalRun;
 test("reading refresh restores the exact span and rejects changed sources or invalid storage",()=>{
  const source={source_id:"course",source_hash:"a".repeat(64),section_id:null,graph_revision:"v1"};
@@ -33,4 +34,18 @@ test("reference sessions require a current owner match and missing sessions rema
  assert.equal(verifiedReferenceSession("old",[{id:"old",user_id:"bob"}],"alice"),undefined);
  assert.equal(verifiedReferenceSession("old",[{id:"old",user_id:"alice"}],"alice"),"old");
  assert.equal(verifiedReferenceSession(null,[{id:"old",user_id:"alice"}],"alice"),undefined);
+});
+
+test("explicit Newton explanation uses a versioned claim and returns to the activity",()=>{
+ const run={id:"newton-run",input_hash:"a".repeat(64),runner_version:"root-v1",graph_revision:"graph-v1",rows:[{k:0}]} as NewtonActivityState["run"];
+ const activity={id:"newton-cycle-v1",version:"newton-participation-v1",run,context_current:true,
+  explanation:{text:"我的解释",request_id:"explain-1",run_id:"newton-run",input_hash:"a".repeat(64),at:"now"},revisions:[]} as unknown as NewtonActivityState;
+ const ref=newtonActivityContextRef(activity,"explanation","explain-1");
+ assert.equal(ref.activity_claim?.request_id,"explain-1");
+ assert.equal(ref.activity_claim?.revision_count,0);
+ assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("alice",{...ref,activity_claim:undefined}));
+ assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("bob",ref));
+ assert.equal(referenceHref({ref} as Parameters<typeof referenceHref>[0]),"/lab#newton-activity");
+ assert.throws(()=>newtonActivityContextRef({...activity,context_current:false},"explanation","explain-1"));
+ assert.throws(()=>newtonActivityContextRef(activity,"explanation","not-selected"));
 });

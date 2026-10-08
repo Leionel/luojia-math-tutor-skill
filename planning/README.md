@@ -1,5 +1,17 @@
 # 项目规划总索引
 
+## 当前状态（2026-10-08；唯一状态入口）
+
+| 状态 | 内容与依据 |
+|---|---|
+| **Now** | 用户在[冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)后明确要求启动 A0–A2；[本地工程回执](r1-a0-a2-delivery.md)已形成，**R0 远端 Gate 仍未验收**。R0 的正式库备份/恢复、迁移及目标 SHA CI 由并行工作独立验收，本轮不部署。 |
+| **Next** | R1-A 的 A3 Jacobi/GS、A4 Teach-back、A5 三域工程/体验尚未实施；继续前先核对 R0 Gate。A5 仍须验收 Newton 已揭示步骤切线、防剧透与 Chat↔Lab 续接。R1-B 仅在 A5 工程 Gate 后依赖递进。D1 是 A2 暂行工程路径，D2 质量优劣待证。 |
+| **Delivered** | [A0–A2 本地工程回执](r1-a0-a2-delivery.md)：16 个公开开发案例、Newton 已保存解释/修订的服务器可信引用、D0/D1 离线合同对照与 D1 暂行；本地知识 JSON、API907/Web72、typecheck、lint 0 错误。此前 [M1 Prompt A](m1-g0-delivery.md)与[M1 Prompt B](m1-newton-delivery.md)已交付上传 owner 收口、Newton 持久活动和 Lab UI。上述不证明真实模型质量或学生收益。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)仍需目标 SHA CI、授权链和正式库独立验收；A0–A2 是用户明确授权的本地工作例外，不解除 R0 Gate。A5 **工程 Gate** 未通过则 R1-B 不启动；工程通过后可先做不依赖待审核内容的 B1/F1、B4/F8。R1-A **质量 Gate** 与 F2 条件卡、F4 题目/rubric 审核各自独立，未验收不得虚报质量或正式内容；真实模型与费用另行准入。 |
+| **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
+
+下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。
+
 M1 Prompt B 的 Newton 参与式活动与实验台界面见 [本轮回执](m1-newton-delivery.md)；Prompt A 安全收口与待核实边界见 [G0 回执](m1-g0-delivery.md)；此前按日期叠加的简要状态见 [交付与规划快照](delivery-history-2026-10.md)。
 
 最终检查：API899、Web最终71、生产构建通过；引用缓存缺失会话已加校验。U01–U06/U16首版、U08临时库已交付；接续重点是U07人工复核与U08正式备份/恢复gate，U09可另做合成名单简报；其余条件片不自动启用。下文保留原规划时顺序。
@@ -45,7 +57,7 @@ A0–A3、S1–S4、S5.0、S5.1/S5.2离线首版和S5.3Mock预算切片已有交
 
 状态依据：[F1–F4](learning-experience-2026-10/f1-f4-delivery.md)、[F5/F8首页](learning-experience-2026-10/home-f5-f8-delivery.md)、[流程加强](learning-experience-2026-10/xiaoluo-chat-lab-review.md)、[A0–A2](agent-engineering-2026-10/delivery-a0-a2.md)、[A3](agent-engineering-2026-10/delivery-a3-numerical.md)、[S1/S2](agent-engineering-2026-10/delivery-s1-s2.md)、[S3/S4](agent-engineering-2026-10/delivery-s3-s4.md)、[S5.0](agent-v3-2026-10/09-delivery-s5-0.md)、[S5.1](agent-v3-2026-10/10-delivery-s5-1.md)、[S5.2](agent-v3-2026-10/12-delivery-s5-2.md)、[S5.3与分批提交](agent-v3-2026-10/13-delivery-s5-3-offline-and-commits.md)。历史测试数量只证明各轮范围。
 
-## 当前推荐顺序
+## 旧切片推荐顺序（实施前规划快照）
 
 先U01线性引用，再U02教材选段/U03任务续接；U16图示降级按实际风险尽早安排。其余按完整计划的优先/接续/条件启动分组，**一次一个可验收结果**。真人/素材/授权/供应商/隔离缺失只停对应正式功能，不堵其它无硬依赖软件工作。
 

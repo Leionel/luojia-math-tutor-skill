@@ -1,0 +1,116 @@
+{
+  "version": "r1-a0-development-v1",
+  "status": "agent_prepared_only",
+  "baseline": {
+    "branch": "feature/course-graph-2.0",
+    "head_before_r1_edits": "da67dd54abd910bca7219b9ed398807c3764cbf5",
+    "date": "2026-10-08",
+    "model_quality_run": false,
+    "independent_human_review": false,
+    "production_student_data_used": false
+  },
+  "purpose": "Find engineering and mathematical failure clusters; do not estimate accuracy or learning gains.",
+  "cases": [
+    {
+      "id": "N01", "domain": "newton", "kind": "correct_step",
+      "student_claim": "对 f(x)=x^3-2x+2，从 x0=0 得到 x1=1。",
+      "independent_basis": "f(0)=2, f'(0)=-2, so x1=0-2/(-2)=1.",
+      "expected_boundary": "Accept this one step; do not infer convergence or mastery."
+    },
+    {
+      "id": "N02", "domain": "newton", "kind": "invalid_generalization",
+      "student_claim": "这里 f'(0) 不为零，所以牛顿法从任意初值都会收敛。",
+      "independent_basis": "For this same function, x0=0 gives x1=1 and x2=0 with f'(0)=-2 and f'(1)=1; the universal claim fails.",
+      "expected_boundary": "Distinguish the valid derivative calculation from the false universal conclusion."
+    },
+    {
+      "id": "N03", "domain": "newton", "kind": "bounded_cycle",
+      "student_claim": "本题标准牛顿法从 x0=0 在 0 与 1 间精确往复。",
+      "independent_basis": "f(0)=2, f'(0)=-2 imply 0->1; f(1)=1, f'(1)=1 imply 1->0; both derivatives are nonzero, so induction repeats the two values for this fixed input.",
+      "expected_boundary": "Accept only this function, rule and initial value; a plotted trace alone is not the proof."
+    },
+    {
+      "id": "N04", "domain": "newton", "kind": "changed_initial",
+      "student_claim": "把初值改为 -2，第一步仍会落在 1。",
+      "independent_basis": "f(-2)=-2 and f'(-2)=10, so x1=-2-(-2)/10=-9/5, not 1.",
+      "expected_boundary": "Reject the step by exact substitution; do not transfer the 0->1->0 fixed-case proof."
+    },
+    {
+      "id": "L01", "domain": "jacobi_gs", "kind": "jacobi_step",
+      "student_claim": "A=[[4,1],[1,3]], b=[1,2], x0=[0,0] 时，Jacobi 第一步是 [1/4,2/3]。",
+      "independent_basis": "Jacobi uses only x0: x1_1=(1-0)/4=1/4 and x1_2=(2-0)/3=2/3.",
+      "expected_boundary": "Accept the step without claiming a global error bound."
+    },
+    {
+      "id": "L02", "domain": "jacobi_gs", "kind": "gs_step",
+      "student_claim": "同一方程组和初值下，Gauss-Seidel 第一步也是 [1/4,2/3]。",
+      "independent_basis": "The first coordinate is 1/4; Gauss-Seidel immediately reuses it, so the second is (2-1/4)/3=7/12, not 2/3.",
+      "expected_boundary": "Identify the update-order error, not a generic convergence error."
+    },
+    {
+      "id": "L03", "domain": "jacobi_gs", "kind": "residual_vs_error",
+      "student_claim": "残差无穷范数只有 1e-8，因此解误差也至多 1e-8。",
+      "independent_basis": "A=diag(1,1e-8), b=(1,1e-8), x=(1,0) give residual (0,1e-8) but exact solution (1,1) and infinity-norm error 1.",
+      "expected_boundary": "Reject the implication without a bound involving the inverse/operator conditioning."
+    },
+    {
+      "id": "L04", "domain": "jacobi_gs", "kind": "missing_conditions",
+      "student_claim": "我做了两步 Jacobi，残差变小，所以对任何矩阵都保证收敛。",
+      "independent_basis": "Two observed residuals cannot establish an all-matrices statement; no matrix, right-hand side or iteration operator is supplied for this particular run.",
+      "expected_boundary": "Reject the universal guarantee and ask for the actual matrix before judging this run."
+    },
+    {
+      "id": "T01", "domain": "teach_back", "kind": "valid_limited_explanation",
+      "student_claim": "牛顿法局部收敛结论要核对根附近条件；一次数值轨迹不能证明任意初值收敛。",
+      "independent_basis": "The second sentence is a valid scope distinction; whether a specific local theorem applies needs its named assumptions and a specific function/root.",
+      "expected_boundary": "Acknowledge the sound scope distinction, then ask which theorem and conditions are meant."
+    },
+    {
+      "id": "T02", "domain": "teach_back", "kind": "condition_gap",
+      "student_claim": "只要函数连续可导，牛顿法从任何初值都会收敛。",
+      "independent_basis": "The fixed N02 counterexample is continuously differentiable but from x0=0 cycles between 0 and 1.",
+      "expected_boundary": "Locate the missing local/initial-point conditions; do not merely say 'wrong'."
+    },
+    {
+      "id": "T03", "domain": "teach_back", "kind": "invalid_root_inference",
+      "student_claim": "算得 x1=1，就说明 1 是方程 x^3-2x+2=0 的根。",
+      "independent_basis": "f(1)=1, not 0; an iterate need not be a root.",
+      "expected_boundary": "Separate a correct Newton update from an incorrect root claim."
+    },
+    {
+      "id": "T04", "domain": "teach_back", "kind": "unknown_input",
+      "student_claim": "我的迭代一定收敛，因为第三步比第二步小。",
+      "independent_basis": "Function, iteration rule, initial point and the meaning of 'smaller' are absent.",
+      "expected_boundary": "Ask for the missing task and comparison metric; do not infer convergence."
+    },
+    {
+      "id": "X01", "domain": "workflow", "kind": "full_answer_request",
+      "student_claim": "还没预测；请直接给出本题完整答案。",
+      "independent_basis": "The activity allows explicit answer exposure but records prediction_choice=skipped and independent_success=false.",
+      "expected_boundary": "Honor the explicit request only through the answer-help path and mark help exposure."
+    },
+    {
+      "id": "X02", "domain": "workflow", "kind": "cross_owner",
+      "student_claim": "Use Alice's saved explanation while authenticated as Bob.",
+      "independent_basis": "The owner-scoped lab run and activity record must both be read under the current principal.",
+      "expected_boundary": "Reject before model generation; never copy a browser-supplied claim."
+    },
+    {
+      "id": "X03", "domain": "workflow", "kind": "stale_revision",
+      "student_claim": "Review revision_count=0 after a new saved revision exists.",
+      "independent_basis": "The selected request_id and revision_count must match the current owner record and run/hash/version.",
+      "expected_boundary": "Return a stale-reference error and ask the student to reselect the original text."
+    },
+    {
+      "id": "X04", "domain": "workflow", "kind": "help_lock",
+      "student_claim": "Open a saved explanation reference while an independent assessment is active.",
+      "independent_basis": "The existing reference-help gate blocks the snapshot before model use.",
+      "expected_boundary": "Reject the reference without creating a mastery or mistake write."
+    }
+  ],
+  "confirmation_candidates": {
+    "status": "not_authored_or_sealed",
+    "count": 0,
+    "reason": "Independent reviewer and held-out scope are not yet available."
+  }
+}

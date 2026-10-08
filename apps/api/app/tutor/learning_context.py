@@ -17,6 +17,58 @@ class LearningContextRef(BaseModel):
     runner_version: str = Field(min_length=1, max_length=80)
     graph_revision: str = Field(min_length=1, max_length=160)
     selected_step: int | None = Field(default=None, ge=0, le=100)
+    activity_claim: "NewtonActivityClaimRef | None" = None
+
+
+class NewtonActivityClaimRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    activity_id: Literal["newton-cycle-v1"]
+    activity_version: Literal["newton-participation-v1"]
+    claim_kind: Literal["explanation", "revision"]
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    revision_count: int = Field(ge=0, le=5)
+
+
+LearningContextRef.model_rebuild()
+
+
+def _saved_newton_claim(workspace, owner: str, run: dict, ref: NewtonActivityClaimRef) -> dict:
+    from app.tutor.newton_activity import ACTIVITY_ID, ACTIVITY_VERSION, EXACT_CHECK, KIND, PROBLEM
+
+    record = workspace.store.learning_record(owner, workspace.course_id, KIND, ACTIVITY_ID)
+    if not record or record.get("version") != ACTIVITY_VERSION:
+        raise ValueError("活动版本已变化，请重新打开活动。")
+    run_ref = record.get("run_ref")
+    if not isinstance(run_ref, dict) or any(run_ref.get(key) != run.get(key) for key in
+                                            ("id", "input_hash", "runner_version", "graph_revision")):
+        raise ValueError("活动与实验版本不匹配，请重新打开活动。")
+    if record.get("prediction_choice") != "submitted" or not record.get("reveal"):
+        raise ValueError("尚无可讨论的独立预测与观察。")
+    revisions = record.get("revisions")
+    if not isinstance(revisions, list) or len(revisions) != ref.revision_count:
+        raise ValueError("活动修订版本已变化，请重新选择原话。")
+    if ref.claim_kind == "explanation":
+        claim = record.get("explanation")
+    else:
+        claim = next((item for item in revisions if isinstance(item, dict) and
+                      item.get("request_id") == ref.request_id), None)
+    if not isinstance(claim, dict) or claim.get("request_id") != ref.request_id:
+        raise ValueError("所选解释或修订已变化，请重新选择。")
+    if claim.get("run_id") != run["id"] or claim.get("input_hash") != run["input_hash"]:
+        raise ValueError("学生原话与当前实验不匹配。")
+    words = claim.get("text")
+    if not isinstance(words, str) or not 1 <= len(words) <= 2000 or not words.strip():
+        raise ValueError("学生原话范围不可确认。")
+    params = run.get("parameters") or {}
+    if any(params.get(key) != PROBLEM[key] for key in
+           ("function", "initial_value", "method", "goal", "tolerance")):
+        raise ValueError("本题精确核对不能用于另一实验。")
+    return {
+        "student_claim": {"kind": ref.claim_kind, "text": words, "request_id": ref.request_id,
+                          "review_status": "unreviewed", "evidence_kind": "student_process",
+                          "revision_count": ref.revision_count, "help_exposed": bool(record.get("answer_exposure"))},
+        "exact_check": EXACT_CHECK,
+    }
 
 
 def _resolve_root_context(workspace, owner: str, ref: LearningContextRef) -> dict:
@@ -48,6 +100,8 @@ def _resolve_root_context(workspace, owner: str, ref: LearningContextRef) -> dic
             "max_iterations": run.get("max_iterations", min(100, max(20, len(rows)-1))),
             "iteration_budget_source": "saved" if "max_iterations" in run else "legacy_default",
         }
+        if ref.activity_claim:
+            snapshot.update(_saved_newton_claim(workspace, owner, run, ref.activity_claim))
         # Fail explicitly rather than silently dropping conditions or inventing rows.
         if len(json.dumps(snapshot, ensure_ascii=False, allow_nan=False).encode()) > 8192:
             raise ValueError("实验上下文超过本批预算，请选择较短的表达式或轨迹。")
