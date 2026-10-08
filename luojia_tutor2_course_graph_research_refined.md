@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-08 M1 活动边界
+
+本轮 Newton 单题活动复用现有课程图版本绑定与 Root Runner，没有新增课程图节点、关系或审核状态。活动记录保留原始学生文字与参考帮助来源，不推断掌握度；课程图审查仍按 G0 边界单独推进。见 `planning/m1-newton-delivery.md`。
+
 ## 2026-10-08 M1 G0 边界
 
 本轮未改课程图谱审核逻辑。现有 27 个 unit、21 条 relation、15 个 teaching case 的种子均缺 `review_status`，当前读取路径会默认为 verified；后续应先显式标记并核对可信旧种子，再让未知来源输入 fail-closed，避免直接清空课程检索。教材 LFS 17 份 PDF 的逐份授权与公开范围待核实。详见 `planning/m1-g0-delivery.md`。

@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-08 M1 Prompt B：Newton 参与式活动
+
+在现有求根实验台加入固定单题四步流程，预测/解释/修订分别保存，参考轨迹沿用 Root Runner；活动和旧自由实验分开回看，防止刷新时提前展开轨迹。数值实验中栏、吸顶导航和中栏滚动显现同步调整。隔离库实测主流程；完整离线测试 API903/Web71，类型检查、lint 0 错误、Web 生产构建通过。帮助和代数结论范围见 `planning/m1-newton-delivery.md`；390px 页面交互及真实模型教学质量未验收。
+
 ## 2026-10-08 M1 Prompt A
 
 上传文件的匿名与跨用户读取已封闭，Chat 合法图片通过受控 Bearer fetch 显示；`uv.lock`、README 事实和历史快照同步整理。API901/Web71及构建通过；migration 8 的正式库验收、旧文件归属和教材授权仍待核实。回执：`planning/m1-g0-delivery.md`。本轮停止于 A，不自动实施 Newton。

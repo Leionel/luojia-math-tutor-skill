@@ -1,6 +1,6 @@
 # 项目规划总索引
 
-M1 Prompt A 本轮安全收口与待核实边界见 [G0 回执](m1-g0-delivery.md)；此前按日期叠加的简要状态见 [交付与规划快照](delivery-history-2026-10.md)。
+M1 Prompt B 的 Newton 参与式活动与实验台界面见 [本轮回执](m1-newton-delivery.md)；Prompt A 安全收口与待核实边界见 [G0 回执](m1-g0-delivery.md)；此前按日期叠加的简要状态见 [交付与规划快照](delivery-history-2026-10.md)。
 
 最终检查：API899、Web最终71、生产构建通过；引用缓存缺失会话已加校验。U01–U06/U16首版、U08临时库已交付；接续重点是U07人工复核与U08正式备份/恢复gate，U09可另做合成名单简报；其余条件片不自动启用。下文保留原规划时顺序。
 

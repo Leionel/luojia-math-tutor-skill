@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-08 M1 Prompt B 与 Lab 界面
+
+固定 Newton 单题活动已嵌入 `/lab`，预测→受控轨迹→解释→修订可持久恢复；完整答案/跳过记录帮助曝光，不计独立掌握。数值实验中栏、共用 sticky 导航与轻量滚动显现已更新。隔离库浏览器走通主链和换初值；API903/Web71、typecheck/lint0错10既有警告、生产构建通过。390px 浏览器覆盖未生效，移动端仍待补验；真实模型教学质量、正式库与部署未验收。详见 `planning/m1-newton-delivery.md`。原工作区 dirty 保留。
+
 ## 2026-10-08 M1 Prompt A
 
 上传资源已加登录与 owner 校验，视觉引用同步收口；旧无 owner 记录的上传保持不可访问。migration 8 仅在隔离库验证，正式库仍需备份/恢复验收。README 历史状态已移至 `planning/delivery-history-2026-10.md`。本轮 `npm test` 为 API901/Web71，构建、typecheck、lint、浏览器合法图片显示及严格锁安装通过；未 push、未调用付费模型。详见 `planning/m1-g0-delivery.md`。Prompt B 依原 M1 文件要求留待另轮。
