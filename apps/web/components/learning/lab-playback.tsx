@@ -2,7 +2,7 @@
 import {useEffect, useState} from "react";
 import type {LabRun} from "@/lib/learning-api";
 
-export function LabPlayback({run, comparison, onDiscussStep}: {run: LabRun; comparison?: LabRun; onDiscussStep?: (step:number)=>void}) {
+export function LabPlayback({run, comparison, onDiscussStep, concealFuture=false}: {run: LabRun; comparison?: LabRun; onDiscussStep?: (step:number)=>void; concealFuture?:boolean}) {
   const [step,setStep]=useState(0);
   const [playing,setPlaying]=useState(false);
   const last=run.rows.length-1;
@@ -28,12 +28,12 @@ export function LabPlayback({run, comparison, onDiscussStep}: {run: LabRun; comp
     <figure className="mt-3"><svg viewBox="0 0 640 220" role="img" aria-label={`迭代序列，横轴迭代次数、纵轴近似值；当前第${row.k}步，近似值${row.x.toPrecision(7)}`} className="w-full">
       <path d="M50 15V185H620" fill="none" stroke="currentColor" opacity=".3"/>
       <text x="5" y="25" fill="currentColor" fontSize="12">{high.toPrecision(4)}</text><text x="5" y="180" fill="currentColor" fontSize="12">{low.toPrecision(4)}</text><text x="48" y="207" fill="currentColor" fontSize="12">k=0</text><text x="560" y="207" fill="currentColor" fontSize="12">k={maxK}</text>
-      <polyline points={run.rows.map(point).join(" ")} fill="none" stroke="currentColor" strokeWidth="2" opacity=".18" className="text-olive-600 dark:text-olive-400"/>
+      {!concealFuture && <polyline points={run.rows.map(point).join(" ")} fill="none" stroke="currentColor" strokeWidth="2" opacity=".18" className="text-olive-600 dark:text-olive-400"/>}
       <polyline points={run.rows.slice(0,step+1).map(point).join(" ")} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-olive-600 dark:text-olive-400"/>
       {comparison && <polyline points={comparison.rows.filter(v=>v.k<=row.k).map(point).join(" ")} fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" className="text-cinnabar-600 dark:text-cinnabar-300"/>}
       <line x1={50+row.k/maxK*560} x2={50+row.k/maxK*560} y1="15" y2="185" stroke="currentColor" strokeDasharray="3 5" opacity=".25"/>
       <circle cx={50+row.k/maxK*560} cy={175-(row.x-low)/span*150} r="5" fill="currentColor" className="text-olive-700 dark:text-olive-300"/>
-    </svg><figcaption className="text-base sm:text-sm leading-6 text-[var(--text-secondary)]">实线：本次轨迹；淡线：全部已算步骤。{comparison?"虚线：对照轨迹的相同步数。":""}图形趋势不替代收敛与误差判断。</figcaption></figure>
+    </svg><figcaption className="text-base sm:text-sm leading-6 text-[var(--text-secondary)]">实线：{concealFuture?"当前已回看的步骤":"本次轨迹"}；{concealFuture?"继续步进可查看后续计算。":"淡线：全部已算步骤。"}{comparison?"虚线：对照轨迹的相同步数。":""}图形趋势不替代收敛与误差判断。</figcaption></figure>
     <label htmlFor={`step-${run.id}`} className="mt-4 block text-base sm:text-sm">选择迭代步骤</label><input id={`step-${run.id}`} aria-valuetext={`第${row.k}步，近似值${row.x.toPrecision(7)}`} type="range" min={0} max={Math.max(last,1)} step={1} value={step} disabled={last===0} onChange={e=>move(Number(e.target.value))} className="h-12 w-full accent-olive-700"/>
     <div className="flex flex-wrap gap-2"><button type="button" className={button} disabled={step===0} onClick={()=>move(step-1)}>上一步</button><button type="button" className={button} disabled={last===0} onClick={()=>{if(playing)setPlaying(false);else{if(step===last)setStep(0);setPlaying(true);}}}>{playing?"暂停回放":step===last?"重新播放":"播放迭代"}</button><button type="button" className={button} disabled={step===last} onClick={()=>move(step+1)}>下一步</button><button type="button" className={button} disabled={step===last} onClick={()=>move(last)}>看最后一步</button></div>
     {onDiscussStep && <button type="button" onClick={()=>{setPlaying(false);onDiscussStep(row.k);}} className="mt-3 inline-flex min-h-12 items-center text-sm font-medium text-olive-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600 dark:text-olive-300">问小珞：解释第 {row.k} 步 →</button>}

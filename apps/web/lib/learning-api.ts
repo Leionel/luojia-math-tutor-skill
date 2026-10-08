@@ -40,6 +40,17 @@ export type LabRun = {
   rows: {k: number; x: number; fx: number; step: number | null; bracket: number[] | null}[];
   diagnosis: Diagnosis;
 };
+export type NewtonActivityState = {
+  id: "newton-cycle-v1"; version: string; phase: "predict" | "predicted" | "observed" | "explained" | "revised";
+  prediction_choice?: "submitted" | "skipped";
+  problem: {function:string;derivative:string;initial_value:number;method:string;goal:string;tolerance:number;max_iterations:number};
+  prediction: {text:string;reason:string;request_id:string;at:string} | null;
+  reveal: {request_id:string;mode:"observe"|"answer";at:string;evidence_kind:string} | null;
+  explanation: {text:string;request_id:string;at:string;run_id:string;input_hash:string} | null;
+  revisions: {text:string;request_id:string;at:string;run_id:string;input_hash:string}[];
+  run: LabRun | null; context_current?: boolean; answer_exposed: boolean; independent_success: false;
+  exact_check?: {scope:string;steps:string[];conclusion:string} | null;
+};
 export type Assessment = {
   id: string; state: string; content_version: string; mode: string;
   answers: Record<string, number>; questions: {id: string; prompt: string; options: string[]}[];
