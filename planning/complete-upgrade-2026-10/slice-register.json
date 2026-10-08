@@ -1,6 +1,6 @@
 {
   "version": "complete-upgrade-draft-v1",
-  "status": "u01_u06_and_u16_first_versions_delivered_remaining_planned",
+  "status": "u01_u06_u08_u16_first_versions_delivered_gates_pending",
   "slices": [
     {
       "id": "U01",
@@ -68,7 +68,9 @@
       "file": "slices/08-account-sessions.md",
       "title": "账户注册失败不残留并可真实退出",
       "priority": "近期",
-      "blocked_by": "无"
+      "blocked_by": "无",
+      "status": "temporary_db_first_version_delivered_production_pending",
+      "receipt": "delivery-u08.md"
     },
     {
       "id": "U09",

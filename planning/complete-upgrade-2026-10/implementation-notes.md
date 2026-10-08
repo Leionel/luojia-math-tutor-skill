@@ -1,5 +1,9 @@
 # 完整升级实施记录
 
+## U08 可撤销登录会话（临时库）
+
+注册签发预检、用户/session原子写入、Bearer v2 sid/撤销/当前角色、幂等服务端退出、跨标签页/首页身份保护已实现。知识JSON/API899/Web70、增量11合同19实例、构建通过，lint0错误10既有警告；实际合成账号登录/双标签退出，临时库1登录1撤销账号保留。migration7增表，在临时库backup/恢复/integrity与失败回滚验证。正式库未读未升级；下一次Repository初始化会应用7，正式启动前必须实际备份/恢复验收。v1不得HTTP授权，重新登录；不是JWT/OIDC。细节 planning/complete-upgrade-2026-10/delivery-u08.md。用户授权额度内继续，本轮已额外交付U16/U08，剩余条件阶段仍pending。
+
 ## U16 静态降级
 
 用户授权 U06 完成后有额度继续，已完成 U16。模型 HTML 的脚本默认禁止且无运行入口，旧消息原源码/静态图保留；删除30秒计时器与脚本重启，教学 prompt teaching-v2.8 与 UI一致。Web65、prompt1、构建通过，lint0错误10既有警告。实际临时库网页确认 srcdoc 无script/on事件/外链、sandbox空、关闭草稿保留、390px无溢出；危险死循环未执行。回执 planning/complete-upgrade-2026-10/delivery-u16.md。下一先 U08 临时库会话，正式库备份/恢复另验。
