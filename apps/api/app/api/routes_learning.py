@@ -3,12 +3,13 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat
 from app.auth import Principal, get_principal, get_forwarded_llm_key
-from app.main_deps import get_repository, get_app_settings
+from app.main_deps import get_repository, get_app_settings, get_learning_workspace
 from app.config import Settings
 from app.knowledge.course_service import get_course_service
 from app.math_tools.root_finding import RootAttempt
 from app.math_tools.root_runner import LabRequest
 from app.tutor.learning_workspace import LearningWorkspace
+from app.tutor.newton_activity import NewtonActivity
 from app.tutor.reading_explanation import source_excerpt, explain
 from app.tutor.learning_extensions import assignment, create_teach_back, model_teach_back, submit_code
 
@@ -91,6 +92,60 @@ class CodeRequest(Body):
     iterates: list[FiniteFloat] = Field(default_factory=list, max_length=101)
     stop_reason: Literal["residual", "step", "exact", "iteration_limit", "none"] = "none"
     previous_id: str | None = Field(default=None, max_length=80)
+
+
+class NewtonPredictionRequest(Body):
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    text: str = Field(min_length=1, max_length=1000, pattern=r"\S")
+    reason: str = Field(default="", max_length=1000)
+
+
+class NewtonRevealRequest(Body):
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    mode: Literal["observe", "answer"]
+
+
+class NewtonWrittenRequest(Body):
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    input_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    text: str = Field(min_length=1, max_length=2000, pattern=r"\S")
+
+
+def newton_activity(principal: Principal, service: LearningWorkspace) -> NewtonActivity:
+    if not principal.authenticated:
+        raise HTTPException(401, "请登录后保存学习活动。")
+    return NewtonActivity(service)
+
+
+@router.get("/root-lab/activity/newton-cycle-v1")
+def newton_state(principal: Principal = Depends(get_principal),
+                 service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).state(principal.user_id))
+
+
+@router.post("/root-lab/activity/newton-cycle-v1/predict")
+def newton_predict(body: NewtonPredictionRequest, principal: Principal = Depends(get_principal),
+                   service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).predict(principal.user_id, body.request_id, body.text, body.reason))
+
+
+@router.post("/root-lab/activity/newton-cycle-v1/reveal")
+def newton_reveal(body: NewtonRevealRequest, principal: Principal = Depends(get_principal),
+                  service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).reveal(principal.user_id, body.request_id, body.mode))
+
+
+@router.post("/root-lab/activity/newton-cycle-v1/explain")
+def newton_explain(body: NewtonWrittenRequest, principal: Principal = Depends(get_principal),
+                   service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).explain(principal.user_id, body.request_id, body.run_id, body.input_hash, body.text))
+
+
+@router.post("/root-lab/activity/newton-cycle-v1/revise")
+def newton_revise(body: NewtonWrittenRequest, principal: Principal = Depends(get_principal),
+                  service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).revise(principal.user_id, body.request_id, body.run_id, body.input_hash, body.text))
 
 
 @router.post("/teach-back/submissions")
