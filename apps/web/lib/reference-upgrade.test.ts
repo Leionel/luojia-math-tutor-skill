@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription} from "./learning-context.ts";
+import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession} from "./learning-context.ts";
 import {studyTaskHref} from "./study-summary.ts";
 import type {NumericalRun} from "./numerical-lab.ts";
 const run={id:"record",source_hash:"a".repeat(64),schema_version:"numerical-lab-v1",task:{domain:"linear_system"},rows:[{k:0},{k:1}]} as unknown as NumericalRun;
@@ -26,4 +26,11 @@ test("integration has its own namespace and retains estimator scope",()=>{
  assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("alice",linearContextRef(run,0)));
  const snapshot={task:integral.task,ref} as unknown as Parameters<typeof referenceDescription>[0];
  assert.match(referenceDescription(snapshot),/误差估计，非严格界/);
+});
+
+test("reference sessions require a current owner match and missing sessions remain a lazy draft",()=>{
+ assert.equal(verifiedReferenceSession("old",[],"alice"),undefined);
+ assert.equal(verifiedReferenceSession("old",[{id:"old",user_id:"bob"}],"alice"),undefined);
+ assert.equal(verifiedReferenceSession("old",[{id:"old",user_id:"alice"}],"alice"),"old");
+ assert.equal(verifiedReferenceSession(null,[{id:"old",user_id:"alice"}],"alice"),undefined);
 });

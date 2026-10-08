@@ -1,5 +1,9 @@
 # 完整升级实施记录
 
+## 最终引用会话恢复校验
+
+发现本地来源缓存可能指向已经不存在的讨论会话，ReferenceTutor 现在并行核对来源与已有 owner 会话名单；失效缓存明确提示，草稿/来源保留，用户再次提问才懒创建新会话。跨owner和失效id的前端回归新增1项，Web最终71/71、最终构建通过、lint0错误10既有警告。后端未改，最近完整API899/根命令Web70为上一检查，未虚称再次跑API。最终日志 results/reference-session-final-*；保护的原runtime/07/原型仍未更改。
+
 ## U08 可撤销登录会话（临时库）
 
 注册签发预检、用户/session原子写入、Bearer v2 sid/撤销/当前角色、幂等服务端退出、跨标签页/首页身份保护已实现。知识JSON/API899/Web70、增量11合同19实例、构建通过，lint0错误10既有警告；实际合成账号登录/双标签退出，临时库1登录1撤销账号保留。migration7增表，在临时库backup/恢复/integrity与失败回滚验证。正式库未读未升级；下一次Repository初始化会应用7，正式启动前必须实际备份/恢复验收。v1不得HTTP授权，重新登录；不是JWT/OIDC。细节 planning/complete-upgrade-2026-10/delivery-u08.md。用户授权额度内继续，本轮已额外交付U16/U08，剩余条件阶段仍pending。

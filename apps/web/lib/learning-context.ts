@@ -49,3 +49,7 @@ export function codeContextRef(saved:{id:string;code_hash:string;static_rule_ver
  if(!/^[a-f0-9]{64}$/.test(saved.code_hash)||finding!==null&&(!Number.isInteger(finding)||finding<0||finding>=saved.findings.length))throw Error("已保存代码或提示版本不可确认。");
  return {kind:"code_static",record_id:saved.id,code_hash:saved.code_hash,static_rule_version:saved.static_rule_version??null,selected_finding:finding};
 }
+
+export function verifiedReferenceSession(cached:string|null,items:{id:string;user_id:string}[],owner:string):string|undefined{
+ return cached&&items.some(item=>item.id===cached&&item.user_id===owner)?cached:undefined;
+}
