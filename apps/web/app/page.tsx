@@ -10,6 +10,7 @@ import {BrandLogo} from "@/components/brand-logo";
 import {TutorCompanion} from "@/components/tutor-companion";
 import {HomeRootIllustration} from "@/components/learning/home-root-illustration";
 import {learningRequest, LearningRequestError, type LearningOverview} from "@/lib/learning-api";
+import {getCurrentUserId,getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
 
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-olive-600";
 const features = [
@@ -29,14 +30,22 @@ export default function HomePage() {
   const [loginRequired,setLoginRequired]=useState(false);
   const [refresh,setRefresh]=useState(0);
   useEffect(()=>{
+    const changed=()=>{setOverview(null);setLoading(true);setError("");setRefresh(n=>n+1);};
+    const storage=(event:StorageEvent)=>{if(isAuthStorageKey(event.key))changed();};
+    window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);
+    return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};
+  },[]);
+  useEffect(()=>{
     const controller=new AbortController();
     let live=true;
+    const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;
+    const current=()=>live&&owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization;
     const timer=setTimeout(()=>controller.abort(),10000);
     learningRequest<LearningOverview>("/learning/overview",undefined,controller.signal).then(value=>{
-      if(live){setOverview(value);setError("");setLoginRequired(false);}
+      if(current()){setOverview(value);setError("");setLoginRequired(false);}
     }).catch(e=>{
-      if(live){setOverview(null);setLoginRequired(e instanceof LearningRequestError && e.status===401);setError(e instanceof LearningRequestError && e.status===401 ? "登录后查看属于你的任务与记录。" : "暂时无法读取学习记录，请重试。各学习入口仍可打开。");}
-    }).finally(()=>{clearTimeout(timer);if(live)setLoading(false);});
+      if(current()){setOverview(null);setLoginRequired(e instanceof LearningRequestError && e.status===401);setError(e instanceof LearningRequestError && e.status===401 ? "登录后查看属于你的任务与记录。" : "暂时无法读取学习记录，请重试。各学习入口仍可打开。");}
+    }).finally(()=>{clearTimeout(timer);if(current())setLoading(false);});
     return()=>{live=false;clearTimeout(timer);controller.abort();};
   },[refresh]);
   const retry=useCallback(()=>{setLoading(true);setError("");setRefresh(value=>value+1);},[]);

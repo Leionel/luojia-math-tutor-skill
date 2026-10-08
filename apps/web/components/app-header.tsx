@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {useState} from "react";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
@@ -20,7 +21,7 @@ import {
 import { SettingsDrawer } from "./settings-drawer";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandLogo } from "./brand-logo";
-import { clearAuthSession } from "@/lib/demo-auth";
+import {clearAuthSession,signOutCurrentSession} from "@/lib/demo-auth";
 
 export function AppHeader({
   onNewSession,
@@ -35,14 +36,17 @@ export function AppHeader({
   onToggleZenMode?: () => void;
   onOpenSearch?: () => void;
 }) {
-  const signOut=()=>{
+  const [signingOut,setSigningOut]=useState(false),[signOutError,setSignOutError]=useState("");
+  const localSignOut=()=>{
     clearAuthSession();
     // Full navigation discards mounted owner-scoped chat state on sign-out.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/auth/login");
   };
+  const signOut=async()=>{if(signingOut)return;setSigningOut(true);setSignOutError("");try{await signOutCurrentSession();localSignOut();}catch(e){setSignOutError(e instanceof Error?e.message:"退出失败，服务端撤销未确认。");}finally{setSigningOut(false);}};
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full flex-shrink-0 items-center justify-between px-3 sm:px-6 glass-header transition-colors duration-300">
+      {signOutError&&<div role="alert" className="absolute left-3 right-3 top-full rounded-xl border border-cinnabar-600/30 bg-[var(--bg-card)] p-4 text-sm"><p>{signOutError}</p><button type="button" disabled={signingOut} onClick={signOut} className="mr-4 min-h-12 underline">重试退出</button><button type="button" onClick={localSignOut} className="min-h-12 underline">仅清除此设备登录</button></div>}
       {/* Left: Brand & Sidebar toggle & User status */}
       <div className="flex items-center gap-2 sm:gap-3.5 min-w-0 shrink-0">
         {onToggleSidebar && (
@@ -83,7 +87,7 @@ export function AppHeader({
           </div>
           <span className="text-xs font-medium text-[var(--text-secondary)] tracking-wide">珞珈学员</span>
           <div className="h-2.5 w-px bg-[var(--border-subtle)]" />
-          <button type="button" onClick={signOut} className="text-[var(--text-muted)] hover:text-cinnabar-600 transition-colors" aria-label="退出登录" title="退出登录">
+          <button type="button" disabled={signingOut} onClick={signOut} className="text-[var(--text-muted)] hover:text-cinnabar-600 transition-colors" aria-label="退出登录" title="退出登录">
             <LogOut className="h-3 w-3" />
           </button>
         </div>
@@ -91,7 +95,7 @@ export function AppHeader({
 
       {/* Right: Functional Navigation & Actions */}
       <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
-        <button type="button" onClick={signOut} aria-label="退出当前会话" title="退出当前会话" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><LogOut className="h-4 w-4"/></button>
+        <button type="button" disabled={signingOut} onClick={signOut} aria-label="退出登录" title="退出登录" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><LogOut className="h-4 w-4"/></button>
         <Link href="/study" className="inline-flex items-center gap-1.5 rounded-lg border border-olive-600/25 bg-olive-600/5 px-3 py-2 text-xs font-semibold text-olive-700 dark:text-olive-300" title="今日任务、教材伴读、求根实验与章节自检">
           <BookOpen className="h-3.5 w-3.5" /><span>今日学习</span>
         </Link>
@@ -197,7 +201,7 @@ export function AppHeader({
             <Link className="block rounded-lg p-3 hover:bg-[var(--bg-hover)]" href="/graph">知识网络</Link>
             <Link className="block rounded-lg p-3 hover:bg-[var(--bg-hover)]" href="/notebook">笔记本</Link>
             <Link className="block rounded-lg p-3 hover:bg-[var(--bg-hover)]" href="/mistake-book">错题本</Link>
-            <button type="button" className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={signOut}>退出当前会话</button>
+            <button type="button" className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" disabled={signingOut} onClick={signOut}>退出登录</button>
             <button className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); onToggleZenMode?.(); }}>全屏学习</button>
             <div className="flex items-center justify-between border-t border-[var(--border-subtle)] p-3"><span>切换主题</span><ThemeToggle /></div>
           </div>

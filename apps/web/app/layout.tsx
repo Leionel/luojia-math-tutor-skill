@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/lib/theme-context";
+import {AuthBoundary} from "@/components/auth-boundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
+          <AuthBoundary/>
           <div className="min-h-screen flex flex-col">
             <main className="flex-1 flex flex-col">
               {children}
