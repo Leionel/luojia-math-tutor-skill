@@ -7,6 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from app.services.mineru_client import extract_markdown_agent_api
+from app.config import get_settings
 from app.knowledge.document_chunking import chunk_document
 from app.main_deps import get_repository
 from app.memory.repository import Repository
@@ -15,7 +16,7 @@ from app.auth import Principal, get_principal
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 logger = logging.getLogger(__name__)
 
-UPLOAD_DIR = Path("data/uploads")
+UPLOAD_DIR = get_settings().upload_root
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Aligned with the MinerU per-file limit (200MB); textbooks up to 200 pages
 # are accepted for note generation.
@@ -82,6 +83,8 @@ async def upload_image(
     repo: Repository = Depends(get_repository),
     principal: Principal = Depends(get_principal),
 ):
+    if not principal.authenticated:
+        raise HTTPException(status_code=401, detail="Sign in to upload files.")
     filename_attr = getattr(file, "filename", "") or ""
     ext = _safe_extension(filename_attr)
     data = await _read_limited_upload(file)
@@ -125,6 +128,12 @@ async def upload_image(
         # be reconstructed by re-joining overlapping chunks.
         repo.insert_document_chunks(document_id, chunk_document(extracted_md))
 
+    try:
+        repo.record_uploaded_file(filename, principal.user_id)
+    except Exception:
+        filepath.unlink(missing_ok=True)
+        raise
+
     return {
         "url": f"/api/uploads/{filename}",
         "markdown": extracted_md,
@@ -141,8 +150,14 @@ def list_documents(
 
 
 @router.get("/{filename}")
-async def get_uploaded_image(filename: str):
+async def get_uploaded_image(
+    filename: str,
+    principal: Principal = Depends(get_principal),
+    repo: Repository = Depends(get_repository),
+):
+    if not principal.authenticated:
+        raise HTTPException(status_code=401, detail="Sign in to view uploads.")
     filepath = _resolve_uploaded_file(filename)
-    if filepath and filepath.exists():
-        return FileResponse(filepath)
-    raise HTTPException(status_code=404, detail="Upload not found")
+    if not filepath or not repo.uploaded_file_belongs_to(filename, principal.user_id) or not filepath.is_file():
+        raise HTTPException(status_code=404, detail="Upload not found")
+    return FileResponse(filepath, headers={"Cache-Control": "private, no-store"})

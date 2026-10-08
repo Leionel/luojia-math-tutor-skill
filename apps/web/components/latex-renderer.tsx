@@ -3,13 +3,14 @@
 import katex from "katex";
 import { parseLatex, parseBlocks, type Block } from "@/lib/message-parser";
 import { Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MathPlot } from "./math-plot";
 import { VideoRecommend } from "./video-recommend";
 import { StaticArtifact } from "./static-artifact";
 import { resolveAnswerImage, API_BASE } from "@/lib/api-base";
 import { balancedLatex } from "@/lib/latex-balance";
 import { SourceSpanCard } from "./source-span-card";
+import { getAuthHeaders, isAuthStorageKey } from "@/lib/demo-auth";
 
 function CodeBlock({ language, content, ready }: { language: string; content: string; ready: boolean }) {
   if (["html", "svg"].includes(language.toLowerCase())) return <StaticArtifact content={content} ready={ready} interactive={language.toLowerCase() === "html"} />;
@@ -18,11 +19,48 @@ function CodeBlock({ language, content, ready }: { language: string; content: st
 function AnswerImage({ source, alt }: { source: string; alt: string }) {
   const [failed, setFailed] = useState(false);
   const [requested, setRequested] = useState(false);
+  const [authVersion, setAuthVersion] = useState(0);
+  const [privateImage, setPrivateImage] = useState<{ source: string; url: string; authVersion: number } | null>(null);
   const src = resolveAnswerImage(source);
+  const apiUrl = new URL(API_BASE);
+  const resolvedUrl = src ? new URL(src) : null;
+  const privateUpload = Boolean(resolvedUrl && resolvedUrl.origin === apiUrl.origin && /^\/api\/uploads\/[0-9a-f-]{36}\.(?:png|jpg|jpeg|gif|webp)$/i.test(resolvedUrl.pathname));
+  useEffect(() => {
+    const changed = () => setAuthVersion((version) => version + 1);
+    const storage = (event: StorageEvent) => { if (isAuthStorageKey(event.key)) changed(); };
+    window.addEventListener("luojia-auth-change", changed);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener("luojia-auth-change", changed);
+      window.removeEventListener("storage", storage);
+    };
+  }, []);
+  useEffect(() => {
+    setPrivateImage(null);
+    setFailed(false);
+    if (!src || !privateUpload) return;
+    const headers = getAuthHeaders();
+    if (!headers.Authorization) { setFailed(true); return; }
+    const controller = new AbortController();
+    let objectUrl: string | null = null;
+    fetch(src, { headers, signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Upload unavailable");
+        const blob = await response.blob();
+        if (!blob.type.startsWith("image/")) throw new Error("Unexpected upload type");
+        if (controller.signal.aborted) return;
+        objectUrl = URL.createObjectURL(blob);
+        setPrivateImage({ source: src, url: objectUrl, authVersion });
+      })
+      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [src, privateUpload, authVersion]);
   if (!src || failed) return <span role="status">图片不可用：{alt || "未命名图片"}</span>;
   const external = new URL(src).origin !== new URL(API_BASE).origin;
   if (external && !requested) return <span className="block"><button type="button" className="rounded border px-3 py-2 text-xs" onClick={() => setRequested(true)}>加载外部图片：{alt || new URL(src).hostname}</button> <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs underline">图片来源</a></span>;
-  return <span className="block"><img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="max-w-full h-auto rounded-lg" /><a href={src} target="_blank" rel="noopener noreferrer" className="text-xs underline">图片来源</a></span>;
+  if (privateUpload && (privateImage?.source !== src || privateImage.authVersion !== authVersion)) return <span role="status">图片加载中</span>;
+  const displaySrc = privateUpload ? privateImage?.url : src;
+  return <span className="block"><img src={displaySrc} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="max-w-full h-auto rounded-lg" />{!privateUpload && <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs underline">图片来源</a>}</span>;
 }
 
 function renderLatex(value: string, displayMode = false) {

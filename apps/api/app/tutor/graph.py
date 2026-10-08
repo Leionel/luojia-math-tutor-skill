@@ -281,6 +281,8 @@ class TutorWorkflow:
                         normalize_image_reference,
                         reference,
                         self.settings.upload_root,
+                        state["user_id"],
+                        self.repository,
                     )
                     for reference in references[:4]
                 )

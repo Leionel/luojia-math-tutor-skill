@@ -94,7 +94,7 @@ def format_vision_message(
     }
 
 
-def normalize_image_reference(reference: str, upload_root: Path) -> str:
+def normalize_image_reference(reference: str, upload_root: Path, user_id: str, repository: Any) -> str:
     """Return a provider-safe data URL without fetching arbitrary remote URLs."""
     data_match = _DATA_URL.fullmatch(reference.strip())
     if data_match:
@@ -112,6 +112,8 @@ def normalize_image_reference(reference: str, upload_root: Path) -> str:
         raise ValueError(
             "Images must be uploaded through /api/uploads or supplied as a safe data URL."
         )
+    if not repository.uploaded_file_belongs_to(upload_match.group(1), user_id):
+        raise ValueError("Uploaded image was not found.")
     root = upload_root.resolve()
     path = (root / upload_match.group(1)).resolve()
     try:

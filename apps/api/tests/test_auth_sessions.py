@@ -134,8 +134,8 @@ def test_failed_auth_migration_rolls_back_without_deleting_old_accounts(auth,mon
     pw,salt=hash_password('synthetic-passphrase-123');repo.create_auth_user('alice','Alice',pw,salt)
     with repo.connect() as conn:conn.execute('drop table auth_sessions');conn.execute('delete from schema_migrations where version=7')
     original=migrations.MIGRATIONS
-    def fail(conn):original[-1][2](conn);raise sqlite3.OperationalError('synthetic migration failure')
-    monkeypatch.setattr(migrations,'MIGRATIONS',(*original[:-1],(7,'auth_sessions',fail)))
+    def fail(conn):next(migrate for version, _, migrate in original if version==7)(conn);raise sqlite3.OperationalError('synthetic migration failure')
+    monkeypatch.setattr(migrations,'MIGRATIONS',tuple(item if item[0]!=7 else (7,'auth_sessions',fail) for item in original))
     with pytest.raises(sqlite3.OperationalError):Repository(settings)
     with sqlite3.connect(repo.db_path) as conn:
         assert conn.execute("select password_hash from users where id='alice'").fetchone()[0]==pw

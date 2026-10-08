@@ -442,6 +442,21 @@ class Repository(AgentRunRepository):
             )
         return attempt_id
 
+    def record_uploaded_file(self, filename: str, user_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "insert into uploaded_files(filename, user_id, created_at) values (?, ?, ?)",
+                (filename, user_id, now_iso()),
+            )
+
+    def uploaded_file_belongs_to(self, filename: str, user_id: str) -> bool:
+        with self.connect() as conn:
+            row = conn.execute(
+                "select 1 from uploaded_files where filename = ? and user_id = ?",
+                (filename, user_id),
+            ).fetchone()
+        return row is not None
+
     def insert_document(self, filename: str, user_id: str, markdown: str = "") -> str:
         document_id = new_id("doc")
         with self.connect() as conn:
