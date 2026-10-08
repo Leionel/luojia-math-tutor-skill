@@ -201,7 +201,7 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
                 title=f"{doc['filename'][:80]} · {section['title'][:80]}";source_kind='uploaded_markdown'
             citation=source_excerpt(workspace,owner,ref.source_id,ref.source_hash,ref.section_id,ref.start,ref.end)
             return _bounded({**common,"title":title,"source_kind":source_kind,"content_review_status":unit["review_status"] if unit else "uploaded_unreviewed","citation":citation})
-        from app.math_tools.numerical_lab import LinearTask, IntegrationTask
+        from app.math_tools.numerical_lab import LinearTask, IntegrationTask, linear_reference
         run=workspace.get(owner,'numerical_lab',ref.record_id)
         if run.get('source_hash')!=ref.source_hash or run.get('schema_version')!=ref.schema_version:
             raise ValueError("实验版本不符，请重新打开已保存实验。")
@@ -247,12 +247,39 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
             if any(row.get(k) is not None and (not finite(row[k]) or row[k]<0) for k in ('step','error_bound')):
                 raise ValueError('步差或误差界不可确认。')
         if ref.selected_step is not None and ref.selected_step>=len(rows):raise ValueError('所选迭代不存在。')
+        # A saved trajectory is reference help, but its mathematical fields must
+        # still match the saved task before they enter a student-claim discussion.
+        recalculated=linear_reference(task)
+        if (len(recalculated['rows'])!=len(rows) or run.get('status')!=recalculated['status']
+                or run.get('condition_sufficient')!=recalculated['condition_sufficient']):
+            raise ValueError('线性实验计算版本不可确认，请重新运行。')
+        for actual, expected in zip(rows,recalculated['rows']):
+            if actual['work']!=expected['work']:
+                raise ValueError('线性实验轨迹与参数不一致，请重新运行。')
+            for key in ('vector','residual','step','error_bound'):
+                left,right=actual.get(key),expected[key]
+                if isinstance(right,list):
+                    matches=isinstance(left,list) and len(left)==len(right) and all(
+                        math.isclose(a,b,rel_tol=1e-12,abs_tol=1e-12) for a,b in zip(left,right))
+                else:
+                    matches=(left is None and right is None) or (finite(left) and right is not None
+                             and math.isclose(left,right,rel_tol=1e-12,abs_tol=1e-12))
+                if not matches:raise ValueError('线性实验轨迹与参数不一致，请重新运行。')
         selected=set(range(min(3,len(rows))))|set(range(max(0,len(rows)-3),len(rows)))
         if ref.selected_step is not None:selected.update(range(max(0,ref.selected_step-2),min(len(rows),ref.selected_step+3)))
         conditions=run.get('conditions');scope=run.get('evidence_scope');stop=run.get('stop_detail')
-        if not isinstance(conditions,list) or not all(isinstance(x,str) for x in conditions) or not isinstance(scope,str) or not isinstance(stop,str):
+        if (conditions!=recalculated['conditions'] or scope!='floating_point_residual'
+                or stop!=recalculated['stop_detail']):
             raise ValueError('保存的条件与停止范围缺失。')
+        checked_index=ref.selected_step if ref.selected_step is not None else len(rows)-1
+        checked=recalculated['rows'][checked_index]
+        linear_check={"scope":"saved_linear_iteration_floating_point","method":task.method,
+            "checked_step":checked_index,"expected_vector":checked['vector'],
+            "residual_infinity":checked['residual'],"condition_sufficient":recalculated['condition_sufficient'],
+            "error_bound":checked['error_bound'],"error_bound_includes_roundoff":False,
+            "unknown_reason":None if recalculated['condition_sufficient'] else
+                "未证严格行对角占优；不能仅凭这条充分条件判断收敛，也不能从残差直接推出同数值的解误差。"}
         return _bounded({**common,"title":"线性方程组参考实验","task":task.model_dump(),
             "rows":[{k:row[k] for k in ('k','vector','residual','step','error_bound','work')} for i,row in enumerate(rows) if i in selected],
-            "conditions":conditions,"evidence_scope":scope,"stop_detail":stop,
+            "conditions":conditions,"evidence_scope":scope,"stop_detail":stop,"linear_check":linear_check,
             "total_rows":len(rows),"omitted_rows":len(rows)-len(selected)})

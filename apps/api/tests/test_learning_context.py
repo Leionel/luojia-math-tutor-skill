@@ -15,6 +15,8 @@ from app.tutor.prompt_builder import build_messages
 from app.math_tools.verifier import VerifyResult
 from app.tutor.intent_router import Intent
 from app.math_tools.root_runner import LabRequest
+from app.math_tools.numerical_lab import LinearTask, check_result, run_numerical
+from app.tutor.learning_context import LinearContextRef
 from test_learning_workspace import workspace
 from test_orchestrator import parse_event
 
@@ -40,6 +42,70 @@ def saved_claim(workspace):
     claim = NewtonActivityClaimRef(activity_id=ACTIVITY_ID, activity_version=ACTIVITY_VERSION,
                                    claim_kind="explanation", request_id="explain-a1", revision_count=0)
     return activity, run, reference(run, activity_claim=claim)
+
+
+def saved_linear(workspace, method="jacobi", matrix=None, rhs=None, limit=1):
+    task=LinearTask(method=method, matrix=matrix or [[4,1],[1,3]], rhs=rhs or [1,2],
+                    initial=[0,0], limit=limit, tolerance=1e-12)
+    record={**run_numerical(task),"id":f"linear-{method}","source_hash":"a"*64,"prediction":"预计收敛"}
+    workspace.save("alice","numerical_lab",record["id"],record)
+    ref=LinearContextRef(kind="linear_lab",record_id=record["id"],source_hash=record["source_hash"],
+                         schema_version="numerical-lab-v1",selected_step=1)
+    return record,ref
+
+
+@pytest.mark.parametrize("method,expected",[("jacobi",[0.25,2/3]),("gauss_seidel",[0.25,7/12])])
+def test_a3_linear_reference_rechecks_update_order_and_keeps_help_boundary(workspace,method,expected):
+    _,ref=saved_linear(workspace,method)
+    before=workspace.store.list_events("alice",workspace.course_id)
+    snapshot=resolve_learning_context(workspace,"alice",ref)
+    assert snapshot["linear_check"]["expected_vector"]==pytest.approx(expected)
+    assert snapshot["linear_check"]["condition_sufficient"] is True
+    assert snapshot["linear_check"]["error_bound_includes_roundoff"] is False
+    assert snapshot["independent_success"] is False
+    assert workspace.store.list_events("alice",workspace.course_id)==before
+    assert workspace.repository.list_mastery("alice")==[]
+    with pytest.raises(KeyError):resolve_learning_context(workspace,"bob",ref)
+
+
+def test_a3_linear_small_residual_does_not_become_same_sized_solution_error(workspace):
+    record,ref=saved_linear(workspace,matrix=[[1,0],[0,1e-8]],rhs=[1,1e-8])
+    snapshot=resolve_learning_context(workspace,"alice",ref)
+    task=LinearTask.model_validate(record["task"])
+    assert check_result(task,[1,0])["residual"]==pytest.approx(1e-8)
+    assert max(abs(a-b) for a,b in zip([1,0],[1,1]))==1
+    assert snapshot["linear_check"]["residual_infinity"]==0
+    assert snapshot["linear_check"]["error_bound"]==0
+    _,unknown_ref=saved_linear(workspace,method="gauss_seidel",matrix=[[1,2],[2,1]],limit=2)
+    unknown=resolve_learning_context(workspace,"alice",unknown_ref)["linear_check"]
+    assert unknown["condition_sufficient"] is False
+    assert unknown["error_bound"] is None and unknown["unknown_reason"]
+
+
+def test_a3_tampered_or_stale_linear_trajectory_fails_before_prompt(workspace):
+    record,ref=saved_linear(workspace)
+    record["rows"][1]["vector"][1]=0.5
+    workspace.save("alice","numerical_lab",record["id"],record)
+    with pytest.raises(ValueError,match="轨迹与参数"):
+        resolve_learning_context(workspace,"alice",ref)
+    record["rows"][1]["vector"][1]=2/3
+    workspace.save("alice","numerical_lab",record["id"],record)
+    with pytest.raises(ValueError,match="版本"):
+        resolve_learning_context(workspace,"alice",ref.model_copy(update={"source_hash":"b"*64}))
+
+
+def test_a3_linear_prompt_keeps_student_claim_separate_from_reference(workspace):
+    _,ref=saved_linear(workspace,method="gauss_seidel")
+    snapshot=resolve_learning_context(workspace,"alice",ref)
+    messages=build_messages("离线固定教学指令","第二分量也是 2/3，对吗？",Intent.CHECK_STUDENT_STEP,
+        "数值分析",[],VerifyResult(False,None,"本轮未触发自动验证。"),None,"socratic",
+        learning_context=snapshot)
+    developer=next(item["content"] for item in messages if item["role"]=="developer")
+    runtime=json.loads(developer.split("[RUNTIME_CONTEXT]\n",1)[1].split("\n[/RUNTIME_CONTEXT]",1)[0])
+    assert "linear_review_rule" in runtime and "不等于解误差" in runtime["linear_review_rule"]
+    assert runtime["learning_task"]["linear_check"]["expected_vector"]==pytest.approx([0.25,7/12])
+    assert runtime["learning_task"]["independent_success"] is False
+    assert messages[-1]["content"]=="第二分量也是 2/3，对吗？"
 
 
 def test_selected_activity_claim_is_server_read_and_stale_versions_fail_closed(workspace):

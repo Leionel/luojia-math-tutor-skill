@@ -524,3 +524,9 @@ gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、
 ### 2026-10-08 R1-A / R1-B 范围修订
 
 仅规划。`planning/r1-math-tutor-core-2026-10-08.md` 已把 R1-A（Newton、Jacobi/GS、Teach-back 的可信主张/来源/教学动作）与 R1-B（F1 推荐、F2 条件推理、F4 分层反馈、F8 限定静态数学诊断）分开，A 阶段验收前 B 不启动。结构化 claim review 从默认实现降为与直接生成、现有工具增强同题对照的候选；格式有效不能证明数学判断正确，若误判/成本/延迟无净增益则不加节点。现有 U01–U06、M1 和 S5 工程合同继续复用，内容审核、真实模型质量、正式库与 R0 Gate 各自保持待验。没有业务代码、测试、付费模型、提交/推送/部署变更；旧 dirty 保留。
+
+### 2026-10-08 R1-A A3 Jacobi/GS 本地切片
+
+A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 37771507944 尚需远端结论。用户授权 A3；现有线性引用现按保存参数复算轨迹与条件，输出选中步有限证据和 unknown，Chat 原话仍取当前消息，不把参考帮助记作掌握。无需复制 Agent。定向 API33、全量知识 JSON/API912/Web72、typecheck 通过；无付费模型/正式库/部署。A3 回执 `planning/r1-a3-delivery.md`，A4/A5 与真人质量评审未完成。原有无关未提交/删除文件保留。
+
+上述 CI 实际 failure：Web/知识成功，API 8 个 S5 哈希测试因 CRLF/LF 不一致失败；已在本轮追加 S5 JSON 固定 LF、内容/fixture 哈希重绑，本地相关 80 项通过。修复版远端 CI 待新提交确认。

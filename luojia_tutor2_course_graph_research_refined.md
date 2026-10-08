@@ -2903,3 +2903,9 @@ gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、
 ### 2026-10-08 R1 两阶段修订：Graph 与条件推理
 
 修订方案见 `planning/r1-math-tutor-core-2026-10-08.md`。R1-A 的 Newton、Jacobi/GS 与 Teach-back 共用“学生主张、来源、数学证据范围、教学动作、unknown”边界，保留 Root Runner、numerical_lab、逐条件讲回各自的数学检查；不让 Course Graph 的 Case 命中或 `not_checked` 条件自动成为前提证明。R1-B 正式纳入 F2 教材条件推理与 F4 经审分层反馈，先处理 `development_card`/rubric 审核状态，不把原文条件与题目已满足条件混为一谈。同题 Graph on/off 和 D0/D1/D2 对照后再决定新抽象；长期 Memory、Reasoning Graph、ProofState 仍无默认实施授权。R0 Gate 前仅规划，无图谱数据或业务代码改动。
+
+### 2026-10-08 R1-A A3 证据边界记录
+
+`linear_lab` 已保存轨迹在进入 Chat 前按相同 `LinearTask` 用原数值实现复算；当前用户消息作为学生主张，Jacobi/GS 更新顺序、绝对残差、严格行对角占优充分条件与理论界进入有界快照。条件不满足时为未知，不等于发散；小残差不自动推出同数值解误差。复算是浮点范围的工程证据，非模型质量或数学形式证明。详见 `planning/r1-a3-delivery.md`；本地全量 API912/Web72 通过，A4/A5、人工审核和真实模型结果待验。
+
+A0–A2 目标 SHA `ebdc909` 的远端 CI 未绿：S5 JSON 的 CRLF 工作区哈希与 LF Git blob 不一致，API 8 例失败；本轮按 LF 原始字节重绑并固定 checkout 换行，本地 S5 80 例通过。此项为评测材料可移植性修复，不是数学质量提升。
