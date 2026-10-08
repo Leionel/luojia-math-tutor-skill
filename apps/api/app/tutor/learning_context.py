@@ -74,7 +74,25 @@ class ReadingContextRef(BaseModel):
     graph_revision: str | None = Field(default=None,max_length=160)
 
 
-ReferenceContext = Annotated[LearningContextRef | LinearContextRef | ReadingContextRef, Field(discriminator="kind")]
+class IntegrationContextRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["integration_lab"]
+    record_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    source_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    schema_version: Literal["numerical-lab-v1"]
+    selected_step: int | None = Field(default=None, ge=0, le=100)
+
+
+class CodeContextRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["code_static"]
+    record_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    code_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    static_rule_version: str | None = Field(default=None, max_length=80)
+    selected_finding: int | None = Field(default=None, ge=0, le=29)
+
+
+ReferenceContext = Annotated[LearningContextRef | LinearContextRef | IntegrationContextRef | ReadingContextRef | CodeContextRef, Field(discriminator="kind")]
 
 
 def _bounded(snapshot):
@@ -88,6 +106,32 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
     with workspace.store.transaction():
         assert_reference_help_allowed(owner,workspace.course)
         common={"version":"learning-context-v1","ref":ref.model_dump(),"evidence_kind":"reference_help","independent_success":False}
+        if ref.kind=='code_static':
+            from app.tutor.learning_workspace import digest
+            from app.tutor.learning_extensions import ASSIGNMENT_ID
+            saved=workspace.get(owner,'code_submission',ref.record_id)
+            code=saved.get('code')
+            if not isinstance(code,str) or saved.get('code_hash')!=ref.code_hash or digest(code)!=ref.code_hash:
+                raise ValueError('已保存代码版本不符，请重新打开。')
+            if saved.get('assignment_id')!=ASSIGNMENT_ID or saved.get('static_rule_version')!=ref.static_rule_version or saved.get('code_executed') is not False:
+                raise ValueError('作业或静态规则范围不可确认。')
+            findings=saved.get('findings')
+            if not isinstance(findings,list) or len(findings)>30:raise ValueError('静态提示记录不符。')
+            finding=None
+            lines=code.split('\n');start=0;end=len(lines)
+            if ref.selected_finding is not None:
+                if ref.selected_finding>=len(findings):raise ValueError('选中的静态提示不存在。')
+                finding=findings[ref.selected_finding]
+                if not isinstance(finding,dict) or not isinstance(finding.get('message'),str) or not isinstance(finding.get('kind'),str):raise ValueError('静态提示内容不可确认。')
+                line=finding.get('line')
+                if line is not None:
+                    if type(line) is not int or not 1<=line<=len(lines):raise ValueError('静态提示行号不符。')
+                    start=max(0,line-4);end=min(len(lines),line+3)
+            return _bounded({**common,'title':'已保存代码的静态提示','assignment_id':saved['assignment_id'],
+                'static_rule_version':saved.get('static_rule_version') or 'legacy_unversioned','finding':finding,
+                'code_excerpt':'\n'.join(lines[start:end]),'start_line':start+1,'end_line':end,'total_lines':len(lines),
+                'previous_id':saved.get('previous_id'),'code_executed':False,'manual_trace_is_program_output':False,
+                'scope':'static_hint_only_not_algorithm_correctness'})
         if ref.kind=="reading":
             from app.tutor.reading_explanation import source_excerpt
             unit=next((u for u in workspace.reading_units() if u['id']==ref.source_id),None)
@@ -103,15 +147,40 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
                 title=f"{doc['filename'][:80]} · {section['title'][:80]}";source_kind='uploaded_markdown'
             citation=source_excerpt(workspace,owner,ref.source_id,ref.source_hash,ref.section_id,ref.start,ref.end)
             return _bounded({**common,"title":title,"source_kind":source_kind,"content_review_status":unit["review_status"] if unit else "uploaded_unreviewed","citation":citation})
-        from app.math_tools.numerical_lab import LinearTask
+        from app.math_tools.numerical_lab import LinearTask, IntegrationTask
         run=workspace.get(owner,'numerical_lab',ref.record_id)
         if run.get('source_hash')!=ref.source_hash or run.get('schema_version')!=ref.schema_version:
             raise ValueError("实验版本不符，请重新打开已保存实验。")
-        task=LinearTask.model_validate(run.get('task'))
+        task=(IntegrationTask if ref.kind=='integration_lab' else LinearTask).model_validate(run.get('task'))
         rows=run.get('rows')
         if not isinstance(rows,list) or not 1<=len(rows)<=task.limit+1 or run.get('independent_success') is not False:
             raise ValueError("保存记录范围不可确认，请重新运行。")
         finite=lambda n:type(n) in {int,float} and math.isfinite(n) and abs(n)<=1e100
+        if ref.kind=='integration_lab':
+            if run.get('evidence_scope')!='quadrature_error_estimate' or not run.get('conditions') or not isinstance(run.get('stop_detail'),str):
+                raise ValueError('积分估计的条件与停止范围缺失。')
+            if not all(isinstance(x,str) for x in run['conditions']):raise ValueError('积分条件记录不符。')
+            work=0
+            for i,row in enumerate(rows):
+                if not isinstance(row,dict) or type(row.get('k')) is not int or row['k']!=i or not finite(row.get('value')):
+                    raise ValueError('积分细分行或近似值不可确认。')
+                if type(row.get('work')) is not int or not work<=row['work']<=8193:raise ValueError('函数求值成本不可确认。')
+                work=row['work']
+                if any(row.get(k) is not None for k in ('vector','residual','error_bound')):raise ValueError('不能将积分估计混同残差或严格误差界。')
+                for key in ('step','error_estimate'):
+                    if row.get(key) is not None and (not finite(row[key]) or row[key]<0):raise ValueError('积分误差估计不可确认。')
+                if task.method!='adaptive_simpson':
+                    if type(row.get('intervals')) is not int or row['intervals']!=task.intervals*2**i or row['intervals']>4096:
+                        raise ValueError('均匀细分分段记录不符。')
+                    if i>0 and row.get('error_estimate') is None:raise ValueError('后续积分估计缺失。')
+                elif row.get('error_estimate') is None:raise ValueError('自适应积分估计缺失。')
+            if ref.selected_step is not None and ref.selected_step>=len(rows):raise ValueError('所选细分不存在。')
+            selected=set(range(min(3,len(rows))))|set(range(max(0,len(rows)-3),len(rows)))
+            if ref.selected_step is not None:selected.update(range(max(0,ref.selected_step-2),min(len(rows),ref.selected_step+3)))
+            return _bounded({**common,'title':'数值积分参考实验','task':task.model_dump(),
+                'rows':[{k:row[k] for k in ('k','value','step','error_estimate','work','intervals') if k in row} for i,row in enumerate(rows) if i in selected],
+                'conditions':run['conditions'],'evidence_scope':run['evidence_scope'],'stop_detail':run['stop_detail'],
+                'estimate_is_bound':False,'total_rows':len(rows),'omitted_rows':len(rows)-len(selected)})
         for i,row in enumerate(rows):
             if not isinstance(row,dict) or type(row.get('k')) is not int or row['k']!=i:
                 raise ValueError('迭代行不连续，不能引用。')

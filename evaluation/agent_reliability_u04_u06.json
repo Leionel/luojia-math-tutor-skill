@@ -1,0 +1,90 @@
+{
+  "version": "reference-upgrade-u04-u06-v1",
+  "scope": "offline_integral_static_code_and_teachback_binding",
+  "cases": [
+    {
+      "id": "test_integral_snapshot_keeps_actual_estimates_and_cost",
+      "selector": "tests/test_integration_context.py::test_integral_snapshot_keeps_actual_estimates_and_cost",
+      "expected_instances": 3,
+      "contract": "test_integral_snapshot_keeps_actual_estimates_and_cost"
+    },
+    {
+      "id": "test_integral_rejects_mixed_or_changed_records",
+      "selector": "tests/test_integration_context.py::test_integral_rejects_mixed_or_changed_records",
+      "expected_instances": 10,
+      "contract": "test_integral_rejects_mixed_or_changed_records"
+    },
+    {
+      "id": "test_aliasing_keeps_zero_estimate_without_certifying_accuracy",
+      "selector": "tests/test_integration_context.py::test_aliasing_keeps_zero_estimate_without_certifying_accuracy",
+      "expected_instances": 1,
+      "contract": "test_aliasing_keeps_zero_estimate_without_certifying_accuracy"
+    },
+    {
+      "id": "test_integral_chat_sse_reuses_reference_boundary",
+      "selector": "tests/test_integration_context.py::test_integral_chat_sse_reuses_reference_boundary",
+      "expected_instances": 1,
+      "contract": "test_integral_chat_sse_reuses_reference_boundary"
+    },
+    {
+      "id": "test_code_ref_bound_to_saved_version_and_real_line",
+      "selector": "tests/test_code_context.py::test_code_ref_bound_to_saved_version_and_real_line",
+      "expected_instances": 1,
+      "contract": "test_code_ref_bound_to_saved_version_and_real_line"
+    },
+    {
+      "id": "test_code_ref_rejects_forged_locator",
+      "selector": "tests/test_code_context.py::test_code_ref_rejects_forged_locator",
+      "expected_instances": 3,
+      "contract": "test_code_ref_rejects_forged_locator"
+    },
+    {
+      "id": "test_code_ref_legacy_is_not_reaudited_or_given_current_version",
+      "selector": "tests/test_code_context.py::test_code_ref_legacy_is_not_reaudited_or_given_current_version",
+      "expected_instances": 1,
+      "contract": "test_code_ref_legacy_is_not_reaudited_or_given_current_version"
+    },
+    {
+      "id": "test_code_ref_rejects_changed_code_and_invalid_line",
+      "selector": "tests/test_code_context.py::test_code_ref_rejects_changed_code_and_invalid_line",
+      "expected_instances": 1,
+      "contract": "test_code_ref_rejects_changed_code_and_invalid_line"
+    },
+    {
+      "id": "test_static_chat_no_execution_or_grade_and_help_lock",
+      "selector": "tests/test_code_context.py::test_static_chat_no_execution_or_grade_and_help_lock",
+      "expected_instances": 1,
+      "contract": "test_static_chat_no_execution_or_grade_and_help_lock"
+    },
+    {
+      "id": "test_original_spans_keep_unicode_repeated_text_and_old_version",
+      "selector": "tests/test_teachback_evidence.py::test_original_spans_keep_unicode_repeated_text_and_old_version",
+      "expected_instances": 1,
+      "contract": "test_original_spans_keep_unicode_repeated_text_and_old_version"
+    },
+    {
+      "id": "test_model_judgment_requires_real_quote_and_complete_condition_set",
+      "selector": "tests/test_teachback_evidence.py::test_model_judgment_requires_real_quote_and_complete_condition_set",
+      "expected_instances": 7,
+      "contract": "test_model_judgment_requires_real_quote_and_complete_condition_set"
+    },
+    {
+      "id": "test_paraphrase_and_negation_are_not_keyword_scores",
+      "selector": "tests/test_teachback_evidence.py::test_paraphrase_and_negation_are_not_keyword_scores",
+      "expected_instances": 1,
+      "contract": "test_paraphrase_and_negation_are_not_keyword_scores"
+    },
+    {
+      "id": "test_review_persists_bound_unverified_feedback_and_no_grade",
+      "selector": "tests/test_teachback_evidence.py::test_review_persists_bound_unverified_feedback_and_no_grade",
+      "expected_instances": 1,
+      "contract": "test_review_persists_bound_unverified_feedback_and_no_grade"
+    },
+    {
+      "id": "test_invalid_feedback_falls_back_and_late_help_lock_does_not_deliver",
+      "selector": "tests/test_teachback_evidence.py::test_invalid_feedback_falls_back_and_late_help_lock_does_not_deliver",
+      "expected_instances": 1,
+      "contract": "test_invalid_feedback_falls_back_and_late_help_lock_does_not_deliver"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
@@ -463,7 +464,7 @@ async def test_teach_back_model_is_unverified_and_failure_hides_details(workspac
     from app.tutor.learning_extensions import create_teach_back, model_teach_back
     result = create_teach_back(workspace,"alice",teach_request(workspace))
     assert (await model_teach_back(workspace,"alice",result,Settings(llm_api_key="")))["model_status"] == "self_review"
-    mocked = AsyncMock(return_value="还需说明为什么单根附近可用局部收敛结论。")
+    mocked = AsyncMock(return_value=json.dumps({"opinions":[{"condition_id":r["condition_id"],"judgment":"unknown","evidence":None,"note":"尚需核对具体条件。","followup":"为什么单根附近可用局部收敛结论？"} for r in result["conditions"]]},ensure_ascii=False))
     monkeypatch.setattr(OpenAICompatibleClient,"chat_completion",mocked)
     reviewed = await model_teach_back(workspace,"alice",result,Settings(llm_api_key="test-only"))
     assert reviewed["model_status"] == "model_review" and not reviewed["independent_success"]
