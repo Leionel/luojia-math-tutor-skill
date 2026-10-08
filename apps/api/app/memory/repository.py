@@ -803,6 +803,35 @@ class Repository(AgentRunRepository):
             ).fetchone()
         return dict(row) if row else None
 
+    def create_auth_user_with_session(self,user_id,display_name,password_hash,password_salt,sid,expires_at) -> bool:
+        try:
+            with self.connect() as conn:
+                conn.execute("insert into users(id,display_name,password_hash,password_salt,created_at) values (?,?,?,?,?)",
+                    (user_id,display_name,password_hash,password_salt,now_iso()))
+                conn.execute("insert into auth_sessions(sid,user_id,expires_at,created_at) values (?,?,?,?)",
+                    (sid,user_id,expires_at,now_iso()))
+            return True
+        except sqlite3.IntegrityError:
+            if self.get_auth_user(user_id) is not None:return False
+            raise
+
+    def create_auth_session(self,sid,user_id,expires_at) -> None:
+        with self.connect() as conn:
+            conn.execute("insert into auth_sessions(sid,user_id,expires_at,created_at) values (?,?,?,?)",
+                (sid,user_id,expires_at,now_iso()))
+
+    def auth_session_valid(self,sid,user_id,expires_at) -> bool:
+        with self.connect() as conn:
+            row=conn.execute("select expires_at,revoked_at from auth_sessions where sid=? and user_id=?",(sid,user_id)).fetchone()
+        return bool(row and row['revoked_at'] is None and row['expires_at']==expires_at and row['expires_at']>int(time.time()))
+
+    def revoke_auth_session(self,sid,user_id) -> bool:
+        with self.connect() as conn:
+            row=conn.execute("select sid from auth_sessions where sid=? and user_id=?",(sid,user_id)).fetchone()
+            if not row:return False
+            conn.execute("update auth_sessions set revoked_at=coalesce(revoked_at,?) where sid=? and user_id=?",(int(time.time()),sid,user_id))
+        return True
+
     @staticmethod
     def semantic_cache_key(subject: str, query: str) -> str:
         normalized = f"{subject.strip()}\n{' '.join(query.split())}"

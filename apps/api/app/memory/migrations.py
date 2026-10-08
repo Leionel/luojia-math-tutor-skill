@@ -134,6 +134,17 @@ def _migration_006_agent_runs(conn: sqlite3.Connection) -> None:
     conn.execute("create index agent_runs_owner_session on agent_runs(user_id,session_id,created_at)")
 
 
+def _migration_007_auth_sessions(conn: sqlite3.Connection) -> None:
+    if not conn.in_transaction:conn.execute("begin")
+    conn.execute("""create table if not exists auth_sessions (
+        sid text primary key,
+        user_id text not null references users(id) on delete cascade,
+        expires_at integer not null,
+        revoked_at integer,
+        created_at text not null)""")
+    conn.execute("create index if not exists auth_sessions_owner on auth_sessions(user_id,expires_at)")
+
+
 MIGRATIONS: tuple[tuple[int, str, Callable[[sqlite3.Connection], None]], ...] = (
     (1, "message_metadata", _migration_001_message_metadata),
     (2, "auth_credentials", _migration_002_auth_credentials),
@@ -141,6 +152,7 @@ MIGRATIONS: tuple[tuple[int, str, Callable[[sqlite3.Connection], None]], ...] = 
     (4, "document_markdown", _migration_004_document_markdown),
     (5, "document_chunk_bigram_index", _migration_005_document_chunk_bigram_index),
     (6, "agent_runs", _migration_006_agent_runs),
+    (7, "auth_sessions", _migration_007_auth_sessions),
 )
 
 

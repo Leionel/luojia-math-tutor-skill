@@ -11,7 +11,8 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import Settings
-from app.main_deps import get_app_settings
+from app.main_deps import get_app_settings,get_repository
+from app.memory.repository import Repository
 
 
 _USER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]{2,63}$")
@@ -23,6 +24,7 @@ class Principal:
     user_id: str
     authenticated: bool
     role: str = "student"  # student | teacher | admin
+    auth_session_id: str | None = None
 
     @property
     def is_teacher(self) -> bool:
@@ -79,15 +81,18 @@ def verify_password(password: str, expected_hash: str, salt: str) -> bool:
     return hmac.compare_digest(actual, expected_hash)
 
 
-def issue_token(user_id: str, settings: Settings) -> str:
+def issue_token(user_id: str, settings: Settings, *, sid: str | None = None, expires_at: int | None = None) -> str:
     if len(settings.auth_token_secret) < 32:
         raise ValueError("AUTH_TOKEN_SECRET is not configured.")
     payload = {
         "sub": user_id,
-        "exp": int(time.time()) + settings.auth_token_ttl_seconds,
-        "v": 1,
+        "exp": expires_at if expires_at is not None else int(time.time()) + settings.auth_token_ttl_seconds,
+        "v": 2 if sid else 1,
         "role": resolve_role(user_id, settings),
     }
+    if sid:
+        if not re.fullmatch(r'[a-f0-9]{32}',sid):raise ValueError('Invalid authentication session ID.')
+        payload['sid']=sid
     encoded = _b64_encode(
         json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     )
@@ -99,8 +104,9 @@ def issue_token(user_id: str, settings: Settings) -> str:
     return f"{encoded}.{_b64_encode(signature)}"
 
 
-def decode_token(token: str, settings: Settings) -> tuple[str, str]:
+def decode_claims(token: str, settings: Settings, *, require_session: bool = False) -> dict:
     try:
+        if len(token)>4096 or len(settings.auth_token_secret)<32:raise ValueError('token configuration')
         encoded, signature = token.split(".", 1)
         expected = hmac.new(
             settings.auth_token_secret.encode("utf-8"),
@@ -110,11 +116,13 @@ def decode_token(token: str, settings: Settings) -> tuple[str, str]:
         if not hmac.compare_digest(_b64_decode(signature), expected):
             raise ValueError("signature")
         payload = json.loads(_b64_decode(encoded))
-        user_id = str(payload["sub"])
-        if int(payload["exp"]) < int(time.time()) or not _USER_ID.fullmatch(user_id):
+        user_id = payload["sub"]
+        if not isinstance(user_id,str) or type(payload.get('exp')) is not int or payload['exp']<=int(time.time()) or not _USER_ID.fullmatch(user_id):
             raise ValueError("expired")
-        role = str(payload.get("role") or resolve_role(user_id, settings))
-        return user_id, role
+        if type(payload.get('v')) is not int or payload['v'] not in (1,2):raise ValueError('version')
+        if require_session and payload['v']!=2:raise ValueError('sign in again')
+        if payload['v']==2 and (not isinstance(payload.get('sid'),str) or not re.fullmatch(r'[a-f0-9]{32}',payload['sid'])):raise ValueError('session')
+        return payload
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -122,13 +130,22 @@ def decode_token(token: str, settings: Settings) -> tuple[str, str]:
         ) from exc
 
 
+def decode_token(token: str, settings: Settings) -> tuple[str,str]:
+    """Signature decoder for legacy inspection; HTTP authorization requires a live v2 session."""
+    claims=decode_claims(token,settings)
+    return claims['sub'],resolve_role(claims['sub'],settings)
+
+
 def get_principal(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     settings: Settings = Depends(get_app_settings),
+    repository: Repository = Depends(get_repository),
 ) -> Principal:
     if credentials:
-        user_id, role = decode_token(credentials.credentials, settings)
-        return Principal(user_id, True, role)
+        claims=decode_claims(credentials.credentials,settings,require_session=True)
+        if not repository.auth_session_valid(claims['sid'],claims['sub'],claims['exp']):
+            raise HTTPException(status_code=401,detail="Authentication session is revoked or expired; sign in again.")
+        return Principal(claims['sub'],True,resolve_role(claims['sub'],settings),claims['sid'])
     if settings.auth_required:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

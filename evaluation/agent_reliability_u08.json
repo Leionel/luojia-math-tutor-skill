@@ -1,0 +1,72 @@
+{
+  "version": "account-sessions-u08-v1",
+  "scope": "offline_auth_v2_atomic_registration_revocation_and_temp_migration",
+  "cases": [
+    {
+      "id": "test_missing_issuer_does_not_leave_account",
+      "selector": "tests/test_auth_sessions.py::test_missing_issuer_does_not_leave_account",
+      "expected_instances": 1,
+      "contract": "test_missing_issuer_does_not_leave_account"
+    },
+    {
+      "id": "test_registration_session_is_atomic_on_db_failure",
+      "selector": "tests/test_auth_sessions.py::test_registration_session_is_atomic_on_db_failure",
+      "expected_instances": 1,
+      "contract": "test_registration_session_is_atomic_on_db_failure"
+    },
+    {
+      "id": "test_concurrent_registration_creates_exactly_one_account_and_session",
+      "selector": "tests/test_auth_sessions.py::test_concurrent_registration_creates_exactly_one_account_and_session",
+      "expected_instances": 1,
+      "contract": "test_concurrent_registration_creates_exactly_one_account_and_session"
+    },
+    {
+      "id": "test_logout_is_idempotent_and_revokes_only_current_session",
+      "selector": "tests/test_auth_sessions.py::test_logout_is_idempotent_and_revokes_only_current_session",
+      "expected_instances": 1,
+      "contract": "test_logout_is_idempotent_and_revokes_only_current_session"
+    },
+    {
+      "id": "test_invalid_or_unbacked_session_cannot_authorize",
+      "selector": "tests/test_auth_sessions.py::test_invalid_or_unbacked_session_cannot_authorize",
+      "expected_instances": 6,
+      "contract": "test_invalid_or_unbacked_session_cannot_authorize"
+    },
+    {
+      "id": "test_role_is_resolved_from_current_server_configuration",
+      "selector": "tests/test_auth_sessions.py::test_role_is_resolved_from_current_server_configuration",
+      "expected_instances": 1,
+      "contract": "test_role_is_resolved_from_current_server_configuration"
+    },
+    {
+      "id": "test_demo_me_and_credentialless_logout_are_distinct",
+      "selector": "tests/test_auth_sessions.py::test_demo_me_and_credentialless_logout_are_distinct",
+      "expected_instances": 1,
+      "contract": "test_demo_me_and_credentialless_logout_are_distinct"
+    },
+    {
+      "id": "test_additive_migration_and_synthetic_backup_restore_preserve_history",
+      "selector": "tests/test_auth_sessions.py::test_additive_migration_and_synthetic_backup_restore_preserve_history",
+      "expected_instances": 1,
+      "contract": "test_additive_migration_and_synthetic_backup_restore_preserve_history"
+    },
+    {
+      "id": "test_invalid_ttl_cannot_create_an_immediately_invalid_login",
+      "selector": "tests/test_auth_sessions.py::test_invalid_ttl_cannot_create_an_immediately_invalid_login",
+      "expected_instances": 4,
+      "contract": "test_invalid_ttl_cannot_create_an_immediately_invalid_login"
+    },
+    {
+      "id": "test_failed_auth_migration_rolls_back_without_deleting_old_accounts",
+      "selector": "tests/test_auth_sessions.py::test_failed_auth_migration_rolls_back_without_deleting_old_accounts",
+      "expected_instances": 1,
+      "contract": "test_failed_auth_migration_rolls_back_without_deleting_old_accounts"
+    },
+    {
+      "id": "test_client_cannot_supply_role_or_session_authority",
+      "selector": "tests/test_auth_sessions.py::test_client_cannot_supply_role_or_session_authority",
+      "expected_instances": 1,
+      "contract": "test_client_cannot_supply_role_or_session_authority"
+    }
+  ]
+}
