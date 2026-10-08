@@ -376,3 +376,5 @@ A3 已实现，终止门控 / Guard 两次临时破坏均被 CLI 检出，源码
 A0–A2 与冻结规划提交 `ebdc909` 已推送 `feature/course-graph-2.0`；对应 CI run 37771507944 启动时仍在进行，结论须以远端结果为准。用户随后授权 A3。本地 A3 复用 U01 `linear_lab` 与现有 TutorWorkflow，不建新 Agent：服务端按保存任务重算 Jacobi/GS 轨迹、充分条件与选中步骤，版本不符拒绝；Chat 当前用户消息才是待评主张，参考 run 与预测不是独立作答。prompt 和引用卡区分分量更新、残差/解误差、充分条件未知及模型意见。定向 33、本地全量知识 JSON/API912/Web72、typecheck 通过；无付费模型、正式库、部署，A4/A5 及质量 Gate 待验。详见 `planning/r1-a3-delivery.md`，状态只以 `planning/README.md` 为准。
 
 CI run 37771507944 终态 failure：Web/知识成功，API 8 个 S5 内容/fixture 哈希绑定失败。原哈希绑定的是 Windows CRLF 工作区字节，Git blob/Ubuntu checkout 为 LF；本轮以 `.gitattributes` 固定 S5 JSON LF 并更新 3 处哈希值，本地相关 80 项通过。修复版远端结论需新 SHA 验收。
+
+修复与 A3 分别提交 `8e58e6e`、`6367ce1` 并推送；`6367ce1` 的 CI #26（37772411831）API/Web/知识数据均成功。R0 正式库/授权链、A5 工程 Gate 与质量 Gate 不因 CI 成功自动完成。

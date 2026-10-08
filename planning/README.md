@@ -4,10 +4,10 @@
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，用户明确授权 A0–A2 后继续 A3；A3 [线性讨论切片](r1-a3-delivery.md)已完成本地工程验证。**R0 远端 Gate 仍未验收**；正式库备份/恢复、迁移及目标 SHA CI 独立验收，本轮不部署。 |
+| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，用户明确授权 A0–A2 后继续 A3；A3 [线性讨论切片](r1-a3-delivery.md)已完成本地工程验证，代码 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) 成功。**R0 的正式库备份/恢复、迁移及授权链仍需独立验收**，本轮不部署。 |
 | **Next** | R1-A 的 A4 Teach-back、A5 三域工程/体验尚未实施；A5 须验收 Newton 已揭示步骤切线、防剧透与 Chat↔Lab 续接。R1-B 仅在 A5 工程 Gate 后依赖递进。D1 是 A2 暂行工程路径，D2 质量优劣待证。 |
-| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)：16 个公开开发案例、Newton 原话可信引用、D0/D1 离线合同与 D1 暂行；`ebdc909` 已推送，其 CI 的 Web/知识通过，API 因 S5 Windows/CI 换行哈希不一致失败。A3 [本地切片及修复](r1-a3-delivery.md)：Jacobi/GS 保存轨迹复算、有限证据/unknown 与 Chat 范围提示；本地知识 JSON、API912/Web72、typecheck 和修复相关 S5 80 项通过，修复版 CI 待新 SHA 核对。真实模型质量待验。此前 [M1 Prompt A](m1-g0-delivery.md)与[M1 Prompt B](m1-newton-delivery.md)完成上传 owner 收口、Newton 持久活动和 Lab UI。均不证明学生收益。 |
-| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)仍需目标 SHA CI、授权链和正式库独立验收；A0–A3 是用户明确授权的本地工作例外，不解除 R0 Gate。A5 **工程 Gate** 未通过则 R1-B 不启动；工程通过后可先做不依赖待审核内容的 B1/F1、B4/F8。R1-A **质量 Gate** 与 F2 条件卡、F4 题目/rubric 审核各自独立，未验收不得虚报质量或正式内容；真实模型与费用另行准入。 |
+| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)：16 个公开开发案例、Newton 原话可信引用、D0/D1 离线合同与 D1 暂行；首推 `ebdc909` 暴露 S5 CRLF/LF 哈希问题，后续修复。A3 [线性切片及修复](r1-a3-delivery.md)：Jacobi/GS 保存轨迹复算、有限证据/unknown 与 Chat 范围提示；本地知识 JSON、API912/Web72、typecheck、lint 0 错误，代码 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) API/Web/知识数据成功。真实模型质量待验。此前 [M1 Prompt A](m1-g0-delivery.md)与[M1 Prompt B](m1-newton-delivery.md)完成上传 owner 收口、Newton 持久活动和 Lab UI。均不证明学生收益。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)虽已有本分支目标 SHA 绿色 CI，授权链与正式库独立验收仍未完成；A0–A3 是用户明确授权的本地工作例外，不解除 R0 Gate。A5 **工程 Gate** 未通过则 R1-B 不启动；工程通过后可先做不依赖待审核内容的 B1/F1、B4/F8。R1-A **质量 Gate** 与 F2 条件卡、F4 题目/rubric 审核各自独立，未验收不得虚报质量或正式内容；真实模型与费用另行准入。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
 
 下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。

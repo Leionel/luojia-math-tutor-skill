@@ -13,6 +13,6 @@
 - 定向 `tests/test_numerical_lab.py tests/test_learning_context.py`：33 passed，覆盖 Jacobi 第一步 `[1/4,2/3]`、GS `[1/4,7/12]`、残差与解误差反例、充分条件未知、跨 owner 与篡改/旧版本拒绝、prompt 原话隔离；这些是离线合同测试，不是模型数学准确率。
 - 全量 `npm test`：知识 JSON、API **912 passed**、Web **72 passed**；`apps/web/npm run typecheck` 通过。开发服务器运行中，未执行 `next build`。
 - 未做真人案例二审或真实模型对照；A0 的 L01–L04 仍是公开开发材料。UI 的 390px、键盘与真实聊天回复需 A5 集成验收。旧线性记录如不满足当前复算合同会提示重跑，避免把旧格式静默当作已核验。
-- A0–A2 推送后的 [目标 SHA CI](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37771507944) Web/知识通过、API 8 个 S5 哈希绑定测试失败：原 JSON 按 Windows CRLF 字节记 hash，而 Git checkout 为 LF。本轮附带最小跨平台修复：S5 JSON 固定 LF，并重绑内容/fixture 哈希；本地相关 80 项通过。修复版 CI 结果须以新 SHA 单独确认。
+- A0–A2 推送后的 [CI #25](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37771507944) Web/知识通过、API 8 个 S5 哈希绑定测试失败：原 JSON 按 Windows CRLF 字节记 hash，而 Git checkout 为 LF。本轮附带最小跨平台修复：S5 JSON 固定 LF，并重绑内容/fixture 哈希；本地相关 80 项通过。目标 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) API/Web/知识数据均成功。该结果仍不证明真实模型质量或教学收益。
 
 停止条件：若一个旧记录无法复算或学生消息缺矩阵/方法，保持引用不可用或追问，不把残差/模型推断升级为解误差或收敛证明。A4 Teach-back 与 A5 三域工程/质量 Gate 仍未完成。

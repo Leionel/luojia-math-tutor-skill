@@ -530,3 +530,5 @@ gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、
 A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 37771507944 尚需远端结论。用户授权 A3；现有线性引用现按保存参数复算轨迹与条件，输出选中步有限证据和 unknown，Chat 原话仍取当前消息，不把参考帮助记作掌握。无需复制 Agent。定向 API33、全量知识 JSON/API912/Web72、typecheck 通过；无付费模型/正式库/部署。A3 回执 `planning/r1-a3-delivery.md`，A4/A5 与真人质量评审未完成。原有无关未提交/删除文件保留。
 
 上述 CI 实际 failure：Web/知识成功，API 8 个 S5 哈希测试因 CRLF/LF 不一致失败；已在本轮追加 S5 JSON 固定 LF、内容/fixture 哈希重绑，本地相关 80 项通过。修复版远端 CI 待新提交确认。
+
+`8e58e6e`（S5 哈希修复）与 `6367ce1`（A3）已推送；目标 SHA 的 CI #26（37772411831）API/Web/知识数据均成功。正式库、授权链、A5 工程/质量验收仍 pending。
