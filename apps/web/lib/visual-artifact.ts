@@ -1,28 +1,26 @@
 export const ARTIFACT_CSP = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
-export const DYNAMIC_ARTIFACT_CSP = ARTIFACT_CSP.replace("script-src 'none'", "script-src 'unsafe-inline'");
-const DYNAMIC_TAGS = new Set("script canvas button input label select option textarea output meter progress fieldset legend img".split(" "));
+// Untrusted dynamic execution has no verified independently terminable boundary.
+export const DYNAMIC_ARTIFACT_CSP = ARTIFACT_CSP;
 const TAGS = new Set("div span p h1 h2 h3 h4 h5 h6 section article header footer main aside ul ol li table thead tbody tr td th details summary b strong i em small br hr pre code style svg g path circle ellipse rect line polyline polygon text tspan defs marker title desc lineargradient radialgradient stop clippath".split(" "));
 export function buildStaticArtifact(source: string, dark: boolean): string { return buildArtifact(source, dark); }
-export function buildDynamicArtifact(source: string, dark: boolean, channel: string): string {
-  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(channel)) throw new Error("无效的预览通道");
-  return buildArtifact(source, dark, channel);
+export function buildDynamicArtifact(_source: string, _dark: boolean, _channel: string): string {
+  throw new Error("动态脚本预览暂未开放，请使用静态预览或查看源码。");
 }
-function buildArtifact(source: string, dark: boolean, channel?: string): string {
+function buildArtifact(source: string, dark: boolean): string {
   if (source.length > 60000) throw new Error("预览超过 60 KB，请简化图示。");
   const template = document.createElement("template");
   template.innerHTML = source; // Template contents stay inert while filtering.
   const nodes = [...template.content.querySelectorAll("*")];
   if (nodes.length > 1500) throw new Error("预览节点过多，请简化图示。");
   for (const node of nodes) {
-    if (!TAGS.has(node.tagName.toLowerCase()) && !(channel && DYNAMIC_TAGS.has(node.tagName.toLowerCase()))) { node.remove(); continue; }
+    if (!TAGS.has(node.tagName.toLowerCase())) { node.remove(); continue; }
     if (node.tagName.toLowerCase() === "input" && /^(file|password)$/i.test(node.getAttribute("type") || "")) {node.remove();continue;}
     for (const attr of [...node.attributes]) {
-      if (channel && node.tagName.toLowerCase() === "img" && attr.name.toLowerCase() === "src" && /^data:image\/(png|jpeg|webp|gif);/i.test(attr.value)) continue;
-      if ((!channel && /^on/i.test(attr.name)) || /^(href|xlink:href|src|srcset|action|formaction|nonce|http-equiv|autofocus|tabindex)$/i.test(attr.name)) node.removeAttribute(attr.name);
+      if (/^on/i.test(attr.name) || /^(href|xlink:href|src|srcset|action|formaction|nonce|http-equiv|autofocus|tabindex)$/i.test(attr.name)) node.removeAttribute(attr.name);
     }
     if (node.tagName.toLowerCase() === "img") { const src = node.getAttribute("src"); if (src && !/^data:image\/(png|jpeg|webp|gif|svg\+xml);/i.test(src)) node.removeAttribute("src"); }
   }
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${channel ? DYNAMIC_ARTIFACT_CSP : ARTIFACT_CSP}"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:${dark ? "dark" : "light"}}body{margin:12px;background:${dark ? "#1e1e1b" : "#faf7f2"};color:${dark ? "#e5e2d8" : "#292b24"};font:14px/1.6 system-ui;overflow-wrap:anywhere}svg{max-width:100%;height:auto}*{box-sizing:border-box}${channel ? "" : "*{animation:none!important;transition:none!important}"}</style></head><body>${channel ? `<script>(()=>{const report=(kind,value)=>parent.postMessage({channel:${JSON.stringify(channel)},kind,value},"*");addEventListener("error",e=>report("error",String(e.message).slice(0,300)));addEventListener("unhandledrejection",e=>report("error",String(e.reason).slice(0,300)));addEventListener("DOMContentLoaded",()=>{report("ready",true);let last=0;new ResizeObserver(()=>{if(performance.now()-last>100){last=performance.now();report("height",document.body.scrollHeight+24)}}).observe(document.body)});})();</script>` : ""}${template.innerHTML}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${ARTIFACT_CSP}"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:${dark ? "dark" : "light"}}body{margin:12px;background:${dark ? "#1e1e1b" : "#faf7f2"};color:${dark ? "#e5e2d8" : "#292b24"};font:14px/1.6 system-ui;overflow-wrap:anywhere}svg{max-width:100%;height:auto}*{box-sizing:border-box}*{animation:none!important;transition:none!important}</style></head><body>${template.innerHTML}</body></html>`;
 }
 
 export function staticSvgHeight(source: string, width: number): number | null {

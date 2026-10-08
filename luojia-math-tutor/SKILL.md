@@ -55,4 +55,4 @@ description: 大学数学与数值分析助教，支持概念解释、分步辅�
 - references/math-tools-guidelines.md
 - references/knowledge-base-usage.md
 
-回答框支持 visual-v2 声明式函数采样图、静态 SVG 与独立沙箱动态 HTML 图示，遵循 references/visual-artifacts.md。这属于前端展示，不代表运行了 Python 仿真或完成了数学验证。
+回答框支持 visual-v2 声明式函数采样图、静态 SVG/HTML 图示；模型生成脚本不运行，遵循 references/visual-artifacts.md。这属于前端展示，不代表运行了 Python 仿真或完成了数学验证。
