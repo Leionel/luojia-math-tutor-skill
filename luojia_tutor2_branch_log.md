@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-08 M1 Prompt A
+
+上传文件的匿名与跨用户读取已封闭，Chat 合法图片通过受控 Bearer fetch 显示；`uv.lock`、README 事实和历史快照同步整理。API901/Web71及构建通过；migration 8 的正式库验收、旧文件归属和教材授权仍待核实。回执：`planning/m1-g0-delivery.md`。本轮停止于 A，不自动实施 Newton。
+
 ## 最终引用会话恢复校验
 
 发现本地来源缓存可能指向已经不存在的讨论会话，ReferenceTutor 现在并行核对来源与已有 owner 会话名单；失效缓存明确提示，草稿/来源保留，用户再次提问才懒创建新会话。跨owner和失效id的前端回归新增1项，Web最终71/71、最终构建通过、lint0错误10既有警告。后端未改，最近完整API899/根命令Web70为上一检查，未虚称再次跑API。最终日志 results/reference-session-final-*；保护的原runtime/07/原型仍未更改。

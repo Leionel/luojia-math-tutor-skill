@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-08 M1 G0 边界
+
+本轮未改课程图谱审核逻辑。现有 27 个 unit、21 条 relation、15 个 teaching case 的种子均缺 `review_status`，当前读取路径会默认为 verified；后续应先显式标记并核对可信旧种子，再让未知来源输入 fail-closed，避免直接清空课程检索。教材 LFS 17 份 PDF 的逐份授权与公开范围待核实。详见 `planning/m1-g0-delivery.md`。
+
 ## 最终引用会话恢复校验
 
 发现本地来源缓存可能指向已经不存在的讨论会话，ReferenceTutor 现在并行核对来源与已有 owner 会话名单；失效缓存明确提示，草稿/来源保留，用户再次提问才懒创建新会话。跨owner和失效id的前端回归新增1项，Web最终71/71、最终构建通过、lint0错误10既有警告。后端未改，最近完整API899/根命令Web70为上一检查，未虚称再次跑API。最终日志 results/reference-session-final-*；保护的原runtime/07/原型仍未更改。

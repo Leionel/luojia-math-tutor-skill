@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-08 M1 Prompt A
+
+上传资源已加登录与 owner 校验，视觉引用同步收口；旧无 owner 记录的上传保持不可访问。migration 8 仅在隔离库验证，正式库仍需备份/恢复验收。README 历史状态已移至 `planning/delivery-history-2026-10.md`。本轮 `npm test` 为 API901/Web71，构建、typecheck、lint、浏览器合法图片显示及严格锁安装通过；未 push、未调用付费模型。详见 `planning/m1-g0-delivery.md`。Prompt B 依原 M1 文件要求留待另轮。
+
 ## 最终引用会话恢复校验
 
 发现本地来源缓存可能指向已经不存在的讨论会话，ReferenceTutor 现在并行核对来源与已有 owner 会话名单；失效缓存明确提示，草稿/来源保留，用户再次提问才懒创建新会话。跨owner和失效id的前端回归新增1项，Web最终71/71、最终构建通过、lint0错误10既有警告。后端未改，最近完整API899/根命令Web70为上一检查，未虚称再次跑API。最终日志 results/reference-session-final-*；保护的原runtime/07/原型仍未更改。
