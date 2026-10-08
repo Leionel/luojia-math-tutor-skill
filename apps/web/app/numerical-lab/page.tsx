@@ -4,7 +4,7 @@ import {useEffect, useRef, useState} from "react";
 import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
 import {ExperimentNavigation} from "@/components/learning/experiment-navigation";
 import {ReferenceTutor} from "@/components/learning/reference-tutor";
-import {linearContextRef,type LinearContextRef} from "@/lib/learning-context";
+import {numericalContextRef,type LinearContextRef,type IntegrationContextRef} from "@/lib/learning-context";
 import {NumericalPlayback} from "@/components/learning/numerical-playback";
 import {learningRequest, stableRequestId} from "@/lib/learning-api";
 import {getCurrentUserId} from "@/lib/demo-auth";
@@ -36,7 +36,7 @@ export default function NumericalLabPage() {
   const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [reference,setReference]=useState<LinearContextRef|null>(null),[mobileOpen,setMobileOpen]=useState(false),[wide,setWide]=useState(false);
+  const [reference,setReference]=useState<LinearContextRef|IntegrationContextRef|null>(null),[mobileOpen,setMobileOpen]=useState(false),[wide,setWide]=useState(false);
   const dialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{const media=window.matchMedia("(min-width:1280px)");const change=()=>{setWide(media.matches);setMobileOpen(false);};change();media.addEventListener("change",change);return()=>media.removeEventListener("change",change);},[]);
   useEffect(()=>{if(mobileOpen&&!wide&&reference){if(!dialog.current?.open)dialog.current?.showModal();}else if(dialog.current?.open)dialog.current.close();},[mobileOpen,wide,reference]);
@@ -49,7 +49,7 @@ export default function NumericalLabPage() {
       const id = new URLSearchParams(window.location.search).get("id");
       const selected = id ? await learningRequest<NumericalRun>(`/numerical-lab/runs/${encodeURIComponent(id)}`, undefined, signal) : data.runs.at(-1);
       if (!controller.signal.aborted && selected) {setRun(selected); setDomain(selected.task.domain);
-        const params=new URLSearchParams(window.location.search);if(selected.task.domain==="linear_system"&&(params.get("discuss")==="1"||params.has("step"))){setReference(linearContextRef(selected,params.has("step")?Number(params.get("step")):null));}
+        const params=new URLSearchParams(window.location.search);if((params.get("discuss")==="1"||params.has("step"))){setReference(numericalContextRef(selected,params.has("step")?Number(params.get("step")):null));}
       }
     }).catch(e => {if (!controller.signal.aborted) setError(e.message);}).finally(() => {if (!controller.signal.aborted) setLoading(false);});
     return () => controller.abort();
@@ -58,7 +58,7 @@ export default function NumericalLabPage() {
   const comparable = run && comparison && comparableNumerical(run, comparison);
   const scalar = (text: string) => numericVector(text, 1)[0];
   function show(value: NumericalRun) {setReference(null);setMobileOpen(false);setRun(value); setFeedback(null); setAnswer(""); setCopied(false); setCompareId(""); window.history.replaceState(null, "", `/numerical-lab?id=${encodeURIComponent(value.id)}`);}
-  function discuss(step:number|null){if(!run)return;try{setReference(linearContextRef(run,step));setMobileOpen(!wide);window.history.replaceState(null,"",`/numerical-lab?id=${encodeURIComponent(run.id)}&discuss=1${step===null?"":`&step=${step}`}`);}catch(e){setError(e instanceof Error?e.message:"引用不可用");}}
+  function discuss(step:number|null){if(!run)return;try{setReference(numericalContextRef(run,step));setMobileOpen(!wide);window.history.replaceState(null,"",`/numerical-lab?id=${encodeURIComponent(run.id)}&discuss=1${step===null?"":`&step=${step}`}`);}catch(e){setError(e instanceof Error?e.message:"引用不可用");}}
   function loadParameters(value: NumericalRun) {
     const task = value.task;
     setDomain(task.domain); setTolerance(String(task.tolerance)); setLimit(String(task.limit)); setPrediction(value.prediction);
@@ -113,7 +113,7 @@ export default function NumericalLabPage() {
           <ul className="mt-3 list-disc space-y-2 pl-5 leading-7 text-[var(--text-secondary)]">{run.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul>
           <label htmlFor="num-comparison" className="mb-2 mt-4 block">选择另一种方法对照</label><select id="num-comparison" className={learningInput} value={compareId} onChange={e => setCompareId(e.target.value)}><option value="">不对照</option>{runs.filter(value => value.id !== run.id).map(value => <option key={value.id} value={value.id}>{methodNames[value.task.method]} · {value.prediction.slice(0, 20)}</option>)}</select>{comparison && !comparable && <p className="mt-2 leading-7 text-ochre-700 dark:text-ochre-300">问题、初始向量或阈值不同，暂不叠加轨迹。</p>}
           {comparable && comparison && <p className="mt-3 break-all leading-7">对照末值：{comparison.rows.at(-1)?.vector?.map(v => v.toPrecision(7)).join(", ") ?? comparison.rows.at(-1)?.value?.toPrecision(9)}；{comparison.stop_detail}</p>}
-          <NumericalPlayback key={run.id} run={run} comparison={comparable ? comparison : undefined} onDiscuss={run.task.domain==="linear_system"?discuss:undefined}/>{run.task.domain==="linear_system"&&<><button type="button" className="mt-3 min-h-12 text-olive-700 underline dark:text-olive-300" onClick={()=>discuss(null)}>讨论整个已保存实验</button>{reference&&<p className="mt-2 text-sm leading-6">聊天固定引用{reference.selected_step===null?"这次已保存实验":`第 ${reference.selected_step} 步`}；播放或编辑参数不会改变引用。{!wide&&<button type="button" className="ml-2 min-h-12 underline" onClick={()=>setMobileOpen(true)}>打开讨论</button>}</p>}</>}
+          <NumericalPlayback key={run.id} run={run} initialStep={reference?.selected_step??0} comparison={comparable ? comparison : undefined} onDiscuss={discuss}/><><button type="button" className="mt-3 min-h-12 text-olive-700 underline dark:text-olive-300" onClick={()=>discuss(null)}>讨论整个已保存实验</button>{reference&&<p className="mt-2 text-sm leading-6">聊天固定引用{reference.selected_step===null?"这次已保存实验":`第 ${reference.selected_step} 步`}；播放或编辑参数不会改变引用。{!wide&&<button type="button" className="ml-2 min-h-12 underline" onClick={()=>setMobileOpen(true)}>打开讨论</button>}</p>}</>
           <form onSubmit={check} className="mt-6 space-y-3 border-t border-[var(--border-subtle)] pt-5"><label htmlFor="num-answer" className="block font-semibold">核对自己的数值结果（已参考帮助）</label><input id="num-answer" required maxLength={500} value={answer} onChange={e => {setAnswer(e.target.value); setFeedback(null);}} className={learningInput} placeholder={run.task.domain === "linear_system" ? "例如：0.1 0.6" : "填写一个积分近似值"}/><button disabled={checking || busy || loading} className={learningButton}>{checking ? "正在核对…" : "核对数值依据"}</button></form>
           {feedback && <div role="status" className="mt-4 rounded-lg bg-[var(--bg-tertiary)] p-4 leading-7"><p>{feedback.matches ? "与本次核对规则相符" : "暂未与本次核对规则相符"} · {feedback.residual !== undefined ? `残差 ${feedback.residual.toExponential(5)}` : `与参考值差 ${feedback.difference?.toExponential(5)}`}</p><p>{feedback.message}</p></div>}
           <p className="mt-5 leading-7 text-[var(--text-secondary)]">参考实验和结果核对均不计为独立完成，不更新求根成绩，也不执行学生程序。</p>

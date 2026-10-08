@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference} from "./learning-context.ts";
+import {selectionRange,linearContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription} from "./learning-context.ts";
 import {studyTaskHref} from "./study-summary.ts";
 import type {NumericalRun} from "./numerical-lab.ts";
 const run={id:"record",source_hash:"a".repeat(64),schema_version:"numerical-lab-v1",task:{domain:"linear_system"},rows:[{k:0},{k:1}]} as unknown as NumericalRun;
@@ -19,3 +19,11 @@ test("source discussion cache cannot cross owners or namespaces",()=>{const ref=
 test("task navigation is a bounded command instead of math keyword interception",()=>{assert.ok(studyRequested("今天学什么？"));assert.ok(!studyRequested("今天学什么，并求x²=2"));});
 test("stale or missing-session task cannot become a resume link",()=>{const t={id:"task1",title:"任务",state:"in_progress",stale:false,session_available:true,kind:"practice"};assert.equal(studyTaskHref(t),"/study?task=task1");assert.equal(studyTaskHref({...t,stale:true}),null);assert.equal(studyTaskHref({...t,session_available:false}),null);assert.equal(studyTaskHref({...t,id:"../private"}),null);});
 test("reading source link uses section without invented page numbers",()=>{const s={version:"learning-context-v1",title:"source",evidence_kind:"reference_help",independent_success:false,ref:{kind:"reading",source_id:"record",source_hash:"a".repeat(64),section_id:"2",start:0,end:1,graph_revision:null},citation:{quote:"q",start:0,end:1,conditions:[]},source_kind:"uploaded_markdown"} as const;assert.equal(referenceHref(s as unknown as Parameters<typeof referenceHref>[0]),"/reading?document=record&section=2");});
+
+test("integration has its own namespace and retains estimator scope",()=>{
+ const integral={...run,task:{domain:"integration",method:"simpson",expression:"exp(x)",left:0,right:1}} as unknown as NumericalRun;
+ const ref=numericalContextRef(integral,0);assert.equal(ref.kind,"integration_lab");
+ assert.notEqual(referenceChatKey("alice",ref),referenceChatKey("alice",linearContextRef(run,0)));
+ const snapshot={task:integral.task,ref} as unknown as Parameters<typeof referenceDescription>[0];
+ assert.match(referenceDescription(snapshot),/误差估计，非严格界/);
+});

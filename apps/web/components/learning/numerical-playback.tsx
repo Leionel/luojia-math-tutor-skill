@@ -5,8 +5,8 @@ import {learningButton} from "./learning-shell";
 
 const format = (value: number | null) => value === null ? "—" : value.toExponential(5);
 
-export function NumericalPlayback({run, comparison, onDiscuss}: {run: NumericalRun; comparison?: NumericalRun; onDiscuss?:(step:number)=>void}) {
-  const [step, setStep] = useState(0);
+export function NumericalPlayback({run, comparison, onDiscuss, initialStep=0}: {run: NumericalRun; comparison?: NumericalRun; onDiscuss?:(step:number)=>void; initialStep?:number}) {
+  const [step, setStep] = useState(()=>Number.isInteger(initialStep)&&initialStep>=0&&initialStep<run.rows.length?initialStep:0);
   const [playing, setPlaying] = useState(false);
   const last = run.rows.length - 1;
   useEffect(() => {

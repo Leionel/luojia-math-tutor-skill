@@ -57,15 +57,16 @@ export type LearningOverview = {
   latest_assessment: null | {id: string; score: {correct: number; total: number; percentage: number}; review_units: string[]};
 };
 export type TeachBack = {
+  evidence_version?:string; condition_hash?:string; graph_revision?:string; content_review_status?:string;
   id: string; unit_id: string; title: string; source_hash: string; source_quote: string; text: string; parent_id: string | null;
-  conditions: {condition_id: string; condition: string; student_quote: string | null; status: string; followup: string}[];
+  conditions: {condition_id: string; condition: string; student_quote: string | null; status: string; followup: string;student_spans?:{start:number;end:number;quote:string}[];model_evidence?:{judgment:string;evidence:{start:number;end:number;quote:string}|null;note:string;followup:string;verified:false}}[];
   model_commentary: string; model_status: string; created_at: string; independent_success: false;
 };
 export type CodeAssignment = {
   id: string; title: string; template: string; signature: string; checks: string[]; execution_available: false;
 };
 export type CodeSubmission = {
-  id: string; assignment_id: string; code: string; iterates: number[]; stop_reason: string;
+  id: string; assignment_id: string; code_hash:string; static_rule_version?:string; code: string; iterates: number[]; stop_reason: string;
   findings: {kind: string; line: number | null; message: string}[]; trace_diagnosis: Diagnosis | null;
   previous_id: string | null; created_at: string; code_executed: false;
   comparison: null | {code_changed: boolean; previous_findings: number; current_findings: number; previous_trace_status: string | null; current_trace_status: string | null};
