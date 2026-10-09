@@ -17,5 +17,6 @@
 ## 验证、待办与停止条件
 
 - 最终完整 `npm test`：知识 JSON、API **917 passed**、Web **75 passed**；Web typecheck、构建通过，lint 0 error / 10 个既有 warning，`git diff --check` 通过。测试包含同一工作区 A4/A5 与 B1/B2 最终快照。新增合同覆盖条件卡换版、非法条件编号、上传来源借卡、无 mastery，以及回链恢复；浏览器仅用隔离临时库。
+- 代码 SHA `aab84cb` 的 [CI #27](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37964199529) 知识数据、API 和 Web 均成功；这是工程回归，不是内容审核或真实模型质量评分。
 - B1 若需要猜测掌握度才能给出下一步，退回中性人工选择。B2 若真人审阅发现卡片数学前提错误，停止正式内容声明并撤下相应开发卡入口；若真实模型将学生勾选当已证明，保持只读开发态并修正提示/交互后重测。
 - B3 F4 与 B4 F8 未在本轮实施；R1-B 整体未完成。R1-A 质量 Gate、R0 正式库备份/恢复及真实模型准入仍 pending。

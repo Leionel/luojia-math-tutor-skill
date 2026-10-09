@@ -18,5 +18,5 @@
 
 - 最终完整 `npm test`：知识 JSON、API **917 passed**、Web **75 passed**；`apps/web/npm run typecheck`、`apps/web/npm run lint`（0 error，10 个既有 warning）和停止开发服务器后的 `npm run build:web` 通过。定向活动、上下文、讲回合同含跨 owner、错版本、重试、刷新、无模型和无 mastery。这是 A4/A5 与后续 B1/B2 同一工作区最终快照的联合结果，不把它解释成模型准确率。
 - 隔离数据库、本地页面实际点击：预测→x₀→x₁ 切线→逐步至 x₈→解释→Chat 引用→返回原 run/步/解释；刷新 x₁ 未展开未来。Teach-back 自我讲回→原句跨度→选中条件→Chat→原记录；390px 的曲线、回放和触控入口可见。键盘与取消依赖前端语义控件及已有合同测试，尚未单独做全流程辅助技术人工审查。
-- **R1-A 工程 Gate：本地通过，远端目标 SHA CI 待验。** E0/离线固定合同与上述 UI 只证明工程行为。**R1-A 数学/教学质量 Gate：pending。** A0 材料尚无独立二审，E1/E2 真实模型表现、误判率、成本/延迟与学生学习收益都不能据此声称通过。D1 继续暂行，D2 仍待同题质量对照。
+- **R1-A 工程 Gate：本地通过；代码 SHA `aab84cb` 的 [CI #27](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37964199529) 知识数据/API/Web 全绿。** E0/离线固定合同与上述 UI 只证明工程行为。**R1-A 数学/教学质量 Gate：pending。** A0 材料尚无独立二审，E1/E2 真实模型表现、误判率、成本/延迟与学生学习收益都不能据此声称通过。D1 继续暂行，D2 仍待同题质量对照。
 - R0 的正式库备份/恢复和迁移授权是独立门槛；本回执不是部署许可，也不把本地浏览器账号作为正式学生数据。
