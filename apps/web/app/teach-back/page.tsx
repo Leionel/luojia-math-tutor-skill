@@ -18,21 +18,23 @@ export default function TeachBackPage(){
   const [evidence,setEvidence]=useState<Record<number,string>>({});
   const [result,setResult]=useState<TeachBack|null>(null);
   const [history,setHistory]=useState<TeachBack[]>([]);
+  const [focusedCondition,setFocusedCondition]=useState<string|null>(null);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState(false);
   const [loading,setLoading]=useState(true);
   const unit=units.find(u=>u.id===selected);
   const draftKey=`teach-back-draft:${getCurrentUserId()}:${selected}:${result?.id??"new"}`;
-  const restore=(r:TeachBack)=>{const key=`teach-back-draft:${getCurrentUserId()}:${r.unit_id}:${r.id}`;setResult(r);setSelected(r.unit_id);setText(localStorage.getItem(key)??r.text);setEvidence(evidenceDraft(key,Object.fromEntries(r.conditions.map((c,i)=>[i,c.student_quote??""]))));window.history.replaceState(null,"",`/teach-back?id=${encodeURIComponent(r.id)}`);};
+  const restore=(r:TeachBack,conditionId:string|null=null)=>{const key=`teach-back-draft:${getCurrentUserId()}:${r.unit_id}:${r.id}`;setResult(r);setSelected(r.unit_id);setFocusedCondition(conditionId&&r.conditions.some(c=>c.condition_id===conditionId)?conditionId:null);setText(localStorage.getItem(key)??r.text);setEvidence(evidenceDraft(key,Object.fromEntries(r.conditions.map((c,i)=>[i,c.student_quote??""]))));window.history.replaceState(null,"",`/teach-back?id=${encodeURIComponent(r.id)}${conditionId&&r.conditions.some(c=>c.condition_id===conditionId)?`&condition=${encodeURIComponent(conditionId)}`:""}`);};
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
     const unitId=params.get("unit")??"NA_NEWTON";
+    setFocusedCondition(params.get("condition"));
     setSelected(unitId);
     const key=`teach-back-draft:${getCurrentUserId()}:${unitId}:new`;
     setText(localStorage.getItem(key)??"");setEvidence(evidenceDraft(key,{}));
     Promise.all([learningRequest<{units:ReadingUnit[]}>("/reading/units"),learningRequest<{submissions:TeachBack[]}>("/teach-back/submissions")]).then(async([a,b])=>{
       setUnits(a.units);setHistory(b.submissions);
-      if(params.get("id")) restore(await learningRequest<TeachBack>(`/teach-back/submissions/${encodeURIComponent(params.get("id")!)}`));
+      if(params.get("id")) restore(await learningRequest<TeachBack>(`/teach-back/submissions/${encodeURIComponent(params.get("id")!)}`),params.get("condition"));
     }).catch(e=>setError(e.message)).finally(()=>setLoading(false));
   },[]);
   return <LearningShell title="这一次，你来解释" description="用自己的话讲清公式为什么可用、为什么停止。把原句与条件对应起来，再补上遗漏的理解。">
@@ -54,7 +56,7 @@ export default function TeachBackPage(){
           <button type="submit" disabled={busy||!text.trim()} className={`${learningButton} mt-6`}>{busy?"保存与对照中…":result?"保存补充版本":"保存讲回并对照条件"}</button>
         </form>
         {result && <section className="mt-8 border-t border-[var(--border-subtle)] pt-6"><h2 className="text-xl font-semibold">已保存版本的条件对照</h2><p className="mt-3 leading-7 text-[var(--text-secondary)]">保留你的原话和来源，不以讲回评价更新独立成绩。{result.model_status==="self_review"?"当前未配置模型，使用自我讲回与条件对照。":result.model_status==="unavailable"?"模型暂不可用；文字与条件对照已保存。":"模型评语尚未经数学核验。"}</p>
-          <TeachBackEvidence saved={result}/>
+          <TeachBackEvidence saved={result} focusedCondition={focusedCondition}/>
           {result.model_commentary && !result.evidence_version && <div className="mt-6 rounded-lg bg-olive-600/5 p-4"><h3 className="mb-3 font-semibold">历史模型意见 · 未核验，未记录原句跨度</h3><MathMarkdown content={result.model_commentary}/></div>}
           <details className="mt-6"><summary className="cursor-pointer py-3">查看本次绑定的课程来源</summary><p className="my-3 break-all text-base sm:text-xs text-[var(--text-muted)]">{result.source_hash}</p><MathMarkdown content={result.source_quote}/></details>
         </section>}

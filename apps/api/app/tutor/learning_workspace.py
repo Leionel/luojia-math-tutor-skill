@@ -85,11 +85,52 @@ class LearningWorkspace:
             public = self.assessment_public(latest) if latest else None
             now = datetime.now(timezone.utc)
             plan_tasks = today["plan"]["tasks"] if today["plan"] else []
+            safe_tasks = [t for t in valid if re.fullmatch(r"[A-Za-z0-9_-]{1,80}", t.get("id", ""))
+                          and (not t.get("session_id") or self.repository.session_belongs_to(t["session_id"], owner))]
+            due = sorted((r for r in today["reviews"] if datetime.fromisoformat(r["due_at"]) <= now),
+                         key=lambda r: (r["due_at"], r["id"]))
+            waiting = next((t for t in safe_tasks if t["state"] == "awaiting_check"), None)
+            revision_task = next((t for t in safe_tasks if t["state"] == "needs_revision"), None)
+            stale = sorted((t for t in pending if t.get("graph_revision") != revision),
+                           key=lambda t: t.get("id", ""))
+            recommendation = {"policy_version": "r1-b1-v1", "graph_revision": revision,
+                              "evidence_kind": "saved_state_only", "mastery_claim": False}
+            if active:
+                recommendation.update(kind="assessment_in_progress", title="继续当前章节自检",
+                                      reason="自检尚未交卷；先完成或主动结束，不把中途作答当成绩。",
+                                      href="/assessment", source_id=active["id"])
+            elif waiting or revision_task:
+                selected = waiting or revision_task
+                recommendation.update(kind="confirm_feedback" if waiting else "revise_process",
+                    title="先确认这次过程反馈" if waiting else "修订上次求根过程",
+                    reason="已保存反馈等待确认，确认后才能继续。" if waiting else "已保存任务标为需要修订；先回看原过程与反馈。",
+                    href=f"/study?task={selected['id']}", source_id=selected["id"])
+            elif due:
+                recommendation.update(kind="due_review", title="安排到期复习",
+                    reason="已有到期复习记录；先在今日学习核对能否开始新题，不据此推断已经遗忘。",
+                    href="/study", source_id=due[0]["id"])
+            elif stale:
+                unit_id = stale[0].get("unit_id")
+                current_units = {unit["id"] for unit in self.reading_units()}
+                recommendation.update(kind="stale_source", title="核对已变化的课程来源",
+                    reason="旧任务绑定的课程版本已变化；先阅读当前材料，不能直接沿用旧任务结果。",
+                    href=f"/reading?unit={unit_id}" if unit_id in current_units else "/study",
+                    source_id=stale[0].get("id"))
+            elif safe_tasks:
+                selected = safe_tasks[0]
+                recommendation.update(kind="resume_task", title="继续已保存任务",
+                    reason="这项任务尚未完成；打开只续接原记录，不自动给分。",
+                    href=f"/study?task={selected['id']}", source_id=selected["id"])
+            else:
+                recommendation.update(kind="choose_task", title="选择今天的一项学习任务",
+                    reason="目前没有可确认的待办状态；可以在今日学习自行选择，不猜测掌握度。",
+                    href="/study", source_id=None)
             return {
                 "local_date": today["local_date"], "persistent": today["persistent"],
                 "plan": {"minutes": today["plan"]["minutes"], "total": len(plan_tasks),
                          "completed": sum(t["state"] in closed for t in plan_tasks), "stale": today["plan"]["stale"]} if today["plan"] else None,
                 "next_task": summary(valid[0]) if valid else None,
+                "recommendation": recommendation,
                 "pending_tasks": [summary(t) for t in valid],
                 "stale_tasks": len(pending) - len(valid),
                 "due_reviews": sum(datetime.fromisoformat(r["due_at"]) <= now for r in today["reviews"]),
@@ -248,7 +289,8 @@ class LearningWorkspace:
                            "source_kind": "curated_course_pack", "source_span": unit.source_span,
                            "source_document_id": unit.source_document_id, "page_start": unit.page_start,
                            "source_hash": digest(quote), "graph_revision": self.revision(),
-                           "conditions": card["conditions"], "question": card["question"], "options": card["options"],
+                           "conditions": card["conditions"], "condition_hash": digest(card["conditions"]),
+                           "question": card["question"], "options": card["options"],
                            "content_version": CONTENT_VERSION, "review_status": "development_card"})
         return result
 

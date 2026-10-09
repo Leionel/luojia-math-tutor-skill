@@ -143,6 +143,19 @@ def build_messages(
                 "residual_infinity是∥Ax−b∥∞，不等于解误差；仅当给出的充分条件与error_bound适用时，"
                 "才可引用该理论公式的浮点值，且它不含舍入误差。condition_sufficient=false表示这条充分条件未证，"
                 "不表示必然发散；缺少其他收敛或误差依据时明确unknown并追问，不把模型意见写成确定性核验。")
+        if learning_context.get("ref", {}).get("kind") == "teach_back":
+            runtime["teach_back_rule"] = (
+                "仅讨论选中的讲回条件和已保存原句。condition中的student_quote是学生自行对应的原句，"
+                "model_evidence即使标为supported或contradiction也只是未经真人核验的模型意见；"
+                "self_review、unavailable或历史记录不能伪装成模型判断。先核对原句是否真正说明该条件，"
+                "合理改写可接受；若缺少前提、反例或适用范围，明确unknown并给一个针对性追问。"
+                "条件卡是开发参考，不宣称自动证明、完整数学评分或学生已掌握；不写入成绩。")
+        if learning_context.get("condition_review"):
+            runtime["reading_condition_rule"] = (
+                "condition_review来自版本绑定的开发条件卡和学生手动标记，标记为已给出也未经过数学核验。"
+                "只依据当前来源摘录和题目原话区分题目陈述、学生标记、待证前提与模型推断；"
+                "unknown不能说成不满足，已标记不能说成定理条件已证。先问next_question中的一个具体问题，"
+                "不要补造题目条件、教材页码或形式证明，不记录掌握度。")
     return [
         {"role": "system", "content": skill_text.strip()},
         *prior,

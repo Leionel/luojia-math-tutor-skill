@@ -37,6 +37,12 @@ def saved_claim(workspace):
     activity.predict("alice", "predict-a1", "我猜会逐渐收敛", "导数非零")
     state = activity.reveal("alice", "reveal-a1", "observe")
     run = state["run"]
+    for index in range(8):
+        if state["observation_complete"]:
+            break
+        state = activity.step("alice", f"step-a1-{index}", index)
+    assert state["observation_complete"]
+    run = state["run"]
     activity.explain("alice", "explain-a1", run["id"], run["input_hash"],
                      "x₁=1 是对的，所以任意初值都收敛。")
     claim = NewtonActivityClaimRef(activity_id=ACTIVITY_ID, activity_version=ACTIVITY_VERSION,

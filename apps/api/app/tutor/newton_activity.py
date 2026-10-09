@@ -43,6 +43,7 @@ class NewtonActivity:
                 return {"id": ACTIVITY_ID, "version": ACTIVITY_VERSION, "problem": PROBLEM,
                         "phase": "predict", "prediction": None, "reveal": None,
                         "explanation": None, "revisions": [], "run": None,
+                        "revealed_step": None, "observation_complete": False,
                         "answer_exposed": False, "independent_success": False}
             if record.get("version") != ACTIVITY_VERSION:
                 raise ValueError("活动版本已变化，请联系管理员核对旧记录。")
@@ -52,10 +53,23 @@ class NewtonActivity:
                 run = self.workspace.get(owner, "lab", ref["id"])
                 if any(run.get(key) != ref[key] for key in ("id", "input_hash", "runner_version", "graph_revision")):
                     raise ValueError("参考实验版本不匹配，请停止使用这份记录。")
-            return {**record, "problem": PROBLEM, "run": run,
+            legacy_full = bool(record.get("reveal") and "revealed_step" not in record)
+            revealed = (len(run["rows"]) - 1 if legacy_full or record.get("answer_exposure") else
+                        min(record.get("revealed_step", 0), len(run["rows"]) - 1)) if run else None
+            complete = bool(run and revealed == len(run["rows"]) - 1)
+            visible_run = None
+            if run:
+                visible_run = {**run, "rows": run["rows"][:revealed + 1]}
+                if not complete:
+                    visible_run.update(stop_reason="pending", stop_detail="后续步骤尚未揭示。",
+                                       diagnosis={"summary": "请先观察已揭示步骤；尚不判断最终结果。",
+                                                  "status": "unknown", "complete": False})
+            return {**record, "problem": PROBLEM, "run": visible_run,
+                    "revealed_step": revealed, "observation_complete": complete,
+                    "legacy_full_exposure": legacy_full,
                     "context_current": bool(run and run["runner_version"] == RUNNER_VERSION
                                             and run["graph_revision"] == self.workspace.revision()),
-                    "exact_check": EXACT_CHECK if record.get("answer_exposure") or record.get("explanation") else None,
+                    "exact_check": EXACT_CHECK if complete and (record.get("answer_exposure") or record.get("explanation")) else None,
                     "answer_exposed": bool(record.get("answer_exposure")),
                     "independent_success": False}
 
@@ -71,7 +85,8 @@ class NewtonActivity:
                                "prediction_choice": "submitted",
                                "prediction": {"text": text, "reason": reason, "request_id": request_id, "at": _now()},
                                "reveal": None, "run_ref": None, "answer_exposure": None,
-                               "explanation": None, "revisions": [], "evidence_kind": "student_process"})
+                          "explanation": None, "revisions": [], "revealed_step": None,
+                          "step_requests": [], "evidence_kind": "student_process"})
             return self.state(owner)
 
     def reveal(self, owner, request_id, mode):
@@ -84,7 +99,8 @@ class NewtonActivity:
                 record = {"id": ACTIVITY_ID, "version": ACTIVITY_VERSION, "phase": "skipped",
                           "prediction_choice": "skipped",
                           "prediction": None, "reveal": None, "run_ref": None, "answer_exposure": None,
-                          "explanation": None, "revisions": [], "evidence_kind": "student_process"}
+                          "explanation": None, "revisions": [], "revealed_step": None,
+                          "step_requests": [], "evidence_kind": "student_process"}
             if record["reveal"] is not None:
                 if record["reveal"]["request_id"] == request_id and record["reveal"]["mode"] == mode:
                     return self.state(owner)
@@ -105,10 +121,35 @@ class NewtonActivity:
             run = self.workspace.lab(owner, lab_request)
             record.update(phase="observed", run_ref={key: run[key] for key in
                                                        ("id", "input_hash", "runner_version", "graph_revision")},
+                          revealed_step=0, step_requests=[],
                           reveal={"request_id": request_id, "mode": mode, "at": _now(),
                                   "evidence_kind": "reference_help"})
             if mode == "answer":
                 record["answer_exposure"] = {"request_id": request_id, "at": _now()}
+            self._save(owner, record)
+            return self.state(owner)
+
+    def step(self, owner, request_id, expected_step):
+        with self.store.transaction():
+            assert_reference_help_allowed(owner, self.workspace.course)
+            record = self._record(owner)
+            if not record or not record.get("reveal") or not record.get("run_ref"):
+                raise ValueError("请先提交预测并开始观察。")
+            previous = next((item for item in record.get("step_requests", [])
+                             if item["request_id"] == request_id), None)
+            if previous:
+                if previous["expected_step"] != expected_step:
+                    raise ValueError("同一请求标识不能更改观察步骤。")
+                return self.state(owner)
+            current = record.get("revealed_step")
+            if current is None or current != expected_step:
+                raise ValueError("观察步骤已变化，请刷新后继续。")
+            run = self.workspace.get(owner, "lab", record["run_ref"]["id"])
+            if current >= len(run["rows"]) - 1:
+                raise ValueError("所有计算步骤已揭示。")
+            record["revealed_step"] = current + 1
+            record.setdefault("step_requests", []).append({"request_id": request_id,
+                                                             "expected_step": expected_step})
             self._save(owner, record)
             return self.state(owner)
 
@@ -119,6 +160,9 @@ class NewtonActivity:
                 raise ValueError("请先观察参考实验。")
             if record["run_ref"]["id"] != run_id or record["run_ref"]["input_hash"] != input_hash:
                 raise ValueError("解释与当前实验不匹配。")
+            run = self.workspace.get(owner, "lab", run_id)
+            if not record.get("answer_exposure") and record.get("revealed_step", len(run["rows"])-1) < len(run["rows"])-1:
+                raise ValueError("请先逐步观察完轨迹，再提交解释。")
             old = record.get("explanation")
             if old:
                 if old["request_id"] == request_id and old["text"] == text:

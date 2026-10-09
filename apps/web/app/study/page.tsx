@@ -4,6 +4,8 @@ import {useCallback, useEffect, useState} from "react";
 import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
 import {learningRequest, parseTrace, stableRequestId, type StudyToday, type StudyTask, type LearningOverview} from "@/lib/learning-api";
 import {getCurrentUserId} from "@/lib/demo-auth";
+import {recommendationHref} from "@/lib/study-summary";
+import type {LearningRecommendation} from "@/lib/learning-api";
 
 const states: Record<string, string> = {planned: "待开始", in_progress: "进行中", awaiting_check: "反馈待确认", verified_complete: "独立检验通过", assisted_complete: "练习已完成", needs_revision: "需要修订", unknown: "尚不能确认", read_complete: "已读"};
 
@@ -20,9 +22,10 @@ export default function StudyPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending,setPending]=useState<StudyTask[]>([]);
+  const [recommendation,setRecommendation]=useState<LearningRecommendation|null>(null);
   const reload = useCallback(async () => {
     const [value,overview]=await Promise.all([learningRequest<StudyToday>("/study/today"),learningRequest<LearningOverview>("/learning/overview")]);
-    setToday(value);setPending(overview.pending_tasks.filter(t=>!value.plan?.tasks.some(p=>p.id===t.id)));
+    setToday(value);setPending(overview.pending_tasks.filter(t=>!value.plan?.tasks.some(p=>p.id===t.id)));setRecommendation(overview.recommendation);
   }, []);
   const openTask = useCallback((value: StudyTask) => {
     setTask(value);
@@ -43,10 +46,13 @@ export default function StudyPage() {
   };
   const locked = busy || !!task && ["planned", "awaiting_check", "assisted_complete", "verified_complete"].includes(task.state);
   const start = (id: string) => act(async () => {openTask(await learningRequest<StudyTask>(`/study/tasks/${id}/start`, {}));});
+  const recommendedTaskId=recommendation&&/^\/study\?task=([A-Za-z0-9_-]{1,80})$/.exec(recommendationHref(recommendation))?.[1];
   return <LearningShell title="今天，向前一步" description="从到期复习和过程修订开始。完成阅读后，提交自己的求根轨迹，再用新题检查理解。">
     <Notice error={error} />
     {!today ? <p role="status">{error ? "连接失败，可重新加载。" : "正在读取今日任务…"}</p> : <>
       {!today.persistent && <p className="mb-5 text-base sm:text-sm text-ochre-700 dark:text-ochre-300">当前为内存演示模式，服务重启会清空记录。设置 COURSE_STORE_PATH 后可持久保存。</p>}
+      {recommendation&&<section aria-label="建议的下一步" className="mb-6 rounded-2xl border border-olive-500/25 bg-olive-500/5 p-5"><p className="text-xs font-medium tracking-wider text-olive-700 dark:text-olive-300">基于已保存状态 · 只读建议</p><h2 className="mt-2 font-title text-xl font-semibold">{recommendation.title}</h2><p className="mt-2 leading-7 text-[var(--text-secondary)]">{recommendation.reason}</p>{recommendedTaskId?<button type="button" disabled={busy} onClick={()=>act(async()=>openTask(await learningRequest<StudyTask>(`/study/tasks/${recommendedTaskId}`)))} className="mt-3 min-h-11 text-olive-700 underline underline-offset-4 dark:text-olive-300">打开原任务 →</button>:recommendationHref(recommendation)==="/study"?<a href="#study-content" className="mt-3 inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">在下方选择 →</a>:<Link href={recommendationHref(recommendation)} className="mt-3 inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">查看下一步 →</Link>}</section>}
+      <div id="study-content"/>
       {!today.plan && !task ? <><div className={`${learningPanel} max-w-xl`}><h2 className="text-xl font-semibold">留一段时间给数值分析</h2><p className="my-4 text-base sm:text-sm text-[var(--text-secondary)]">最多安排三项任务，未完成的记录会保留。</p><label htmlFor="minutes" className="block mb-2">今日时长</label><select id="minutes" name="minutes" className={`${learningInput} mb-4`} value={minutes} onChange={e=>setMinutes(Number(e.target.value))}><option value={15}>15 分钟</option><option value={30}>30 分钟</option></select><button type="button" disabled={busy} className={learningButton} onClick={()=>act(async()=>setToday(await learningRequest<StudyToday>("/study/plans", {minutes})))}>生成今日任务</button></div><PendingTasks tasks={pending} busy={busy} start={start}/></> :
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <section><div className="mb-5 flex items-baseline justify-between"><h2 className="text-xl font-semibold">{today.local_date}</h2><span className="text-[var(--text-secondary)]">{today.plan ? `${today.plan.minutes} 分钟` : "此前任务"}</span></div>{today.plan?.stale && <p role="status" className="mb-4 text-cinnabar-700">课程版本已变化，旧任务保留供核对。</p>}

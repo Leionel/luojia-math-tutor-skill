@@ -105,6 +105,11 @@ class NewtonRevealRequest(Body):
     mode: Literal["observe", "answer"]
 
 
+class NewtonStepRequest(Body):
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    expected_step: int = Field(ge=0, le=100)
+
+
 class NewtonWrittenRequest(Body):
     request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
     run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
@@ -134,6 +139,12 @@ def newton_predict(body: NewtonPredictionRequest, principal: Principal = Depends
 def newton_reveal(body: NewtonRevealRequest, principal: Principal = Depends(get_principal),
                   service: LearningWorkspace = Depends(get_learning_workspace)):
     return invoke(lambda: newton_activity(principal, service).reveal(principal.user_id, body.request_id, body.mode))
+
+
+@router.post("/root-lab/activity/newton-cycle-v1/step")
+def newton_step(body: NewtonStepRequest, principal: Principal = Depends(get_principal),
+                service: LearningWorkspace = Depends(get_learning_workspace)):
+    return invoke(lambda: newton_activity(principal, service).step(principal.user_id, body.request_id, body.expected_step))
 
 
 @router.post("/root-lab/activity/newton-cycle-v1/explain")
@@ -282,17 +293,34 @@ def documents(principal: Principal = Depends(get_principal)):
 
 @router.post("/root-lab/runs")
 def lab(body: LabRequest, principal: Principal = Depends(get_principal)):
-    return invoke(lambda: workspace().lab(principal.user_id, body))
+    service = workspace()
+    run = invoke(lambda: service.lab(principal.user_id, body))
+    activity = service.store.learning_record(principal.user_id, service.course_id, "newton_activity", "newton-cycle-v1")
+    if activity and (activity.get("run_ref") or {}).get("id") == run["id"]:
+        return invoke(lambda: NewtonActivity(service).state(principal.user_id)["run"])
+    return run
 
 
 @router.get("/root-lab/runs/{run_id}")
 def lab_run(run_id: str, principal: Principal = Depends(get_principal)):
-    return invoke(lambda: workspace().lab_run(principal.user_id, run_id))
+    service = workspace()
+    run = invoke(lambda: service.lab_run(principal.user_id, run_id))
+    activity = service.store.learning_record(principal.user_id, service.course_id, "newton_activity", "newton-cycle-v1")
+    if activity and (activity.get("run_ref") or {}).get("id") == run_id:
+        return invoke(lambda: NewtonActivity(service).state(principal.user_id)["run"])
+    return run
 
 
 @router.get("/root-lab/runs")
 def lab_runs(principal: Principal = Depends(get_principal)):
-    return {"runs": invoke(lambda: workspace().lab_runs(principal.user_id))}
+    service = workspace()
+    runs = invoke(lambda: service.lab_runs(principal.user_id))
+    activity = service.store.learning_record(principal.user_id, service.course_id, "newton_activity", "newton-cycle-v1")
+    if activity and activity.get("run_ref"):
+        activity_id = activity["run_ref"]["id"]
+        visible = invoke(lambda: NewtonActivity(service).state(principal.user_id)["run"])
+        runs = [visible if run["id"] == activity_id else run for run in runs]
+    return {"runs": runs}
 
 
 @router.post("/assessments")

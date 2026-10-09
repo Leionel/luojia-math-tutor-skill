@@ -1,13 +1,13 @@
 # 项目规划总索引
 
-## 当前状态（2026-10-08；唯一状态入口）
+## 当前状态（2026-10-10；唯一状态入口）
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，用户明确授权 A0–A2 后继续 A3；A3 [线性讨论切片](r1-a3-delivery.md)已完成本地工程验证，代码 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) 成功。**R0 的正式库备份/恢复、迁移及授权链仍需独立验收**，本轮不部署。 |
-| **Next** | R1-A 的 A4 Teach-back、A5 三域工程/体验尚未实施；A5 须验收 Newton 已揭示步骤切线、防剧透与 Chat↔Lab 续接。R1-B 仅在 A5 工程 Gate 后依赖递进。D1 是 A2 暂行工程路径，D2 质量优劣待证。 |
-| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)：16 个公开开发案例、Newton 原话可信引用、D0/D1 离线合同与 D1 暂行；首推 `ebdc909` 暴露 S5 CRLF/LF 哈希问题，后续修复。A3 [线性切片及修复](r1-a3-delivery.md)：Jacobi/GS 保存轨迹复算、有限证据/unknown 与 Chat 范围提示；本地知识 JSON、API912/Web72、typecheck、lint 0 错误，代码 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) API/Web/知识数据成功。真实模型质量待验。此前 [M1 Prompt A](m1-g0-delivery.md)与[M1 Prompt B](m1-newton-delivery.md)完成上传 owner 收口、Newton 持久活动和 Lab UI。均不证明学生收益。 |
-| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)虽已有本分支目标 SHA 绿色 CI，授权链与正式库独立验收仍未完成；A0–A3 是用户明确授权的本地工作例外，不解除 R0 Gate。A5 **工程 Gate** 未通过则 R1-B 不启动；工程通过后可先做不依赖待审核内容的 B1/F1、B4/F8。R1-A **质量 Gate** 与 F2 条件卡、F4 题目/rubric 审核各自独立，未验收不得虚报质量或正式内容；真实模型与费用另行准入。 |
+| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，A4/A5 与 B1/B2 已按用户授权在本地实施。[A4–A5 回执](r1-a4-a5-delivery.md)记录 R1-A 工程 Gate 本地通过；[B1–B2 回执](r1-b1-b2-delivery.md)记录只读推荐与开发条件卡对照。R0 正式库备份/恢复、迁移和授权链仍需独立验收，本轮不部署。 |
+| **Next** | 先补 A 阶段独立数学/教学复核和获准真实模型质量证据；B2 条件卡需审核后才能宣称正式教材推理。B3 F4、B4 F8 按各自门槛另行实施。D1 暂行，D2 质量优劣待证。 |
+| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)。当前工作区最新本地测试与构建以对应回执为准；上一代码 SHA `6367ce1` 的 [CI #26](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37772411831) 成功，不能自动覆盖后续代码。此前 M1/U 系列仍按各自回执，不证明真实模型质量或学生收益。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺独立二审/真实模型质量；B2 开发条件卡尚缺内容审核，B3 题目/rubric 亦需审核。不能把 A5 本地工程、固定模型流程或学生勾选当数学准确率。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
 
 下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。

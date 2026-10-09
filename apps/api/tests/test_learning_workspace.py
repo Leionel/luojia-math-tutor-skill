@@ -390,16 +390,22 @@ def teach_request(workspace, **kwargs):
 def test_overview_read_only_owner_and_pending_probe_priority(workspace):
     empty = workspace.overview("alice")
     assert empty["plan"] is None and empty["next_task"] is None
+    assert empty["recommendation"]["kind"] == "choose_task"
     assert workspace.store.learning_records("alice",workspace.course_id,"plan") == []
     task = complete(workspace, practice(workspace))
     probe = workspace.probe_task("alice",task["id"])
     overview = workspace.overview("alice")
     assert overview["next_task"]["id"] == probe["id"]
+    assert overview["recommendation"]["kind"] == "resume_task"
+    assert overview["recommendation"] == workspace.overview("alice")["recommendation"]
+    assert overview["recommendation"]["href"] == f"/study?task={probe['id']}"
+    assert overview["recommendation"]["mastery_claim"] is False
     assert "challenge" not in overview["next_task"]
     assert overview["counts"]["practice"] == 1 and overview["counts"]["independent"] == 0
     assert workspace.overview("bob")["counts"]["practice"] == 0
     pending = workspace.submit("alice",probe["id"],attempt_for(probe),"pending-probe")
     assert workspace.overview("alice")["next_task"]["state"] == "awaiting_check"
+    assert workspace.overview("alice")["recommendation"]["kind"] == "confirm_feedback"
     assert workspace.get("alice","task",probe["id"])["state"] == pending["state"]
 
 
@@ -416,6 +422,7 @@ def test_overview_prior_day_resume_stale_and_training_score(workspace, monkeypat
     workspace.answer_assessment("alice",exam["id"],QUESTIONS[0][0],0)
     overview = workspace.overview("alice")
     assert overview["active_assessment"]["answered"] == 1
+    assert overview["recommendation"]["kind"] == "assessment_in_progress"
     assert "answers" not in overview["active_assessment"]
     workspace.end_assessment("alice",exam["id"])
     assert workspace.overview("alice")["active_assessment"] is None
@@ -428,6 +435,8 @@ def test_overview_prior_day_resume_stale_and_training_score(workspace, monkeypat
     workspace.store.append_revision("changed",None,workspace.course_id,"candidate","accept",{},"teacher")
     overview = workspace.overview("alice")
     assert overview["next_task"] is None and overview["stale_tasks"] == 2
+    assert overview["recommendation"]["kind"] == "stale_source"
+    assert overview["recommendation"]["href"].startswith("/reading?unit=")
 
 
 def test_teach_back_source_quote_revision_and_no_mastery(workspace):

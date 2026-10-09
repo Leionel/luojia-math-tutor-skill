@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-10 R1-A 工程与 R1-B 前两片
+
+唯一现状入口 `planning/README.md`。R1-A A4 将 U06 保存的 Teach-back 原句/条件按 owner、hash、课程版本接入 Chat 并回到原条件；A5 将 Newton 观察改为服务端逐步揭示，限已揭示步的切线与防剧透，三域沿用现有 TutorWorkflow/领域核验。隔离库浏览器走通 Newton 与讲回，工程 Gate 本地通过；数学/教学质量 Gate 仍 pending，详见 `planning/r1-a4-a5-delivery.md`。按用户要求随后做 B1 保存状态的只读任务建议、B2 开发条件卡的题目/学生自报前提对照与单一追问，详见 `planning/r1-b1-b2-delivery.md`。B2 没有从自由题干自动证明条件，正式条件卡需审核；B3/B4 未做。R0 正式库与授权链未验收，不部署；没有付费模型调用。保留本轮开始前的无关 dirty，提交/推送以最终回执为准。
+
 ## 2026-10-08 R1-A A0–A2 本地实现（R0 Gate 未过）
 
 用户在冻结规划后明确要求启动 A0–A2。`evaluation/r1/` 固定 16 个 agent 准备的开发案例和 D0/D1 对照边界；`apps/api/app/tutor/learning_context.py` 让 Newton 已保存解释/修订经 owner、活动/run/hash/版本/帮助锁重验后进入 Chat，普通轨迹讨论不带原话。前端活动增加显式“检查原话”入口与返回 Lab；D1 用已有 Root Runner/固定题精确代入暂行，D2 仍待验证。回执 `planning/r1-a0-a2-delivery.md`：本地 npm test 知识 JSON、API907/Web72，Web typecheck 与 lint 0 error/10 既有 warning；3000 开发服务器运行，未 build、未浏览正式库、未调用付费模型。远端目标 SHA CI、真实模型质量、A5 体验与 R0 仍 pending；未 commit/push/deploy。原工作区修改保留。

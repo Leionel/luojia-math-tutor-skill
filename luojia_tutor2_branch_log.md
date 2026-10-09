@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-10 R1-A A4/A5 与 R1-B B1/B2 本地切片
+
+A4 讲回选中条件可信引用与回链；A5 Newton 服务端逐步揭示、已揭示转移切线、防剧透、Chat↔Lab 原对象续接。三域共用现有上下文/回执边界，未建新 Agent。A5 本地工程 Gate 通过，独立数学/教学质量未验收。B1 按保存状态给只读、可解释任务入口；B2 用开发条件卡与学生提供的题目/自报前提对照追问，保留 unknown 和来源版本，不证明定理适用。独立内容审核、真实模型和学生收益待验，B3/B4 未做。测试与浏览器范围见 `planning/r1-a4-a5-delivery.md`、`planning/r1-b1-b2-delivery.md`；唯一当前状态入口 `planning/README.md`。R0 正式库与授权链仍 pending，原无关工作区修改保留。
+
 ## 2026-10-08 R1-A A0–A2 本地工程切片
 
 用户明确授权在 R0 Gate 未完成时先做 A0–A2 本地开发。16 个公开案例仅 agent 准备；Newton 已保存解释/修订经服务器重读和版本/owner/帮助锁绑定进入 Chat，普通轨迹问答不带原话。D1 复用固定题精确代入暂行，D2 与真实数学质量待验证。知识 JSON/API907/Web72、typecheck、lint0错10既有警告；开发服务器监听3000，未 build/付费模型/正式库/commit/push/deploy。`planning/README.md` 为唯一状态入口，细节见 `planning/r1-a0-a2-delivery.md`。

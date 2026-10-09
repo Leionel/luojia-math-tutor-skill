@@ -50,7 +50,10 @@ def test_prediction_observation_explanation_revision_and_restore(activity):
     assert exposed.status_code == 200
     state = exposed.json()
     run = state["run"]
-    assert [row["x"] for row in run["rows"][:3]] == [0, 1, 0]
+    assert [row["x"] for row in run["rows"]] == [0]
+    assert state["revealed_step"] == 0 and state["observation_complete"] is False
+    assert "往复" not in json.dumps(state, ensure_ascii=False)
+    assert run["stop_reason"] == "pending" and run["diagnosis"]["status"] == "unknown"
     assert run["runner_version"] and run["input_hash"]
     assert state["exact_check"] is None and state["answer_exposed"] is False
     assert state["reveal"]["evidence_kind"] == "reference_help"
@@ -59,6 +62,20 @@ def test_prediction_observation_explanation_revision_and_restore(activity):
 
     written = {"request_id": "explain-1", "run_id": run["id"], "input_hash": run["input_hash"],
                "text": "观察到返回初值；局部定理不能推广到任意初值。"}
+    assert client.post(BASE + "/explain", json=written).status_code == 409
+    assert client.get(BASE).json()["run"]["rows"] == run["rows"]
+    step = client.post(BASE + "/step", json={"request_id": "step-1", "expected_step": 0}).json()
+    assert [row["x"] for row in step["run"]["rows"]] == [0, 1]
+    assert "往复" not in json.dumps(step, ensure_ascii=False)
+    assert client.post(BASE + "/step", json={"request_id": "step-1", "expected_step": 0}).json()["revealed_step"] == 1
+    assert client.post(BASE + "/step", json={"request_id": "step-1", "expected_step": 1}).status_code == 409
+    assert client.post(BASE + "/step", json={"request_id": "stale", "expected_step": 0}).status_code == 409
+    for index in range(1, 8):
+        if step["observation_complete"]:
+            break
+        step = client.post(BASE + "/step", json={"request_id": f"step-{index+1}", "expected_step": index}).json()
+    assert step["observation_complete"] is True
+    assert [row["x"] for row in step["run"]["rows"][:3]] == [0, 1, 0]
     assert client.post(BASE + "/explain", json={**written, "input_hash": "0" * 64}).status_code == 409
     explained = client.post(BASE + "/explain", json=written).json()
     assert explained["exact_check"]["steps"] and explained["explanation"]["text"] == written["text"]
@@ -98,3 +115,19 @@ def test_direct_answer_and_changed_initial_do_not_count_as_independent(activity)
     assert changed["id"] != state["run"]["id"]
     assert "exact_check" not in changed
     assert workspace.repository.list_mastery("alice") == []
+
+
+def test_partial_activity_cannot_be_recovered_through_generic_lab_routes(activity, monkeypatch):
+    client, _, workspace, _ = activity
+    monkeypatch.setattr("app.api.routes_learning.workspace", lambda: workspace)
+    client.post(BASE + "/predict", json={"request_id": "predict-guard", "text": "先观察", "reason": ""})
+    state = client.post(BASE + "/reveal", json={"request_id": "observe-guard", "mode": "observe"}).json()
+    run = state["run"]
+    assert len(run["rows"]) == 1
+    assert len(client.get(f"/api/root-lab/runs/{run['id']}").json()["rows"]) == 1
+    assert len(client.get("/api/root-lab/runs").json()["runs"][0]["rows"]) == 1
+    replay = client.post("/api/root-lab/runs", json={"attempt": {
+        "method": "newton", "function": "x^3-2*x+2", "initial_value": 0,
+        "goal": "residual", "tolerance": 1e-6}, "max_iterations": 8,
+        "prediction": "先观察", "request_id": run["id"]})
+    assert replay.status_code == 200 and len(replay.json()["rows"]) == 1

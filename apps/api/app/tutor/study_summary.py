@@ -34,10 +34,21 @@ def read_study_summary(workspace,owner):
                 if not session_valid:state='session_unavailable'
                 tasks.append({'id':id,'title':'当前任务（请回工作区作答）' if locked else str(task.get('title','任务已不可用') if task else '任务已不可用')[:120],
                               'state':state,'stale':stale,'session_available':session_valid,'kind':task.get('kind','unknown') if task else 'unknown'})
+        recommendation = {'policy_version':'r1-b1-v1','graph_revision':revision,
+            'evidence_kind':'saved_state_only','mastery_claim':False,'kind':'assessment_in_progress' if locked else 'choose_task',
+            'title':'继续当前自检' if locked else '核对今日学习记录',
+            'reason':'自检期间只显示回到作答的入口。' if locked else '记录不完整时请回工作区核对，不推断掌握度。',
+            'href':'/assessment' if locked else '/study','source_id':None}
+        if not locked:
+            try:
+                recommendation=workspace.overview(owner)['recommendation']
+            except (KeyError, ValueError, TypeError):
+                # Old or partially missing task records remain visible above; do not invent a direct link.
+                pass
         return {'version':'study-summary-v1','local_date':date,'read_at':datetime.now(timezone.utc).isoformat(),
             'plan_exists':bool(plan),'stale':bool(plan and plan.get('graph_revision')!=revision),'help_locked':locked,
             'tasks':tasks,'omitted_tasks':max(0,len(ids)-3) if plan or pending else 0,
-            'read_only':True,'independent_success':False}
+            'recommendation':recommendation,'read_only':True,'independent_success':False}
 
 
 def event(name,data):return 'event: '+name+'\ndata: '+json.dumps(data,ensure_ascii=False)+'\n\n'

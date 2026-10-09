@@ -8,6 +8,7 @@ import {learningRequest, stableRequestId, type LabRun, type NewtonActivityState}
 import {newtonActivityContextRef} from "@/lib/learning-context";
 import {learningInput} from "./learning-shell";
 import {LabPlayback} from "./lab-playback";
+import {NewtonTangentView} from "./newton-tangent-view";
 
 const path = "/root-lab/activity/newton-cycle-v1";
 const reviewHref=(activity:NewtonActivityState,kind:"explanation"|"revision",requestId:string)=>
@@ -22,6 +23,8 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [loginNeeded,setLoginNeeded]=useState(false);
+  const [returnNotice,setReturnNotice]=useState("");
+  const [focusedClaim,setFocusedClaim]=useState<string|null>(null);
   const generation=useRef(0);
   const request=useRef<AbortController|null>(null);
 
@@ -29,7 +32,19 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
     const owner=getCurrentUserId(),version=++generation.current,controller=new AbortController();
     request.current=controller;
     learningRequest<NewtonActivityState>(path,undefined,controller.signal)
-      .then(next=>{if(version===generation.current&&owner===getCurrentUserId())setActivity(next);})
+      .then(next=>{if(version===generation.current&&owner===getCurrentUserId()){
+        setActivity(next);
+        const params=new URLSearchParams(window.location.search);
+        if(params.get("activity")==="newton-cycle-v1"){
+          const run=params.get("run"),claim=params.get("claim"),step=params.get("step");
+          const claimCurrent=claim===next.explanation?.request_id||next.revisions.some(item=>item.request_id===claim);
+          const stepCurrent=step===null||(Number.isInteger(Number(step))&&Number(step)>=0&&Number(step)<(next.run?.rows.length??0));
+          setReturnNotice(run===next.run?.id&&claimCurrent&&stepCurrent&&next.context_current?
+            `已回到原实验与第 ${step??next.revealed_step??0} 步；选中的解释或修订保留在下方。`:
+            "原实验、步骤或修订已变化；请核对当前记录后重新选择。")
+          setFocusedClaim(run===next.run?.id&&claimCurrent&&stepCurrent&&next.context_current?claim:null);
+        }
+      }})
       .catch(e=>{if(!controller.signal.aborted){setError(e instanceof Error?e.message:"活动暂不可用");setLoginNeeded((e as {status?:number}).status===401);}});
     const changed=()=>{generation.current++;request.current?.abort();setActivity(null);setBusy(false);setError("身份已变化，请刷新后继续。");};
     const storage=(event:StorageEvent)=>{if(isAuthStorageKey(event.key))changed();};
@@ -37,12 +52,12 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
     return()=>{generation.current=version+1;controller.abort();window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};
   },[]);
 
-  async function send(action:"predict"|"reveal"|"explain"|"revise",payload:Record<string,unknown>) {
+  async function send(action:"predict"|"reveal"|"step"|"explain"|"revise",payload:Record<string,unknown>) {
     if(busy)return;
     const owner=getCurrentUserId(),version=generation.current,controller=new AbortController();
     request.current=controller;setBusy(true);setError("");
     try {
-      const request_id=stableRequestId(localStorage,`newton-activity:${owner}:${action}:${action==="revise"?(activity?.revisions.length??0):0}`,
+      const request_id=stableRequestId(localStorage,`newton-activity:${owner}:${action}:${action==="revise"?(activity?.revisions.length??0):action==="step"?(activity?.revealed_step??0):0}`,
         payload,()=>crypto.randomUUID());
       const next=await learningRequest<NewtonActivityState>(`${path}/${action}`,{...payload,request_id},controller.signal);
       if(version!==generation.current||owner!==getCurrentUserId()||controller.signal.aborted)return;
@@ -72,7 +87,7 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
           <p className="text-xs tracking-widest text-olive-200">已知条件</p>
           <p className="mt-3 break-all font-mono text-xl font-medium sm:text-2xl">f(x) = x³ − 2x + 2</p>
           <p className="mt-2 font-mono text-sm text-olive-100">f′(x) = 3x² − 2　·　x₀ = 0</p>
-          <div className="mt-5 flex items-center gap-3 border-t border-olive-300/20 pt-4"><span className="size-2 rounded-full bg-ochre-300"/><span className="text-xs text-olive-100">后续轨迹暂未展开</span></div>
+          <div className="mt-5 flex items-center gap-3 border-t border-olive-300/20 pt-4"><span className="size-2 rounded-full bg-ochre-300"/><span className="text-xs text-olive-100">{activity?.observation_complete?"本次轨迹已观察完成":activity?.reveal?`当前观察至 x${activity.revealed_step??0}`:"后续轨迹暂未展开"}</span></div>
         </div>
       </div>
     </div>
@@ -82,6 +97,7 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
       </ol>
       {!activity&&!error&&<p role="status" className="mt-6 flex items-center gap-2 text-sm"><Loader2 aria-hidden="true" className="size-4 animate-spin"/>正在恢复活动…</p>}
       {error&&<p role="alert" className="mt-6 rounded-xl border border-cinnabar-600/25 bg-cinnabar-600/5 p-4 text-sm text-cinnabar-700 dark:text-cinnabar-300">{error}{loginNeeded&&<> <Link href="/auth/login" className="underline">前往登录</Link></>}</p>}
+      {returnNotice&&<p role="status" className="mt-6 rounded-xl border border-olive-500/30 bg-olive-500/5 p-4 text-sm">{returnNotice}</p>}
       {activity&&!activity.prediction&&!reached&&<div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(250px,.55fr)]">
         <div><h3 className="font-title text-xl font-semibold">你预计接下来的近似值会怎样变化？</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">猜测可以不确定。这里保存你的原话，不据此判断是否掌握。</p>
           <label htmlFor="newton-prediction" className="mt-5 block text-sm font-medium">我的预测</label><textarea id="newton-prediction" rows={3} maxLength={1000} value={prediction} onChange={e=>setPrediction(e.target.value)} placeholder="我预计……" className={`${learningInput} mt-2`}/>
@@ -92,16 +108,18 @@ export function NewtonActivity({onDiscuss}: {onDiscuss:(run:LabRun,step:number)=
       {activity?.prediction&&<div className="mt-7 rounded-xl border-l-4 border-olive-600 bg-olive-500/5 px-5 py-4"><p className="text-xs font-medium tracking-wider text-olive-700 dark:text-olive-300">最初的预测 · 已保存原文</p><p className="mt-2 whitespace-pre-wrap leading-7">{activity.prediction.text}</p>{activity.prediction.reason&&<p className="mt-2 text-sm text-[var(--text-secondary)]">依据：{activity.prediction.reason}</p>}</div>}
       {activity?.prediction&&!reached&&<div className="mt-6 flex flex-wrap gap-4"><button type="button" disabled={busy} onClick={()=>void send("reveal",{mode:"observe"})} className={button}><Eye aria-hidden="true" className="size-4"/>开始观察真实迭代</button><button type="button" disabled={busy} onClick={()=>void send("reveal",{mode:"answer"})} className="min-h-12 text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">直接看完整答案</button></div>}
       {run&&<div className="mt-8"><div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-title text-2xl font-semibold">逐步观察</h3><span className="font-mono text-xs text-[var(--text-muted)]">{run.runner_version} · {run.id}</span></div><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">标准 Newton · x₀={run.parameters.initial_value} · 残差阈值 {run.parameters.tolerance} · 上限 {run.max_iterations} 步。由受控计算器生成，属于参考帮助。</p>
-        <LabPlayback run={run} concealFuture onDiscussStep={activity.context_current?step=>onDiscuss(run,step):undefined}/>
-        <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">停止说明：{run.stop_detail}。数值回放只描述这一次计算；更换初值须重新运行，不能沿用本题判断。</p>
+        <NewtonTangentView rows={run.rows}/>
+        <LabPlayback run={run} concealFuture onDiscussStep={activity.context_current&&activity.observation_complete?step=>onDiscuss(run,step):undefined}/>
+        {!activity.observation_complete&&<div className="mt-4 flex flex-wrap items-center gap-4"><button type="button" disabled={busy} onClick={()=>void send("step",{expected_step:activity.revealed_step})} className={button}>揭示下一步切线与落点 <ArrowRight aria-hidden="true" className="size-4"/></button><button type="button" disabled={busy} onClick={()=>void send("reveal",{mode:"answer"})} className="min-h-11 text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">跳过余下步骤，查看完整答案</button><span className="text-sm text-[var(--text-secondary)]">当前只公开至 x{activity.revealed_step??0}；刷新不会展开未来步骤。</span></div>}
+        <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{activity.observation_complete?`停止说明：${run.stop_detail}。数值回放只描述这一次计算；更换初值须重新运行。`:"最终停止原因与诊断将在逐步观察完成后显示。"}</p>
         {!activity.context_current&&<p role="status" className="mt-3 text-sm text-ochre-700 dark:text-ochre-300">计算或课程版本已更新：旧轨迹仅供回看，请重新实验后再与助教讨论。</p>}
       </div>}
-      {run&&!activity?.explanation&&activity?.prediction_choice==="submitted"&&<div className="mt-8 rounded-2xl border border-olive-500/20 bg-olive-500/5 p-5 sm:p-6"><h3 className="font-title text-xl font-semibold">把观察说清楚</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">你看到了什么？为什么不能只凭局部收敛结论判断这个初值？这里记录你的解释，不自动计分。</p><label htmlFor="newton-explanation" className="sr-only">我的解释</label><textarea id="newton-explanation" rows={3} maxLength={2000} value={explanation} onChange={e=>setExplanation(e.target.value)} placeholder="我观察到……；局部定理要求……" className={`${learningInput} mt-4`}/><div className="mt-4 flex flex-wrap items-center gap-4"><button type="button" disabled={busy||!explanation.trim()} onClick={()=>void send("explain",{run_id:run.id,input_hash:run.input_hash,text:explanation.trim()})} className={button}>保存解释<ArrowRight aria-hidden="true" className="size-4"/></button>{!activity.answer_exposed&&<button type="button" disabled={busy} onClick={()=>void send("reveal",{mode:"answer"})} className="min-h-12 text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">直接看完整答案</button>}</div></div>}
-      {activity?.explanation&&<div className="mt-7"><p className="text-xs font-medium tracking-wider text-olive-700 dark:text-olive-300">我的解释 · 已保存原文</p><p className="mt-2 whitespace-pre-wrap leading-7">{activity.explanation.text}</p>{activity.context_current&&<Link href={reviewHref(activity,"explanation",activity.explanation.request_id)} className="mt-3 inline-flex min-h-11 items-center text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">请小珞检查这段解释 →</Link>}</div>}
+      {run&&activity?.observation_complete&&!activity?.explanation&&activity?.prediction_choice==="submitted"&&<div className="mt-8 rounded-2xl border border-olive-500/20 bg-olive-500/5 p-5 sm:p-6"><h3 className="font-title text-xl font-semibold">把观察说清楚</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">你看到了什么？为什么不能只凭局部收敛结论判断这个初值？这里记录你的解释，不自动计分。</p><label htmlFor="newton-explanation" className="sr-only">我的解释</label><textarea id="newton-explanation" rows={3} maxLength={2000} value={explanation} onChange={e=>setExplanation(e.target.value)} placeholder="我观察到……；局部定理要求……" className={`${learningInput} mt-4`}/><div className="mt-4 flex flex-wrap items-center gap-4"><button type="button" disabled={busy||!explanation.trim()} onClick={()=>void send("explain",{run_id:run.id,input_hash:run.input_hash,text:explanation.trim()})} className={button}>保存解释<ArrowRight aria-hidden="true" className="size-4"/></button>{!activity.answer_exposed&&<button type="button" disabled={busy} onClick={()=>void send("reveal",{mode:"answer"})} className="min-h-12 text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">直接看完整答案</button>}</div></div>}
+      {activity?.explanation&&<div id={`claim-${activity.explanation.request_id}`} className={`mt-7 ${focusedClaim===activity.explanation.request_id?"rounded-xl border border-olive-500/40 bg-olive-500/5 p-4":""}`}> <p className="text-xs font-medium tracking-wider text-olive-700 dark:text-olive-300">我的解释 · 已保存原文</p><p className="mt-2 whitespace-pre-wrap leading-7">{activity.explanation.text}</p>{activity.context_current&&<Link href={reviewHref(activity,"explanation",activity.explanation.request_id)} className="mt-3 inline-flex min-h-11 items-center text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">请小珞检查这段解释 →</Link>}</div>}
       {activity?.exact_check&&<div className="mt-8 rounded-2xl border border-dai-500/25 bg-dai-500/5 p-5 sm:p-6"><p className="text-xs font-medium tracking-wider text-dai-700 dark:text-dai-300">精确代数核对 · 与数值回放分开</p><ol className="mt-3 space-y-2 text-sm leading-7">{activity.exact_check.steps.map(step=><li key={step}>{step}</li>)}</ol><p className="mt-3 text-sm leading-7">{activity.exact_check.conclusion}</p><p className="mt-3 text-xs text-[var(--text-muted)]">{activity.exact_check.scope}</p></div>}
-      {run&&activity?.explanation&&activity.prediction&&<div className="mt-8 border-t border-[var(--border-subtle)] pt-6"><h3 className="font-title text-xl font-semibold">修订刚才的观点</h3><p className="mt-2 text-sm text-[var(--text-secondary)]">原预测保留在上方。修订会作为新版本保存，不覆盖它。</p><label htmlFor="newton-revision" className="sr-only">修订后的观点</label><textarea id="newton-revision" rows={3} maxLength={2000} value={revision} onChange={e=>setRevision(e.target.value)} placeholder="现在我认为……；还需要确认……" className={`${learningInput} mt-4`}/><button type="button" disabled={busy||!revision.trim()} onClick={()=>void send("revise",{run_id:run.id,input_hash:run.input_hash,text:revision.trim()})} className={`${button} mt-4`}>保存修订<ArrowRight aria-hidden="true" className="size-4"/></button>{activity.revisions.length>0&&<ol className="mt-6 space-y-3">{activity.revisions.map((item,index)=><li key={item.request_id} className="rounded-xl border border-[var(--border-subtle)] p-4"><span className="text-xs text-[var(--text-muted)]">第 {index+1} 次修订</span><p className="mt-2 whitespace-pre-wrap leading-7">{item.text}</p>{activity.context_current&&<Link href={reviewHref(activity,"revision",item.request_id)} className="mt-2 inline-flex min-h-11 items-center text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">请小珞检查这次修订 →</Link>}</li>)}</ol>}</div>}
+      {run&&activity?.explanation&&activity.prediction&&<div className="mt-8 border-t border-[var(--border-subtle)] pt-6"><h3 className="font-title text-xl font-semibold">修订刚才的观点</h3><p className="mt-2 text-sm text-[var(--text-secondary)]">原预测保留在上方。修订会作为新版本保存，不覆盖它。</p><label htmlFor="newton-revision" className="sr-only">修订后的观点</label><textarea id="newton-revision" rows={3} maxLength={2000} value={revision} onChange={e=>setRevision(e.target.value)} placeholder="现在我认为……；还需要确认……" className={`${learningInput} mt-4`}/><button type="button" disabled={busy||!revision.trim()} onClick={()=>void send("revise",{run_id:run.id,input_hash:run.input_hash,text:revision.trim()})} className={`${button} mt-4`}>保存修订<ArrowRight aria-hidden="true" className="size-4"/></button>{activity.revisions.length>0&&<ol className="mt-6 space-y-3">{activity.revisions.map((item,index)=><li id={`claim-${item.request_id}`} key={item.request_id} className={`rounded-xl border p-4 ${focusedClaim===item.request_id?"border-olive-500/50 bg-olive-500/5":"border-[var(--border-subtle)]"}`}> <span className="text-xs text-[var(--text-muted)]">第 {index+1} 次修订</span><p className="mt-2 whitespace-pre-wrap leading-7">{item.text}</p>{activity.context_current&&<Link href={reviewHref(activity,"revision",item.request_id)} className="mt-2 inline-flex min-h-11 items-center text-sm text-olive-700 underline underline-offset-4 dark:text-olive-300">请小珞检查这次修订 →</Link>}</li>)}</ol>}</div>}
       {activity?.prediction_choice==="skipped"&&run&&<p className="mt-6 text-sm leading-6 text-[var(--text-secondary)]">你选择了直接看答案。本次只记录参考帮助曝光，不代表不会，也不计独立完成。</p>}
-      {run&&<div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-[var(--border-subtle)] pt-5 text-sm"><button type="button" disabled={!activity?.context_current} onClick={()=>onDiscuss(run,0)} className="min-h-11 text-olive-700 underline underline-offset-4 disabled:opacity-45 dark:text-olive-300">带着这次实验问小珞 →</button><Link href="/study" className="inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">去做自己的求根练习 →</Link></div>}
+      {run&&<div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-[var(--border-subtle)] pt-5 text-sm"><button type="button" disabled={!activity?.context_current||!activity.observation_complete} onClick={()=>onDiscuss(run,0)} className="min-h-11 text-olive-700 underline underline-offset-4 disabled:opacity-45 dark:text-olive-300">带着这次实验问小珞 →</button><Link href="/study" className="inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">去做自己的求根练习 →</Link></div>}
     </div>
   </section>;
 }

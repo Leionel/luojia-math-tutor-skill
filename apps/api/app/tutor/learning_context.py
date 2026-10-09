@@ -75,6 +75,12 @@ def _resolve_root_context(workspace, owner: str, ref: LearningContextRef) -> dic
     with workspace.store.transaction():
         assert_reference_help_allowed(owner, workspace.course)
         run = workspace.get(owner, "lab", ref.record_id)
+        from app.tutor.newton_activity import ACTIVITY_ID, KIND
+        activity = workspace.store.learning_record(owner, workspace.course_id, KIND, ACTIVITY_ID)
+        if activity and (activity.get("run_ref") or {}).get("id") == ref.record_id:
+            revealed = activity.get("revealed_step")
+            if revealed is not None and not activity.get("answer_exposure") and revealed < len(run["rows"]) - 1:
+                raise ValueError("活动仍在逐步观察中；请揭示完轨迹后再引用完整实验。")
         if any(run.get(k) != getattr(ref, k) for k in
                ("input_hash", "runner_version", "graph_revision")):
             raise ValueError("实验版本已变化，请重新打开实验后引用。")
@@ -126,6 +132,9 @@ class ReadingContextRef(BaseModel):
     start: int = Field(ge=0)
     end: int = Field(gt=0)
     graph_revision: str | None = Field(default=None,max_length=160)
+    problem_text: str | None = Field(default=None, min_length=1, max_length=1000)
+    claimed_known: list[int] = Field(default_factory=list, max_length=10)
+    condition_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 class IntegrationContextRef(BaseModel):
@@ -146,7 +155,17 @@ class CodeContextRef(BaseModel):
     selected_finding: int | None = Field(default=None, ge=0, le=29)
 
 
-ReferenceContext = Annotated[LearningContextRef | LinearContextRef | IntegrationContextRef | ReadingContextRef | CodeContextRef, Field(discriminator="kind")]
+class TeachBackContextRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["teach_back"]
+    record_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    source_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    condition_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    graph_revision: str = Field(min_length=1, max_length=160)
+    condition_id: str = Field(min_length=1, max_length=100)
+
+
+ReferenceContext = Annotated[LearningContextRef | LinearContextRef | IntegrationContextRef | ReadingContextRef | CodeContextRef | TeachBackContextRef, Field(discriminator="kind")]
 
 
 def _bounded(snapshot):
@@ -160,6 +179,26 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
     with workspace.store.transaction():
         assert_reference_help_allowed(owner,workspace.course)
         common={"version":"learning-context-v1","ref":ref.model_dump(),"evidence_kind":"reference_help","independent_success":False}
+        if ref.kind == "teach_back":
+            from app.tutor.learning_workspace import digest
+            saved = workspace.get(owner, "teach_back", ref.record_id)
+            unit = next((item for item in workspace.reading_units() if item["id"] == saved.get("unit_id")), None)
+            if (not unit or saved.get("evidence_version") != "teachback-evidence-v1"
+                    or saved.get("source_hash") != ref.source_hash or unit["source_hash"] != ref.source_hash
+                    or saved.get("condition_hash") != ref.condition_hash
+                    or digest(unit["conditions"]) != ref.condition_hash
+                    or saved.get("graph_revision") != ref.graph_revision
+                    or unit["graph_revision"] != ref.graph_revision):
+                raise ValueError("讲回来源或条件版本已变化，请回原记录核对。")
+            condition = next((row for row in saved.get("conditions", [])
+                              if row.get("condition_id") == ref.condition_id), None)
+            if not condition or condition["condition"] not in unit["conditions"]:
+                raise ValueError("选中的讲回条件已变化，请重新选择。")
+            return _bounded({**common, "title": "已保存讲回 · 条件追问", "unit_id": saved["unit_id"],
+                "content_review_status": saved["content_review_status"],
+                "source_quote": saved["source_quote"], "student_text": saved["text"],
+                "condition": condition, "model_status": saved["model_status"],
+                "parent_id": saved.get("parent_id"), "scope": "selected_condition_only_unverified_no_mastery"})
         if ref.kind=='code_static':
             from app.tutor.learning_workspace import digest
             from app.tutor.learning_extensions import ASSIGNMENT_ID
@@ -200,7 +239,24 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
                 if section is None:raise KeyError('section')
                 title=f"{doc['filename'][:80]} · {section['title'][:80]}";source_kind='uploaded_markdown'
             citation=source_excerpt(workspace,owner,ref.source_id,ref.source_hash,ref.section_id,ref.start,ref.end)
-            return _bounded({**common,"title":title,"source_kind":source_kind,"content_review_status":unit["review_status"] if unit else "uploaded_unreviewed","citation":citation})
+            snapshot={**common,"title":title,"source_kind":source_kind,
+                      "content_review_status":unit["review_status"] if unit else "uploaded_unreviewed",
+                      "citation":citation}
+            if ref.problem_text is not None or ref.claimed_known or ref.condition_hash is not None:
+                if not unit or not ref.problem_text or not ref.problem_text.strip() or ref.condition_hash != unit["condition_hash"]:
+                    raise ValueError("当前来源没有可绑定的条件卡，或条件卡版本已变化。")
+                indices=ref.claimed_known
+                if len(indices)!=len(set(indices)) or any(index<0 or index>=len(unit["conditions"]) for index in indices):
+                    raise ValueError("所选条件编号不可确认。")
+                conditions=[{"index":index,"condition":condition,
+                             "status":"student_reported_known_unverified" if index in indices else "unknown"}
+                            for index,condition in enumerate(unit["conditions"])]
+                next_question=(f"题目中哪里给出了“{conditions[0]['condition']}”的依据？" if len(indices)==len(conditions) else
+                               f"题目是否给出“{next(row['condition'] for row in conditions if row['status']=='unknown')}”？请指出原句或说明仍未知。")
+                snapshot["condition_review"]={"card_hash":unit["condition_hash"],"card_status":unit["review_status"],
+                    "problem_text":ref.problem_text,"conditions":conditions,"next_question":next_question,
+                    "scope":"student_marked_premises_not_mathematical_verification","verified":False}
+            return _bounded(snapshot)
         from app.math_tools.numerical_lab import LinearTask, IntegrationTask, linear_reference
         run=workspace.get(owner,'numerical_lab',ref.record_id)
         if run.get('source_hash')!=ref.source_hash or run.get('schema_version')!=ref.schema_version:

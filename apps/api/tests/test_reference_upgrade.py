@@ -110,6 +110,37 @@ def test_reading_public_scope_and_extra_data_are_not_authority(ws,monkeypatch):
     assert client.post('/api/tutor/context',json={**ref.model_dump(),'quote':'forged source'}).status_code==422
 
 
+def test_reading_condition_comparison_is_unverified_and_version_bound(ws):
+    work,_=ws;ref=course_ref(ws);unit=next(u for u in work.reading_units() if u['id']==ref.source_id)
+    reviewed=ref.model_copy(update={
+        'problem_text':'已知函数在区间内可导，问是否可直接套用？',
+        'claimed_known':[0], 'condition_hash':unit['condition_hash']})
+    snapshot=resolve_learning_context(work,'alice',reviewed)
+    rows=snapshot['condition_review']['conditions']
+    assert snapshot['condition_review']['verified'] is False
+    assert rows[0]['status']=='student_reported_known_unverified'
+    assert all(row['status']=='unknown' for row in rows[1:])
+    assert snapshot['evidence_kind']=='reference_help' and snapshot['independent_success'] is False
+    assert work.repository.list_mastery('alice')==[] and work.repository.list_user_mistakes('alice')==[]
+    for patch in ({'condition_hash':'0'*64},{'claimed_known':[len(rows)]},{'claimed_known':[0,0]},
+                  {'source_hash':'0'*64},{'graph_revision':'old'}):
+        with pytest.raises(ValueError):
+            resolve_learning_context(work,'alice',reviewed.model_copy(update=patch))
+    # Course cards are public; the unverified problem text is sent by this request,
+    # not read from another owner's saved work.
+    assert resolve_learning_context(work,'bob',reviewed)['condition_review']['verified'] is False
+
+
+def test_uploaded_source_cannot_borrow_course_condition_card(ws,monkeypatch):
+    work,_=ws;unit=work.reading_units()[0]
+    monkeypatch.setattr(work,'document',lambda owner,id:{'id':id,'filename':'private.md',
+        'source_hash':'1'*64,'sections':[{'id':'0','title':'原文','quote':'普通原文'}]})
+    ref=ReadingContextRef(kind='reading',source_id='private',source_hash='1'*64,
+        section_id='0',start=0,end=2,problem_text='一道题',claimed_known=[0],
+        condition_hash=unit['condition_hash'])
+    with pytest.raises(ValueError):resolve_learning_context(work,'alice',ref)
+
+
 def test_private_reading_uses_exact_span_owner_and_full_hash(ws,monkeypatch):
     work,_=ws
     documents={'alice':{'id':'document-one','filename':'same.md','source_hash':'1'*64,'sections':[{'id':'0','title':'原文','quote':'甲📘乙重复乙重复'}]}}
@@ -166,6 +197,7 @@ def test_study_read_bound_stale_missing_locked_no_writes(ws,monkeypatch):
     before=work.store.learning_records('alice',work.course_id,'task')
     summary=read_study_summary(work,'alice')
     assert summary['tasks'][0]['id']==id and read_study_summary(work,'bob')['tasks']==[]
+    assert summary['recommendation']==work.overview('alice')['recommendation']
     assert work.store.learning_records('alice',work.course_id,'task')==before
     task=work.get('alice','task',id);task['session_id']='not-owned';work.save('alice','task',id,task)
     assert read_study_summary(work,'alice')['tasks'][0]['state']=='session_unavailable'
@@ -173,6 +205,7 @@ def test_study_read_bound_stale_missing_locked_no_writes(ws,monkeypatch):
     assert read_study_summary(work,'alice')['tasks'][0]['stale']
     work.new_assessment('alice');summary=read_study_summary(work,'alice')
     assert summary['help_locked'] and summary['tasks'][0]['title']=='当前任务（请回工作区作答）'
+    assert summary['recommendation']['kind']=='assessment_in_progress'
     assert all('challenge' not in row and 'reason' not in row for row in summary['tasks'])
     client,tutor=app_client(ws,monkeypatch);session=work.repository.create_session('alice','数值分析')['session_id']
     r=client.post('/api/tutor/stream',json={'session_id':session,'user_id':'alice','message':'继续上次任务'})

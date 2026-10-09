@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-10 R1-A/B 课程证据边界
+
+A4 讲回和 B2 教材对照复用课程图 revision、来源 hash 与条件卡 hash；Teach-back 原句和开发条件卡仍是待审内容。B2 只把学生标记的前提送入有界 Chat 上下文：`student_reported_known_unverified` 与 `unknown`，并追问依据；没有自由题干形式化证明、自动定理适用判定或新图谱节点。B1 推荐只读保存状态，不更新掌握度。A5 Newton 固定题切线限已揭示步骤，数学真值仍由领域工具单独核对。具体交付范围及未验质量 Gate 见 `planning/r1-a4-a5-delivery.md`、`planning/r1-b1-b2-delivery.md`，当前状态仅看 `planning/README.md`。
+
 ## 2026-10-08 R1-A A0–A2 证据边界
 
 A0 固定 16 个 agent 准备的公开数学/权限案例，算术用独立分数运算复核，但无人审 gold。A1 将 Newton 活动保存的学生原话与 Root Runner 轨迹区分：服务器按 owner、活动请求、修订计数及 run/hash/graph 版本重读；模型输出不自动更新掌握。A2 仅比较 D0/D1 prompt 合同，暂用含本题精确代入的 D1，不把固定模型或协议回归算作真实数学质量；D2 待验证。R0 CI 与 A5/质量 Gate 未过，详见 `planning/r1-a0-a2-delivery.md` 和唯一状态入口 `planning/README.md`。

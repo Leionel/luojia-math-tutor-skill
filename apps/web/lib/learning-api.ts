@@ -25,7 +25,7 @@ export type StudyToday = {
 export type ReadingUnit = {
   graph_revision: string;
   id: string; title: string; quote: string; latex: string; source_hash: string;
-  conditions: string[]; question: string; options: string[]; source_span?: string | null;
+  conditions: string[]; condition_hash:string; question: string; options: string[]; source_span?: string | null;
   page_start?: number | null; source_document_id?: string | null;
 };
 export type ReadingDocument = {
@@ -49,6 +49,7 @@ export type NewtonActivityState = {
   explanation: {text:string;request_id:string;at:string;run_id:string;input_hash:string} | null;
   revisions: {text:string;request_id:string;at:string;run_id:string;input_hash:string}[];
   run: LabRun | null; context_current?: boolean; answer_exposed: boolean; independent_success: false;
+  revealed_step: number | null; observation_complete: boolean; legacy_full_exposure?: boolean;
   exact_check?: {scope:string;steps:string[];conclusion:string} | null;
 };
 export type Assessment = {
@@ -63,10 +64,12 @@ export type LearningOverview = {
   local_date: string; persistent: boolean; access_mode: "account" | "demo";
   plan: null | {minutes: number; total: number; completed: number; stale: boolean};
   next_task: StudyTask | null; pending_tasks: StudyTask[]; stale_tasks: number; due_reviews: number;
+  recommendation: LearningRecommendation;
   counts: {reading: number; practice: number; independent: number; notes: number; labs: number; teach_backs: number; code_submissions: number};
   active_assessment: null | {id: string; answered: number; total: number};
   latest_assessment: null | {id: string; score: {correct: number; total: number; percentage: number}; review_units: string[]};
 };
+export type LearningRecommendation = {policy_version:"r1-b1-v1";graph_revision:string;evidence_kind:"saved_state_only";mastery_claim:false;kind:string;title:string;reason:string;href:string;source_id:string|null};
 export type TeachBack = {
   evidence_version?:string; condition_hash?:string; graph_revision?:string; content_review_status?:string;
   id: string; unit_id: string; title: string; source_hash: string; source_quote: string; text: string; parent_id: string | null;
