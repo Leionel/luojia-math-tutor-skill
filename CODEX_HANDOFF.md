@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-12 R1-B B5 同会话工程回归
+
+按用户授权实施 B5：离线同会话 ASGI/SSE 验证 Chat 只读任务、教材选段、Newton/线性保存实验、代码保存行号及交卷后复习单元再回教材 Chat；换 owner/hash 的私有引用拒绝，参考帮助不写掌握。前端回链合同补线性/代码保存对象与 owner/code hash 分隔。自检没有单题答案直连 Chat 的可信引用，当前回链只到复习单元，不能冒称答案在 Chat 中核验。统一分 Gate 回执见 `planning/r1-b5-delivery.md`，唯一状态入口仍 `planning/README.md`。B1–B5 本地工程与正式内容/真实模型质量分开；R0 正式库 Gate 和 R1-A 质量 Gate 未解除。本轮无付费模型/正式库/部署，原无关 dirty 保留。
+
 ## 2026-10-12 R1-B B3/B4 本地开发切片
 
 用户授权启动 B3/B4。B3 沿用六道开发自检题与既有参考计分，交卷后按条件/方法/完整解析分层；题目、rubric 和反馈版本/hash 绑定，新版不重评旧卷，交卷前不泄露答案，不写掌握度。B4 在限定 Newton `solve` AST 审阅里仅增直接残差阈值退出的一条算法线索，提示需根误差依据而不判错；v2 规则、行号与保存代码 hash 绑定，历史 v1 不重算，学生代码不执行。隔离临时库的网页流程已走通，最终测试/提交状态见 `planning/r1-b3-b4-delivery.md` 与唯一状态入口 `planning/README.md`。独立题目/rubric/误导审核、真实模型质量、R1-A 质量 Gate 和 R0 正式库 Gate 仍 pending；B5 未做，原无关 dirty 保留。

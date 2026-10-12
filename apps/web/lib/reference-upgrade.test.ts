@@ -70,3 +70,12 @@ test("selected teach-back condition keeps its saved version and own chat return 
  assert.throws(()=>teachBackContextRef({...saved,condition_hash:"old"},"NA_NEWTON:0"));
  assert.throws(()=>teachBackContextRef(saved,"NA_NEWTON:9"));
 });
+
+test("B5 return links keep the saved object and leave private code out of URLs",()=>{
+ const linear=linearContextRef(run,1);
+ assert.equal(referenceHref({ref:linear} as Parameters<typeof referenceHref>[0]),"/numerical-lab?id=record&step=1");
+ const code={kind:"code_static" as const,record_id:"submission_1",code_hash:"a".repeat(64),static_rule_version:"newton-static-v2",selected_finding:0};
+ assert.equal(referenceHref({ref:code} as Parameters<typeof referenceHref>[0]),"/code-workshop?id=submission_1");
+ assert.notEqual(referenceChatKey("alice",code),referenceChatKey("bob",code));
+ assert.notEqual(referenceChatKey("alice",code),referenceChatKey("alice",{...code,code_hash:"b".repeat(64)}));
+});
