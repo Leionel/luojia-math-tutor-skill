@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-12 R1 独立质量审阅与真实模型小样本
+
+B5 工程提交 `1fc1b2f` 的目标 CI 已过。独立子 agent 在 B5 之后只读复核 A/B 全链，主 agent 经用户授权用临时凭据直连 `deepseek-flash` 运行 9 条公开合成提示；原始脱敏数据在 `evaluation/r1/live-probe-development-2026-10-12.json`，判据、源码行号与质量边界见 `planning/r1-independent-quality-review-2026-10-12.md`。发现 B1 首页 CTA 与后端推荐优先级冲突、A5 同题新 run 可提前显示完整轨迹、B1 复习来源版本风险、B3 共用错项线索、B4 正确代码的残差提示风险；模型 T04 对未知条件过早判错，B4 仅给近似依据。未修改业务代码或正式库；小样本不是应用端到端准确率，真人内容二审、R1 质量 Gate、R0 正式库 Gate 均未通过。当前状态只看 `planning/README.md`。
+
 ## 2026-10-12 R1-B B5 同会话工程回归
 
 按用户授权实施 B5：离线同会话 ASGI/SSE 验证 Chat 只读任务、教材选段、Newton/线性保存实验、代码保存行号及交卷后复习单元再回教材 Chat；换 owner/hash 的私有引用拒绝，参考帮助不写掌握。前端回链合同补线性/代码保存对象与 owner/code hash 分隔。自检没有单题答案直连 Chat 的可信引用，当前回链只到复习单元，不能冒称答案在 Chat 中核验。统一分 Gate 回执见 `planning/r1-b5-delivery.md`，唯一状态入口仍 `planning/README.md`。B1–B5 本地工程与正式内容/真实模型质量分开；R0 正式库 Gate 和 R1-A 质量 Gate 未解除。本轮无付费模型/正式库/部署，原无关 dirty 保留。

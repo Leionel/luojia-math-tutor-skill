@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-12",
+  "scope": "model-only; synthetic cases; no app routing or student data",
+  "model_requested": "deepseek-flash",
+  "settings": {
+    "thinking": "disabled",
+    "temperature": 0,
+    "max_tokens": 512,
+    "retries": 0
+  },
+  "cases": [
+    {
+      "id": "N02-D0",
+      "criterion_precommitted": "承认 f'(0) 非零但反驳任意初值收敛；不假装已有工具证据",
+      "prompt": "学生说：对 f(x)=x³−2x+2，在 x0=0 有 f'(0)=-2，所以牛顿法从任意初值都会收敛。请检查这句话。",
+      "http_status": 200,
+      "latency_seconds": 1.351,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "该说法错误。已核对：f'(x)=3x²−2，故 f'(0)=−2，但这只说明 x0=0 处导数非零，不能推出“任意初值都收敛”。牛顿法收敛依赖初值、根附近性质等；此处还可能有周期或发散情形。未知：学生是否混淆了局部与全局。追问：你打算用哪个初值验证收敛？",
+      "usage": {
+        "prompt_tokens": 105,
+        "completion_tokens": 88,
+        "total_tokens": 193,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 105
+      }
+    },
+    {
+      "id": "N02-D1",
+      "criterion_precommitted": "利用给定精确轨迹指出 0↔1 周期，且只限本函数本初值",
+      "prompt": "学生说：对 f(x)=x³−2x+2，在 x0=0 有 f'(0)=-2，所以牛顿法从任意初值都会收敛。请检查这句话。\n服务器给出的固定输入精确证据：f(0)=2，f'(0)=-2，x1=1；f(1)=1，f'(1)=1，x2=0。此证据只覆盖本函数、本初值和前两步。",
+      "http_status": 200,
+      "latency_seconds": 1.193,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "这句话不对。已核对：f(0)=2，f'(0)=-2，故x₁=1；f(1)=1，f'(1)=1，故x₂=0，出现0↔1循环，从x₀=0不收敛。至于“任意初值”更无依据，证据只覆盖本函数、本初值和前两步。\n\n追问：若换初值x₀=2，前两步会怎样？",
+      "usage": {
+        "prompt_tokens": 159,
+        "completion_tokens": 97,
+        "total_tokens": 256,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 159
+      }
+    },
+    {
+      "id": "N04",
+      "criterion_precommitted": "算出 x1=-9/5；不迁移 x0=0 的结论",
+      "prompt": "学生说：f(x)=x³−2x+2 的牛顿法把初值改为 -2，第一步仍会落在 1。请核对。",
+      "http_status": 200,
+      "latency_seconds": 0.978,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "牛顿法：x₁=x₀−f(x₀)/f′(x₀)。x₀=−2 时，f=−8+4+2=−2，f′=12−2=10，故 x₁=−2−(−2/10)=−1.8，不是 1。若初值 0，则 x₁=1。追问：你算 f′(−2) 时是否漏了常数项？",
+      "usage": {
+        "prompt_tokens": 97,
+        "completion_tokens": 95,
+        "total_tokens": 192,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 97
+      }
+    },
+    {
+      "id": "L02",
+      "criterion_precommitted": "GS 第一步第二分量为 7/12，解释立即复用新分量",
+      "prompt": "A=[[4,1],[1,3]]，b=[1,2]，x0=[0,0]。学生说 Gauss-Seidel 第一步是 [1/4,2/3]，与 Jacobi 相同。请核对。",
+      "http_status": 200,
+      "latency_seconds": 0.932,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "核对：Gauss-Seidel 第一步 x1=1/4；x2=(2−1·1/4)/3=7/12，不是2/3。Jacobi 第一步才是 [1/4,2/3]。学生把两者混同了。追问：若继续迭代，Gauss-Seidel 第二步的 x1 会是多少？",
+      "usage": {
+        "prompt_tokens": 114,
+        "completion_tokens": 77,
+        "total_tokens": 191,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 114
+      }
+    },
+    {
+      "id": "L03",
+      "criterion_precommitted": "拒绝残差直接界定误差，给出 A 逆或条件数依赖",
+      "prompt": "学生说：线性方程组 Ax=b 的残差无穷范数只有 1e-8，所以解误差也至多 1e-8。没有提供 A 的性质。请核对。",
+      "http_status": 200,
+      "latency_seconds": 1.172,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "不能这样推。残差 r=b−Ax̃ 小，只说明 Ax̃ 接近 b；误差 e=x−x̃ 满足 Ae=r，故 ‖e‖∞≤‖A⁻¹‖∞‖r‖∞。若 A 病态，‖A⁻¹‖∞ 很大，误差可能远大于 1e-8。未给 A 条件数，结论未知。\n\n追问：A 的条件数或 ‖A⁻¹‖∞ 是多少？",
+      "usage": {
+        "prompt_tokens": 105,
+        "completion_tokens": 101,
+        "total_tokens": 206,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 105
+      }
+    },
+    {
+      "id": "T03",
+      "criterion_precommitted": "区分牛顿一步迭代值与方程根，算出 f(1)=1",
+      "prompt": "讲回原句：对 f(x)=x³−2x+2，从 x0=0 算得 x1=1，就说明 1 是方程的根。请只评这句话。",
+      "http_status": 200,
+      "latency_seconds": 1.111,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "这句话不成立。x₁=1 只是某一步迭代值，不能仅凭它断定 1 是根；需验证 f(1)=1−2+2=1≠0。若指牛顿法，x₁=1 也只说明该步结果，不是根。",
+      "usage": {
+        "prompt_tokens": 107,
+        "completion_tokens": 61,
+        "total_tokens": 168,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 107
+      }
+    },
+    {
+      "id": "T04",
+      "criterion_precommitted": "索要函数、迭代规则、初值及更小的含义，不推断收敛",
+      "prompt": "讲回原句：我的迭代一定收敛，因为第三步比第二步小。请只评这句话。",
+      "http_status": 200,
+      "latency_seconds": 1.119,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "这句话不成立。“第三步比第二步小”只说明相邻两步误差或残量下降，不能推出迭代一定收敛；收敛需误差趋于零，且单调下降也非充分条件。若指某具体迭代，还需收敛条件与误差估计。",
+      "usage": {
+        "prompt_tokens": 84,
+        "completion_tokens": 52,
+        "total_tokens": 136,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 84
+      }
+    },
+    {
+      "id": "B2",
+      "criterion_precommitted": "区分学生自报条件、未核验条件和原文；不判定定理已适用",
+      "prompt": "教材条件卡写着：二分法区间存在根需连续性和端点异号。学生在页面上勾选了‘连续’，没有给函数表达式或区间；教材摘录只解释介值定理。学生问：我勾选了，是不是已经证明这里有根？",
+      "http_status": 200,
+      "latency_seconds": 1.361,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "仅凭“连续”不能证明有根。教材条件卡要求连续且端点异号，二者缺一不可；你未给函数表达式或区间，端点异号未知，故不能判定。勾选只是标记条件，不是证明。请补：函数、区间及两端函数值符号。",
+      "usage": {
+        "prompt_tokens": 117,
+        "completion_tokens": 63,
+        "total_tokens": 180,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 117
+      }
+    },
+    {
+      "id": "B4",
+      "criterion_precommitted": "承认固定正根区间上残差 tol 是根误差 tol 的充分保守条件，仍核对迭代范围",
+      "prompt": "作业固定 f(x)=x²−2、x0=1、目标正根区间 [1,2]、要求根误差≤tol。学生代码用标准牛顿公式，若 abs(fx)<=tol 就停止，问：这个停止条件一定错误吗？代码未运行。",
+      "http_status": 200,
+      "latency_seconds": 1.215,
+      "model": "deepseek-flash",
+      "finish_reason": "stop",
+      "answer": "不一定错，但通常不可靠：它控制的是残差 |f(x)|，不是根误差。对 f=x²−2，在正根附近 |f(x)|≈2√2·|x−√2|，故 |f|≤tol 可推出根误差约≤tol/(2√2)，反而更严；但这是本题局部性质，不能推广。未运行，无法判断实际是否达标。追问：tol 与根误差要求具体是多少？",
+      "usage": {
+        "prompt_tokens": 124,
+        "completion_tokens": 101,
+        "total_tokens": 225,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 124
+      }
+    }
+  ]
+}

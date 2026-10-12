@@ -4,10 +4,10 @@
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，A4/A5、B1–B4 及 [B5 同会话跨工作区工程回归](r1-b5-delivery.md)已按用户授权在本地实施。B5 将工程、内容审核与真实模型质量分列；R1 正式质量总验收仍未完成。R0 正式库备份/恢复、迁移和授权链仍需独立验收，本轮不部署。 |
-| **Next** | 按用户要求开展独立质量验收，重点复核 B2 条件卡、B3 六题/rubric、B4 正确与错误代码变体及 A 阶段证据边界；缺真人二审、获准真实模型对照和学生收益时保留 pending。D1 暂行，D2 质量优劣待证。 |
-| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)、[B5 本地集成回归与分 Gate 回执](r1-b5-delivery.md)。B3/B4 代码 SHA `a33b46b` 的 [CI #38194030159](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38194030159) 已通过；B5 的目标 SHA/最终验证见其回执。此前 M1/U 系列仍按各自回执，不证明真实模型质量或学生收益。 |
-| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺独立二审/真实模型质量；B2 开发条件卡、B3 题目与提示缺独立审核，B4 算法线索缺独立误导评估。自检单题答案没有直连 Chat 的可信引用，B5 只验证经复习单元返回教材与 Chat。不能把工程合同、固定模型流程或选项匹配当数学准确率。 |
+| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下 A4/A5 与 B1–B5 本地工程已实施。[B5 回执](r1-b5-delivery.md)和[独立质量审阅](r1-independent-quality-review-2026-10-12.md)分列工程、内容与模型观察；R1 正式质量总验收仍未完成。R0 正式库备份/恢复、迁移和授权链仍需独立验收，本轮不部署。 |
+| **Next** | 先修 B1 首页推荐优先级与 A5 防剧透范围/曝光表述，再核 B1 复习来源版本；B3 不把共用线索写成错因诊断，B4 用正确/错误变体复核残差提示。随后做真人逐题/条件卡二审、隔离浏览器跨工作区回归及应用真实路径下同题模型对照。D1 暂行，D2 质量优劣待证。 |
+| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)、[B5 本地集成回归与分 Gate 回执](r1-b5-delivery.md)，以及 [9 次公开合成题真实模型观察与独立子 agent 审阅](r1-independent-quality-review-2026-10-12.md)。B3/B4 的 [CI #38194030159](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38194030159)、B5 目标 SHA 的 [CI #38224685431](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38224685431) 已通过。此前 M1/U 系列仍按各自回执。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺真人二审及应用路径下真实模型质量；B2 开发条件卡、B3 题目与提示缺独立审核，B4 算法线索缺正确变体误导评估。模型小样本 T04 出现未知条件过早判错、B4 固定题只给近似误差依据。自检单题答案没有直连 Chat 的可信引用；不能把工程合同、合成模型观察或选项匹配当数学准确率/学生收益。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
 
 下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。

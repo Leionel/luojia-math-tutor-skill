@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-12 R1 独立质量审阅的图谱/来源边界
+
+独立子 agent 未发现现有 D1 固定题精确证据被自动写成整段学生主张的 `verified` 或掌握度；B2 学生勾选仍是未核验状态。新风险是 B1 到期 review 缺单元内容 hash/graph revision，课程修订后可能把旧 episode 纳入新版本任务；需区分全图 revision 与该单元实质变化，不能简单让所有旧复习失效。详见 `planning/r1-independent-quality-review-2026-10-12.md`；九次公开合成模型提示不证明图谱、教学策略或学生收益增益，当前状态见 `planning/README.md`。
+
 ## 2026-10-12 R1-B B5 回链边界
 
 B5 同会话回归确认课程选段、Newton/线性保存实验和代码保存版本仍经各自来源/hash/owner 合同进入 Chat，没有再建统一图谱节点或证明器。自检交卷后的“复习单元→教材引用→Chat”只带教材来源，**不带学生单题答案**；不能用这条路径宣称模型诊断了自检错误。F1 推荐、F2 条件卡、F4 分层反馈与 F8 静态线索的内容审核和真实模型质量按 `planning/r1-b5-delivery.md` 单列，唯一状态入口 `planning/README.md`。

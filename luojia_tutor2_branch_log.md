@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-12 R1 工程后独立质量审阅
+
+在 B5 提交后由独立子 agent 只读审阅 A/B 数据流、数学种子、工作区与质量回执；另经用户授权做 9 条公开合成题的 `deepseek-flash` 直连观察，预写判据与脱敏结果见 `evaluation/r1/live-probe-development-2026-10-12.json`。报告 `planning/r1-independent-quality-review-2026-10-12.md` 分列 6 项有源码证据的问题与保留项；没有改业务代码、正式库或原有 dirty。真实模型观察没有覆盖路由、工具、浏览器或真人评审，正式质量 Gate 仍 pending。
+
 ## 2026-10-12 R1-B B5 总回归
 
 新增同一 Chat 会话的离线跨工作区回归：只读任务→教材引用→Newton/线性实验→代码静态线索→自检帮助锁与交卷→复习单元教材引用。保存对象由服务端重读，跨 owner 与过期 hash 拒绝，未写掌握度；Web 合同核对返回原线性/代码对象，代码原文不入 URL。自检单题答案尚无可信 Chat 引用，B5 仅验证经教材复习路径的续接。工程、内容审核、真实模型质量分列见 `planning/r1-b5-delivery.md`；正式 R1 质量、R0 正式库 Gate 仍 pending。原无关工作区修改保留。
