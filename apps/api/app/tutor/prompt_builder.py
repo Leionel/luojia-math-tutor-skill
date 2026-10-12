@@ -156,6 +156,12 @@ def build_messages(
                 "只依据当前来源摘录和题目原话区分题目陈述、学生标记、待证前提与模型推断；"
                 "unknown不能说成不满足，已标记不能说成定理条件已证。先问next_question中的一个具体问题，"
                 "不要补造题目条件、教材页码或形式证明，不记录掌握度。")
+        if learning_context.get("ref", {}).get("kind") == "code_static":
+            runtime["code_static_rule"] = (
+                "finding只是保存版本上的AST静态提示，rule_version与code_hash限定其范围。"
+                "evidence_scope=structural_fact只说明可见代码结构；algorithm_suspicion只是需要解释的数学线索，"
+                "不能直接判定程序错误或正确。代码从未执行，手填轨迹不是程序输出。"
+                "若根误差停止条件只比较残差，应追问误差界前提；不得猜测未显示的运行结果或更新掌握度。")
     return [
         {"role": "system", "content": skill_text.strip()},
         *prior,

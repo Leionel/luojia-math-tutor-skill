@@ -1,13 +1,13 @@
 # 项目规划总索引
 
-## 当前状态（2026-10-10；唯一状态入口）
+## 当前状态（2026-10-12；唯一状态入口）
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，A4/A5 与 B1/B2 已按用户授权在本地实施。[A4–A5 回执](r1-a4-a5-delivery.md)记录 R1-A 工程 Gate 本地通过；[B1–B2 回执](r1-b1-b2-delivery.md)记录只读推荐与开发条件卡对照。R0 正式库备份/恢复、迁移和授权链仍需独立验收，本轮不部署。 |
-| **Next** | 先补 A 阶段独立数学/教学复核和获准真实模型质量证据；B2 条件卡需审核后才能宣称正式教材推理。B3 F4、B4 F8 按各自门槛另行实施。D1 暂行，D2 质量优劣待证。 |
-| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)。代码 SHA `aab84cb` 的 [CI #27](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37964199529) 知识数据/API/Web 全部成功；本地 API917/Web75、typecheck、lint 0 错误与停止开发服务器后的 Web 构建通过。此前 M1/U 系列仍按各自回执，不证明真实模型质量或学生收益。 |
-| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺独立二审/真实模型质量；B2 开发条件卡尚缺内容审核，B3 题目/rubric 亦需审核。不能把 A5 本地工程、固定模型流程或学生勾选当数学准确率。 |
+| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下，A4/A5、B1/B2 与 [B3/B4 开发切片](r1-b3-b4-delivery.md)已按用户授权在本地实施。B3 是六道开发题的版本化分层参考反馈；B4 是限定 Newton 作业的一条残差停止线索，均不等于正式内容或数学质量验收。R0 正式库备份/恢复、迁移和授权链仍需独立验收，本轮不部署。 |
+| **Next** | 优先补 A 阶段独立数学/教学复核及获准真实模型质量证据；B2 条件卡、B3 题目/rubric 与 B4 静态线索分别做独立内容/误导审阅。B5 仅在所需依赖与新授权满足后实施。D1 暂行，D2 质量优劣待证。 |
+| **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)。此前代码 SHA `aab84cb` 的 [CI #27](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/37964199529) 成功，只证明该 SHA 的工程回归；B3/B4 的最终测试与提交状态以新回执为准。此前 M1/U 系列仍按各自回执，不证明真实模型质量或学生收益。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺独立二审/真实模型质量；B2 开发条件卡、B3 题目与提示缺独立审核，B4 算法线索缺独立误导评估。不能把 A5 本地工程、固定模型流程或选项匹配当数学准确率。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
 
 下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。

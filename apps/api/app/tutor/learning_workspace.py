@@ -14,6 +14,7 @@ from app.math_tools.root_finding import RootAttempt
 
 CONTENT_VERSION = "root-learning-dev-v1"
 ASSESSMENT_VERSION = "root-chapter-diagnostic-v1"
+ASSESSMENT_FEEDBACK_VERSION = "root-chapter-feedback-dev-v1"
 CARDS = {
     "NA_ROOT_FINDING": {"conditions": ["残差 |f(x)| 和根误差 |x-x*| 是不同的量", "若区间内有根且 |f'|≥m>0，可由中值定理给出 |x-x*|≤|f(x)|/m", "停止阈值必须说明目标是残差还是根误差"], "question": "把函数乘以很小的常数，会不会自动降低根误差？", "options": ["会", "不会，根的位置并不改变"], "answer": 1, "explanation": "缩放会降低残差，但不改变零点；需要相应的导数下界才能换算根误差。"},
     "NA_BISECTION": {"conditions": ["f 在闭区间连续", "两端严格变号；端点为根须单独处理", "半区间宽度可作为中点误差上界"], "question": "只有两端变号，能否直接确认中间有根？", "options": ["能", "还需要区间连续性"], "answer": 1, "explanation": "例如 1/x 在 [-1,1] 两端变号，但在 0 处不连续。"},
@@ -29,6 +30,17 @@ QUESTIONS = [
     ("residual", "残差很小是否自动意味着根误差很小？", ["总是", "还需要误差界条件", "残差就是根误差"], 1, "需要导数下界等条件才能由残差推出根误差上界。", "NA_ROOT_FINDING"),
     ("contraction", "压缩映射求根的区间条件包括？", ["只需一个点导数小于1", "区间不变且一致压缩", "只需最后两次迭代相近"], 1, "区间不变性和一致压缩缺一不可。", "NA_FIXED_POINT"),
 ]
+
+# Development prompts, not independently reviewed grading rubrics. The saved
+# assessment pins their version/hash; historical attempts keep their old view.
+ASSESSMENT_RUBRICS = {
+    "continuity": {"condition": "仅有端点异号还不足以使用介值定理；先核对闭区间连续性。", "method": "分别列出端点函数值和整个区间的连续性，再判断能否推出区间内有根。", "check": "为什么两端变号仍需连续性？"},
+    "width": {"condition": "中点误差界来自半区间宽度，不是整段宽度。", "method": "先算区间宽度 1.125−1，再除以 2；这个上界以根位于当前区间为前提。", "check": "半宽为何是中点到区间内任一点的最远距离？"},
+    "update": {"condition": "标准 Newton 更新需代入 f(x₀)、非零的 f′(x₀) 和减号。", "method": "本题 f(2)=−1、f′(2)=4，按 x₁=2−f(2)/f′(2) 计算。", "check": "这一步为何要先确认导数非零？"},
+    "local": {"condition": "二阶收敛是有前提的局部结论，不能推广到任意初值。", "method": "分开检查单根、局部光滑性、非退化导数与初值所在邻域。", "check": "哪个条件限制了初值的范围？"},
+    "residual": {"condition": "小残差本身不等于小根误差。", "method": "若要从 |f(x)| 推出 |x−x*|，需另有适用区间与导数下界等依据。", "check": "缩放函数后，根位置与残差分别怎样变化？"},
+    "contraction": {"condition": "单点导数信息不能替代整个区间的一致压缩与自映条件。", "method": "先检查 φ 把区间映回自身，再检查全区间统一 q<1，最后核对初值。", "check": "只在一点有 |φ′|<1，缺少哪项区间证据？"},
+}
 
 
 def digest(value):
@@ -379,6 +391,20 @@ class LearningWorkspace:
         result["questions"] = [{"id": q[0], "prompt": q[1], "options": q[2]} for q in value["questions"]]
         if value["state"] == "completed":
             result["feedback"] = [{"id": q[0], "reference_match": value["answers"].get(q[0]) == q[3], "reference_answer": q[3], "explanation": q[4], "unit_id": q[5]} for q in value["questions"]]
+            current_rubric = (value.get("content_version") == ASSESSMENT_VERSION
+                              and value.get("feedback_version") == ASSESSMENT_FEEDBACK_VERSION
+                              and value.get("rubric_hash") == digest(ASSESSMENT_RUBRICS)
+                              and value.get("question_hash") == digest(QUESTIONS)
+                              and digest(value["questions"]) == value.get("question_hash"))
+            result["feedback_version"] = ASSESSMENT_FEEDBACK_VERSION if current_rubric else "legacy_unlayered"
+            result["feedback_review_status"] = "development_unreviewed" if current_rubric else "legacy_reference"
+            if current_rubric:
+                for row in result["feedback"]:
+                    rubric = ASSESSMENT_RUBRICS[row["id"]]
+                    row["layers"] = {
+                        "condition": (f"与参考选项一致；仍可说明：{rubric['check']}" if row["reference_match"]
+                                      else f"先核对条件：{rubric['condition']}"),
+                        "method": rubric["method"], "full": row["explanation"]}
             result["reference_matches"] = sum(f["reference_match"] for f in result["feedback"])
             result["score"] = {"correct": result["reference_matches"], "total": len(value["questions"]),
                                "percentage": round(100 * result["reference_matches"] / len(value["questions"]))}
@@ -392,7 +418,9 @@ class LearningWorkspace:
                 return self.assessment_public(existing)
             record_id = uuid.uuid4().hex
             value = {"id": record_id, "state": "in_progress", "answers": {}, "questions": QUESTIONS,
-                     "created_at": datetime.now(timezone.utc).isoformat(), "content_version": ASSESSMENT_VERSION, "graph_revision": self.revision()}
+                     "created_at": datetime.now(timezone.utc).isoformat(), "content_version": ASSESSMENT_VERSION,
+                     "feedback_version": ASSESSMENT_FEEDBACK_VERSION, "rubric_hash": digest(ASSESSMENT_RUBRICS),
+                     "question_hash": digest(QUESTIONS), "graph_revision": self.revision()}
             self.save(owner, "assessment", record_id, value)
             return self.assessment_public(value)
 

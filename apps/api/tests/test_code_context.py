@@ -22,6 +22,34 @@ def test_code_ref_bound_to_saved_version_and_real_line(ws):
     with pytest.raises(KeyError):resolve_learning_context(ws[0],'bob',ref)
 
 
+def test_new_static_hint_preserves_code_hash_line_scope_and_old_version(ws):
+    from app.tutor.prompt_builder import build_messages
+    from app.tutor.intent_router import Intent
+    from app.math_tools.verifier import VerifyResult
+    code = ('def solve(x0, tol, max_iter):\n    xs=[x0]\n    x=x0\n'
+            '    for _ in range(max_iter):\n        fx=x*x-2\n'
+            '        if abs(fx)<=tol:\n            break\n'
+            '        x=x-fx/(2*x)\n        xs.append(x)\n    return xs\n')
+    body=CodeRequest(request_id='bounded-rule',assignment_id=ASSIGNMENT_ID,code=code)
+    saved=submit_code(ws[0],'alice',body)
+    index=next(i for i,f in enumerate(saved['findings']) if f['kind']=='root_error_residual_stop')
+    ref=CodeContextRef(kind='code_static',record_id=saved['id'],code_hash=saved['code_hash'],
+                       static_rule_version=STATIC_RULE_VERSION,selected_finding=index)
+    snapshot=resolve_learning_context(ws[0],'alice',ref)
+    assert snapshot['finding']==saved['findings'][index]
+    assert snapshot['start_line']<=6<=snapshot['end_line']
+    assert snapshot['code_executed'] is False and ws[0].repository.list_mastery('alice')==[]
+    prompt=build_messages('tutor','这一行是否正确？',Intent.CONCEPT,'数值分析',[],
+        VerifyResult(False,None,'未触发自动验证。'),None,'socratic',learning_context=snapshot)
+    assert 'code_static_rule' in prompt[-2]['content'] and 'algorithm_suspicion' in prompt[-2]['content']
+    with pytest.raises(ValueError):resolve_learning_context(ws[0],'alice',ref.model_copy(update={'static_rule_version':'newton-static-v1'}))
+    saved['static_rule_version']='newton-static-v1';saved['findings']=[{'kind':'legacy_hint','line':1,'message':'旧版提示'}]
+    ws[0].save('alice','code_submission',saved['id'],saved)
+    historical=resolve_learning_context(ws[0],'alice',ref.model_copy(update={'static_rule_version':'newton-static-v1','selected_finding':0}))
+    assert historical['finding']==saved['findings'][0]
+    assert ws[0].get('alice','code_submission',saved['id'])['findings']==saved['findings']
+
+
 @pytest.mark.parametrize('field,value',[('code_hash','f'*64),('static_rule_version','old'),('selected_finding',29)])
 def test_code_ref_rejects_forged_locator(ws,field,value):
     _,ref=saved_code(ws)

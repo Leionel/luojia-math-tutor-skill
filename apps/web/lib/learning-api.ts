@@ -55,7 +55,10 @@ export type NewtonActivityState = {
 export type Assessment = {
   id: string; state: string; content_version: string; mode: string;
   answers: Record<string, number>; questions: {id: string; prompt: string; options: string[]}[];
-  feedback?: {id: string; reference_match: boolean; reference_answer: number; explanation: string; unit_id: string}[];
+  feedback_version?: "root-chapter-feedback-dev-v1" | "legacy_unlayered";
+  feedback_review_status?: "development_unreviewed" | "legacy_reference";
+  feedback?: {id: string; reference_match: boolean; reference_answer: number; explanation: string; unit_id: string;
+    layers?: {condition: string; method: string; full: string}}[];
   reference_matches?: number;
   score?: {correct: number; total: number; percentage: number}; review_units?: string[];
 };
@@ -81,7 +84,7 @@ export type CodeAssignment = {
 };
 export type CodeSubmission = {
   id: string; assignment_id: string; code_hash:string; static_rule_version?:string; code: string; iterates: number[]; stop_reason: string;
-  findings: {kind: string; line: number | null; message: string}[]; trace_diagnosis: Diagnosis | null;
+  findings: {kind: string; line: number | null; message: string; evidence_scope?:"structural_fact"|"algorithm_suspicion";rule_version?:string}[]; trace_diagnosis: Diagnosis | null;
   previous_id: string | null; created_at: string; code_executed: false;
   comparison: null | {code_changed: boolean; previous_findings: number; current_findings: number; previous_trace_status: string | null; current_trace_status: string | null};
 };

@@ -10,7 +10,7 @@ from app.tutor.learning_workspace import digest
 from app.tutor.teachback_evidence import original_spans,parse_review
 
 ASSIGNMENT_ID = "newton-trace-dev-v1"
-STATIC_RULE_VERSION = "newton-static-v1"
+STATIC_RULE_VERSION = "newton-static-v2"
 TEMPLATE = '''def solve(x0, tol, max_iter):
     # 返回含初值的迭代值列表；在本地运行后粘贴轨迹。
     xs = [x0]
@@ -118,10 +118,15 @@ async def model_teach_back(workspace, owner, result, settings, api_key=None):
 
 
 def static_findings(code):
+    def scoped(findings):
+        return [{**finding, "evidence_scope": ("algorithm_suspicion" if finding["kind"] in
+                 {"update_sign", "root_error_residual_stop"} else "structural_fact"),
+                 "rule_version": STATIC_RULE_VERSION} for finding in findings[:30]]
+
     try:
         tree = ast.parse(code)
     except (SyntaxError, ValueError, RecursionError) as exc:
-        return [{"kind": "syntax", "line": getattr(exc, "lineno", None), "message": "Python 语法未通过解析，请核对括号、缩进与语句。"}]
+        return scoped([{"kind": "syntax", "line": getattr(exc, "lineno", None), "message": "Python 语法未通过解析，请核对括号、缩进与语句。"}])
     nodes = list(ast.walk(tree))
     if len(nodes) > 2000:
         raise ValueError("代码结构过大，请保留限定作业中的最小函数")
@@ -164,7 +169,26 @@ def static_findings(code):
             findings.append({"kind": "update_sign", "line": n.lineno, "message": "这里出现 x + fx / …；若 fx 表示 f(x)，请核对标准 Newton 更新的减号。该提示依赖变量含义。"})
         if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in {"exec", "eval", "open", "__import__"}:
             findings.append({"kind": "unsupported_operation", "line": n.lineno, "message": "该调用涉及动态代码或文件操作；本首版不会执行任何学生代码。"})
-    return findings[:30]
+    # The assignment asks for root error, whereas this exact branch tests a
+    # residual. It is a question about the missing bound, not a bug verdict.
+    def abs_fx(node):
+        return (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "abs" and len(node.args) == 1
+                and isinstance(node.args[0], ast.Name) and node.args[0].id == "fx"
+                and not node.keywords)
+
+    for n in scoped_nodes:
+        if not isinstance(n, ast.If) or not isinstance(n.test, ast.Compare) or len(n.test.ops) != 1:
+            continue
+        test = n.test
+        direct_residual = ((abs_fx(test.left) and isinstance(test.comparators[0], ast.Name)
+                            and test.comparators[0].id == "tol" and isinstance(test.ops[0], (ast.Lt, ast.LtE)))
+                           or (isinstance(test.left, ast.Name) and test.left.id == "tol"
+                               and abs_fx(test.comparators[0]) and isinstance(test.ops[0], (ast.Gt, ast.GtE))))
+        if direct_residual and any(isinstance(statement, (ast.Break, ast.Return)) for statement in n.body):
+            findings.append({"kind": "root_error_residual_stop", "line": n.lineno,
+                             "message": "这里以 |fx| 与 tol 比较后退出。若 fx 表示 f(x)，这只直接检查残差；本作业的根误差目标还需适用区间与导数下界等误差依据。静态线索不判定代码错误。"})
+    return scoped(findings)
 
 
 def submit_code(workspace, owner, body):

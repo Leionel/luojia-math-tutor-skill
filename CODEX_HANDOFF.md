@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-12 R1-B B3/B4 本地开发切片
+
+用户授权启动 B3/B4。B3 沿用六道开发自检题与既有参考计分，交卷后按条件/方法/完整解析分层；题目、rubric 和反馈版本/hash 绑定，新版不重评旧卷，交卷前不泄露答案，不写掌握度。B4 在限定 Newton `solve` AST 审阅里仅增直接残差阈值退出的一条算法线索，提示需根误差依据而不判错；v2 规则、行号与保存代码 hash 绑定，历史 v1 不重算，学生代码不执行。隔离临时库的网页流程已走通，最终测试/提交状态见 `planning/r1-b3-b4-delivery.md` 与唯一状态入口 `planning/README.md`。独立题目/rubric/误导审核、真实模型质量、R1-A 质量 Gate 和 R0 正式库 Gate 仍 pending；B5 未做，原无关 dirty 保留。
+
 ## 2026-10-10 R1-A 工程与 R1-B 前两片
 
 唯一现状入口 `planning/README.md`。R1-A A4 将 U06 保存的 Teach-back 原句/条件按 owner、hash、课程版本接入 Chat 并回到原条件；A5 将 Newton 观察改为服务端逐步揭示，限已揭示步的切线与防剧透，三域沿用现有 TutorWorkflow/领域核验。隔离库浏览器走通 Newton 与讲回，工程 Gate 本地通过；数学/教学质量 Gate 仍 pending，详见 `planning/r1-a4-a5-delivery.md`。按用户要求随后做 B1 保存状态的只读任务建议、B2 开发条件卡的题目/学生自报前提对照与单一追问，详见 `planning/r1-b1-b2-delivery.md`。B2 没有从自由题干自动证明条件，正式条件卡需审核；B3/B4 未做。R0 正式库与授权链未验收，不部署；没有付费模型调用。保留本轮开始前的无关 dirty，提交/推送以最终回执为准。

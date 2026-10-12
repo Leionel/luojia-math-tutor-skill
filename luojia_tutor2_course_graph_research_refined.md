@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-12 R1-B B3/B4 证据边界
+
+B3 的六道开发自检题交卷后才提供分层提示，回链仍指向既有课程单元；题目/rubric 版本绑定只防历史记录被新版反馈覆盖，不构成内容审核或数学证明。B4 的残差停止提示只针对保存的 Newton `solve` 静态代码，属于需追问根误差依据的算法线索，不加入图谱结论、掌握状态或代码执行证据。独立数学/教学复核仍需另做；当前状态见 `planning/README.md`，范围见 `planning/r1-b3-b4-delivery.md`。
+
 ## 2026-10-10 R1-A/B 课程证据边界
 
 A4 讲回和 B2 教材对照复用课程图 revision、来源 hash 与条件卡 hash；Teach-back 原句和开发条件卡仍是待审内容。B2 只把学生标记的前提送入有界 Chat 上下文：`student_reported_known_unverified` 与 `unknown`，并追问依据；没有自由题干形式化证明、自动定理适用判定或新图谱节点。B1 推荐只读保存状态，不更新掌握度。A5 Newton 固定题切线限已揭示步骤，数学真值仍由领域工具单独核对。具体交付范围及未验质量 Gate 见 `planning/r1-a4-a5-delivery.md`、`planning/r1-b1-b2-delivery.md`，当前状态仅看 `planning/README.md`。

@@ -12,7 +12,7 @@ from app.knowledge.review_schedule import advance_review
 from app.math_tools.root_finding import RootAttempt
 from app.math_tools.root_runner import LabRequest, run_reference
 from app.memory.repository import Repository
-from app.tutor.learning_workspace import LearningWorkspace, QUESTIONS
+from app.tutor.learning_workspace import LearningWorkspace, QUESTIONS, ASSESSMENT_FEEDBACK_VERSION
 
 
 @pytest.fixture
@@ -252,6 +252,36 @@ def test_assessment_public_keys_first_answers_submission_and_owner(workspace):
     with pytest.raises(ValueError):
         workspace.answer_assessment("alice", exam["id"], QUESTIONS[0][0], 0)
     assert workspace.today("alice")["reviews"] == []
+
+
+def test_layered_assessment_feedback_only_after_submission_and_never_regrades_history(workspace):
+    exam = workspace.new_assessment("alice")
+    assert "feedback" not in exam and "feedback_version" not in exam
+    for index, q in enumerate(QUESTIONS):
+        option = q[3] if index == 0 else (q[3] + 1) % len(q[2])
+        current = workspace.answer_assessment("alice", exam["id"], q[0], option)
+        assert "feedback" not in current and "feedback_version" not in current
+    done = workspace.submit_assessment("alice", exam["id"])
+    assert done["feedback_version"] == ASSESSMENT_FEEDBACK_VERSION
+    assert done["feedback_review_status"] == "development_unreviewed"
+    assert done["score"] == {"correct": 1, "total": 6, "percentage": 17}
+    assert done["feedback"][0]["reference_match"]
+    assert "先核对条件" not in done["feedback"][0]["layers"]["condition"]
+    assert all(row["layers"]["condition"].startswith("先核对条件") for row in done["feedback"][1:])
+    assert all(row["layers"]["full"] == row["explanation"] for row in done["feedback"])
+    assert workspace.submit_assessment("alice", exam["id"]) == done
+    assert workspace.repository.list_mastery("alice") == []
+
+    # Saved older papers retain their original explanations and score, even
+    # when the current development rubric changes.
+    saved = workspace.get("alice", "assessment", exam["id"])
+    for field in ("feedback_version", "rubric_hash", "question_hash"):
+        saved.pop(field)
+    workspace.save("alice", "assessment", exam["id"], saved)
+    legacy = workspace.assessment_public(saved)
+    assert legacy["score"] == done["score"]
+    assert legacy["feedback_version"] == "legacy_unlayered"
+    assert all("layers" not in row for row in legacy["feedback"])
 
 
 def test_chapter_reference_math_keys_and_weak_points(workspace):
@@ -543,6 +573,32 @@ def test_static_checks_use_solve_scope_not_unrelated_helpers():
     assert sum(f["kind"] == "unused_parameter" for f in findings) == 2
     reads = "def solve(x0, tol, max_iter):\n    xs = [x0]\n    for i in range(max_iter):\n        if abs(x0) < tol:\n            break\n    return xs\n"
     assert not any(f["kind"] == "unused_parameter" for f in static_findings(reads))
+
+
+def test_static_root_error_hint_is_scoped_and_keeps_legal_bound_variant():
+    from app.tutor.learning_extensions import static_findings, STATIC_RULE_VERSION
+    body = ("def solve(x0, tol, max_iter):\n"
+            "    xs = [x0]\n    x = x0\n"
+            "    for _ in range(max_iter):\n"
+            "        fx = x*x - 2\n"
+            "        if abs(fx) <= tol:\n            break\n"
+            "        x = x - fx/(2*x)\n        xs.append(x)\n"
+            "    return xs\n")
+    findings = static_findings(body)
+    hint = next(f for f in findings if f["kind"] == "root_error_residual_stop")
+    assert hint["line"] == 6 and hint["evidence_scope"] == "algorithm_suspicion"
+    assert hint["rule_version"] == STATIC_RULE_VERSION
+    assert "不判定代码错误" in hint["message"]
+    assert not any(f["kind"] == "update_sign" for f in findings)
+
+    # For the fixed positive-root exercise, a student may divide residual by
+    # a separately justified derivative bound. This is not a direct residual
+    # threshold and must not trigger the new hint.
+    with_bound = body.replace("abs(fx) <= tol", "abs(fx)/2 <= tol")
+    assert not any(f["kind"] == "root_error_residual_stop" for f in static_findings(with_bound))
+    helper_only = body.replace("        if abs(fx) <= tol:\n            break\n", "") + (
+        "def helper(fx, tol):\n    if abs(fx) <= tol:\n        return True\n")
+    assert not any(f["kind"] == "root_error_residual_stop" for f in static_findings(helper_only))
 
 
 def test_pending_probe_blocks_teach_back_and_code_help(workspace):
