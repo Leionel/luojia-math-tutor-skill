@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-12 R1-B B5 隔离浏览器补验
+
+合成账号和独立库下重演今日任务、教材选段与自由 Newton 实验的 Chat 续接；修复教材题目原话进入 URL、草稿刷新丢来源。题目改由同标签页短期 `sessionStorage` 临时 ID 转交，服务端仍重读并核对引用。API928/Web78、生产构建通过；不把路径检查当数学/教学质量。完整范围和限制见 `planning/r1-b5-browser-followup-2026-10-12.md`，现状只看 `planning/README.md`。
+
 ## 2026-10-12 R1 审阅后修正
 
 首页主卡消费 B1 服务端推荐；到期 review 加单元来源/条件/内容版本合同，旧来源先读当前材料再做新练习；A5 内置通用 Lab 同题后续轨迹记参考帮助曝光；B3 错项只给核对线索，B4 对固定正根题说明残差阈值充分条件，Teach-back 缺输入时保持 unknown。无新 Agent/Graph 抽象或学生代码执行，原 dirty 保留。验证、限制和 Gate 见 `planning/r1-quality-fixes-2026-10-12.md` 与唯一入口 `planning/README.md`。

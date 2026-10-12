@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-12 R1-B B5 教材来源的浏览器续接
+
+教材条件卡仍按来源 hash、图版本及学生自报状态在服务端核对。隔离浏览器发现私有题目原话曾随 reading `ref` 进入 Chat URL，且草稿刷新丢失引用；现只用短期同标签页临时 ID 进入 Chat，刷新后仍从服务端重新构建来源快照。此改动不自动证明自由题条件、也不扩充 Graph/Memory；见 `planning/r1-b5-browser-followup-2026-10-12.md`，当前状态以 `planning/README.md` 为准。
+
 ## 2026-10-12 R1 来源版本修正
 
 复习状态不再只靠全图 revision 推断可沿用：保存当前单元摘录 hash、条件卡 hash 和内容版本；内容相同的无关修订可继续，旧记录缺依据或单元变化则暂停旧 episode 并提供新练习。历史阶段保留作历史，不作为当前来源下的自动成绩。该局部合同没有新增 Graph/Memory 框架，也未建立真人审核的教学内容质量；细节见 `planning/r1-quality-fixes-2026-10-12.md`，状态以 `planning/README.md` 为准。

@@ -8,6 +8,25 @@ export type CodeContextRef={kind:"code_static";record_id:string;code_hash:string
 export type ReadingContextRef={kind:"reading";source_id:string;source_hash:string;section_id:string|null;start:number;end:number;graph_revision:string|null;problem_text?:string|null;claimed_known?:number[];condition_hash?:string|null};
 export type TeachBackContextRef={kind:"teach_back";record_id:string;source_hash:string;condition_hash:string;graph_revision:string;condition_id:string};
 export type LearningContextRef=RootContextRef|LinearContextRef|IntegrationContextRef|ReadingContextRef|CodeContextRef|TeachBackContextRef;
+const PRIVATE_CHAT_HANDOFF_PREFIX="luojia_private_chat_ref_v1:";
+const PRIVATE_CHAT_HANDOFF_MAX_AGE=30*60*1000;
+export function needsPrivateChatHandoff(ref:LearningContextRef){return ref.kind==="reading"&&Boolean(ref.problem_text);}
+export function chatReferenceHref(ref:LearningContextRef,handoffId?:string){
+ return needsPrivateChatHandoff(ref)?handoffId&&/^[a-f0-9-]{36}$/.test(handoffId)?`/chat?handoff=${handoffId}`:"/chat":`/chat?ref=${encodeURIComponent(JSON.stringify(ref))}`;
+}
+export function storePrivateChatHandoff(storage:Pick<Storage,"setItem">,owner:string,id:string,ref:LearningContextRef,at=Date.now()){
+ if(!needsPrivateChatHandoff(ref)||!/^[a-f0-9-]{36}$/.test(id))throw Error("题目引用无法安全转交。");
+ storage.setItem(`${PRIVATE_CHAT_HANDOFF_PREFIX}${id}`,JSON.stringify({owner,ref,at}));
+}
+export function restorePrivateChatHandoff(storage:Pick<Storage,"getItem">,owner:string,id:string,now=Date.now()):LearningContextRef|null{
+ if(!/^[a-f0-9-]{36}$/.test(id))return null;
+ try{
+  const raw=storage.getItem(`${PRIVATE_CHAT_HANDOFF_PREFIX}${id}`);
+  if(!raw)return null;
+  const item=JSON.parse(raw) as {owner?:string;ref?:LearningContextRef;at?:number};
+  return item.owner===owner&&typeof item.at==="number"&&now>=item.at&&now-item.at<=PRIVATE_CHAT_HANDOFF_MAX_AGE&&item.ref&&needsPrivateChatHandoff(item.ref)?item.ref:null;
+ }catch{return null;}
+}
 type BaseSnapshot={version:"learning-context-v1";title:string;evidence_kind:"reference_help";independent_success:false};
 export type RootSnapshot=BaseSnapshot&{ref:RootContextRef;parameters:RootParameters;rows:LabRun["rows"];total_rows:number;omitted_rows:number;stop_detail:string;diagnosis_summary:string;max_iterations:number;iteration_budget_source:"saved"|"legacy_default";student_claim?:{kind:"explanation"|"revision";text:string;request_id:string;review_status:"unreviewed";evidence_kind:"student_process";revision_count:number;help_exposed:boolean};exact_check?:{scope:string;steps:string[];conclusion:string}};
 export type LinearSnapshot=BaseSnapshot&{ref:LinearContextRef;task:LinearTask;rows:NumericalRow[];total_rows:number;omitted_rows:number;stop_detail:string;conditions:string[];evidence_scope:string;linear_check:{scope:"saved_linear_iteration_floating_point";method:"jacobi"|"gauss_seidel";checked_step:number;expected_vector:number[];residual_infinity:number;condition_sufficient:boolean;error_bound:number|null;error_bound_includes_roundoff:false;unknown_reason:string|null}};

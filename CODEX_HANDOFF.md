@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-12 R1-B B5 隔离浏览器续接补验
+
+用独立 SQLite、独立课程库与离线模型配置重演今日学习→Chat→原任务、教材选段→Chat→原文以及自由 Newton 实验→Chat→原 run。发现教材问题原话被放进 `?ref=`，且客户端路由后草稿 URL 丢引用；现用账号绑定、30 分钟 `sessionStorage` 临时 ID 交接，教材入口做同站页面跳转，未发送消息刷新也能恢复。API928/Web78、Web build、lint0错10既有警告；详见 `planning/r1-b5-browser-followup-2026-10-12.md`，唯一当前状态入口仍是 `planning/README.md`。B3/B4 全点击链未在本轮重演；正式内容/真实模型质量、R1 质量 Gate 和 R0 正式库 Gate 仍 pending。保留已有无关 dirty；未调用付费模型或部署。
+
 ## 2026-10-12 R1 独立审阅后的局部修正
 
 按 `planning/r1-independent-quality-review-2026-10-12.md` 修 B1 首页推荐优先级、review 单元来源版本与旧证据隔离、A5 同题通用 Lab 的帮助曝光，及 B3/B4/T04 提示边界。详细行为、剩余风险与验证范围见 `planning/r1-quality-fixes-2026-10-12.md`；唯一当前状态入口仍为 `planning/README.md`。旧 review 缺来源 hash 时只作历史记录，当前来源下新练习可重建；同题曝光识别限内置实验与规范化语法，不声称全局防剧透。真人内容审核、应用真实模型对照、B5 浏览器全流程、R1 质量 Gate、R0 正式库 Gate 均未解除。本轮未用新的付费模型、正式库或部署；原无关 dirty 保留。

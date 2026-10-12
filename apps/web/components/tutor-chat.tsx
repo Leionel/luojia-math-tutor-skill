@@ -24,7 +24,7 @@ import { GlobalSearchModal } from "./global-search-modal";
 import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
 import {learningRequest, type LabRun} from "@/lib/learning-api";
-import {rootContextRef, referenceChatKey, studyRequested, type LearningContextRef, type LearningTaskSnapshot} from "@/lib/learning-context";
+import {needsPrivateChatHandoff,restorePrivateChatHandoff,rootContextRef,referenceChatKey,storePrivateChatHandoff,studyRequested,type LearningContextRef,type LearningTaskSnapshot} from "@/lib/learning-context";
 import {getCurrentUserId} from "@/lib/demo-auth";
 import {ChatLifetime} from "@/lib/chat-lifetime";
 import {ContextBanner} from "./learning/context-banner";
@@ -38,6 +38,19 @@ type LocalMessage = {
   thinkingElapsedMs?: number;
   learningMeta?: TutorMeta | null;
 };
+
+function appendContextQuery(query:URLSearchParams,ref:LearningContextRef,owner:string){
+  if(ref.kind==="root_lab"&&!ref.activity_claim){
+    query.set("lab",ref.record_id);
+    if(ref.selected_step!==null)query.set("step",String(ref.selected_step));
+  }else if(needsPrivateChatHandoff(ref)){
+    const id=crypto.randomUUID();
+    storePrivateChatHandoff(sessionStorage,owner,id,ref);
+    query.set("handoff",id);
+  }else{
+    query.set("ref",JSON.stringify(ref));
+  }
+}
 
 function mapServerMessages(items: Message[]): LocalMessage[] {
   return items.map((item) => ({
@@ -317,16 +330,29 @@ export function TutorChat() {
     const existing=await listSessions().catch(()=>[]);
     if(!valid())return;
     setSessions(existing);
-    const params=new URLSearchParams(window.location.search),labId=params.get("lab"),encodedRef=params.get("ref");
-    if(labId||encodedRef){
+    const params=new URLSearchParams(window.location.search),labId=params.get("lab"),encodedRef=params.get("ref"),handoffId=params.get("handoff");
+    if(labId||encodedRef||handoffId){
       try{
         const step=params.get("step");
-        const requested:LearningContextRef=labId?rootContextRef(await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000)),step===null?null:Number(step)):JSON.parse(encodedRef!);
+        const privateRef=handoffId?restorePrivateChatHandoff(sessionStorage,owner,handoffId):null;
+        if(handoffId&&!privateRef&&params.get("session")){
+          const saved=existing.find(s=>s.id===params.get("session"));
+          if(saved){await selectSession(saved.id);return;}
+        }
+        const requested:LearningContextRef=labId?rootContextRef(await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000)),step===null?null:Number(step)):encodedRef?JSON.parse(encodedRef):privateRef??(()=>{throw Error("题目引用已过期或不属于当前账号，请回原页面重新选择。");})();
+        if(encodedRef&&needsPrivateChatHandoff(requested)){
+          const replacement=crypto.randomUUID();
+          try{storePrivateChatHandoff(sessionStorage,owner,replacement,requested);window.history.replaceState(null,"",`/chat?handoff=${replacement}`);}
+          catch{window.history.replaceState(null,"","/chat");throw Error("浏览器无法安全恢复题目引用，请回原页面重新选择。");}
+        }
         const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",requested,AbortSignal.timeout(15000));
         if(!valid())return;
         const mapped=localStorage.getItem(referenceChatKey(owner,snapshot.ref));
         if(mapped&&existing.some(s=>s.id===mapped)) await selectSession(mapped,snapshot);
-        else {resetToDraftSession();setLearningContext(snapshot);setContextLoading(false);}
+        else {
+          resetToDraftSession(true);
+          setLearningContext(snapshot);setContextLoading(false);
+        }
       }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"来源引用不可用");setContextLoading(false);}}
       return;
     }
@@ -334,9 +360,9 @@ export function TutorChat() {
     if(selected)await selectSession(selected.id);else resetToDraftSession();
   }
 
-  function resetToDraftSession() {
+  function resetToDraftSession(preserveUrl = false) {
     viewGeneration.current++;lifetime.current.invalidate();setIsStreaming(false);setContextLoading(false);
-    window.history.replaceState(null,"","/chat");
+    if (!preserveUrl) window.history.replaceState(null,"","/chat");
     setLearningContext(null); setContextError("");
     setVisionDraft(null);
     setSessionId(null);
@@ -382,7 +408,7 @@ export function TutorChat() {
     if(!valid())return;
     setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
     const query=new URLSearchParams({session:nextSessionId});
-    if(snapshot){if(snapshot.ref.kind==="root_lab"&&!snapshot.ref.activity_claim){query.set("lab",snapshot.ref.record_id);if(snapshot.ref.selected_step!==null)query.set("step",String(snapshot.ref.selected_step));}else{query.set("ref",JSON.stringify(snapshot.ref));}localStorage.setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
+    if(snapshot){try{appendContextQuery(query,snapshot.ref,owner);}catch{ /* Saved replies can restore their last context. */ }localStorage.setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
     window.history.replaceState(null,"",`/chat?${query}`);
     if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {

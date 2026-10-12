@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {selectionRange,linearContextRef,newtonActivityContextRef,teachBackContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession} from "./learning-context.ts";
+import {selectionRange,linearContextRef,newtonActivityContextRef,teachBackContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession,chatReferenceHref,storePrivateChatHandoff,restorePrivateChatHandoff} from "./learning-context.ts";
 import {studyTaskHref,recommendationHref,homeNextStep} from "./study-summary.ts";
 import type {NumericalRun} from "./numerical-lab.ts";
 import type {LearningOverview,NewtonActivityState,TeachBack} from "./learning-api.ts";
@@ -23,6 +23,20 @@ test("condition comparison keeps student markings unverified and bound to the ca
  const href=referenceHref({ref,citation:{quote:"q",start:0,end:8,conditions:[]}} as unknown as Parameters<typeof referenceHref>[0]);
  assert.equal(href,"/reading?unit=NA_NEWTON#reading-discussion");
  assert.ok(!href.includes(ref.problem_text));
+});
+test("private reading question crosses to Chat without entering the URL",()=>{
+ const ref={kind:"reading" as const,source_id:"NA_NEWTON",source_hash:"a".repeat(64),section_id:null,start:0,end:8,graph_revision:"v1",problem_text:"我的未公开题目原话",claimed_known:[0],condition_hash:"b".repeat(64)};
+ const id="12345678-1234-4123-8123-123456789abc",items=new Map<string,string>();
+ const storage={setItem:(key:string,value:string)=>{items.set(key,value);},getItem:(key:string)=>items.get(key)??null};
+ const href=chatReferenceHref(ref,id);
+ assert.equal(href,`/chat?handoff=${id}`);
+ assert.ok(!href.includes(ref.problem_text)&&!href.includes("problem_text"));
+ storePrivateChatHandoff(storage,"alice",id,ref,1000);
+ assert.deepEqual(restorePrivateChatHandoff(storage,"alice",id,1001),ref);
+ assert.equal(restorePrivateChatHandoff(storage,"bob",id,1001),null);
+ assert.equal(restorePrivateChatHandoff(storage,"alice",id,1000+31*60*1000),null);
+ assert.equal(restorePrivateChatHandoff(storage,"alice","../bad",1001),null);
+ assert.equal(chatReferenceHref({...ref,problem_text:undefined}),`/chat?ref=${encodeURIComponent(JSON.stringify({...ref,problem_text:undefined}))}`);
 });
 test("explicit iteration reference is immutable while playback changes",()=>{const ref=linearContextRef(run,1);run.rows.push({k:2} as NumericalRun["rows"][number]);assert.equal(ref.selected_step,1);assert.equal(ref.record_id,"record");});
 test("linear reference rejects old versions and invalid steps",()=>{assert.throws(()=>linearContextRef({...run,schema_version:"old"},0));assert.throws(()=>linearContextRef(run,100));});
