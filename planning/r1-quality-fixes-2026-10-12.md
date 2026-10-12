@@ -13,6 +13,6 @@
 
 ## 验证与 Gate
 
-从根目录运行最终完整 `npm test`，其 pytest 阶段按脚本在 `apps/api` 启动：知识 JSON 检查通过、API **928 passed**、Web **77 passed**。定向 `tests/test_learning_context.py` **14 passed**；`npm run build:web` 通过；`apps/web/npm run lint` 为 0 error、10 个既有 warning。`git diff --check` 通过；`git grep "sk-"` 的文字/普通标识符命中已判读，本轮拟提交文件无凭证。远端 CI 仍须按最终提交 SHA 单独确认。本轮未调用新的付费模型。
+从根目录运行最终完整 `npm test`，其 pytest 阶段按脚本在 `apps/api` 启动：知识 JSON 检查通过、API **928 passed**、Web **77 passed**。定向 `tests/test_learning_context.py` **14 passed**；`npm run build:web` 通过；`apps/web/npm run lint` 为 0 error、10 个既有 warning。`git diff --check` 通过；`git grep "sk-"` 的文字/普通标识符命中已判读，本轮提交文件无凭证。代码提交 `f9cf2a1` 的 [目标 CI #38235113931](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38235113931) 知识数据、API/离线 Agent 合同与 Web 全绿。本轮未调用新的付费模型。
 
 工程缺口仍有 B5 隔离浏览器跨工作区导航/刷新/身份切换的完整重演。内容缺口仍有 B2 条件卡、B3 六题/rubric、B4 正反代码变体的真人审核；A0 案例仍未封存为独立 gold。R1-A/B 数学与教学质量 Gate、真实学生收益、R0 正式库备份/恢复与授权 Gate 均未解除。

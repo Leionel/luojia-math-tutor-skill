@@ -4,8 +4,8 @@
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下 A4/A5 与 B1–B5 本地工程已实施；[独立质量审阅](r1-independent-quality-review-2026-10-12.md)后的[局部修正回执](r1-quality-fixes-2026-10-12.md)完成本地回归：API928/Web77、Web 构建通过。修正覆盖首页入口、旧复习来源、同题通用 Lab/Chat 引用帮助曝光及 B3/B4/T04 提示合同。R1 正式质量总验收未完成，R0 正式库 Gate 未过，本轮不部署。 |
-| **Next** | 按最终提交 SHA 核对远端 CI；再做 B5 隔离浏览器跨工作区重演、B2/B3/B4 真人内容二审、应用真实路径下的同题模型对照。D1 暂行，D2 质量优劣待证；不把提示合同改动视作模型效果提升。 |
+| **Now** | [冻结 R1 基线](r1-math-tutor-core-2026-10-08.md)下 A4/A5 与 B1–B5 本地工程已实施；[独立质量审阅](r1-independent-quality-review-2026-10-12.md)后的[局部修正回执](r1-quality-fixes-2026-10-12.md)完成本地回归：API928/Web77、Web 构建通过；代码提交 `f9cf2a1` 的 [目标 CI](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38235113931) 全绿。修正覆盖首页入口、旧复习来源、同题通用 Lab/Chat 引用帮助曝光及 B3/B4/T04 提示合同。R1 正式质量总验收未完成，R0 正式库 Gate 未过，本轮不部署。 |
+| **Next** | 做 B5 隔离浏览器跨工作区重演、B2/B3/B4 真人内容二审、应用真实路径下的同题模型对照。D1 暂行，D2 质量优劣待证；不把提示合同改动视作模型效果提升。 |
 | **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)、[B5 本地集成回归](r1-b5-delivery.md)，以及 [9 次公开合成题真实模型观察与独立子 agent 审阅](r1-independent-quality-review-2026-10-12.md)。B3/B4 的 [CI #38194030159](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38194030159)、B5 的 [CI #38224685431](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38224685431)、审阅文档的 [CI #38227839910](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38227839910) 已通过。此前 M1/U 系列仍按各自回执。 |
 | **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地切片不解除上线门槛。R1-A **质量 Gate** 尚缺真人二审及应用路径下真实模型质量；B2 开发条件卡、B3 题目与提示缺独立审核，B4 算法线索缺正确变体误导评估。上轮模型小样本 T04/B4 的缺口仅修提示合同，未做新模型验收。自检单题答案没有直连 Chat 的可信引用；不能把工程合同、合成模型观察或选项匹配当数学准确率/学生收益。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
