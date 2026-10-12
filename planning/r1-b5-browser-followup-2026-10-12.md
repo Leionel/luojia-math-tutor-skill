@@ -18,4 +18,4 @@
 
 Web 单测覆盖题目不入 URL、账号不匹配、超时和无效 ID；浏览器验证了正常入口与刷新。`sessionStorage` 是同标签页短期续接，不是持久学习记录；来源与权限的最终判断仍在服务端。R1 数学/教学质量 Gate、B2/B3/B4 真人内容审核及 R0 正式库 Gate 均未解除。
 
-最终完整 `npm test` 从根脚本正确进入 `apps/api` 运行离线 pytest：知识 JSON、API **928 passed**、Web **78 passed**；Web lint **0 error / 10 个既有 warning**，停止开发服务器后 `npm run build:web` 通过。`git diff --check` 通过。上述结果只证明本地工程回归；提交和目标 CI 状态以 [唯一状态入口](README.md) 为准。
+最终完整 `npm test` 从根脚本正确进入 `apps/api` 运行离线 pytest：知识 JSON、API **928 passed**、Web **78 passed**；Web lint **0 error / 10 个既有 warning**，停止开发服务器后 `npm run build:web` 通过。`git diff --check` 通过。代码提交 `b50c20a` 的 [目标 CI #38260016162](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38260016162) 已全绿。上述结果只证明工程回归；最新状态仍以 [唯一状态入口](README.md) 为准。
