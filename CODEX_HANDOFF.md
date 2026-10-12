@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-12 R1 独立审阅后的局部修正
+
+按 `planning/r1-independent-quality-review-2026-10-12.md` 修 B1 首页推荐优先级、review 单元来源版本与旧证据隔离、A5 同题通用 Lab 的帮助曝光，及 B3/B4/T04 提示边界。详细行为、剩余风险与验证范围见 `planning/r1-quality-fixes-2026-10-12.md`；唯一当前状态入口仍为 `planning/README.md`。旧 review 缺来源 hash 时只作历史记录，当前来源下新练习可重建；同题曝光识别限内置实验与规范化语法，不声称全局防剧透。真人内容审核、应用真实模型对照、B5 浏览器全流程、R1 质量 Gate、R0 正式库 Gate 均未解除。本轮未用新的付费模型、正式库或部署；原无关 dirty 保留。
+
 ## 2026-10-12 R1 独立质量审阅与真实模型小样本
 
 B5 工程提交 `1fc1b2f` 的目标 CI 已过。独立子 agent 在 B5 之后只读复核 A/B 全链，主 agent 经用户授权用临时凭据直连 `deepseek-flash` 运行 9 条公开合成提示；原始脱敏数据在 `evaluation/r1/live-probe-development-2026-10-12.json`，判据、源码行号与质量边界见 `planning/r1-independent-quality-review-2026-10-12.md`。发现 B1 首页 CTA 与后端推荐优先级冲突、A5 同题新 run 可提前显示完整轨迹、B1 复习来源版本风险、B3 共用错项线索、B4 正确代码的残差提示风险；模型 T04 对未知条件过早判错，B4 仅给近似依据。未修改业务代码或正式库；小样本不是应用端到端准确率，真人内容二审、R1 质量 Gate、R0 正式库 Gate 均未通过。当前状态只看 `planning/README.md`。

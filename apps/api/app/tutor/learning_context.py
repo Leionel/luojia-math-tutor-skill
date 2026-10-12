@@ -111,6 +111,10 @@ def _resolve_root_context(workspace, owner: str, ref: LearningContextRef) -> dic
         # Fail explicitly rather than silently dropping conditions or inventing rows.
         if len(json.dumps(snapshot, ensure_ascii=False, allow_nan=False).encode()) > 8192:
             raise ValueError("实验上下文超过本批预算，请选择较短的表达式或轨迹。")
+        # A saved generic run may predate the activity. Selecting it in Chat still
+        # exposes the same-case trajectory, even though no lab endpoint was called.
+        from app.tutor.newton_activity import NewtonActivity
+        NewtonActivity(workspace).note_generic_run(owner, run)
         return snapshot
 
 

@@ -42,6 +42,7 @@ def test_new_static_hint_preserves_code_hash_line_scope_and_old_version(ws):
     prompt=build_messages('tutor','这一行是否正确？',Intent.CONCEPT,'数值分析',[],
         VerifyResult(False,None,'未触发自动验证。'),None,'socratic',learning_context=snapshot)
     assert 'code_static_rule' in prompt[-2]['content'] and 'algorithm_suspicion' in prompt[-2]['content']
+    assert '|fx|≤tol 是根误差≤tol 的充分条件' in prompt[-2]['content']
     with pytest.raises(ValueError):resolve_learning_context(ws[0],'alice',ref.model_copy(update={'static_rule_version':'newton-static-v1'}))
     saved['static_rule_version']='newton-static-v1';saved['findings']=[{'kind':'legacy_hint','line':1,'message':'旧版提示'}]
     ws[0].save('alice','code_submission',saved['id'],saved)

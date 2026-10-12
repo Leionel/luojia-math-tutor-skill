@@ -1,7 +1,9 @@
 """One versioned Newton participation activity; reference work is never mastery evidence."""
+import ast
 from datetime import datetime, timezone
 from hashlib import sha256
 
+from app.math_tools.root_expression import ExpressionError, RootExpression
 from app.math_tools.root_runner import LabRequest, RUNNER_VERSION
 from app.tutor.help_boundary import assert_reference_help_allowed
 
@@ -10,6 +12,7 @@ ACTIVITY_VERSION = "newton-participation-v1"
 KIND = "newton_activity"
 PROBLEM = {"function": "x^3-2*x+2", "derivative": "3*x^2-2", "initial_value": 0,
            "method": "newton", "goal": "residual", "tolerance": 1e-6, "max_iterations": 8}
+_PROBLEM_AST = ast.dump(RootExpression(PROBLEM["function"]).root, include_attributes=False)
 EXACT_CHECK = {
     "scope": "仅对本题函数、标准牛顿法和 x₀=0 的精确代数判断",
     "steps": ["f(0)=2，f'(0)=-2，所以 x₁=0-2/(-2)=1。",
@@ -33,6 +36,31 @@ class NewtonActivity:
 
     def _save(self, owner, record):
         self.store.save_learning_record(owner, self.course_id, KIND, ACTIVITY_ID, record)
+
+    def note_generic_run(self, owner, run):
+        """Record same-case in-app help; this is not a general math-equivalence oracle."""
+        record = self._record(owner)
+        if (not record or record.get("version") != ACTIVITY_VERSION or not record.get("run_ref") or not record.get("reveal")
+                or "revealed_step" not in record or record.get("answer_exposure")
+                or run["id"] == record["run_ref"]["id"]):
+            return
+        params = run.get("parameters") or {}
+        variant = params.get("variant", "standard")
+        same_update = (variant == "standard" or (variant == "damped" and params.get("damping") == 1)
+                       or (variant == "modified" and params.get("multiplicity") == 1))
+        if params.get("method") != "newton" or not same_update or params.get("initial_value") != 0:
+            return
+        try:
+            same_expression = ast.dump(RootExpression(params["function"]).root, include_attributes=False) == _PROBLEM_AST
+        except (KeyError, TypeError, ExpressionError):
+            return
+        if same_expression:
+            bound = self.workspace.get(owner, "lab", record["run_ref"]["id"])
+            if record["revealed_step"] >= len(bound["rows"]) - 1 or len(run.get("rows", [])) <= record["revealed_step"] + 1:
+                return
+            record["answer_exposure"] = {"request_id": f"generic-{run['id']}", "source": "generic_lab",
+                                         "run_id": run["id"], "at": _now()}
+            self._save(owner, record)
 
     def state(self, owner):
         with self.store.transaction():
@@ -107,6 +135,8 @@ class NewtonActivity:
                 if mode != "answer":
                     raise ValueError("参考实验已展示，请恢复已有活动。")
                 exposure = record.get("answer_exposure")
+                if exposure and exposure.get("source") == "generic_lab":
+                    return self.state(owner)
                 if exposure and exposure["request_id"] != request_id:
                     raise ValueError("完整答案已展示，请恢复已有活动。")
                 record["answer_exposure"] = exposure or {"request_id": request_id, "at": _now()}

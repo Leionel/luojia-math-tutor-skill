@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-12 R1 来源版本修正
+
+复习状态不再只靠全图 revision 推断可沿用：保存当前单元摘录 hash、条件卡 hash 和内容版本；内容相同的无关修订可继续，旧记录缺依据或单元变化则暂停旧 episode 并提供新练习。历史阶段保留作历史，不作为当前来源下的自动成绩。该局部合同没有新增 Graph/Memory 框架，也未建立真人审核的教学内容质量；细节见 `planning/r1-quality-fixes-2026-10-12.md`，状态以 `planning/README.md` 为准。
+
 ## 2026-10-12 R1 独立质量审阅的图谱/来源边界
 
 独立子 agent 未发现现有 D1 固定题精确证据被自动写成整段学生主张的 `verified` 或掌握度；B2 学生勾选仍是未核验状态。新风险是 B1 到期 review 缺单元内容 hash/graph revision，课程修订后可能把旧 episode 纳入新版本任务；需区分全图 revision 与该单元实质变化，不能简单让所有旧复习失效。详见 `planning/r1-independent-quality-review-2026-10-12.md`；九次公开合成模型提示不证明图谱、教学策略或学生收益增益，当前状态见 `planning/README.md`。

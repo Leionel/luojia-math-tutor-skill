@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {selectionRange,linearContextRef,newtonActivityContextRef,teachBackContextRef,referenceChatKey,studyRequested,referenceHref,restoreReadingReference,numericalContextRef,referenceDescription,verifiedReferenceSession} from "./learning-context.ts";
-import {studyTaskHref,recommendationHref} from "./study-summary.ts";
+import {studyTaskHref,recommendationHref,homeNextStep} from "./study-summary.ts";
 import type {NumericalRun} from "./numerical-lab.ts";
-import type {NewtonActivityState,TeachBack} from "./learning-api.ts";
+import type {LearningOverview,NewtonActivityState,TeachBack} from "./learning-api.ts";
 const run={id:"record",source_hash:"a".repeat(64),schema_version:"numerical-lab-v1",task:{domain:"linear_system"},rows:[{k:0},{k:1}]} as unknown as NumericalRun;
 test("reading refresh restores the exact span and rejects changed sources or invalid storage",()=>{
  const source={source_id:"course",source_hash:"a".repeat(64),section_id:null,graph_revision:"v1"};
@@ -31,6 +31,7 @@ test("source discussion cache cannot cross owners or namespaces",()=>{const ref=
 test("task navigation is a bounded command instead of math keyword interception",()=>{assert.ok(studyRequested("今天学什么？"));assert.ok(!studyRequested("今天学什么，并求x²=2"));});
 test("stale or missing-session task cannot become a resume link",()=>{const t={id:"task1",title:"任务",state:"in_progress",stale:false,session_available:true,kind:"practice"};assert.equal(studyTaskHref(t),"/study?task=task1");assert.equal(studyTaskHref({...t,stale:true}),null);assert.equal(studyTaskHref({...t,session_available:false}),null);assert.equal(studyTaskHref({...t,id:"../private"}),null);});
 test("state recommendation only opens bounded workspace routes",()=>{const base={policy_version:"r1-b1-v1",graph_revision:"v1",evidence_kind:"saved_state_only",mastery_claim:false,kind:"resume_task",title:"下一步",reason:"已保存状态",source_id:"id"} as const;assert.equal(recommendationHref({...base,href:"/study?task=task_1"}),"/study?task=task_1");assert.equal(recommendationHref({...base,href:"javascript:alert(1)"}),"/study");assert.equal(recommendationHref({...base,href:"/reading?unit=../private"}),"/study");});
+test("home follows the server recommendation when an assessment and task coexist",()=>{const recommendation={policy_version:"r1-b1-v1",graph_revision:"v1",evidence_kind:"saved_state_only",mastery_claim:false,kind:"assessment_in_progress",title:"继续当前章节自检",reason:"自检尚未交卷",href:"/assessment",source_id:"exam"} as const;const step=homeNextStep({recommendation,active_assessment:{id:"exam",answered:2,total:6},next_task:{id:"task",title:"旧待办"} as LearningOverview["next_task"]});assert.equal(step.href,"/assessment");assert.equal(step.label,"继续章节自检");assert.match(step.reason,/2 \/ 6/);});
 test("reading source link uses section without invented page numbers",()=>{const s={version:"learning-context-v1",title:"source",evidence_kind:"reference_help",independent_success:false,ref:{kind:"reading",source_id:"record",source_hash:"a".repeat(64),section_id:"2",start:0,end:1,graph_revision:null},citation:{quote:"q",start:0,end:1,conditions:[]},source_kind:"uploaded_markdown"} as const;assert.equal(referenceHref(s as unknown as Parameters<typeof referenceHref>[0]),"/reading?document=record&section=2");});
 
 test("integration has its own namespace and retains estimator scope",()=>{

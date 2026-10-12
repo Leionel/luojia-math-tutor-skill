@@ -10,7 +10,7 @@ from app.tutor.learning_workspace import digest
 from app.tutor.teachback_evidence import original_spans,parse_review
 
 ASSIGNMENT_ID = "newton-trace-dev-v1"
-STATIC_RULE_VERSION = "newton-static-v2"
+STATIC_RULE_VERSION = "newton-static-v3"
 TEMPLATE = '''def solve(x0, tol, max_iter):
     # 返回含初值的迭代值列表；在本地运行后粘贴轨迹。
     xs = [x0]
@@ -187,7 +187,7 @@ def static_findings(code):
                                and abs_fx(test.comparators[0]) and isinstance(test.ops[0], (ast.Gt, ast.GtE))))
         if direct_residual and any(isinstance(statement, (ast.Break, ast.Return)) for statement in n.body):
             findings.append({"kind": "root_error_residual_stop", "line": n.lineno,
-                             "message": "这里以 |fx| 与 tol 比较后退出。若 fx 表示 f(x)，这只直接检查残差；本作业的根误差目标还需适用区间与导数下界等误差依据。静态线索不判定代码错误。"})
+                             "message": "这里以 |fx| 与 tol 比较后退出。对本作业 f(x)=x²−2，若 fx 确为 f(x) 且退出时 x∈[1,2]，则区间内 |f′|≥2，由中值定理有 |x−√2|≤|fx|/2；因此 |fx|≤tol 已足以保证本题根误差≤tol。请说明代码中的 fx 含义和迭代范围；静态线索不判定代码错误或整个程序正确。"})
     return scoped(findings)
 
 

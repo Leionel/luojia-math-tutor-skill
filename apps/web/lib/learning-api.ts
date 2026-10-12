@@ -21,6 +21,7 @@ export type StudyToday = {
   local_date: string; persistent: boolean;
   plan: null | {id: string; minutes: number; stale: boolean; tasks: StudyTask[]};
   reviews: {id: string; stage: number; due_at: string}[];
+  review_source_status: Record<string,"current"|"needs_source_check">;
 };
 export type ReadingUnit = {
   graph_revision: string;
@@ -46,6 +47,7 @@ export type NewtonActivityState = {
   problem: {function:string;derivative:string;initial_value:number;method:string;goal:string;tolerance:number;max_iterations:number};
   prediction: {text:string;reason:string;request_id:string;at:string} | null;
   reveal: {request_id:string;mode:"observe"|"answer";at:string;evidence_kind:string} | null;
+  answer_exposure?: {request_id:string;at:string;source?:"generic_lab";run_id?:string} | null;
   explanation: {text:string;request_id:string;at:string;run_id:string;input_hash:string} | null;
   revisions: {text:string;request_id:string;at:string;run_id:string;input_hash:string}[];
   run: LabRun | null; context_current?: boolean; answer_exposed: boolean; independent_success: false;
@@ -55,7 +57,7 @@ export type NewtonActivityState = {
 export type Assessment = {
   id: string; state: string; content_version: string; mode: string;
   answers: Record<string, number>; questions: {id: string; prompt: string; options: string[]}[];
-  feedback_version?: "root-chapter-feedback-dev-v1" | "legacy_unlayered";
+  feedback_version?: "root-chapter-feedback-dev-v1" | "root-chapter-feedback-dev-v2" | "legacy_unlayered";
   feedback_review_status?: "development_unreviewed" | "legacy_reference";
   feedback?: {id: string; reference_match: boolean; reference_answer: number; explanation: string; unit_id: string;
     layers?: {condition: string; method: string; full: string}}[];
@@ -66,7 +68,7 @@ export type Assessment = {
 export type LearningOverview = {
   local_date: string; persistent: boolean; access_mode: "account" | "demo";
   plan: null | {minutes: number; total: number; completed: number; stale: boolean};
-  next_task: StudyTask | null; pending_tasks: StudyTask[]; stale_tasks: number; due_reviews: number;
+  next_task: StudyTask | null; pending_tasks: StudyTask[]; stale_tasks: number; due_reviews: number; stale_reviews: number;
   recommendation: LearningRecommendation;
   counts: {reading: number; practice: number; independent: number; notes: number; labs: number; teach_backs: number; code_submissions: number};
   active_assessment: null | {id: string; answered: number; total: number};

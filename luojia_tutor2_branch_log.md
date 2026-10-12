@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-12 R1 审阅后修正
+
+首页主卡消费 B1 服务端推荐；到期 review 加单元来源/条件/内容版本合同，旧来源先读当前材料再做新练习；A5 内置通用 Lab 同题后续轨迹记参考帮助曝光；B3 错项只给核对线索，B4 对固定正根题说明残差阈值充分条件，Teach-back 缺输入时保持 unknown。无新 Agent/Graph 抽象或学生代码执行，原 dirty 保留。验证、限制和 Gate 见 `planning/r1-quality-fixes-2026-10-12.md` 与唯一入口 `planning/README.md`。
+
 ## 2026-10-12 R1 工程后独立质量审阅
 
 在 B5 提交后由独立子 agent 只读审阅 A/B 数据流、数学种子、工作区与质量回执；另经用户授权做 9 条公开合成题的 `deepseek-flash` 直连观察，预写判据与脱敏结果见 `evaluation/r1/live-probe-development-2026-10-12.json`。报告 `planning/r1-independent-quality-review-2026-10-12.md` 分列 6 项有源码证据的问题与保留项；没有改业务代码、正式库或原有 dirty。真实模型观察没有覆盖路由、工具、浏览器或真人评审，正式质量 Gate 仍 pending。

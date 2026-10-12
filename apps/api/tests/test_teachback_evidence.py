@@ -72,6 +72,7 @@ def test_selected_condition_chat_reference_is_owner_scoped_and_unverified(ws):
         VerifyResult(False,None,'本轮未触发自动验证。'),None,'socratic',learning_context=snapshot)
     runtime=prompt[-2]['content']
     assert 'teach_back_rule' in runtime and '未经真人核验' in runtime
+    assert '第三步比第二步小' in runtime and '先标unknown并追问' in runtime
     assert ws[0].repository.list_mastery('alice')==[]
 
 

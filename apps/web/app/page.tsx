@@ -10,6 +10,7 @@ import {BrandLogo} from "@/components/brand-logo";
 import {TutorCompanion} from "@/components/tutor-companion";
 import {HomeRootIllustration} from "@/components/learning/home-root-illustration";
 import {learningRequest, LearningRequestError, type LearningOverview} from "@/lib/learning-api";
+import {homeNextStep} from "@/lib/study-summary";
 import {getCurrentUserId,getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
 
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-olive-600";
@@ -49,9 +50,7 @@ export default function HomePage() {
     return()=>{live=false;clearTimeout(timer);controller.abort();};
   },[refresh]);
   const retry=useCallback(()=>{setLoading(true);setError("");setRefresh(value=>value+1);},[]);
-  const next=overview?.next_task;
-  const href=next?`/study?task=${encodeURIComponent(next.id)}`:overview?.active_assessment?`/assessment?id=${encodeURIComponent(overview.active_assessment.id)}`:"/study";
-  const nextLabel=next?.state==="awaiting_check"?"确认过程反馈":next?.kind==="review"?"继续独立检验":next?"继续这项任务":overview?.active_assessment?"继续章节自检":overview?.plan?"查看今日任务":"安排今日学习";
+  const nextStep=homeNextStep(overview);
   return <MotionConfig reducedMotion="user"><div className={`${styles.page} min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]`}>
     <a href="#home-content" className={`sr-only focus:not-sr-only focus:absolute focus:left-5 focus:top-2 focus:z-50 focus:bg-[var(--bg-card)] focus:p-3 ${focus}`}>跳到学习入口</a>
     <header className="border-b border-[var(--border-primary)]">
@@ -75,11 +74,11 @@ export default function HomePage() {
         <section aria-labelledby="next-step" aria-busy={loading} className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-6 sm:p-8 lg:mt-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="next-step" className="text-lg font-semibold">继续你的学习</h2><span className="text-base sm:text-sm text-[var(--text-muted)]">{overview?.local_date ?? "学习工作区"}</span></div>
           {loading?<p role="status" className="my-6 leading-7 text-[var(--text-secondary)]">正在读取你的学习记录…</p>:error?<div className="my-6"><p role={loginRequired?"status":"alert"} className="leading-7 text-[var(--text-secondary)]">{error}</p>{!loginRequired && <button type="button" onClick={retry} className={`mt-2 min-h-12 text-olive-700 dark:text-olive-300 underline ${focus}`}>重新读取记录</button>}</div>:<>
-            <p className="mt-5 text-xl font-medium">{next?.title ?? (overview?.active_assessment?"还有一份章节自检未交卷":overview?.plan?.stale?"课程来源已更新，请核对旧任务":overview?.plan?"今日计划已完成，可回看过程":"给数值分析留一段时间")}</p>
-            <p className="mt-2 leading-7 text-[var(--text-secondary)]">{next?.reason ?? (overview?.active_assessment?`已保存 ${overview.active_assessment.answered} / ${overview.active_assessment.total} 题，继续完成这次自检。`:"安排 15 或 30 分钟。阅读、练习与独立检验会分别记录。")}</p>
+            <p className="mt-5 text-xl font-medium">{nextStep.title}</p>
+            <p className="mt-2 leading-7 text-[var(--text-secondary)]">{nextStep.reason}</p>
             {overview?.plan && <div className="mt-5"><div className="mb-2 flex justify-between text-base sm:text-sm"><span>今日计划 · {overview.plan.minutes} 分钟</span><span>{overview.plan.completed} / {overview.plan.total} 项完成</span></div><progress aria-label="今日计划完成项数" max={Math.max(1,overview.plan.total)} value={overview.plan.completed} className="h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-[var(--bg-tertiary)] [&::-webkit-progress-value]:bg-olive-600 [&::-moz-progress-bar]:bg-olive-600"/></div>}
           </>}
-          <Link href={loginRequired?"/auth/login":href} className={`mt-6 inline-flex min-h-12 items-center gap-3 rounded-lg bg-olive-700 py-3 pl-4 pr-3 text-paper-50 hover:bg-olive-800 ${focus}`}>{loginRequired?"登录查看任务":nextLabel}<ArrowRight className="h-4 w-4" aria-hidden="true"/></Link>
+          <Link href={loginRequired?"/auth/login":nextStep.href} className={`mt-6 inline-flex min-h-12 items-center gap-3 rounded-lg bg-olive-700 py-3 pl-4 pr-3 text-paper-50 hover:bg-olive-800 ${focus}`}>{loginRequired?"登录查看任务":nextStep.label}<ArrowRight className="h-4 w-4" aria-hidden="true"/></Link>
           {overview?.access_mode==="demo" && <p className="mt-4 text-base sm:text-xs leading-6 text-[var(--text-muted)]">当前显示本地演示记录；登录后使用自己的学习记录。</p>}
         </section>
       </motion.section>
@@ -89,7 +88,7 @@ export default function HomePage() {
         <dl className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
           {[["到期复习",overview.due_reviews,"项"],["阅读记录",overview.counts.reading,"项"],["练习完成",overview.counts.practice,"次"],["独立检验通过",overview.counts.independent,"次"]].map(([label,count,unit])=><div key={label}><dt className="text-base sm:text-sm text-[var(--text-secondary)]">{label}</dt><dd className="mt-1 text-2xl font-medium">{count}<span className="ml-2 text-base sm:text-sm font-normal text-[var(--text-muted)]">{unit}</span></dd></div>)}
         </dl>
-        <p className="mt-3 text-base sm:text-xs leading-6 text-[var(--text-muted)]">以上为已保存的过程记录，不表示课程总体掌握度。{overview.stale_tasks>0?`另有 ${overview.stale_tasks} 项旧课程版本任务待核对。`:""}</p>
+        <p className="mt-3 text-base sm:text-xs leading-6 text-[var(--text-muted)]">以上为已保存的过程记录，不表示课程总体掌握度。{overview.stale_tasks>0?`另有 ${overview.stale_tasks} 项旧课程版本任务待核对。`:""}{overview.stale_reviews>0?`另有 ${overview.stale_reviews} 项复习来源待核对。`:""}</p>
       </section>}
       <section aria-labelledby="learning-entries" className="mt-12">
         <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3"><h2 id="learning-entries" className="font-title text-2xl font-semibold">选择今天的学习方式</h2><p className="text-base sm:text-sm text-[var(--text-secondary)]">读材料 → 做过程 → 讲清楚 → 再检查</p></div>

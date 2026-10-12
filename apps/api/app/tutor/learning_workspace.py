@@ -14,7 +14,8 @@ from app.math_tools.root_finding import RootAttempt
 
 CONTENT_VERSION = "root-learning-dev-v1"
 ASSESSMENT_VERSION = "root-chapter-diagnostic-v1"
-ASSESSMENT_FEEDBACK_VERSION = "root-chapter-feedback-dev-v1"
+ASSESSMENT_FEEDBACK_VERSION = "root-chapter-feedback-dev-v2"
+ASSESSMENT_FEEDBACK_PRIOR_VERSION = "root-chapter-feedback-dev-v1"
 CARDS = {
     "NA_ROOT_FINDING": {"conditions": ["残差 |f(x)| 和根误差 |x-x*| 是不同的量", "若区间内有根且 |f'|≥m>0，可由中值定理给出 |x-x*|≤|f(x)|/m", "停止阈值必须说明目标是残差还是根误差"], "question": "把函数乘以很小的常数，会不会自动降低根误差？", "options": ["会", "不会，根的位置并不改变"], "answer": 1, "explanation": "缩放会降低残差，但不改变零点；需要相应的导数下界才能换算根误差。"},
     "NA_BISECTION": {"conditions": ["f 在闭区间连续", "两端严格变号；端点为根须单独处理", "半区间宽度可作为中点误差上界"], "question": "只有两端变号，能否直接确认中间有根？", "options": ["能", "还需要区间连续性"], "answer": 1, "explanation": "例如 1/x 在 [-1,1] 两端变号，但在 0 处不连续。"},
@@ -67,6 +68,15 @@ class LearningWorkspace:
         graph = self.store.load_graph(self.course_id) or {}
         return self.store.latest_revision_id(self.course_id) or f"seed:{graph.get('seed_checksum', '')}"
 
+    def review_source(self, unit_id, units=None):
+        unit = next((u for u in (units if units is not None else self.reading_units()) if u["id"] == unit_id), None)
+        return {"source_hash": unit["source_hash"], "condition_hash": unit["condition_hash"],
+                "content_version": unit["content_version"]} if unit else None
+
+    def review_source_current(self, review, units=None):
+        source = self.review_source(review["id"], units)
+        return bool(source and all(review.get(key) == value for key, value in source.items()))
+
     def today(self, owner, tz="Asia/Hong_Kong"):
         try:
             date = datetime.now(ZoneInfo(tz)).date().isoformat()
@@ -76,8 +86,12 @@ class LearningWorkspace:
         if plan:
             plan["tasks"] = [self.get(owner, "task", item) for item in plan["task_ids"]]
             plan["stale"] = plan["graph_revision"] != self.revision()
+        reviews = self.store.learning_records(owner, self.course_id, "review")
+        units = self.reading_units()
         return {"plan": plan, "local_date": date, "timezone": tz, "persistent": self.store.persistent,
-                "reviews": self.store.learning_records(owner, self.course_id, "review")}
+                "reviews": reviews,
+                "review_source_status": {r["id"]: "current" if self.review_source_current(r, units) else "needs_source_check"
+                                         for r in reviews}}
 
     def overview(self, owner, tz="Asia/Hong_Kong"):
         """Read-only summary. Progress categories are not mastery estimates."""
@@ -99,8 +113,11 @@ class LearningWorkspace:
             plan_tasks = today["plan"]["tasks"] if today["plan"] else []
             safe_tasks = [t for t in valid if re.fullmatch(r"[A-Za-z0-9_-]{1,80}", t.get("id", ""))
                           and (not t.get("session_id") or self.repository.session_belongs_to(t["session_id"], owner))]
-            due = sorted((r for r in today["reviews"] if datetime.fromisoformat(r["due_at"]) <= now),
+            units = self.reading_units()
+            due_all = [r for r in today["reviews"] if datetime.fromisoformat(r["due_at"]) <= now]
+            due = sorted((r for r in due_all if self.review_source_current(r, units)),
                          key=lambda r: (r["due_at"], r["id"]))
+            stale_due = [r for r in due_all if not self.review_source_current(r, units)]
             waiting = next((t for t in safe_tasks if t["state"] == "awaiting_check"), None)
             revision_task = next((t for t in safe_tasks if t["state"] == "needs_revision"), None)
             stale = sorted((t for t in pending if t.get("graph_revision") != revision),
@@ -121,9 +138,16 @@ class LearningWorkspace:
                 recommendation.update(kind="due_review", title="安排到期复习",
                     reason="已有到期复习记录；先在今日学习核对能否开始新题，不据此推断已经遗忘。",
                     href="/study", source_id=due[0]["id"])
+            elif stale_due:
+                unit_id = stale_due[0]["id"]
+                current_units = {unit["id"] for unit in units}
+                recommendation.update(kind="stale_source", title="先核对旧复习的课程来源",
+                    reason="到期复习缺少当前单元的来源依据；先核对材料，不直接沿用旧练习。",
+                    href=f"/reading?unit={unit_id}" if unit_id in current_units else "/study",
+                    source_id=unit_id)
             elif stale:
                 unit_id = stale[0].get("unit_id")
-                current_units = {unit["id"] for unit in self.reading_units()}
+                current_units = {unit["id"] for unit in units}
                 recommendation.update(kind="stale_source", title="核对已变化的课程来源",
                     reason="旧任务绑定的课程版本已变化；先阅读当前材料，不能直接沿用旧任务结果。",
                     href=f"/reading?unit={unit_id}" if unit_id in current_units else "/study",
@@ -145,7 +169,7 @@ class LearningWorkspace:
                 "recommendation": recommendation,
                 "pending_tasks": [summary(t) for t in valid],
                 "stale_tasks": len(pending) - len(valid),
-                "due_reviews": sum(datetime.fromisoformat(r["due_at"]) <= now for r in today["reviews"]),
+                "due_reviews": len(due), "stale_reviews": len(stale_due),
                 "counts": {"reading": sum(t["state"] == "read_complete" for t in tasks),
                            "practice": sum(t["state"] == "assisted_complete" for t in tasks),
                            "independent": sum(t["state"] == "verified_complete" for t in tasks),
@@ -164,30 +188,38 @@ class LearningWorkspace:
                 return today
             date = today["local_date"]
             now = datetime.now(timezone.utc)
-            due = sorted([r for r in today["reviews"] if datetime.fromisoformat(r["due_at"]) <= now], key=lambda r: r["due_at"])
+            units = self.reading_units()
+            due_all = [r for r in today["reviews"] if datetime.fromisoformat(r["due_at"]) <= now]
+            due = sorted([r for r in due_all if self.review_source_current(r, units)], key=lambda r: r["due_at"])
+            stale_due = [r for r in due_all if not self.review_source_current(r, units)]
             prior = self.store.learning_records(owner, self.course_id, "task")
-            revision = next((t for t in reversed(prior) if t["state"] == "needs_revision"), None)
+            revision = next((t for t in reversed(prior) if t["state"] == "needs_revision"
+                             and t["graph_revision"] == self.revision()), None)
             assessments = self.store.learning_records(owner, self.course_id, "assessment")
             latest = next((a for a in reversed(assessments) if a["state"] == "completed"), None)
             weak_units = list(dict.fromkeys(q[5] for q in latest["questions"] if latest["answers"].get(q[0]) != q[3])) if latest else []
             if due:
                 episode = self.episodes.owned(due[0]["parent_episode_id"], owner, due[0]["session_id"])
                 can_probe = any(a["acknowledged"] and a["report"]["complete"] for a in episode["attempts"])
-                selected = [("review", "到期复习：新的求根检验", "到达计划复习时间，并不意味着已经遗忘", due[0]["parent_episode_id"], due[0]["session_id"])] if can_probe else [("practice", "到期修订：先完成求根过程", "此前过程未完成，先修订再发独立新题", due[0]["parent_episode_id"], due[0]["session_id"])]
+                selected = [("review", "到期复习：新的求根检验", "到达计划复习时间，并不意味着已经遗忘", due[0]["parent_episode_id"], due[0]["session_id"], due[0]["id"])] if can_probe else [("practice", "到期修订：先完成求根过程", "此前过程未完成，先修订再发独立新题", due[0]["parent_episode_id"], due[0]["session_id"], due[0]["id"])]
+            elif stale_due:
+                unit_id = stale_due[0]["id"] if self.review_source(stale_due[0]["id"], units) else "NA_NEWTON"
+                selected = [("reading", "核对旧复习的课程来源", "旧复习来源未核对，先读当前材料，不续用旧练习结果", None, None, unit_id),
+                            ("practice", "按当前来源重新练习", "旧复习不直接沿用；这是一道新的求根过程任务", None, None, unit_id)]
             elif revision:
-                selected = [("practice", "修订求根过程", "上一次诊断发现过程偏差", revision.get("episode_id"), revision.get("session_id"))]
+                selected = [("practice", "修订求根过程", "上一次诊断发现过程偏差", revision.get("episode_id"), revision.get("session_id"), revision["unit_id"])]
             else:
-                selected = [("reading", "重温牛顿法适用条件", "先确认局部收敛与停止条件", None, None),
-                            ("practice", "提交自己的牛顿迭代", "以受控轨迹核对更新与停止依据", None, None)]
+                selected = [("reading", "重温牛顿法适用条件", "先确认局部收敛与停止条件", None, None, "NA_NEWTON"),
+                            ("practice", "提交自己的牛顿迭代", "以受控轨迹核对更新与停止依据", None, None, "NA_NEWTON")]
                 if weak_units:
-                    selected[0] = ("reading", "复习章节诊断中待核对的条件", "最近一次参考题显示需要回看条件；不代表总体掌握度", None, None)
+                    selected[0] = ("reading", "复习章节诊断中待核对的条件", "最近一次参考题显示需要回看条件；不代表总体掌握度", None, None, weak_units[0])
             if minutes == 30:
-                selected.append(("reading", "比较二分法的保证", "对照变号、连续性与区间误差界", None, None))
+                selected.append(("reading", "比较二分法的保证", "对照变号、连续性与区间误差界", None, None, "NA_BISECTION"))
             ids = []
-            for kind, title, reason, episode_id, session_id in selected[:3]:
+            for kind, title, reason, episode_id, session_id, unit_id in selected[:3]:
                 task_id = uuid.uuid4().hex
                 task = {"id": task_id, "kind": kind, "title": title, "reason": reason,
-                        "state": "planned", "unit_id": weak_units[0] if "诊断" in title else "NA_BISECTION" if "二分" in title else "NA_NEWTON",
+                        "state": "planned", "unit_id": unit_id,
                         "graph_revision": self.revision(), "content_version": CONTENT_VERSION,
                         "study_session_id": f"study:{date}",
                         "parent_episode_id": episode_id if kind == "review" else None,
@@ -248,6 +280,8 @@ class LearningWorkspace:
     def acknowledge(self, owner, task_id, attempt_id, feedback_id):
         with self.store.transaction():
             task = self.get(owner, "task", task_id)
+            if task["graph_revision"] != self.revision():
+                raise ValueError("课程版本已更新，请先核对当前来源；旧反馈不能生成新复习。")
             if not task.get("feedback") or task["feedback"]["feedback_id"] != feedback_id:
                 raise ValueError("请确认当前显示的反馈，旧反馈不能覆盖新尝试")
             result = self.episodes.acknowledge(owner, task["session_id"], task["episode_id"], attempt_id, feedback_id)
@@ -256,17 +290,27 @@ class LearningWorkspace:
             task.update(state={"independent_probe_success": "verified_complete", "assisted_success": "assisted_complete", "observed_success": "assisted_complete", "failed": "needs_revision"}.get(outcome, "unknown"))
             if outcome != "unknown":
                 old = self.store.learning_record(owner, self.course_id, "review", task["unit_id"])
+                source = self.review_source(task["unit_id"])
+                if not source:
+                    raise ValueError("复习单元来源不存在，请先核对课程材料。")
                 # Only probe success advances a stage. Ordinary practice stays assisted.
-                review = advance_review(old, outcome, feedback_id, task.get("study_session_id", f"legacy:{task['session_id']}"), datetime.now(timezone.utc))
+                prior = old if old and self.review_source_current(old) else None
+                review = advance_review(prior, outcome, feedback_id, task.get("study_session_id", f"legacy:{task['session_id']}"), datetime.now(timezone.utc))
                 parent = task["episode_id"] if outcome in ("independent_probe_success", "assisted_success", "observed_success") else task.get("parent_episode_id") or task["episode_id"]
-                if not old or feedback_id not in old["applied_events"]:
-                    review.update(id=task["unit_id"], parent_episode_id=parent, session_id=task["session_id"])
+                if not prior or feedback_id not in prior["applied_events"]:
+                    review.update(id=task["unit_id"], parent_episode_id=parent, session_id=task["session_id"],
+                                  graph_revision=self.revision(), **source)
+                    if old and not prior:
+                        review["prior_source_review"] = {key: old.get(key) for key in
+                                                         ("graph_revision", "source_hash", "condition_hash", "content_version", "stage", "due_at", "applied_events", "last_event_id")}
                     self.save(owner, "review", task["unit_id"], review)
             return self.save(owner, "task", task_id, task)
 
     def probe_task(self, owner, task_id):
         with self.store.transaction():
             parent = self.get(owner, "task", task_id)
+            if parent["graph_revision"] != self.revision():
+                raise ValueError("课程版本已更新，请先核对当前来源；旧练习不能生成新检验。")
             if parent["state"] not in ("assisted_complete", "verified_complete"):
                 raise ValueError("先完成并确认当前练习反馈")
             if parent.get("next_task_id"):
@@ -285,6 +329,8 @@ class LearningWorkspace:
     def complete_reading(self, owner, task_id):
         with self.store.transaction():
             task = self.get(owner, "task", task_id)
+            if task["graph_revision"] != self.revision():
+                raise ValueError("课程版本已更新，请先核对当前来源；旧阅读任务不能标记为当前已读。")
             if task["kind"] != "reading":
                 raise ValueError("只有阅读任务可标记已读")
             task["state"] = "read_complete"
@@ -342,21 +388,34 @@ class LearningWorkspace:
             if old:
                 if old["input_hash"] != input_hash:
                     raise ValueError("同一请求标识不能更改参数")
+                from app.tutor.newton_activity import NewtonActivity
+                NewtonActivity(self).note_generic_run(owner, old)
                 return old
             result = run_reference(request)
             result.update(id=request.request_id, input_hash=input_hash, parameters=request.attempt.model_dump(), max_iterations=request.max_iterations,
                           prediction=request.prediction, graph_revision=self.revision(), created_at=datetime.now(timezone.utc).isoformat())
-            return self.save(owner, "lab", request.request_id, result)
+            self.save(owner, "lab", request.request_id, result)
+            from app.tutor.newton_activity import NewtonActivity
+            NewtonActivity(self).note_generic_run(owner, result)
+            return result
 
     def lab_run(self, owner, run_id):
         with self.store.transaction():
             assert_reference_help_allowed(owner, self.course)
-            return self.get(owner, "lab", run_id)
+            run = self.get(owner, "lab", run_id)
+            from app.tutor.newton_activity import NewtonActivity
+            NewtonActivity(self).note_generic_run(owner, run)
+            return run
 
     def lab_runs(self, owner):
         with self.store.transaction():
             assert_reference_help_allowed(owner, self.course)
-            return self.store.learning_records(owner, self.course_id, "lab")[-20:]
+            runs = self.store.learning_records(owner, self.course_id, "lab")[-20:]
+            from app.tutor.newton_activity import NewtonActivity
+            activity = NewtonActivity(self)
+            for run in runs:
+                activity.note_generic_run(owner, run)
+            return runs
 
     def save_reading_note(self, owner, request_id, source_id, source_hash, section_id, content):
         with self.store.transaction():
@@ -391,19 +450,21 @@ class LearningWorkspace:
         result["questions"] = [{"id": q[0], "prompt": q[1], "options": q[2]} for q in value["questions"]]
         if value["state"] == "completed":
             result["feedback"] = [{"id": q[0], "reference_match": value["answers"].get(q[0]) == q[3], "reference_answer": q[3], "explanation": q[4], "unit_id": q[5]} for q in value["questions"]]
-            current_rubric = (value.get("content_version") == ASSESSMENT_VERSION
-                              and value.get("feedback_version") == ASSESSMENT_FEEDBACK_VERSION
+            layered_rubric = (value.get("content_version") == ASSESSMENT_VERSION
+                              and value.get("feedback_version") in {ASSESSMENT_FEEDBACK_PRIOR_VERSION, ASSESSMENT_FEEDBACK_VERSION}
                               and value.get("rubric_hash") == digest(ASSESSMENT_RUBRICS)
                               and value.get("question_hash") == digest(QUESTIONS)
                               and digest(value["questions"]) == value.get("question_hash"))
-            result["feedback_version"] = ASSESSMENT_FEEDBACK_VERSION if current_rubric else "legacy_unlayered"
-            result["feedback_review_status"] = "development_unreviewed" if current_rubric else "legacy_reference"
-            if current_rubric:
+            result["feedback_version"] = value["feedback_version"] if layered_rubric else "legacy_unlayered"
+            result["feedback_review_status"] = "development_unreviewed" if layered_rubric else "legacy_reference"
+            if layered_rubric:
                 for row in result["feedback"]:
                     rubric = ASSESSMENT_RUBRICS[row["id"]]
                     row["layers"] = {
                         "condition": (f"与参考选项一致；仍可说明：{rubric['check']}" if row["reference_match"]
-                                      else f"先核对条件：{rubric['condition']}"),
+                                      else (f"先核对条件：{rubric['condition']}"
+                                            if value["feedback_version"] == ASSESSMENT_FEEDBACK_PRIOR_VERSION else
+                                            f"参考选项不符；以下是本题核对线索，不代表已定位错因：{rubric['condition']}")),
                         "method": rubric["method"], "full": row["explanation"]}
             result["reference_matches"] = sum(f["reference_match"] for f in result["feedback"])
             result["score"] = {"correct": result["reference_matches"], "total": len(value["questions"]),

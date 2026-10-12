@@ -131,3 +131,41 @@ def test_partial_activity_cannot_be_recovered_through_generic_lab_routes(activit
         "goal": "residual", "tolerance": 1e-6}, "max_iterations": 8,
         "prediction": "先观察", "request_id": run["id"]})
     assert replay.status_code == 200 and len(replay.json()["rows"]) == 1
+
+
+def test_same_case_new_generic_run_records_answer_exposure(activity, monkeypatch):
+    client, _, workspace, _ = activity
+    monkeypatch.setattr("app.api.routes_learning.workspace", lambda: workspace)
+    client.post(BASE + "/predict", json={"request_id": "predict-generic", "text": "先预测", "reason": "观察"})
+    state = client.post(BASE + "/reveal", json={"request_id": "observe-generic", "mode": "observe"}).json()
+    assert len(state["run"]["rows"]) == 1
+    changed_initial = client.post("/api/root-lab/runs", json={"attempt": {
+        "method": "newton", "function": "x^3-2*x+2", "initial_value": -2,
+        "goal": "residual", "tolerance": 1e-6}, "max_iterations": 8,
+        "prediction": "换初值", "request_id": "other-initial"})
+    assert changed_initial.status_code == 200
+    assert client.get(BASE).json()["answer_exposed"] is False
+    same_case = client.post("/api/root-lab/runs", json={"attempt": {
+        "method": "newton", "function": "x**3 - 2*x + 2", "initial_value": 0,
+        "goal": "residual", "tolerance": 1e-6}, "max_iterations": 8,
+        "prediction": "再运行", "request_id": "same-case-new-id"})
+    assert same_case.status_code == 200 and len(same_case.json()["rows"]) > 1
+    exposed = client.get(BASE).json()
+    assert exposed["answer_exposed"] is True and exposed["answer_exposure"]["source"] == "generic_lab"
+    assert exposed["independent_success"] is False
+    assert client.post(BASE + "/reveal", json={"request_id": "show-after-generic", "mode": "answer"}).status_code == 200
+    assert workspace.repository.list_mastery("alice") == []
+
+
+def test_reading_preexisting_same_case_run_records_exposure(activity, monkeypatch):
+    client, _, workspace, _ = activity
+    monkeypatch.setattr("app.api.routes_learning.workspace", lambda: workspace)
+    old = client.post("/api/root-lab/runs", json={"attempt": {
+        "method": "newton", "function": "x^3-2*x+2", "initial_value": 0,
+        "goal": "residual", "tolerance": 1e-6}, "max_iterations": 8,
+        "prediction": "旧参考", "request_id": "prior-generic"}).json()
+    client.post(BASE + "/predict", json={"request_id": "predict-prior", "text": "先预测", "reason": "观察"})
+    client.post(BASE + "/reveal", json={"request_id": "observe-prior", "mode": "observe"})
+    assert client.get(BASE).json()["answer_exposed"] is False
+    assert client.get(f"/api/root-lab/runs/{old['id']}").status_code == 200
+    assert client.get(BASE).json()["answer_exposure"]["source"] == "generic_lab"

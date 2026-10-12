@@ -232,6 +232,22 @@ def test_context_is_owned_versioned_bounded_and_not_a_learning_write(workspace):
     with pytest.raises(ValueError,match="更新"):resolve_learning_context(workspace,"alice",reference(run))
 
 
+def test_preexisting_same_case_lab_context_records_activity_answer_exposure(workspace):
+    generic_run = saved(workspace, request_id="generic-before-activity")
+    activity = NewtonActivity(workspace)
+    activity.predict("alice", "predict-context", "可能收敛", "先观察")
+    observed = activity.reveal("alice", "reveal-context", "observe")
+    assert observed["revealed_step"] == 0 and not observed["answer_exposed"]
+
+    snapshot = resolve_learning_context(workspace, "alice", reference(generic_run))
+    assert snapshot["total_rows"] > 1
+    state = activity.state("alice")
+    assert state["answer_exposed"] is True
+    assert state["answer_exposure"]["source"] == "generic_lab"
+    assert state["independent_success"] is False
+    assert workspace.repository.list_mastery("alice") == []
+
+
 def test_http_context_rejects_forged_data_missing_owner_and_locked_help(workspace):
     run=saved(workspace);app=FastAPI();app.include_router(router)
     app.dependency_overrides[get_learning_workspace]=lambda:workspace

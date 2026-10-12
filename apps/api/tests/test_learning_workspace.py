@@ -12,7 +12,7 @@ from app.knowledge.review_schedule import advance_review
 from app.math_tools.root_finding import RootAttempt
 from app.math_tools.root_runner import LabRequest, run_reference
 from app.memory.repository import Repository
-from app.tutor.learning_workspace import LearningWorkspace, QUESTIONS, ASSESSMENT_FEEDBACK_VERSION
+from app.tutor.learning_workspace import LearningWorkspace, QUESTIONS, ASSESSMENT_FEEDBACK_VERSION, ASSESSMENT_FEEDBACK_PRIOR_VERSION
 
 
 @pytest.fixture
@@ -75,6 +75,56 @@ def test_graph_change_preserves_old_task_but_prevents_start(workspace):
     assert workspace.today("alice")["plan"]["stale"]
     with pytest.raises(ValueError, match="版本"):
         workspace.start("alice", task["id"])
+
+
+def test_due_review_keeps_same_unit_source_but_pauses_changed_source(workspace, monkeypatch):
+    complete(workspace, practice(workspace))
+    review = workspace.today("alice")["reviews"][0]
+    assert review["source_hash"] and review["condition_hash"]
+    review["due_at"] = "2000-01-01T00:00:00+00:00"
+    workspace.save("alice", "review", review["id"], review)
+    workspace.store.append_revision("unrelated-revision", None, workspace.course_id, "candidate", "accept", {}, "teacher")
+    assert workspace.overview("alice")["due_reviews"] == 1
+    assert workspace.overview("alice")["stale_reviews"] == 0
+
+    original_units = workspace.reading_units
+    def changed_units():
+        return [{**unit, "source_hash": "changed-source"} if unit["id"] == review["id"] else unit
+                for unit in original_units()]
+    monkeypatch.setattr(workspace, "reading_units", changed_units)
+    overview = workspace.overview("alice")
+    assert overview["due_reviews"] == 0 and overview["stale_reviews"] == 1
+    assert overview["recommendation"]["kind"] == "stale_source"
+    assert workspace.today("alice")["review_source_status"][review["id"]] == "needs_source_check"
+    class Later(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return super().now(tz) + timedelta(days=2)
+    monkeypatch.setattr("app.tutor.learning_workspace.datetime", Later)
+    tasks = workspace.plan("alice", 15, "Asia/Hong_Kong")["plan"]["tasks"]
+    assert [task["kind"] for task in tasks] == ["reading", "practice"]
+    assert all(task["unit_id"] == review["id"] and task["parent_episode_id"] is None for task in tasks)
+    complete(workspace, workspace.start("alice", tasks[1]["id"]), request_id="fresh-source-practice")
+    refreshed = workspace.today("alice")["reviews"][0]
+    assert refreshed["source_hash"] == "changed-source"
+    assert refreshed["prior_source_review"]["source_hash"] == review["source_hash"]
+    assert workspace.today("alice")["review_source_status"][review["id"]] == "current"
+
+
+def test_old_task_feedback_cannot_create_current_review(workspace):
+    task = practice(workspace)
+    pending = workspace.submit("alice", task["id"], attempt_for(task), "old-feedback")
+    workspace.store.append_revision("new-revision", None, workspace.course_id, "candidate", "accept", {}, "teacher")
+    with pytest.raises(ValueError, match="课程版本"):
+        workspace.acknowledge("alice", task["id"], pending["feedback"]["attempt_id"], pending["feedback"]["feedback_id"])
+    assert workspace.today("alice")["reviews"] == []
+
+
+def test_old_completed_task_cannot_seed_new_probe(workspace):
+    done = complete(workspace, practice(workspace))
+    workspace.store.append_revision("new-revision", None, workspace.course_id, "candidate", "accept", {}, "teacher")
+    with pytest.raises(ValueError, match="课程版本"):
+        workspace.probe_task("alice", done["id"])
 
 
 def test_practice_ack_then_probe_and_new_probe(workspace):
@@ -266,8 +316,8 @@ def test_layered_assessment_feedback_only_after_submission_and_never_regrades_hi
     assert done["feedback_review_status"] == "development_unreviewed"
     assert done["score"] == {"correct": 1, "total": 6, "percentage": 17}
     assert done["feedback"][0]["reference_match"]
-    assert "先核对条件" not in done["feedback"][0]["layers"]["condition"]
-    assert all(row["layers"]["condition"].startswith("先核对条件") for row in done["feedback"][1:])
+    assert "参考选项不符" not in done["feedback"][0]["layers"]["condition"]
+    assert all(row["layers"]["condition"].startswith("参考选项不符；以下是本题核对线索，不代表已定位错因") for row in done["feedback"][1:])
     assert all(row["layers"]["full"] == row["explanation"] for row in done["feedback"])
     assert workspace.submit_assessment("alice", exam["id"]) == done
     assert workspace.repository.list_mastery("alice") == []
@@ -275,6 +325,11 @@ def test_layered_assessment_feedback_only_after_submission_and_never_regrades_hi
     # Saved older papers retain their original explanations and score, even
     # when the current development rubric changes.
     saved = workspace.get("alice", "assessment", exam["id"])
+    saved["feedback_version"] = ASSESSMENT_FEEDBACK_PRIOR_VERSION
+    prior = workspace.assessment_public(saved)
+    assert prior["score"] == done["score"]
+    assert prior["feedback_version"] == ASSESSMENT_FEEDBACK_PRIOR_VERSION
+    assert all(row["layers"]["condition"].startswith("先核对条件") for row in prior["feedback"][1:])
     for field in ("feedback_version", "rubric_hash", "question_hash"):
         saved.pop(field)
     workspace.save("alice", "assessment", exam["id"], saved)
@@ -589,7 +644,10 @@ def test_static_root_error_hint_is_scoped_and_keeps_legal_bound_variant():
     assert hint["line"] == 6 and hint["evidence_scope"] == "algorithm_suspicion"
     assert hint["rule_version"] == STATIC_RULE_VERSION
     assert "不判定代码错误" in hint["message"]
+    assert "|fx|≤tol 已足以保证本题根误差≤tol" in hint["message"]
     assert not any(f["kind"] == "update_sign" for f in findings)
+    wrong_sign = body.replace("x = x - fx/(2*x)", "x = x + fx/(2*x)")
+    assert any(f["kind"] == "update_sign" for f in static_findings(wrong_sign))
 
     # For the fixed positive-root exercise, a student may divide residual by
     # a separately justified derivative bound. This is not a direct residual
