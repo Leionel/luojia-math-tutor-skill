@@ -2,7 +2,7 @@
 
 ## 2026-10-13 R1-A/B 阶段工程收尾
 
-最终口径见 `planning/r1-a-b-closeout-2026-10-13.md`，当前状态只看 `planning/README.md`：A0–A5 与 B1–B5 本地工程切片收尾，R1 数学/教学质量 Gate、B2/B3/B4 真人内容审核和 R0 正式库/授权 Gate 未通过。独立复核发现 B5 虽已从 URL 移走教材私题，但题目、引用键与草稿仍留在 `localStorage`；现将私题暂存改为同标签页 `sessionStorage`，旧私题迁移/清理，确认退出及身份变化时清理学习草稿和用户自填模型 Key。服务端已保存会话/学习记录不由此删除。根目录离线 `npm test` 知识 JSON/API928/Web80、Web typecheck/build 通过，lint 0 错/10 既有警告；本轮未调用付费模型、正式库或部署。无关原 dirty 保留。
+最终口径见 `planning/r1-a-b-closeout-2026-10-13.md`，当前状态只看 `planning/README.md`：A0–A5 与 B1–B5 本地工程切片收尾，R1 数学/教学质量 Gate、B2/B3/B4 真人内容审核和 R0 正式库/授权 Gate 未通过。独立复核发现 B5 虽已从 URL 移走教材私题，但题目、引用键与草稿仍留在 `localStorage`；现将私题暂存改为同标签页 `sessionStorage`，旧私题迁移/清理，确认退出及身份变化时清理学习草稿和用户自填模型 Key。服务端已保存会话/学习记录不由此删除。根目录离线 `npm test` 知识 JSON/API928/Web80、Web typecheck/build 通过，lint 0 错/10 既有警告；代码 `c192943` 的目标 CI #38344554973 全绿。本轮未调用付费模型、正式库或部署。无关原 dirty 保留。
 
 ## 2026-10-12 R1-B B5 隔离浏览器续接补验
 
