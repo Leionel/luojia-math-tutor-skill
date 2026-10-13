@@ -1,3 +1,5 @@
+import {clearLearningBrowserState} from "./learning-browser-storage.ts";
+
 const DEMO_ACCESS_KEY = "luojia_demo_access";
 const LEGACY_ACCESS_KEY = "mock_auth_token";
 const AUTH_TOKEN_KEY = "luojia_auth_token";
@@ -45,15 +47,16 @@ export async function authenticate(
   }
   const payload = await response.json();
   if(payload.auth_version!==2||payload.token_type!=="bearer"||typeof payload.access_token!=="string"||!payload.access_token||payload.user_id!==userId.trim())throw new Error("登录响应无法确认，请重试；原登录信息未改动。");
+  clearLearningBrowserState(window.localStorage,window.sessionStorage);
   window.localStorage.setItem(AUTH_TOKEN_KEY, String(payload.access_token));
   window.localStorage.setItem(AUTH_USER_KEY, String(payload.user_id));
   window.localStorage.removeItem(DEMO_ACCESS_KEY);
   window.localStorage.removeItem(LEGACY_ACCESS_KEY);
   window.dispatchEvent?.(new Event("luojia-auth-change"));
 }
-
 export function grantDemoAccess(): void {
   if (typeof window === "undefined") return;
+  clearLearningBrowserState(window.localStorage,window.sessionStorage);
   window.localStorage.setItem(DEMO_ACCESS_KEY, "true");
   window.localStorage.removeItem(LEGACY_ACCESS_KEY);
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -70,8 +73,8 @@ export async function signOutCurrentSession():Promise<"demo"|"server">{
   if(!headers.Authorization){clearAuthSession();return "demo";}
   let response:Response;
   try{response=await fetch(`${API_BASE}/api/auth/logout`,{method:"POST",headers,signal:AbortSignal.timeout(15000)});}
-  catch{throw new Error("连接失败，服务端撤销未确认。可以重试，或仅清除此设备登录。");}
-  if(!response.ok)throw new Error("未能确认服务端会话已撤销。可以重试，或仅清除此设备登录。");
+  catch{throw new Error("连接失败，服务端撤销未确认。可以重试，或仅清除此设备登录及未提交草稿。");}
+  if(!response.ok)throw new Error("未能确认服务端会话已撤销。可以重试，或仅清除此设备登录及未提交草稿。");
   const receipt=await response.json();
   if(receipt.revoked!==true||receipt.scope!=="current_session")throw new Error("退出结果无法确认，请重试。");
   if(getAuthHeaders().Authorization!==headers.Authorization)throw new Error("登录身份已变化，请刷新后继续。");
@@ -80,6 +83,7 @@ export async function signOutCurrentSession():Promise<"demo"|"server">{
 
 export function clearAuthSession(): void {
   if (typeof window === "undefined") return;
+  clearLearningBrowserState(window.localStorage,window.sessionStorage);
   for (const key of [AUTH_TOKEN_KEY, AUTH_USER_KEY, DEMO_ACCESS_KEY, LEGACY_ACCESS_KEY]) {
     window.localStorage.removeItem(key);
   }

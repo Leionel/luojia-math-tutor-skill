@@ -8,9 +8,9 @@ import type {LabRun} from "@/lib/learning-api";
 import type {LearningContextRef} from "@/lib/learning-context";
 import {useTutorConversation} from "@/lib/use-tutor-conversation";
 
-export function TutorConversation({sessionId, scope, subject, context, onSession, onLabSaved, draftKey, suggestions, placeholder, blocked=false}: {
+export function TutorConversation({sessionId, scope, subject, context, onSession, onLabSaved, draftKey, draftStorage="local", suggestions, placeholder, blocked=false}: {
   sessionId?: string; scope: string; subject: string; context?: LearningContextRef;
-  onSession?: (id: string)=>void; onLabSaved?: (run: LabRun)=>void; draftKey?: string;
+  onSession?: (id: string)=>void; onLabSaved?: (run: LabRun)=>void; draftKey?: string; draftStorage?: "local"|"session";
   suggestions: {label:string; message:string; mode?:TutorMode}[]; placeholder: string; blocked?: boolean;
 }) {
   const chat=useTutorConversation({sessionId,scope,subject,context,onSession});
@@ -21,10 +21,10 @@ export function TutorConversation({sessionId, scope, subject, context, onSession
   const follow=useRef(true);
   useEffect(()=>{
     setHydrated(undefined);
-    try {setDraft(draftKey?localStorage.getItem(draftKey)??"":"");} catch {setDraft("");}
+    try {setDraft(draftKey?(draftStorage==="session"?sessionStorage:localStorage).getItem(draftKey)??"":"");} catch {setDraft("");}
     setHydrated(draftKey);
-  },[draftKey]);
-  useEffect(()=>{if(hydrated===draftKey && draftKey) localStorage.setItem(draftKey,draft);},[draft,draftKey,hydrated]);
+  },[draftKey,draftStorage]);
+  useEffect(()=>{if(hydrated===draftKey && draftKey)try{(draftStorage==="session"?sessionStorage:localStorage).setItem(draftKey,draft);}catch{/* Draft remains in memory when storage is unavailable. */}},[draft,draftKey,draftStorage,hydrated]);
   useEffect(()=>{if(follow.current) end.current?.scrollIntoView({behavior:"instant",block:"nearest"});},[chat.messages]);
   const unavailable=blocked||chat.loading||chat.busy||!!chat.error;
   async function submit(value: string, mode?: TutorMode) {

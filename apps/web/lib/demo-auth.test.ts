@@ -3,23 +3,30 @@ import test from "node:test";
 
 import {authenticate,grantDemoAccess,hasDemoAccess,clearAuthSession,getAuthHeaders,getCurrentUserId,signOutCurrentSession,isAuthStorageKey} from "./demo-auth.ts";
 
-test("sign out clears credentials and demo access while preserving learning drafts",()=>{
-  const store=installStorage({luojia_auth_token:"test-token",luojia_auth_user:"alice",luojia_demo_access:"true",mock_auth_token:"true","reading-note:alice:test":"draft"});
+test("sign out clears credentials and learning drafts but keeps display preferences",()=>{
+  const store=installStorage({luojia_auth_token:"test-token",luojia_auth_user:"alice",luojia_demo_access:"true",mock_auth_token:"true","reading-note:alice:test":"draft","luojia-theme":"dark","luojia_user_api_key":"synthetic-key"},{"luojia_private_chat_ref_v1:ref":"private"});
   clearAuthSession();
   assert.deepEqual(getAuthHeaders(),{});
   assert.equal(getCurrentUserId(),"demo-user");
   assert.equal(hasDemoAccess(),false);
-  assert.equal(store.get("reading-note:alice:test"),"draft");
+  assert.equal(store.get("reading-note:alice:test"),undefined);
+  assert.equal(store.get("luojia_user_api_key"),undefined);
+  assert.equal(store.get("luojia-theme"),"dark");
+  assert.equal((globalThis as any).window.sessionStorage.getItem("luojia_private_chat_ref_v1:ref"),null);
 });
 
-function installStorage(initial: Record<string, string> = {}) {
+function installStorage(initial: Record<string, string> = {},sessionInitial:Record<string,string>={}) {
   const store = new Map(Object.entries(initial));
+  const session = new Map(Object.entries(sessionInitial));
+  const storage=(items:Map<string,string>)=>({
+    get length(){return items.size;},
+    key:(index:number)=>Array.from(items.keys())[index]??null,
+    getItem:(key:string)=>items.get(key)??null,
+    setItem:(key:string,value:string)=>items.set(key,value),
+    removeItem:(key:string)=>items.delete(key),
+  });
   (globalThis as any).window = {
-    localStorage: {
-      getItem: (key: string) => store.get(key) ?? null,
-      setItem: (key: string, value: string) => store.set(key, value),
-      removeItem: (key: string) => store.delete(key),
-    },
+    localStorage:storage(store),sessionStorage:storage(session),
   };
   return store;
 }
@@ -39,11 +46,11 @@ test("grants demo access and clears legacy key", () => {
   assert.equal(store.has("mock_auth_token"), false);
 });
 
-test("server-confirmed logout clears only credentials and preserves drafts",async()=>{
+test("server-confirmed logout clears credentials and browser learning drafts",async()=>{
  const store=installStorage({luojia_auth_token:"synthetic-token",luojia_auth_user:"alice","reading-note:alice:test":"draft"});
  const before=globalThis.fetch;
  try{globalThis.fetch=async(_url,options)=>{assert.equal((options?.headers as Record<string,string>).Authorization,"Bearer synthetic-token");return {ok:true,json:async()=>({revoked:true,scope:"current_session"})} as Response;};
- assert.equal(await signOutCurrentSession(),"server");assert.equal(store.has("luojia_auth_token"),false);assert.equal(store.get("reading-note:alice:test"),"draft");
+ assert.equal(await signOutCurrentSession(),"server");assert.equal(store.has("luojia_auth_token"),false);assert.equal(store.has("reading-note:alice:test"),false);
  }finally{globalThis.fetch=before;}
 });
 

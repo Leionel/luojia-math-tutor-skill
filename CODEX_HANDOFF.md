@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-13 R1-A/B 阶段工程收尾
+
+最终口径见 `planning/r1-a-b-closeout-2026-10-13.md`，当前状态只看 `planning/README.md`：A0–A5 与 B1–B5 本地工程切片收尾，R1 数学/教学质量 Gate、B2/B3/B4 真人内容审核和 R0 正式库/授权 Gate 未通过。独立复核发现 B5 虽已从 URL 移走教材私题，但题目、引用键与草稿仍留在 `localStorage`；现将私题暂存改为同标签页 `sessionStorage`，旧私题迁移/清理，确认退出及身份变化时清理学习草稿和用户自填模型 Key。服务端已保存会话/学习记录不由此删除。根目录离线 `npm test` 知识 JSON/API928/Web80、Web typecheck/build 通过，lint 0 错/10 既有警告；本轮未调用付费模型、正式库或部署。无关原 dirty 保留。
+
 ## 2026-10-12 R1-B B5 隔离浏览器续接补验
 
 用独立 SQLite、独立课程库与离线模型配置重演今日学习→Chat→原任务、教材选段→Chat→原文以及自由 Newton 实验→Chat→原 run。发现教材问题原话被放进 `?ref=`，且客户端路由后草稿 URL 丢引用；现用账号绑定、30 分钟 `sessionStorage` 临时 ID 交接，教材入口做同站页面跳转，未发送消息刷新也能恢复。API928/Web78、Web build、lint0错10既有警告；详见 `planning/r1-b5-browser-followup-2026-10-12.md`，唯一当前状态入口仍是 `planning/README.md`。B3/B4 全点击链未在本轮重演；正式内容/真实模型质量、R1 质量 Gate 和 R0 正式库 Gate 仍 pending。保留已有无关 dirty；未调用付费模型或部署。

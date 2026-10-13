@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-13 R1-A/B 工程收尾的来源边界
+
+B2 自填题目及相关 Chat 草稿改同标签页暂存，退出/身份变化清理本地学习草稿；来源、条件卡和学生自报状态仍须由服务端重读核对，迁移本地存储不提高条件推理质量。R1-A/B 工程切片已收尾，Graph/Memory 没有新增框架；B2/B3/B4 真人内容审核、应用路径模型质量、R0 正式库 Gate 仍 pending。详见 `planning/r1-a-b-closeout-2026-10-13.md`，唯一现状入口 `planning/README.md`。
+
 ## 2026-10-12 R1-B B5 教材来源的浏览器续接
 
 教材条件卡仍按来源 hash、图版本及学生自报状态在服务端核对。隔离浏览器发现私有题目原话曾随 reading `ref` 进入 Chat URL，且草稿刷新丢失引用；现只用短期同标签页临时 ID 进入 Chat，刷新后仍从服务端重新构建来源快照。此改动不自动证明自由题条件、也不扩充 Graph/Memory；见 `planning/r1-b5-browser-followup-2026-10-12.md`，当前状态以 `planning/README.md` 为准。

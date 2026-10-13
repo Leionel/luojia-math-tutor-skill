@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-13 R1-A/B 工程收尾与浏览器草稿口径
+
+按独立复核补齐 B2 私题本地留存：未发送题目/引用/内嵌讨论草稿改同标签页暂存，旧私题迁移或删除；确认退出/账号变化时清理本地学习草稿、请求指纹和用户自填模型 Key，保留非密钥界面偏好和服务端已保存记录。`planning/r1-a-b-closeout-2026-10-13.md` 分列 A/B 工程收尾、真人内容/真实模型质量缺口及 R0 上线 Gate；唯一状态入口仍是 `planning/README.md`。根目录离线知识 JSON/API928/Web80、Web typecheck/build、lint 0 错/10 既有警告。本轮无付费模型/正式库/部署，原无关 dirty 保留。
+
 ## 2026-10-12 R1-B B5 隔离浏览器补验
 
 合成账号和独立库下重演今日任务、教材选段与自由 Newton 实验的 Chat 续接；修复教材题目原话进入 URL、草稿刷新丢来源。题目改由同标签页短期 `sessionStorage` 临时 ID 转交，服务端仍重读并核对引用。API928/Web78、生产构建通过；不把路径检查当数学/教学质量。完整范围和限制见 `planning/r1-b5-browser-followup-2026-10-12.md`，现状只看 `planning/README.md`。
