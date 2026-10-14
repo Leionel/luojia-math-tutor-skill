@@ -1,4 +1,14 @@
-# R2.3｜E1 同题对照运行合同（尚未运行）
+# R2.3｜E1 同题对照运行合同（离线应用采集可用，真实质量未运行）
+
+2026-10-14接续：[`r2_application_capture.py`](../../scripts/r2_application_capture.py) 已支持 N01/N02 两个Newton开发题的真实进程内 ASGI/SSE配对采集，每臂独立临时库、合成Principal和固定回复，执行现有编译工作流与消息保存。D0只在harness的服务端context解析处移除 `exact_check`，不改业务代码；全prompt比较确认除此之外完全相同。**2对/4条固定回复，质量评分仍0**。HTTP/socket外连拒绝，不执行付费模型，也不验证JWT。L01/L02/T01/T04显式 `not_run`，尚未建立单因素应用对照。
+
+```powershell
+python scripts/r2_application_capture.py --offline --output results/r2-application-pairs.json
+```
+
+输出记录公开合成题、实际Teacher输入及其摘要、源代码摘要、采集SHA/dirty、调用类型、保存与学习写入边界；usage为null、真实provider HTTP数0，fixture延迟不可用来比较真实模型性能。这里D0仍持有相同参考轨迹，比较的是**固定题精确证据的增益**，不是“裸LLM与整套Tutor”的总体优劣。
+
+两题逐项判据见 [`newton-pair-rubric-v1.json`](newton-pair-rubric-v1.json)，含独立代入、必要/禁止结论、合法替代及首错指标适用性；作者审核/真人独立二审pending，ratings为null。采集按文件与逐题摘要绑定。签署须由实际审阅者另存可追溯记录、版本化升级；离线fixture脚本不自动接受评分或升级gold。
 
 首轮开发题取 A0 的 N01（正确步骤）、N02（错误全称推广）、L01（正确 Jacobi）、L02（GS 更新顺序）、T01（正确但有限的讲回）、T04（信息不足）。这 6 题都已公开并参与开发；只用于发现失败类型，**不是封存确认集**。每题 D0/D1 各一条应用路径回答，计划观察单元为 6×2=12，实际分母目前为 **0**。若某领域无法在相同保存对象与相同用户输入上实现仅一项主要因素不同的两臂，就把该题标为“对照不成立”，不凑成12次比较。
 

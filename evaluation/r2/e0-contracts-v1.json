@@ -13,6 +13,7 @@
     {"id": "b5_cross_workspace", "selector": "tests/test_r1_b5_workspaces.py::test_one_chat_session_resumes_reading_experiment_and_saved_code", "expected_instances": 1, "contract": "same_session_resume"},
     {"id": "b5_assessment_lock", "selector": "tests/test_r1_b5_workspaces.py::test_assessment_stays_locked_then_returns_to_unit_source_not_answer_chat", "expected_instances": 1, "contract": "assessment_help_lock"},
     {"id": "teachback_quote_scope", "selector": "tests/test_teachback_evidence.py::test_model_judgment_requires_real_quote_and_complete_condition_set", "expected_instances": 7, "contract": "original_quote_and_condition_set"},
-    {"id": "r2_review_binding", "selector": "tests/test_r2_review_packet.py::test_review_packet_is_current_unsigned_and_covers_each_source_family", "expected_instances": 1, "contract": "unsigned_content_provenance"}
+    {"id": "r2_review_binding", "selector": "tests/test_r2_review_packet.py::test_review_packet_is_current_unsigned_and_covers_each_source_family", "expected_instances": 1, "contract": "unsigned_content_provenance"},
+    {"id": "r2_application_pair", "selector": "tests/test_r2_application_capture.py::test_application_pairs_do_not_promote_fixed_responses_to_quality", "expected_instances": 1, "contract": "fresh_application_pair_without_quality_promotion"}
   ]
 }

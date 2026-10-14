@@ -4,7 +4,7 @@
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [R2.0–R2.4 可信评价首轮](r2-evaluation-delivery-2026-10-14.md)：R2.0 基线、R2.1 **未签署**38条内容包、R2.2 本地 E0 12/12合同（19/19实例）已建立；知识JSON/API930/Web80、Web typecheck/build通过，lint0错10既有警告。R2.3/E1尚无应用模型评分；R2.4补2条Agent操作的B3/B4局部桌面路径，真人0。本地提交 `69cea78` 的推送因网络失败，远端CI待验。R1质量与R0上线Gate仍未通过。 |
+| **Now** | [R2接续回执](r2-evaluation-delivery-2026-10-14.md)：N01/N02真实ASGI/SSE离线应用采集2对/4条固定回复，全Teacher输入只差exact_check，质量分0、真人gold0；线性/讲回公平对照待建立。R2 E0追加后13/13合同、20/20实例，根JSON/API933/Web80通过。R2.4仍为2条局部桌面路径、真人0。[R4演示与源码材料](r4-demo-and-source-guide-2026-10-14.md)已准备，视频/真实模型段未录。当前本地提交未推送，远端CI待验；R1质量与R0上线Gate未过。 |
 | **Next** | 沿v4推进：真人内容复核与应用同题D0/D1数学/教学对照，补E2剩余浏览器路径与少量非开发者任务；有实际失败簇后只选一个R3改进。R4真实Newton闭环Demo与源码讲解可并行准备。供应商/预算未知时不开live；工程合同、AI二审与直连观察均不等于质量提高。 |
 | **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)、[B5 本地集成回归](r1-b5-delivery.md)与[隔离浏览器补验](r1-b5-browser-followup-2026-10-12.md)，以及 [9 次公开合成题真实模型观察与独立子 agent 审阅](r1-independent-quality-review-2026-10-12.md)。B3/B4 的 [CI #38194030159](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38194030159)、B5 的 [CI #38224685431](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38224685431)、审阅文档的 [CI #38227839910](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38227839910) 已通过。此前 M1/U 系列仍按各自回执。 |
 | **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；本地评测准备不解除上线门槛。R2 内容包38条无人签署；S5 8题离线基线执行0，E1应用模型对照与E2真人观察均0。2条局部桌面路径缺Chat/移动端/键盘/跨标签项。R1-A质量、B2/B3/B4内容与R0仍待证据。自检单题答案没有直连Chat可信引用；认证令牌持久存储另属R0风险。 |
