@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-14 用户审核反馈登记
+
+记录用户对N01/N02与页面流程/口径清单的整体“通过”，绑定当前判据和页面源码摘要；未展开成逐项分数或完整E2，正式二审/模型质量/R3仍待证据。见 `evaluation/r2/user-review-2026-10-14.md` 与 `planning/README.md`。本轮仅文档，原dirty及运行服务保留。
+
 ## 2026-10-14 独立评测归档
 
 新建独立只读任务在23aace8复跑R2两对固定应用采集、材料check与数学代入，保留原dirty，无代码更改。报告 `planning/r2-independent-evaluation-2026-10-14.md`：R2工程准备可信、数学教学质量待验，R3暂不启动；先少量真人判据与R4真实UI段，live需补阶段/回答/计量；演示须区分精确卡与Agent贡献，零学习写入限mastery/mistake/独立成绩。独立AI意见不升gold。主任务仅归档/索引，现状只看 `planning/README.md`。
