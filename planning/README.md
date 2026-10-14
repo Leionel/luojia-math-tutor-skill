@@ -4,10 +4,10 @@
 
 | 状态 | 内容与依据 |
 |---|---|
-| **Now** | [R2.0–R2.4 可信评价首轮](r2-evaluation-delivery-2026-10-14.md)：按 v4 的 E0/E1/E2 拆分五片；R2.0 基线、R2.1 **未签署**内容审核包、R2.2 本地 E0 聚焦合同已建立，R2.3/E1 与 R2.4/E2 仅有运行协议、尚未评分或新浏览器执行。R1-A/B 本地工程收尾口径仍见[前轮回执](r1-a-b-closeout-2026-10-13.md)；R1 数学/教学质量 Gate 和 R0 正式库 Gate 均未通过，不部署。 |
-| **Next** | 先找真人作者与独立数学复核者审核 A0/S5/B2/B3/B4；修错时版本化材料。完成供应商/预算准入后才考虑应用实际路径同题 D0/D1，D2 只在可证增益时启用。隔离浏览器补 B3/B4 全点击链、跨标签身份清理与 E2 任务观察；工程合同、AI 二审和九条直连模型观察均不等于质量提高。 |
+| **Now** | [R2.0–R2.4 可信评价首轮](r2-evaluation-delivery-2026-10-14.md)：R2.0 基线、R2.1 **未签署**38条内容包、R2.2 本地 E0 12/12合同（19/19实例）已建立；知识JSON/API930/Web80、Web typecheck/build通过，lint0错10既有警告。R2.3/E1尚无应用模型评分；R2.4补2条Agent操作的B3/B4局部桌面路径，真人0。本地提交 `69cea78` 的推送因网络失败，远端CI待验。R1质量与R0上线Gate仍未通过。 |
+| **Next** | 沿v4推进：真人内容复核与应用同题D0/D1数学/教学对照，补E2剩余浏览器路径与少量非开发者任务；有实际失败簇后只选一个R3改进。R4真实Newton闭环Demo与源码讲解可并行准备。供应商/预算未知时不开live；工程合同、AI二审与直连观察均不等于质量提高。 |
 | **Delivered** | [A0–A2](r1-a0-a2-delivery.md)、[A3 线性切片](r1-a3-delivery.md)、[A4–A5 本地工程](r1-a4-a5-delivery.md)、[B1–B2 本地首版](r1-b1-b2-delivery.md)、[B3–B4 本地开发切片](r1-b3-b4-delivery.md)、[B5 本地集成回归](r1-b5-delivery.md)与[隔离浏览器补验](r1-b5-browser-followup-2026-10-12.md)，以及 [9 次公开合成题真实模型观察与独立子 agent 审阅](r1-independent-quality-review-2026-10-12.md)。B3/B4 的 [CI #38194030159](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38194030159)、B5 的 [CI #38224685431](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38224685431)、审阅文档的 [CI #38227839910](https://github.com/Leionel/luojia-math-tutor-skill/actions/runs/38227839910) 已通过。此前 M1/U 系列仍按各自回执。 |
-| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；用户授权的本地评测准备不解除上线门槛。R2 内容包 38 条均为 Agent 准备、无人签署；S5 8题离线基线执行数 0，E1 同题应用模型对照与 E2 新真人观察也为 0。R1-A **质量 Gate**、B2/B3/B4 内容质量和 R0 仍待证据。自检单题答案没有直连 Chat 的可信引用；认证令牌仍沿用浏览器持久存储，另属 R0 风险。不能把工程合同、合成模型观察或选项匹配当数学准确率/学生收益。 |
+| **Blocked** | [v4 的 R0→R1 Gate](../luojia_roadmap_v4_2026-10-08.md)的正式库与授权链尚未独立验收；本地评测准备不解除上线门槛。R2 内容包38条无人签署；S5 8题离线基线执行0，E1应用模型对照与E2真人观察均0。2条局部桌面路径缺Chat/移动端/键盘/跨标签项。R1-A质量、B2/B3/B4内容与R0仍待证据。自检单题答案没有直连Chat可信引用；认证令牌持久存储另属R0风险。 |
 | **Conditional** | F2 的 PDF 精确页区域、F8 的代码沙箱、U18 新线性独立训练、长期 Memory/Reasoning Graph/A8 依额外证据决定；**F1/F2/F4/F8 的本轮最小增强已纳入 R1-B**。 |
 
 下面保留按日期形成的旧计划和交付索引；其中“下一步”及测试数只表示当时状态，以本表和链接回执核对现在进度。
