@@ -1,5 +1,27 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-14 R3.1 与 3A UI-a 首版交付
+
+用户要求开做并随后要求先交付。完成 Chat＋Lab 共享领域视图、同会话预测/观察/解释/修订、OpenUI 1.0.0 自有组件目录、单调用教学决策与来源绑定。决策为模型意见，不提升数学 verified 或掌握度；输入预算不足/无效协议/交付修复回退。固定动作仍由服务器预览与保存接口执行。UI-b/c、R3.2目的实验、真实模型增益接续，未倒填质量成绩。
+
+根 JSON/API971/Web86 全套通过；最终 Web88、API定向29、TypeScript、生产构建通过，lint 0错误/10既有警告。Playwright 验证桌面双栏、连续两次刷新、390px抽屉/键盘、开关工作区保持生成、同会话双请求和主动停止；浏览器轨迹真实，模型回复为离线fixture，实际供应商调用0。详见 [本轮交付](planning/r3-ui-a-and-r3-1-delivery-2026-10-14.md)。没有 commit/push/deploy；原 dirty 与其它聊天新增规划保留。原8000进程需重启加载新后端；隔离验收服务收尾，正式库/.env未修改。
+
+## 2026-10-14 学习工作区视觉重塑与统一规范补充规划
+
+按用户“先不直接改代码，系统性规划，形成统一而美观的补充文档”要求，新增专项规划文档 `planning/r3-workspace-ui-design-and-unification-2026-10-14.md`，并在 `planning/README.md` 与 `planning/r3-agent-capabilities-2026-10-14.md` §3A 建立索引。方案针对 Study、Reading、Lab、Assessment、Teach-back、Code Workshop 六大工作区，统一定义“三栏黄金推演舞台（Atelier Layout）”、东方水墨宣纸质感（Farm-Ink）、印章徽标与高质感数学控件，明确 UI-a/b/c 分阶段无损接入原则。本轮仅规划沉淀，不改动业务代码，无新增模型调用。
+
+## 2026-10-14 Intelligent UI与统一学习工作区规划
+
+用户要求加入规划。R3新增UI-a/b/c界面主线：共享Chat＋Lab/OpenUI组件目录与教学决策/主动实验一起实现，Reading/Study接续，Code保存版本讨论复用同一控制与来源。独立路由保留，共享领域View、会话/动作桥及历史版本；不重新做Tutor后端、不放开学生代码或模型HTML脚本。细节在planning/r3-agent-capabilities-2026-10-14.md §3A，v4/状态入口/R4目标及交接均同步。
+
+范围增加已重估：UI新增7–11日、Newton核心9–14日、能力四片＋UI三片17–27集中开发日，未测产能。本轮只改规划，SDK未安装/功能未实施，无模型消费、提交或推送，原dirty保留。
+
+## 2026-10-14 Agent能力近期规划修订
+
+按用户“加入这些、方案不要过于保守”更新v4与planning/README.md，新增R3执行细化，同步R2接续/R4演进版目标。近期核心：证据驱动教学动作→Agent提出单参数实验→学生预测/确认/观察/修订；目标检索与失败反馈优化随后深化，任务记忆/恢复按实际需求。R2基线与R3隔离开发交错，正式质量/费用/上线仍分别验收；原“必须先有经审失败簇才允许任何R3开发”不再作为当前规则。粗估核心6–9、四片10–16集中开发日，未测实际产能。
+
+本轮仅规划/交接记录，未实现功能或扩大模型消费；前轮评测/文档dirty、原删除/原型及运行环境保留，未提交/推送/部署。主计划仍v4，状态仍只看planning/README.md；planning/r3-agent-capabilities-2026-10-14.md为执行细化，不另建状态看板。
+
 ## 2026-10-14 用户审核反馈登记
 
 记录用户对N01/N02与页面流程/口径清单的整体“通过”，绑定当前判据和页面源码摘要；未展开成逐项分数或完整E2，正式二审/模型质量/R3仍待证据。见 `evaluation/r2/user-review-2026-10-14.md` 与 `planning/README.md`。本轮仅文档，原dirty及运行服务保留。
@@ -578,3 +600,15 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
 上述 CI 实际 failure：Web/知识成功，API 8 个 S5 哈希测试因 CRLF/LF 不一致失败；已在本轮追加 S5 JSON 固定 LF、内容/fixture 哈希重绑，本地相关 80 项通过。修复版远端 CI 待新提交确认。
 
 `8e58e6e`（S5 哈希修复）与 `6367ce1`（A3）已推送；目标 SHA 的 CI #26（37772411831）API/Web/知识数据均成功。正式库、授权链、A5 工程/质量验收仍 pending。
+### 2026-10-14 R2 回答采集v2
+
+评测脚本补保存正文、上游固定回复、SSE阶段/失败、调用回执与外连阻断记录；两题四条离线应用采集工程通过，定向采集/模拟预算43项通过。真人gold与真实模型评分仍0，未实现真实供应商transport，不称费用硬上限。下一步按准入清单补小规模签核和真实适配器的Mock预发送验证；R3暂不启动。见planning/r2-capture-and-live-admission-2026-10-14.md。未改业务/环境/正式库，原dirty保留。
+### 2026-10-14 两项推进与在线诊断
+
+签核材料按N01/N02/T04原话与SHA整理，真人逐题/二审未代填。R2实际适配器预算Mock验证支持OpenAI/DeepSeek非thinking原payload、跨阶段预留/重试/取消；不放开S5真实transport。用户明确授权临时key在线三题诊断：3条完整返回、714token，另有4token ping（usage35）及模型列表GET，总5HTTP；无重试、搜索、后台、费用上界声明。T04有待真人复核的补造指标/收敛概念风险，非完整应用失败簇。详见planning/r2-two-tracks-and-live-smoke-2026-10-14.md；未改业务/正式库/配置或push，原dirty保留。
+### 2026-10-14 三题材料认可记录
+
+用户回复“通过”，独立记录绑定冻结材料SHA，范围为N01/N02/T04判据整体用户认可，不替代逐项签署、二审或模型评分。见evaluation/r2/math-review-user-acceptance-2026-10-14.md；本轮仅文档同步，未消费模型或修改业务。
+### 2026-10-14 T04应用复核
+
+真实ASGI/编译工作流临时库诊断：首次harness压缩转交失败保留，修正后routing/Teacher/Guard/保存完成，先澄清指标与迭代条件、不给掌握度。Guard无repair不能归因数学核验；总provider3次，usage部分未知，未改业务/正式库/配置或push。回执planning/r2-t04-application-recheck-2026-10-14.md，暂不启动R3。

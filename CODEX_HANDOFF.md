@@ -1,5 +1,53 @@
 # CODEX 交接文档
 
+## 2026-10-14 R3.1 与 3A UI-a 首版交付
+
+用户要求开做并随后要求先交付。完成 Chat＋Lab 共享领域视图、同会话预测/观察/解释/修订、OpenUI 1.0.0 自有组件目录、单调用教学决策与来源绑定。决策为模型意见，不提升数学 verified 或掌握度；输入预算不足/无效协议/交付修复回退。固定动作仍由服务器预览与保存接口执行。UI-b/c、R3.2目的实验、真实模型增益接续，未倒填质量成绩。
+
+根 JSON/API971/Web86 全套通过；最终 Web88、API定向29、TypeScript、生产构建通过，lint 0错误/10既有警告。Playwright 验证桌面双栏、连续两次刷新、390px抽屉/键盘、开关工作区保持生成、同会话双请求和主动停止；浏览器轨迹真实，模型回复为离线fixture，实际供应商调用0。详见 [本轮交付](planning/r3-ui-a-and-r3-1-delivery-2026-10-14.md)。没有 commit/push/deploy；原 dirty 与其它聊天新增规划保留。原8000进程需重启加载新后端；隔离验收服务收尾，正式库/.env未修改。
+
+## 2026-10-14 学习工作区视觉重塑与统一规范补充规划
+
+按用户“先不直接改代码，系统性规划，形成统一而美观的补充方案”要求，新增专项设计与规划补充文档 `planning/r3-workspace-ui-design-and-unification-2026-10-14.md`，并在 `planning/README.md` 与 `planning/r3-agent-capabilities-2026-10-14.md` §3A 建立双向索引。
+
+方案针对 Study、Reading、Lab、Assessment、Teach-back、Code Workshop 六大工作区，统一定义：
+1. 统一三栏黄金推演舞台（Atelier Layout）：左栏脉络导航（260px）、中栏沉浸式演算舞台（弹性1fr）、右栏助教思辨与定理条件栏（320px/抽屉）；
+2. 东方水墨宣纸质感（Farm-Ink）：宣纸暖白底色（`paper`）、松柏绿主行动（`olive`）、黛蓝定理引线（`dai`）、朱砂发散警示（`cinnabar`）、赭石待证微光（`ochre`），宋骨标题（站酷小薇体）+ JetBrains Mono 代码 + KaTeX 数学排版；
+3. 六个标准复用构件规格：AtelierRibbon、AtelierFolioCard、SocraticCompanionBubble、ConditionPillarBadge、NumericalTraceVisualizer、MathCodeGutterInspector；
+4. 实施原则：零逻辑侵入、纯表现层与交互形态升阶，完全保持现有 API、localStorage 幂等草稿机制与 CI 测试不变，按 UI-a/b/c 切片节奏推进。本轮仅规划沉淀，不改动业务代码，无新增模型调用。
+
+## 2026-10-14 Intelligent UI与Chat工作区统一纳入R3
+
+用户确认将讨论的intelligent UI方案加入规划。v4/唯一入口及R3 §3A已同步：UI-a共享Chat＋Lab与R3.1/R3.2交错，实现模型组合自有组件卡→学生预测/确认→旁侧真实实验→修订→同会话接续；UI-b Reading/Study、UI-c Code随后统一。独立路由保留并复用领域View，共享对话控制器保留主Chat编辑/重试/图片/笔记；服务端对象/历史引用固定，浏览器草稿与视图状态分开，账号/帮助边界不变。OpenUI采用React renderer/目录与固定动作桥，保留Python/FastAPI/SSE；不复制逆向DIL或放开任意HTML/JS。SDK未安装、功能未实施。
+
+UI新增预算7–11集中开发日；原能力核心6–9加UI-a3–5，首个完整成果重估9–14日，能力四片＋UI三片17–27日，非交付承诺。R4演进版改为同一Chat＋Lab的真实交互录像目标。最新T04复核只说明一次应用回答缺条件先澄清，不能把它当重复失败触发；用户纳入新能力的规划决定仍有效。文档链接/路径/差异检查，无业务测试或模型消费/commit/push/deploy；原dirty及运行环境保留。
+
+## 2026-10-14 T04当前应用路径复核
+
+最终根知识JSON/API951/Web80通过，38条绑定check通过；解码回归与离线ASGI探针2/2通过。其它规划文件工作期间产生的dirty保留。
+
+新r2_t04_application_probe.py真实ASGI、原编译工作流/本地检索/Teacher/Guard/保存，合成Principal、新临时双库；搜索/native tools/语义后台关，无付费embedding。首次1 routing请求被harness二次解压错误污染，原结果保留，不能评质量；修正响应header、补2项离线回归，以剩余2次请求再跑。routing→teacher，实际答复区分指标并问方法/函数/初值，未核验/正确性unknown/mastery0，Guardpassed无repair（不是数学Oracle）。总3provider请求、usage partial（905仅已报告部分），费用未知；无额外消费/业务改动/配置/正式库/push/build。详见planning/r2-t04-application-recheck-2026-10-14.md，原结果results/r2-t04-application-live-fixed.json。单次应用表现不构成R3失败簇或提升分数。
+
+## 2026-10-14 Agent能力规划接续（用户要求不要过于保守）
+
+用户要求将开源借鉴加入现有规划。已更新v4 §6与唯一入口planning/README.md，细化见planning/r3-agent-capabilities-2026-10-14.md：R2应用基线→R3有界隔离开发→单因素复验；不再把“38条全签署/先有经审失败簇”当所有开发的前置。R3.1证据驱动教学动作与轻量claim/condition绑定、R3.2带目的的Newton实验为核心（粗估6–9集中开发日）；R3.3目标检索、R3.4失败反馈优化接续，R3.5任务记忆/一条恢复路径按真实长任务需要进入。OATutor/DeepTutor/LightRAG/DSPy-GEPA/LangGraph分别借鉴机制，复用现有框架/工具/动作卡。每片保留基线、候选回退、独立题和成本边界，主链与正式数学评分/R0上线分别验收；旧三题模型消费授权不自动扩大。
+
+本轮只修改规划/交接文档，R3功能均尚未实施。前轮采集v2/Mock预算/直接在线smoke和三题整体用户认可保留原记录，正式质量分仍0；独立评测原结论不改写，当前开发规则由用户这次新决定更新。原dirty与正在运行的环境保持；文档验证不运行业务测试/模型，不commit/push/deploy。
+
+## 2026-10-14 三题材料用户认可
+
+用户最新回复“通过”，已登记evaluation/r2/math-review-user-acceptance-2026-10-14.md，绑定冻结核对材料SHA f851ab54dcd4ae572d162ee10bac3027381535a1d7c17c368a57a8c3b88efef5。这是N01/N02/T04判据材料整体认可，不伪造逐题理由、签署或独立二审，不等同模型三题评分/完整应用验收。原材料/rubric/38条包pending保留，T04模型风险仍待复核；本轮仅文档记录，无模型消费/业务修改/push。唯一状态入口同步。
+
+## 2026-10-14 两项推进及明确授权的在线数学smoke
+
+最终离线根知识JSON/API949/Web80通过，日志results/r2-two-tracks-final-test.log；38条绑定check通过。此前同日回执数字均为历史快照，以planning/README.md最新接续行核对。
+
+用户要求同时开展签核材料与预算准入，新增evaluation/r2/math-review-three-cases-2026-10-14.md；未代签，用户“怎么核对”不算三题审核。r2_adapter_budget.py复用S5原子预留/Mock-only，验证原适配器OpenAI/DeepSeek非thinking形态；计量request_sent是transport前调度，预留/Mock收到数需独立核对。用户随后明确用新key在线测试：临时进程使用、未写env，先GETmodels+4token ping，再直接适配器N01/N02/T04各一次<=512输出，无重试/搜索/后台。三题HTTP200 stop、usage714；含ping生成749，总5HTTP（1GET+4生成），费用未知。T04先假设指标与混同目标/迭代收敛，需真人复核；不能归因完整应用或启动R3。正式质量评分0，live预算生产接线未过。回执planning/r2-two-tracks-and-live-smoke-2026-10-14.md，公开原始产物results/r2-live-math-smoke.json忽略不提交。未改业务/正式库/配置，原dirty保留，未push/build/部署。
+
+## 2026-10-14 采集v2与真实运行准入审查
+
+从26c9a76继续，`r2_application_capture.py`补保存回答正文、固定上游输出、公开SSE阶段/失败、固定调用回执与外连拒绝记录；结果写results/r2-application-pairs-v2.json，2对/4条工程差分通过、质量评分仍0。定向采集/S5预算43/43。未修改业务、正式库或环境，服务继续运行，未build/push/付费。真实适配器计量可复用但S5预算只接受Mock，真实transport、逐条live失败持久回执、官方计费profile与本轮消费授权均未齐；勿称live已ready。详情 `planning/r2-capture-and-live-admission-2026-10-14.md`，唯一入口仍planning/README.md。原dirty保留。
+
 ## 2026-10-14 用户审核整体反馈
 
 隔离服务Web3000/API8000启动后，用户对N01/N02判据、页面流程与口径清单回复“通过”；原文与source/rubric摘要登记 `evaluation/r2/user-review-2026-10-14.md`，唯一状态入口同步。仅一次整体用户认可，没有逐项评分/操作日志/审阅资质或独立二审，不自动升gold、完整E2、模型质量或R3。原开发包/rubric不改pending，未调用模型。服务维持供用户审核，dev生成的next-env路径改动与其他dirty不纳入提交。
