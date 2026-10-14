@@ -125,6 +125,16 @@ UI总增量约7–11日；能力四片＋UI三片合计约17–27集中开发日
 
 **完整闭环验收路径**：Chat 输入收敛判断 ➔ Agent 给出 `TeachingDecision` 并展示条件/预测卡 ➔ 展开同一 Lab ➔ 在参数配置台选定条件并先写下预测 ➔ 实时算式蓝图预演 ➔ 启动受控数值推演 ➔ 观测几何切线与迭代轨迹 ➔ 保存实验记录 ➔ 回到主 Chat 带着实验引用接续讨论 ➔ 页面刷新后历史引用与草稿完美恢复。严格覆盖移动端（~390px）、桌面端与键盘无障碍导航（`rule/keyboard-complete-flow`）。
 
+#### 3A 实施交付成果（2026-10-14 落地）
+- [x] **现代 Canvas 左右分栏工作区**：在 `/chat` 引入 `ResizeHandle`（380px ~ 1000px 连续无级调节，`localStorage` 持久化），支持全屏最大化展开与还原。
+- [x] **学术工坊条 (Atelier Canvas Ribbon)**：重构对话顶部通栏，左侧显示伴读联动微光徽章，中间呈现多工作区选项卡 Pills，右侧支持一键展开/收起。
+- [x] **多工作空间统一调度 (`CanvasWorkspace`)**：
+  - `🧪 数值实验台 (Lab)`：融合参数配置台、算法切换与几何蓝图推演；
+  - `📖 经典研读录 (Reading)`：嵌入《数值分析》核心收敛定理与适用条件对照录；
+  - `📐 今日日课案 (Study)`：嵌入递进式思考题与演算任务，支持一键带入对话展开苏格拉底式互动。
+- [x] **Scholarly Atelier 智能卡片组件重构**：重构 `SourceExcerpt`、`ConditionChecklist`、`PredictionForm`、`RunTraceChart`、`TeachingDecisionReceipt`，全面呈现水墨宣纸与现代学术工坊质感。
+- [x] **端到端工程验证**：TypeScript 0 error、88 项前端测试全部通过、ESLint 0 error。
+
 ## 4. R3.1：把证据转成合适的教学动作
 
 学生反馈先绑定当前主张，再复用 `resolved_policy` 选择 `confirm_local`、`correct_claim`、`ask_missing_condition`、`offer_experiment`、`explain` 或 `offer_probe`；这些是允许动作，不是每轮必须经过的阶段。

@@ -1,5 +1,28 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-14 3A Canvas 分栏多工作空间与 Intelligent UI 东方学者风重塑交付
+
+结合用户“结合网络优秀 UI 经验”指令与方案 a+c（现代 Canvas 左右分栏工作区 + 多工作空间支持）：
+1. **Intelligent UI 智能卡片重塑 (Batch 4 - `89a68c9`)**：
+   - 依据《东方水墨宣纸质感设计规范（Scholarly Atelier Design System）》，全量重构 `apps/web/components/learning/intelligent-ui.tsx` 中的核心组件：
+     - `SourceExcerpt`：典籍文献微卡、一键复制原文、边注式引用信息。
+     - `ConditionChecklist`：公理化定理成立条件判定阵列、绿/琥珀双态徽章。
+     - `PredictionForm`：先验假设推演卡、直觉速选启思 Pills（二次收敛、线性退化、震荡发散）。
+     - `RunTraceChart`：精美现代 SVG 折线/区域渐变图，带点状网格与交互提示点，下方支持折叠展开详细数值迭代矩阵。
+     - `TeachingDecisionReceipt`：学术导师决策票据，支持教学意图印章与动作审计。
+2. **现代 Canvas 左右分栏多工作区交付 (Batch 5 - `8edd92e`)**：
+   - **可拖拽分栏手柄**：在 `/chat` 中引入 `ResizeHandle`（支持 380px ~ 1000px 宽度连续拖拽），通过 `localStorage: luojia_workspace_width` 进行状态持久化。
+   - **学术工坊条 (Atelier Canvas Ribbon)**：重构对话顶部通栏，左侧显示伴读联动微光徽章，中间呈现多工作区选项卡 Pills，右侧提供一键展开/收起。
+   - **多工作空间体系 (`CanvasWorkspace`)**：
+     - `🧪 数值实验台 (Lab)`：无缝嵌入已重构的动态蓝图画布与启发引导。
+     - `📖 经典研读录 (Reading)`：嵌入《数值分析》收敛定理与前提条件对照录，带一键提问探针。
+     - `📐 今日日课案 (Study)`：嵌入递进式日课任务卡，支持一键在当前对话开启推演。
+     - 具备窗口最大化切换（`isWorkspaceMaximized`）、独立页面新标签打开、移动端抽屉适配。
+3. **验证结果**：
+   - TypeScript `tsc --noEmit` 0 错误通过。
+   - 前端 88 项测试套件全部通过（0 fail）。
+   - ESLint 0 error 通过。服务持续在端口 3000 / 8000 运行。
+
 ## 2026-10-14 R3.1 与 3A UI-a 首版交付
 
 用户要求开做并随后要求先交付。完成 Chat＋Lab 共享领域视图、同会话预测/观察/解释/修订、OpenUI 1.0.0 自有组件目录、单调用教学决策与来源绑定。决策为模型意见，不提升数学 verified 或掌握度；输入预算不足/无效协议/交付修复回退。固定动作仍由服务器预览与保存接口执行。UI-b/c、R3.2目的实验、真实模型增益接续，未倒填质量成绩。
