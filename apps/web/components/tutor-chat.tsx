@@ -6,7 +6,7 @@ import type { ReviewData } from "./review-card";
 import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
 import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, FlaskConical, BookOpen, CalendarCheck2 } from "lucide-react";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
 import { TutorCompanion } from "./tutor-companion";
@@ -24,11 +24,14 @@ import { GlobalSearchModal } from "./global-search-modal";
 import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
 import {learningRequest, type LabRun} from "@/lib/learning-api";
-import {needsPrivateChatHandoff,restorePrivateChatHandoff,rootContextRef,referenceChatKey,storePrivateChatHandoff,studyRequested,type LearningContextRef,type LearningTaskSnapshot} from "@/lib/learning-context";
+import {needsPrivateChatHandoff,restorePrivateChatHandoff,rootContextRef,referenceChatKey,storePrivateChatHandoff,studyRequested,verifiedReferenceSession,type LearningContextRef,type LearningTaskSnapshot} from "@/lib/learning-context";
 import {migratePrivateReadingStorage,referenceBrowserStorage} from "@/lib/learning-browser-storage";
 import {getCurrentUserId} from "@/lib/demo-auth";
-import {ChatLifetime} from "@/lib/chat-lifetime";
+import {TutorConversationController} from "@/lib/tutor-conversation-controller";
 import {ContextBanner} from "./learning/context-banner";
+import {CanvasWorkspace, type WorkspaceTab} from "./learning/canvas-workspace";
+import type {WorkspaceIntent} from "@/lib/intelligent-ui";
+import type {RootContextRef} from "@/lib/learning-context";
 
 type LocalMessage = {
   id: string;
@@ -119,6 +122,9 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH = 600;
 const DEFAULT_SIDEBAR_WIDTH = 260;
 const DEFAULT_LEARNING_WIDTH = 320;
+const MIN_WORKSPACE_WIDTH = 380;
+const MAX_WORKSPACE_WIDTH = 1000;
+const DEFAULT_WORKSPACE_WIDTH = 580;
 
 function ResizeHandle({target,className="",onStart}:{target:string;className?:string;onStart:(target:string)=>void}) {
   return <div
@@ -148,6 +154,38 @@ export function TutorChat() {
   const [rootInstruction, setRootInstruction] = useState("");
   const [rootError, setRootError] = useState("");
   const [learningContext, setLearningContext] = useState<LearningTaskSnapshot | null>(null);
+  const [workspaceOpen,updateWorkspaceOpen]=useState(false);
+  const workspaceOpenRef=useRef(false);
+  function setWorkspaceOpen(value:boolean){workspaceOpenRef.current=value;updateWorkspaceOpen(value);}
+  const [workspaceWidth, setWorkspaceWidth] = useState(DEFAULT_WORKSPACE_WIDTH);
+  const [isWorkspaceMaximized, setIsWorkspaceMaximized] = useState(false);
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>("lab");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("luojia_workspace_width");
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_WORKSPACE_WIDTH && parsed <= MAX_WORKSPACE_WIDTH) {
+          setWorkspaceWidth(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  function restoreWorkspace(query:URLSearchParams){
+    const ws = query.get("workspace");
+    if (ws === "lab" || ws === "reading" || ws === "study") {
+      setActiveWorkspaceTab(ws);
+      setWorkspaceOpen(true);
+    } else if (ws === "true") {
+      setActiveWorkspaceTab("lab");
+      setWorkspaceOpen(true);
+    }
+  }
+  const [workspacePrediction,setWorkspacePrediction]=useState<string>();
+  const [desktopWorkspace,setDesktopWorkspace]=useState(false);
+  useEffect(()=>{const media=window.matchMedia("(min-width: 1280px)");const update=()=>setDesktopWorkspace(media.matches);update();media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
   const [contextLoading, setContextLoading] = useState(false);
   const [contextError, setContextError] = useState("");
   const [visionDraft, setVisionDraft] = useState<string | null>(null);
@@ -162,8 +200,9 @@ export function TutorChat() {
   const [showZenConfirm, setShowZenConfirm] = useState(false);
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
-  const lifetime=useRef(new ChatLifetime());
+  const lifetime=useRef(new TutorConversationController({create:createSession,history:listMessages,stream:streamTutor}));
   const viewGeneration=useRef(0);
+  const contextSelection=useRef(0);
   const alive=useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeRunRef = useRef<AgentRun | undefined>(undefined);
@@ -304,6 +343,10 @@ export function TutorChat() {
       } else if (isResizing === "learning") {
         const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, containerRect.width - mouseX));
         setLearningWidth(newWidth);
+      } else if (isResizing === "workspace") {
+        const newWidth = Math.min(MAX_WORKSPACE_WIDTH, Math.max(MIN_WORKSPACE_WIDTH, containerRect.width - mouseX));
+        setWorkspaceWidth(newWidth);
+        try { localStorage.setItem("luojia_workspace_width", String(newWidth)); } catch {}
       }
     };
 
@@ -350,19 +393,24 @@ export function TutorChat() {
         if(!valid())return;
         migratePrivateReadingStorage(localStorage,sessionStorage,owner);
         const mapped=referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref),localStorage,sessionStorage).getItem(referenceChatKey(owner,snapshot.ref));
-        if(mapped&&existing.some(s=>s.id===mapped)) await selectSession(mapped,snapshot);
+        const restoredSession=verifiedReferenceSession(params.get("session"),existing,owner)??verifiedReferenceSession(mapped,existing,owner);
+        if(restoredSession) await selectSession(restoredSession,snapshot);
         else {
           resetToDraftSession(true);
           setLearningContext(snapshot);setContextLoading(false);
         }
+        restoreWorkspace(params);
       }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"来源引用不可用");setContextLoading(false);}}
       return;
     }
     const selected=existing.find(s=>s.id===params.get("session"))??existing[0];
     if(selected)await selectSession(selected.id);else resetToDraftSession();
+    restoreWorkspace(params);
   }
 
   function resetToDraftSession(preserveUrl = false) {
+    setWorkspaceOpen(false);setWorkspacePrediction(undefined);
+    lifetime.current.adoptSession(undefined);
     viewGeneration.current++;lifetime.current.invalidate();setIsStreaming(false);setContextLoading(false);
     if (!preserveUrl) window.history.replaceState(null,"","/chat");
     setLearningContext(null); setContextError("");
@@ -388,6 +436,8 @@ export function TutorChat() {
   }
 
   async function selectSession(nextSessionId: string, override?:LearningTaskSnapshot) {
+    setWorkspaceOpen(false);setWorkspacePrediction(undefined);
+    lifetime.current.adoptSession(nextSessionId);
     const generation=++viewGeneration.current,owner=getCurrentUserId();
     lifetime.current.invalidate();setIsStreaming(false);setContextLoading(true);
     const valid=()=>alive.current && generation===viewGeneration.current && owner===getCurrentUserId();
@@ -449,6 +499,34 @@ export function TutorChat() {
     }
   }
 
+  async function selectWorkspaceReference(ref:RootContextRef) {
+    const owner=getCurrentUserId(),generation=viewGeneration.current,selection=++contextSelection.current;
+    setContextLoading(true);setContextError("");
+    try {
+      const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",ref,AbortSignal.timeout(15000));
+      if(!alive.current||owner!==getCurrentUserId()||generation!==viewGeneration.current||selection!==contextSelection.current)return;
+      setLearningContext(snapshot);
+      const query=new URLSearchParams(sessionId?{session:sessionId}:{});
+      appendContextQuery(query,snapshot.ref,owner);if(workspaceOpenRef.current)query.set("workspace","lab");
+      window.history.replaceState(null,"",`/chat?${query}`);
+      if(sessionId)referenceBrowserStorage(false,localStorage,sessionStorage).setItem(referenceChatKey(owner,snapshot.ref),sessionId);
+    }catch(error){if(alive.current&&owner===getCurrentUserId()&&generation===viewGeneration.current&&selection===contextSelection.current)setContextError(error instanceof Error?error.message:"来源引用不可用");}
+    finally{if(alive.current&&generation===viewGeneration.current&&selection===contextSelection.current)setContextLoading(false);}
+  }
+  function openWorkspace(intent:WorkspaceIntent={}, tab: WorkspaceTab = "lab") {
+    setActiveWorkspaceTab(tab);
+    setWorkspacePrediction(intent.prediction);setWorkspaceOpen(true);setIsMobileLearningOpen(false);setIsMobileSidebarOpen(false);
+    if(intent.ref?.kind==="root_lab")void selectWorkspaceReference(intent.ref);
+    else {const query=new URLSearchParams(window.location.search);query.set("workspace",tab);window.history.replaceState(null,"",`/chat?${query}`);}
+  }
+  function switchWorkspaceTab(tab: WorkspaceTab) {
+    setActiveWorkspaceTab(tab);
+    const query = new URLSearchParams(window.location.search);
+    query.set("workspace", tab);
+    window.history.replaceState(null, "", `/chat?${query}`);
+  }
+  function closeWorkspace(){setWorkspaceOpen(false);const query=new URLSearchParams(window.location.search);query.delete("workspace");window.history.replaceState(null,"",`/chat${query.size?`?${query}`:""}`);}
+
   async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission, parentRunId?:string) {
     if (isStreaming || contextLoading || contextError) return;
     if (learningContext && (rootSubmission || imageUrls?.length)) {
@@ -463,9 +541,9 @@ export function TutorChat() {
     let activeSession=sessionId;
     try {
       if(!activeSession){
-        const created=await createSession("综合",lease.controller.signal);
+        const createdId=await manager.ensureSession(lease,getCurrentUserId,"综合");
         if(!valid())return;
-        activeSession=created.session_id;setSessionId(activeSession);
+        activeSession=createdId;setSessionId(activeSession);
       }
       if(learningContext)referenceBrowserStorage(needsPrivateChatHandoff(learningContext.ref),localStorage,sessionStorage).setItem(referenceChatKey(getCurrentUserId(),learningContext.ref),activeSession);
       const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
@@ -480,7 +558,7 @@ export function TutorChat() {
         }).catch(() => {});
       }
 
-      await streamTutor(
+      await manager.stream(lease,
         {
           study_action: !learningContext && !rootSubmission && !imageUrls?.length && studyRequested(value)?"current_tasks":undefined,
           root_submission: rootSubmission,
@@ -846,6 +924,78 @@ export function TutorChat() {
           </button>
         )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200/80 dark:border-paper-800/80 bg-[var(--bg-card)]/80 backdrop-blur-md px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-olive-500/10 text-olive-700 dark:text-olive-300">
+                <Sparkles className="size-3.5" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-title text-xs font-semibold text-[var(--text-primary)]">学术伴读工坊</span>
+                <span className="text-[10px] text-olive-700 dark:text-olive-300 bg-olive-500/10 px-1.5 py-0.5 rounded-full font-mono border border-olive-500/20">
+                  {workspaceOpen ? (activeWorkspaceTab === "lab" ? "实验联动中" : activeWorkspaceTab === "reading" ? "文献对照中" : "日课演练中") : "随时可开启分栏画布"}
+                </span>
+              </div>
+            </div>
+
+            {/* Center: Canvas Workspace Quick Switchers */}
+            <div className="hidden sm:flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "lab") openWorkspace({ ref: learningContext?.ref }, "lab");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "lab"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <FlaskConical className="size-3" />
+                <span>数值实验</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "reading") openWorkspace({ ref: learningContext?.ref }, "reading");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "reading"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <BookOpen className="size-3" />
+                <span>定理研读</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "study") openWorkspace({ ref: learningContext?.ref }, "study");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "study"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <CalendarCheck2 className="size-3" />
+                <span>今日日课</span>
+              </button>
+            </div>
+
+            {/* Right: Quick Toggle Button */}
+            <button
+              type="button"
+              onClick={() => (workspaceOpen ? closeWorkspace() : openWorkspace({ ref: learningContext?.ref }, activeWorkspaceTab))}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-olive-700 hover:bg-olive-500/10 dark:text-olive-300 border border-olive-500/20 transition-colors"
+            >
+              <Target aria-hidden="true" className="size-3.5" />
+              <span>{workspaceOpen ? "收起工坊画布" : "展开工坊画布"}</span>
+            </button>
+          </div>
           {(learningContext || contextError || contextLoading) && <div className="mx-auto w-full max-w-4xl px-4 pt-4">
             {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {lifetime.current.invalidate();setLearningContext(null); setContextError(""); window.history.replaceState(null, "", "/chat");}}/>}
             {contextLoading && <p role="status" className="p-3">正在核对实验引用…</p>}
@@ -864,6 +1014,7 @@ export function TutorChat() {
                   m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
                 return messages.map((message, idx) => (
                   <MathMessage
+                    onOpenWorkspace={openWorkspace} onLabSaved={run=>void selectWorkspaceReference(rootContextRef(run))}
                     learningMeta={message.learningMeta} messageId={message.id} learningContext={learningContext?.ref} actionsDisabled={isStreaming || contextLoading || !!contextError}
                     key={message.id}
                     role={message.role}
@@ -999,14 +1150,73 @@ export function TutorChat() {
           </div>
         </main>
 
-        {!isZenMode && !isLearningCollapsed && <ResizeHandle onStart={setIsResizing} target="learning" className="hidden xl:block" />}
-        {!isZenMode && !isLearningCollapsed && (
+        {!isZenMode && workspaceOpen && desktopWorkspace && (
+          <ResizeHandle onStart={setIsResizing} target="workspace" className="hidden xl:block" />
+        )}
+        {workspaceOpen && desktopWorkspace && !isZenMode && (
+          <aside
+            aria-label="学术工坊分栏画布"
+            className="hidden min-w-0 shrink-0 flex-col border-l border-paper-200 dark:border-paper-800 bg-[var(--bg-primary)] xl:flex transition-all duration-150"
+            style={{ width: isWorkspaceMaximized ? "85%" : `${workspaceWidth}px` }}
+          >
+            <CanvasWorkspace
+              activeTab={activeWorkspaceTab}
+              onTabChange={switchWorkspaceTab}
+              onClose={closeWorkspace}
+              isMaximized={isWorkspaceMaximized}
+              onToggleMaximize={() => setIsWorkspaceMaximized((prev) => !prev)}
+              initialRef={learningContext?.ref.kind === "root_lab" ? learningContext.ref : undefined}
+              draftPrediction={workspacePrediction}
+              sessionId={sessionId ?? undefined}
+              onDiscuss={(ref) => {
+                void selectWorkspaceReference(ref);
+                if (window.innerWidth < 1280) closeWorkspace();
+              }}
+              onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
+              onAskTutor={(prompt) => void submit(prompt, "socratic")}
+            />
+          </aside>
+        )}
+        {workspaceOpen && !desktopWorkspace && !isZenMode && (
+          <div className="xl:hidden">
+            <MobileDrawer
+              title={`学术工坊 · ${activeWorkspaceTab === "lab" ? "数值实验台" : activeWorkspaceTab === "reading" ? "经典研读录" : "今日日课案"}`}
+              side="right"
+              breakpoint={1280}
+              onClose={closeWorkspace}
+            >
+              <div className="h-full overflow-y-auto">
+                <CanvasWorkspace
+                  activeTab={activeWorkspaceTab}
+                  onTabChange={switchWorkspaceTab}
+                  onClose={closeWorkspace}
+                  isMaximized={false}
+                  onToggleMaximize={() => {}}
+                  initialRef={learningContext?.ref.kind === "root_lab" ? learningContext.ref : undefined}
+                  draftPrediction={workspacePrediction}
+                  sessionId={sessionId ?? undefined}
+                  onDiscuss={(ref) => {
+                    void selectWorkspaceReference(ref);
+                    closeWorkspace();
+                  }}
+                  onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
+                  onAskTutor={(prompt) => {
+                    closeWorkspace();
+                    void submit(prompt, "socratic");
+                  }}
+                />
+              </div>
+            </MobileDrawer>
+          </div>
+        )}
+        {!workspaceOpen && !isZenMode && !isLearningCollapsed && <ResizeHandle onStart={setIsResizing} target="learning" className="hidden xl:block" />}
+        {!workspaceOpen && !isZenMode && !isLearningCollapsed && (
           <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
             {rightPanelContent}
           </div>
         )}
 
-        {!isZenMode && isLearningCollapsed && (
+        {!workspaceOpen && !isZenMode && isLearningCollapsed && (
           <button
             onClick={() => setIsLearningCollapsed(false)}
             className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 group h-20 w-4 items-center justify-center rounded-l-md border border-r-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
