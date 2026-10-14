@@ -1,0 +1,18 @@
+{
+  "version": "r2-e0-contracts-v1",
+  "scope": "selected_offline_r1_source_state_help_and_review_contracts_not_model_quality",
+  "cases": [
+    {"id": "a3_linear_reference", "selector": "tests/test_learning_context.py::test_a3_linear_reference_rechecks_update_order_and_keeps_help_boundary", "expected_instances": 2, "contract": "source_and_update_order"},
+    {"id": "a2_d0_d1_input", "selector": "tests/test_learning_context.py::test_a2_offline_d0_d1_prompts_share_the_same_claim_and_only_d1_has_exact_check", "expected_instances": 1, "contract": "comparison_input_binding"},
+    {"id": "context_owner_version", "selector": "tests/test_learning_context.py::test_context_is_owned_versioned_bounded_and_not_a_learning_write", "expected_instances": 1, "contract": "owner_version_no_learning_write"},
+    {"id": "newton_help_exposure", "selector": "tests/test_newton_activity.py::test_same_case_new_generic_run_records_answer_exposure", "expected_instances": 1, "contract": "answer_exposure_state"},
+    {"id": "review_source_drift", "selector": "tests/test_learning_workspace.py::test_due_review_keeps_same_unit_source_but_pauses_changed_source", "expected_instances": 1, "contract": "source_revision"},
+    {"id": "b3_feedback_history", "selector": "tests/test_learning_workspace.py::test_layered_assessment_feedback_only_after_submission_and_never_regrades_history", "expected_instances": 1, "contract": "answer_lock_and_history"},
+    {"id": "b4_no_code_execution", "selector": "tests/test_learning_workspace.py::test_static_code_never_executes_and_preserves_versions", "expected_instances": 1, "contract": "static_review_only"},
+    {"id": "b4_scoped_hint", "selector": "tests/test_learning_workspace.py::test_static_root_error_hint_is_scoped_and_keeps_legal_bound_variant", "expected_instances": 1, "contract": "hint_scope"},
+    {"id": "b5_cross_workspace", "selector": "tests/test_r1_b5_workspaces.py::test_one_chat_session_resumes_reading_experiment_and_saved_code", "expected_instances": 1, "contract": "same_session_resume"},
+    {"id": "b5_assessment_lock", "selector": "tests/test_r1_b5_workspaces.py::test_assessment_stays_locked_then_returns_to_unit_source_not_answer_chat", "expected_instances": 1, "contract": "assessment_help_lock"},
+    {"id": "teachback_quote_scope", "selector": "tests/test_teachback_evidence.py::test_model_judgment_requires_real_quote_and_complete_condition_set", "expected_instances": 7, "contract": "original_quote_and_condition_set"},
+    {"id": "r2_review_binding", "selector": "tests/test_r2_review_packet.py::test_review_packet_is_current_unsigned_and_covers_each_source_family", "expected_instances": 1, "contract": "unsigned_content_provenance"}
+  ]
+}

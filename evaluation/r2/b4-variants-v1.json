@@ -1,0 +1,28 @@
+{
+  "version": "r2-b4-public-development-v1",
+  "status": "agent_prepared_only",
+  "assignment_id": "newton-trace-dev-v1",
+  "scope": "For the assigned f(x)=x^2-2, x0=1, root-error goal and interval [1,2]. Code is read, never executed.",
+  "cases": [
+    {
+      "id": "B4-V01",
+      "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x - fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+      "review_question": "Does the residual-stop hint incorrectly imply that this assigned run is wrong? Check the actual iterates and the root-error bound."
+    },
+    {
+      "id": "B4-V02",
+      "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) / 2 <= tol:\n            break\n        if x == 0:\n            break\n        x = (x + 2 / x) / 2\n        xs.append(x)\n    return xs\n",
+      "review_question": "Is this algebraically equivalent update and stated bound valid for the assigned initial value? Would a missing static hint prove correctness?"
+    },
+    {
+      "id": "B4-V03",
+      "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x + fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+      "review_question": "Does the update sign match Newton's rule? Keep the sign issue distinct from the residual-stop explanation."
+    },
+    {
+      "id": "B4-V04",
+      "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x - fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+      "review_question": "Is fx actually f(x) for this assignment? Does the static residual rule establish that fact?"
+    }
+  ]
+}

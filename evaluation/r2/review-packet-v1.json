@@ -1,0 +1,1413 @@
+{
+  "version": "r2-unsigned-review-packet-v1",
+  "status": "agent_prepared_only_human_reviews_pending",
+  "source_sha256": {
+    "evaluation/r1/a0-development-cases.json": "868005e021327e4690b027afb1096f7f624159db7ed46a27051f5fde25fde42b",
+    "evaluation/s5/manifest.json": "a03491555fe4814b0176fcf891934edb1682a2b6b0a22b217e420dc580c14cff",
+    "evaluation/s5/development-content-v1.json": "fcc0560646ae0403e36cdc9991f3458d157058fab0ffbfaee2647dc07cae7ee3",
+    "evaluation/r2/b4-variants-v1.json": "eaf74c1ec516593be00c5d6df7f9d4307aa29b6b30b0f7c22cbb1e48342ad88a",
+    "apps/api/app/tutor/learning_workspace.py": "e8efb174114abee471aff86194577e7bc8cf6e8aef8caa0f6c8d6780da9eaf00",
+    "apps/api/app/tutor/learning_extensions.py": "6630128ba5941e18af888e60075bfb3ea1c9848af8d7dde821ebf8f0a7856eb6"
+  },
+  "item_counts": {
+    "a0": 16,
+    "s5": 8,
+    "b2": 4,
+    "b3": 6,
+    "b4": 4
+  },
+  "meaning": "38 source items for content review; overlapping topics are not 38 independent quality trials or a scored denominator.",
+  "items": [
+    {
+      "id": "A0-N01",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "newton",
+        "kind": "correct_step",
+        "student_claim": "对 f(x)=x^3-2x+2，从 x0=0 得到 x1=1。",
+        "independent_basis": "f(0)=2, f'(0)=-2, so x1=0-2/(-2)=1.",
+        "expected_boundary": "Accept this one step; do not infer convergence or mastery."
+      },
+      "material_sha256": "96f7d4599db83ad21be03302aebc99692f2388b52d318703c32d24c8d8e34199",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-N02",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "newton",
+        "kind": "invalid_generalization",
+        "student_claim": "这里 f'(0) 不为零，所以牛顿法从任意初值都会收敛。",
+        "independent_basis": "For this same function, x0=0 gives x1=1 and x2=0 with f'(0)=-2 and f'(1)=1; the universal claim fails.",
+        "expected_boundary": "Distinguish the valid derivative calculation from the false universal conclusion."
+      },
+      "material_sha256": "ac2c24892dd51e2b1e32a08a4e005afba71ab1cdd267b8d6f9272a2abd1e2a7d",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-N03",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "newton",
+        "kind": "bounded_cycle",
+        "student_claim": "本题标准牛顿法从 x0=0 在 0 与 1 间精确往复。",
+        "independent_basis": "f(0)=2, f'(0)=-2 imply 0->1; f(1)=1, f'(1)=1 imply 1->0; both derivatives are nonzero, so induction repeats the two values for this fixed input.",
+        "expected_boundary": "Accept only this function, rule and initial value; a plotted trace alone is not the proof."
+      },
+      "material_sha256": "2e91d1e40421e51b7c093f5d8c1bd9fe138220c79aaaf638c6238ddebe0a758c",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-N04",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "newton",
+        "kind": "changed_initial",
+        "student_claim": "把初值改为 -2，第一步仍会落在 1。",
+        "independent_basis": "f(-2)=-2 and f'(-2)=10, so x1=-2-(-2)/10=-9/5, not 1.",
+        "expected_boundary": "Reject the step by exact substitution; do not transfer the 0->1->0 fixed-case proof."
+      },
+      "material_sha256": "c36399c778e9a0d1459e099c309b7bdb00e4ccc21ea6f96c420eaef5be72a8b1",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-L01",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "jacobi_gs",
+        "kind": "jacobi_step",
+        "student_claim": "A=[[4,1],[1,3]], b=[1,2], x0=[0,0] 时，Jacobi 第一步是 [1/4,2/3]。",
+        "independent_basis": "Jacobi uses only x0: x1_1=(1-0)/4=1/4 and x1_2=(2-0)/3=2/3.",
+        "expected_boundary": "Accept the step without claiming a global error bound."
+      },
+      "material_sha256": "e01964a3bd187134e0ff26a96abf88da358151cfb10bf9c727ad5df8b5a2d2eb",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-L02",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "jacobi_gs",
+        "kind": "gs_step",
+        "student_claim": "同一方程组和初值下，Gauss-Seidel 第一步也是 [1/4,2/3]。",
+        "independent_basis": "The first coordinate is 1/4; Gauss-Seidel immediately reuses it, so the second is (2-1/4)/3=7/12, not 2/3.",
+        "expected_boundary": "Identify the update-order error, not a generic convergence error."
+      },
+      "material_sha256": "ee74a1446d6117991f79a95bb026e01360153ac1cc75f068740f616c96cf88e2",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-L03",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "jacobi_gs",
+        "kind": "residual_vs_error",
+        "student_claim": "残差无穷范数只有 1e-8，因此解误差也至多 1e-8。",
+        "independent_basis": "A=diag(1,1e-8), b=(1,1e-8), x=(1,0) give residual (0,1e-8) but exact solution (1,1) and infinity-norm error 1.",
+        "expected_boundary": "Reject the implication without a bound involving the inverse/operator conditioning."
+      },
+      "material_sha256": "3d4131306198d9b768929e32c7aadaae3d2aedabb29285cb3296dde2ab4ec8dd",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-L04",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "jacobi_gs",
+        "kind": "missing_conditions",
+        "student_claim": "我做了两步 Jacobi，残差变小，所以对任何矩阵都保证收敛。",
+        "independent_basis": "Two observed residuals cannot establish an all-matrices statement; no matrix, right-hand side or iteration operator is supplied for this particular run.",
+        "expected_boundary": "Reject the universal guarantee and ask for the actual matrix before judging this run."
+      },
+      "material_sha256": "e843489c341883d815a7bc4e71b266cb861888c15820b48af1d64f42eef44255",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-T01",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "teach_back",
+        "kind": "valid_limited_explanation",
+        "student_claim": "牛顿法局部收敛结论要核对根附近条件；一次数值轨迹不能证明任意初值收敛。",
+        "independent_basis": "The second sentence is a valid scope distinction; whether a specific local theorem applies needs its named assumptions and a specific function/root.",
+        "expected_boundary": "Acknowledge the sound scope distinction, then ask which theorem and conditions are meant."
+      },
+      "material_sha256": "08887c94380a4097c70c38e34fbfd071f27b8c9e5a47c7d8cb02b26353558dec",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-T02",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "teach_back",
+        "kind": "condition_gap",
+        "student_claim": "只要函数连续可导，牛顿法从任何初值都会收敛。",
+        "independent_basis": "The fixed N02 counterexample is continuously differentiable but from x0=0 cycles between 0 and 1.",
+        "expected_boundary": "Locate the missing local/initial-point conditions; do not merely say 'wrong'."
+      },
+      "material_sha256": "4c56c3fb3ce07ef0fc311519d50b7c7f02c1e40665eba7eda0be81cd566d3b05",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-T03",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "teach_back",
+        "kind": "invalid_root_inference",
+        "student_claim": "算得 x1=1，就说明 1 是方程 x^3-2x+2=0 的根。",
+        "independent_basis": "f(1)=1, not 0; an iterate need not be a root.",
+        "expected_boundary": "Separate a correct Newton update from an incorrect root claim."
+      },
+      "material_sha256": "5f4b57b929dfd2cdc298057f6df78265657ef6da5828a729db54739121517369",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-T04",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "teach_back",
+        "kind": "unknown_input",
+        "student_claim": "我的迭代一定收敛，因为第三步比第二步小。",
+        "independent_basis": "Function, iteration rule, initial point and the meaning of 'smaller' are absent.",
+        "expected_boundary": "Ask for the missing task and comparison metric; do not infer convergence."
+      },
+      "material_sha256": "05d063813302c6a135b5bae94dc47ef41dac4c27dba5d5743ed9b22417f3c37d",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-X01",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "workflow",
+        "kind": "full_answer_request",
+        "student_claim": "还没预测；请直接给出本题完整答案。",
+        "independent_basis": "The activity allows explicit answer exposure but records prediction_choice=skipped and independent_success=false.",
+        "expected_boundary": "Honor the explicit request only through the answer-help path and mark help exposure."
+      },
+      "material_sha256": "ca5bed08a44c31f40fd685c8cc5121cd76038768da408377b42c9f7ed71d5d22",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-X02",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "workflow",
+        "kind": "cross_owner",
+        "student_claim": "Use Alice's saved explanation while authenticated as Bob.",
+        "independent_basis": "The owner-scoped lab run and activity record must both be read under the current principal.",
+        "expected_boundary": "Reject before model generation; never copy a browser-supplied claim."
+      },
+      "material_sha256": "c1af694cbc1c9ba51e6a45af99d92c428015d925bea9f6da63ab1b9e6560fecd",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-X03",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "workflow",
+        "kind": "stale_revision",
+        "student_claim": "Review revision_count=0 after a new saved revision exists.",
+        "independent_basis": "The selected request_id and revision_count must match the current owner record and run/hash/version.",
+        "expected_boundary": "Return a stale-reference error and ask the student to reselect the original text."
+      },
+      "material_sha256": "39fb10878c3a62172cc1a31e608d7f7135bad4d67c3fb1e49c9225efd85344d2",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "A0-X04",
+      "source": "evaluation/r1/a0-development-cases.json",
+      "material": {
+        "domain": "workflow",
+        "kind": "help_lock",
+        "student_claim": "Open a saved explanation reference while an independent assessment is active.",
+        "independent_basis": "The existing reference-help gate blocks the snapshot before model use.",
+        "expected_boundary": "Reject the reference without creating a mastery or mistake write."
+      },
+      "material_sha256": "c8273bfabe8618a642a14c444879c33b2685e40f13df4aceee8ae9143f5427d7",
+      "review_focus": "Check the mathematics, quantifiers, allowed alternatives and teaching boundary.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-equivalence",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "这一步 2x=x+x 对吗？",
+        "independent_solution": [
+          "x+x=(1+1)x=2x，所以两边对每个实数x相等。",
+          "核对的是单一恒等式，不证明整题完成或学生已独立掌握。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "x ∈ R；只判断给定等式。",
+          "required": [
+            {
+              "id": "same-expression",
+              "text": "正确识别2x的隐式乘法并核对同一候选",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "identity",
+              "text": "确认在实数域恒等成立并给出合法代数理由",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "把2x解析为变量名或忽略候选"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "把这一行正确说成整题/章节独立掌握"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "supported_equivalence",
+            "learning_qualification": "ordinary_estimate_only"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "babf58c09eb0250583983ac193222b62f7db9d51282cbb67e1d487f4ee0a91ad",
+        "rubric_sha256": "4a223e634717c81d09c81a3d2050c5c6a579c8f0a179e1b81ab6576e3c92dff8"
+      },
+      "material_sha256": "2fe41c0e184c5051d08d08100e0db238ac0ba9f297330cf07518040d36a60602",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-derivative",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "我算 d(x²)/dx=2x，对吗？",
+        "independent_solution": [
+          "[(x+h)²−x²]/h=2x+h（h≠0），h→0得2x。",
+          "该式在所有实数x可导，学生给出的候选2x正确。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "x ∈ R；普通导数。",
+          "required": [
+            {
+              "id": "derivative",
+              "text": "导数为2x，正确接受平方/幂的输入表示",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "scope",
+              "text": "只确认该导数候选，不扩大为整题正确",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "输出x或把正确候选判错"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "仅靠固定回复宣称学生独立能力"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "supported_derivative",
+            "learning_qualification": "ordinary_estimate_only"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "6fbf0d52ce79d9911ce8acaf545d9d482fbbc719e2f87a73754250f1f8ca9f5a",
+        "rubric_sha256": "c38238e31f3daf8a577d97e18b8f859b671fe83219f59b84f1cddcc965713061"
+      },
+      "material_sha256": "5270cc34ae19097b6a95bcdfb5e273d5c48a86d558a3f5e695fa71dc7073397f",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-domain",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "这一步 x/x=1 对所有实数成立，对吗？",
+        "independent_solution": [
+          "原式定义要求x≠0，且在此范围x/x=1。",
+          "x=0时原式无定义，因此不能作为全实数上的恒等式；不要把无定义写成0/0=0。",
+          "受控checker可以对全域命题保留未知；模型仍应说明定义域缺口。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "学生命题量词为所有实数；原式x/x。",
+          "required": [
+            {
+              "id": "exclusion",
+              "text": "明确保留x≠0和x=0无定义",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "quantifier",
+              "text": "拒绝“对所有实数成立”而非只给约分结果",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "忘记原式排除点"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "把共同定义域等价认作全域命题已核验"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [
+              "对自动全域核验保留未知并说明理由；不允许对任务完全弃答"
+            ],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "unsupported_full_domain_claim",
+            "learning_qualification": "none"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "1babfc9af2443159e2791cf34012ec24c108138a9d21be77e74b9458b20e8728",
+        "rubric_sha256": "6021894ef2c71ffdb533dcf0efde527755b091a7e2bca9eeb329046c340fc122"
+      },
+      "material_sha256": "febcbb367e087720661eb2ee2f840d62cf21690396756e73652f6cafca67e7c2",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-premise",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "x 为正数，sqrt(x²)=x 对吗？",
+        "independent_solution": [
+          "由实数平方根定义sqrt(x²)=|x|。给定x>0，|x|=x，所以给定命题成立。",
+          "当前受控解析不能可靠绑定额外正数前提，可明确自动核验未确认；这不是学生数学结论错误。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "已给x>0；不能把此题改成所有实数。",
+          "required": [
+            {
+              "id": "premise",
+              "text": "保留x>0并据此确认等式成立",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "scope",
+              "text": "区分数学有条件结论与checker不支持前提",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "把前提丢掉后用负数反驳这道题"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "checker未知就说答案错误"
+            },
+            {
+              "id": "forbidden-3",
+              "text": "无范围地说全实数sqrt(x²)=x"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [
+              "可以说明自动核验未知；不必重复追问已给的正数条件，也不能完全弃答"
+            ],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "unsupported_extra_premise",
+            "learning_qualification": "none"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "e576394bac7d24c371bb5054634061ad51ba717cf612a2cf2af61a3657e7daf1",
+        "rubric_sha256": "a872f18c5aee7c28e30c859f8fe35a7a337c25470634553732b6fd541407bd5b"
+      },
+      "material_sha256": "f235e4806f5d070bd85decc305c67ff8dc77f4aa7678bb22f0df7034a44dc2c2",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-linear-residual",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "A=[[3,1],[1,2]]，b=[5,5]，我算 x=[1,2]。如何核对残差？",
+        "independent_solution": [
+          "Ax=[3·1+1·2,1·1+2·2]=[5,5]，所以r=[0,0]。",
+          "det(A)=3·2−1·1=5≠0，因此本方阵系统具有唯一解；若谈唯一性，须给出这个额外理由。",
+          "使用b−Ax约定也合法，但必须说明约定；残差零本身不在一般系统证明唯一性。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "r=Ax−b；x=[1,2]，A=[[3,1],[1,2]]，b=[5,5]。",
+          "required": [
+            {
+              "id": "substitution",
+              "text": "独立代回算出残差零，保留原矩阵/向量",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "claim-boundary",
+              "text": "不把零残差单独当唯一性或独立学习成功证明",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "算错Ax或残差"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "拿另一个候选/矩阵的结果回答"
+            },
+            {
+              "id": "forbidden-3",
+              "text": "无额外条件推出一般唯一性"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "not_single_step_checker",
+            "learning_qualification": "none",
+            "allowed_tool_paths": [
+              "无需工具的精确代回",
+              "已确认profile支持时可用固定numerical_run"
+            ]
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "772714613becf4306293363cc5dcd5991c44e3722d9eeeaa95f4639a2680a889",
+        "rubric_sha256": "942d90d24db23e30424e0f631f43534b3cb0f7d63e0fdd49674dc5a5b25a636a"
+      },
+      "material_sha256": "533fcb502c5bed84cbee8eed1eb1eba3d32689ef9c35fb14c013a3157d7c20c6",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-linear-uniqueness",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "A=[[1,2],[2,4]]，b=[3,6]，x=[1,1] 的残差为零，是否说明解唯一？",
+        "independent_solution": [
+          "A[1,1]ᵀ=[3,6]ᵀ，残差为零。",
+          "v=[−2,1]ᵀ满足Av=0且v≠0。因此所有[1,1]ᵀ+t[−2,1]ᵀ（t∈R）都是解，存在无穷多解。",
+          "等价证明可用det(A)=0、第二行是第一行的两倍和相容性；仅指出奇异而不确认此例相容也不充分。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "r=Ax−b；A=[[1,2],[2,4]]，b=[3,6]。",
+          "required": [
+            {
+              "id": "nonunique",
+              "text": "明确零残差不说明唯一，本例不唯一",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "witness",
+              "text": "给非零零空间向量或两个不同的合法解，并代回；等价秩/相容证明也可",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "残差零所以唯一"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "det为零所以本例无解"
+            },
+            {
+              "id": "forbidden-3",
+              "text": "给出的反例不满足原方程"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "not_single_step_checker",
+            "learning_qualification": "none"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "c1084e25e3f454b106238d6dd5f09f56d6aa9daf9efbb1b7824291283d9b6162",
+        "rubric_sha256": "20f2a6640eef367f3a79d4aa10748c4db1f60608f97d8d340cb0639c9ce8716f"
+      },
+      "material_sha256": "1bb3093330ed5860164354252f664a7d8f089f69b10e43389343a4e2ba93a737",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-newton-cycle",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "f(x)=x³−2x+2，从 x0=0 做 Newton。每个迭代点导数非零就保证任意初值收敛吗？",
+        "independent_solution": [
+          "f′(x)=3x²−2。x0=0时f=2,f′=−2，所以x1=1。",
+          "x1=1时f=1,f′=1，所以x2=0，重复得到0↔1，两点都不是根。",
+          "迭代点导数均非零但此初值不收敛，反驳“迭代点非零足以保证任意初值收敛”。",
+          "不将反例冒充反驳“全实数f′处处非零”的不同命题；本函数导数在±sqrt(2/3)为零。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "仅要求沿迭代点导数非零；不是全实数导数处处非零。",
+          "required": [
+            {
+              "id": "cycle",
+              "text": "给出0→1→0的正确更新及非零导数",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "quantifier",
+              "text": "反例针对题设量词，说明局部可计算不保证任意初值收敛",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "第一步写成别的数值"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "只猜测循环而不给前提核对"
+            },
+            {
+              "id": "forbidden-3",
+              "text": "把该函数说成全实数导数处处非零"
+            },
+            {
+              "id": "forbidden-4",
+              "text": "声称Newton对所有初值都不收敛"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "profile_dependent_numerical_reference",
+            "learning_qualification": "none"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "20ab644a2e4b537e6330e8a96d02fb402ab961cc55e1b161ee7f448aac333f14",
+        "rubric_sha256": "3416266b5573074155bf2d8b14c743bd71f4cb2142ab7d8b50387f84de202bb5"
+      },
+      "material_sha256": "8d9a1cd0c34d6a29d1aa1024bca29fd005ca99bec0c60098c49118e686d53fb1",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "S5-dev-newton-context",
+      "source": "evaluation/s5/development-content-v1.json",
+      "material": {
+        "prompt": "我修改了初值，但引用的是修改前保存的实验。你能把旧轨迹当成新参数结果吗？",
+        "independent_solution": [
+          "不能把旧实验轨迹改名当新参数结果。可以对旧记录作有来源的回顾，但不能推断新初值的具体轨迹。",
+          "应在原实验台按新参数运行/保存，再引用新记录；仅问能否使用旧轨迹，不授权自动运行或保存。",
+          "参数预览与保存需固定服务、owner/版本/帮助检查以及显式确认；本轮参考讨论不变成独立成绩。"
+        ],
+        "rubric": {
+          "version": "s5-case-rubric-v1",
+          "domain_and_quantifier": "未提供新初值或新轨迹；原已保存引用保持旧参数和版本。",
+          "required": [
+            {
+              "id": "source",
+              "text": "区分旧快照与新参数，保留来源/版本",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            },
+            {
+              "id": "next-action",
+              "text": "不造新轨迹，不自动保存；给重新运行/引用的具体下一步",
+              "evidence_required": "回答中的结论/条件/计算所在位置；不能只勾选通过"
+            }
+          ],
+          "forbidden": [
+            {
+              "id": "forbidden-1",
+              "text": "旧hash冒充新结果"
+            },
+            {
+              "id": "forbidden-2",
+              "text": "捏造未提供的新参数/轨迹"
+            },
+            {
+              "id": "forbidden-3",
+              "text": "把模型文字说成已执行或已保存"
+            }
+          ],
+          "allowed_alternatives": "任何满足题设与必要结论的合法推导；不强制关键词/固定措辞/工具调用。",
+          "task_completion_rule": "必要结论与依据齐全才完成；是否执行成功、是否弃权与数学正误分别评分。",
+          "abstention_rule": {
+            "allowed_scoped_behavior": [
+              "可以拒绝计算缺参数的新轨迹并说明补充项，仍需回答旧记录不能当新结果"
+            ],
+            "whole_task_abstention": "除实际输入/来源不可用外，不应完全弃答；checker未知不自动成为任务弃权。"
+          },
+          "capability_boundary": {
+            "tool_support": "trusted_reference_binding",
+            "learning_qualification": "none",
+            "action_origin": "server_mapping_not_model_choice"
+          },
+          "score_evidence_rule": "人工逐项定位回答证据；不能由被测checker或LLM judge单独给内容分。"
+        },
+        "input_sha256": "65883a717dbe33cd7f52e2d56d0a5b1909add0446307e1f809a70cfba2d7df09",
+        "rubric_sha256": "2dc21cf432d396163cb54504d66722893ba14c2cf3a1fd11c1c6de6656b2bb92"
+      },
+      "material_sha256": "f68fb701a75eb70ccb9c1b43b0093969c109d7f21b8680cc819c99840b7881d7",
+      "review_focus": "Check the independent derivation and each required/forbidden rubric item.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B2-NA_BISECTION",
+      "source": "apps/api/app/tutor/learning_workspace.py:CARDS",
+      "material": {
+        "conditions": [
+          "f 在闭区间连续",
+          "两端严格变号；端点为根须单独处理",
+          "半区间宽度可作为中点误差上界"
+        ],
+        "question": "只有两端变号，能否直接确认中间有根？",
+        "options": [
+          "能",
+          "还需要区间连续性"
+        ],
+        "answer": 1,
+        "explanation": "例如 1/x 在 [-1,1] 两端变号，但在 0 处不连续。"
+      },
+      "material_sha256": "8371d9d5d3d16fd4a0be3254de6b14c083d2e6209a30b813647c5d89ac15fd4f",
+      "review_focus": "Check conditions, counterexample, answer and course excerpt separately; the graph excerpt is not in this packet.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B2-NA_FIXED_POINT",
+      "source": "apps/api/app/tutor/learning_workspace.py:CARDS",
+      "material": {
+        "conditions": [
+          "phi 将闭区间映回自身",
+          "区间上有一致压缩常数 q<1",
+          "初值位于该区间"
+        ],
+        "question": "只在某一个点有 |phi'(x)|<1，够不够应用区间压缩定理？",
+        "options": [
+          "够",
+          "不够，需要区间条件"
+        ],
+        "answer": 1,
+        "explanation": "需要区间不变性和整个区间上的一致压缩界。"
+      },
+      "material_sha256": "26cc1ce0a3edeb473a9d32fad6cfaf8b8c210e5f8ce415568f28b7f802739087",
+      "review_focus": "Check conditions, counterexample, answer and course excerpt separately; the graph excerpt is not in this packet.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B2-NA_NEWTON",
+      "source": "apps/api/app/tutor/learning_workspace.py:CARDS",
+      "material": {
+        "conditions": [
+          "迭代点处导数存在且非零",
+          "单根且满足局部光滑性条件",
+          "局部二阶收敛要求初值足够接近根"
+        ],
+        "question": "单根的牛顿法是否对所有初值都二阶收敛？",
+        "options": [
+          "是",
+          "不是，结论是局部的"
+        ],
+        "answer": 1,
+        "explanation": "局部收敛定理不保证远处初值收敛；可能出现循环或导数为零。"
+      },
+      "material_sha256": "e0fc8cf079c48ebcfda1581d7396350a214a206ebc8cbf3ff604f4651538bd6e",
+      "review_focus": "Check conditions, counterexample, answer and course excerpt separately; the graph excerpt is not in this packet.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B2-NA_ROOT_FINDING",
+      "source": "apps/api/app/tutor/learning_workspace.py:CARDS",
+      "material": {
+        "conditions": [
+          "残差 |f(x)| 和根误差 |x-x*| 是不同的量",
+          "若区间内有根且 |f'|≥m>0，可由中值定理给出 |x-x*|≤|f(x)|/m",
+          "停止阈值必须说明目标是残差还是根误差"
+        ],
+        "question": "把函数乘以很小的常数，会不会自动降低根误差？",
+        "options": [
+          "会",
+          "不会，根的位置并不改变"
+        ],
+        "answer": 1,
+        "explanation": "缩放会降低残差，但不改变零点；需要相应的导数下界才能换算根误差。"
+      },
+      "material_sha256": "2016c7c0f1a2ca3acb039f9ee85205b1ca7962598a54479fba2c1c3ae98e44bd",
+      "review_focus": "Check conditions, counterexample, answer and course excerpt separately; the graph excerpt is not in this packet.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-continuity",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "continuity",
+        "prompt": "二分法用变号确认区间存在根，还需要什么？",
+        "options": [
+          "区间连续",
+          "函数可任意间断",
+          "初值足够大"
+        ],
+        "reference_answer_index": 0,
+        "explanation": "介值定理需要区间连续。",
+        "unit_id": "NA_BISECTION",
+        "layered_rubric": {
+          "condition": "仅有端点异号还不足以使用介值定理；先核对闭区间连续性。",
+          "method": "分别列出端点函数值和整个区间的连续性，再判断能否推出区间内有根。",
+          "check": "为什么两端变号仍需连续性？"
+        }
+      },
+      "material_sha256": "ce48782d0a37645c40bbeb3d9532ec7cca58ae7c706902ec86bab0fda67392ef",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-width",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "width",
+        "prompt": "二分法当前区间 [1,1.125] 的中点误差上界是多少？",
+        "options": [
+          "0.125",
+          "0.0625",
+          "无法给界"
+        ],
+        "reference_answer_index": 1,
+        "explanation": "中点到区间任意点至多为半宽 0.0625。",
+        "unit_id": "NA_BISECTION",
+        "layered_rubric": {
+          "condition": "中点误差界来自半区间宽度，不是整段宽度。",
+          "method": "先算区间宽度 1.125−1，再除以 2；这个上界以根位于当前区间为前提。",
+          "check": "半宽为何是中点到区间内任一点的最远距离？"
+        }
+      },
+      "material_sha256": "44aa230d8dcd9aebb05314e30d0ab54f310c161b9d3fe7f4d2dd53c484d9c117",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-update",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "update",
+        "prompt": "f(x)=x²−5，x₀=2，一次标准牛顿更新是？",
+        "options": [
+          "2.25",
+          "2.5",
+          "1.75"
+        ],
+        "reference_answer_index": 0,
+        "explanation": "2−(4−5)/4=2.25。",
+        "unit_id": "NA_NEWTON",
+        "layered_rubric": {
+          "condition": "标准 Newton 更新需代入 f(x₀)、非零的 f′(x₀) 和减号。",
+          "method": "本题 f(2)=−1、f′(2)=4，按 x₁=2−f(2)/f′(2) 计算。",
+          "check": "这一步为何要先确认导数非零？"
+        }
+      },
+      "material_sha256": "b2c8e04b2c726d8e16b0e5798287b3c84c5cf686c8b70ab308e9c03fe6c72bc0",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-local",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "local",
+        "prompt": "单根牛顿法的二阶收敛结论通常是？",
+        "options": [
+          "任意初值均成立",
+          "满足条件时的局部结论",
+          "与初值无关"
+        ],
+        "reference_answer_index": 1,
+        "explanation": "单根、光滑性、非退化性和初值邻域共同限制适用范围。",
+        "unit_id": "NA_NEWTON",
+        "layered_rubric": {
+          "condition": "二阶收敛是有前提的局部结论，不能推广到任意初值。",
+          "method": "分开检查单根、局部光滑性、非退化导数与初值所在邻域。",
+          "check": "哪个条件限制了初值的范围？"
+        }
+      },
+      "material_sha256": "575f46cc4550d8289f47e28067ec834da9028dafdaf001b33bc26bf11401a9c5",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-residual",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "residual",
+        "prompt": "残差很小是否自动意味着根误差很小？",
+        "options": [
+          "总是",
+          "还需要误差界条件",
+          "残差就是根误差"
+        ],
+        "reference_answer_index": 1,
+        "explanation": "需要导数下界等条件才能由残差推出根误差上界。",
+        "unit_id": "NA_ROOT_FINDING",
+        "layered_rubric": {
+          "condition": "小残差本身不等于小根误差。",
+          "method": "若要从 |f(x)| 推出 |x−x*|，需另有适用区间与导数下界等依据。",
+          "check": "缩放函数后，根位置与残差分别怎样变化？"
+        }
+      },
+      "material_sha256": "a509029e1eb6f757a805b18d3e17d269de6cb991d54e70b4d1c3718287fac3d4",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B3-contraction",
+      "source": "apps/api/app/tutor/learning_workspace.py:QUESTIONS/ASSESSMENT_RUBRICS",
+      "material": {
+        "question_id": "contraction",
+        "prompt": "压缩映射求根的区间条件包括？",
+        "options": [
+          "只需一个点导数小于1",
+          "区间不变且一致压缩",
+          "只需最后两次迭代相近"
+        ],
+        "reference_answer_index": 1,
+        "explanation": "区间不变性和一致压缩缺一不可。",
+        "unit_id": "NA_FIXED_POINT",
+        "layered_rubric": {
+          "condition": "单点导数信息不能替代整个区间的一致压缩与自映条件。",
+          "method": "先检查 φ 把区间映回自身，再检查全区间统一 q<1，最后核对初值。",
+          "check": "只在一点有 |φ′|<1，缺少哪项区间证据？"
+        }
+      },
+      "material_sha256": "1c12611fffb82e1ad6ea02943112820133bf648028fcf4fb7c5aa5c4e9e31e80",
+      "review_focus": "Check reference answer, assumptions, feedback wording and every distractor without inferring student error cause.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B4-V01",
+      "source": "evaluation/r2/b4-variants-v1.json",
+      "material": {
+        "assignment_id": "newton-trace-dev-v1",
+        "static_rule_version": "newton-static-v3",
+        "scope": "For the assigned f(x)=x^2-2, x0=1, root-error goal and interval [1,2]. Code is read, never executed.",
+        "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x - fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+        "review_question": "Does the residual-stop hint incorrectly imply that this assigned run is wrong? Check the actual iterates and the root-error bound."
+      },
+      "material_sha256": "b9939d46749bcd2bf1f07b96ea90c788b469dfeb4d6ecd49fa749247c38b68b1",
+      "review_focus": "Blindly judge mathematical validity and whether each static hint could mislead; a hint is not a verdict.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B4-V02",
+      "source": "evaluation/r2/b4-variants-v1.json",
+      "material": {
+        "assignment_id": "newton-trace-dev-v1",
+        "static_rule_version": "newton-static-v3",
+        "scope": "For the assigned f(x)=x^2-2, x0=1, root-error goal and interval [1,2]. Code is read, never executed.",
+        "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) / 2 <= tol:\n            break\n        if x == 0:\n            break\n        x = (x + 2 / x) / 2\n        xs.append(x)\n    return xs\n",
+        "review_question": "Is this algebraically equivalent update and stated bound valid for the assigned initial value? Would a missing static hint prove correctness?"
+      },
+      "material_sha256": "18d83abf006fa7eec90117e0209d4d0d06463d0670242d55bc1a10661f1c1fa0",
+      "review_focus": "Blindly judge mathematical validity and whether each static hint could mislead; a hint is not a verdict.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B4-V03",
+      "source": "evaluation/r2/b4-variants-v1.json",
+      "material": {
+        "assignment_id": "newton-trace-dev-v1",
+        "static_rule_version": "newton-static-v3",
+        "scope": "For the assigned f(x)=x^2-2, x0=1, root-error goal and interval [1,2]. Code is read, never executed.",
+        "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x * x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x + fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+        "review_question": "Does the update sign match Newton's rule? Keep the sign issue distinct from the residual-stop explanation."
+      },
+      "material_sha256": "f5db80c683a2314eb1ff2529d3940cd28413179f328847153c994fc1c03268f4",
+      "review_focus": "Blindly judge mathematical validity and whether each static hint could mislead; a hint is not a verdict.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "B4-V04",
+      "source": "evaluation/r2/b4-variants-v1.json",
+      "material": {
+        "assignment_id": "newton-trace-dev-v1",
+        "static_rule_version": "newton-static-v3",
+        "scope": "For the assigned f(x)=x^2-2, x0=1, root-error goal and interval [1,2]. Code is read, never executed.",
+        "code": "def solve(x0, tol, max_iter):\n    xs = [x0]\n    x = x0\n    for _ in range(max_iter):\n        fx = x - 2\n        if abs(fx) <= tol:\n            break\n        if x == 0:\n            break\n        x = x - fx / (2 * x)\n        xs.append(x)\n    return xs\n",
+        "review_question": "Is fx actually f(x) for this assignment? Does the static residual rule establish that fact?"
+      },
+      "material_sha256": "ee5799cfe19fa5ffb5bfb4e290d2785888d6982b92fe72f07756a66916791d46",
+      "review_focus": "Blindly judge mathematical validity and whether each static hint could mislead; a hint is not a verdict.",
+      "author_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      },
+      "independent_human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "date": null,
+        "notes": null
+      }
+    }
+  ]
+}
