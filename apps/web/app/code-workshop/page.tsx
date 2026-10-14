@@ -1,46 +1,379 @@
 "use client";
-import {useEffect, useState} from "react";
-import {LearningShell, Notice, learningInput, learningButton, learningPanel} from "@/components/learning/learning-shell";
-import {learningRequest, parseTrace, stableRequestId, type CodeAssignment, type CodeSubmission} from "@/lib/learning-api";
-import {SavedCodeReview} from "@/components/learning/saved-code-review";
-import {getCurrentUserId} from "@/lib/demo-auth";
+import { useEffect, useState, useMemo } from "react";
+import { 
+  LearningShell, 
+  Notice, 
+  learningInput, 
+  learningButton, 
+  learningButtonSecondary,
+  AtelierFolioCard,
+  SocraticCompanionBubble 
+} from "@/components/learning/learning-shell";
+import { 
+  learningRequest, 
+  parseTrace, 
+  stableRequestId, 
+  type CodeAssignment, 
+  type CodeSubmission 
+} from "@/lib/learning-api";
+import { SavedCodeReview } from "@/components/learning/saved-code-review";
+import { getCurrentUserId } from "@/lib/demo-auth";
+import { 
+  Code2, 
+  Terminal, 
+  Clock, 
+  Sparkles, 
+  FileCode, 
+  AlertTriangle, 
+  CheckCircle2, 
+  ArrowRight,
+  TrendingDown,
+  Layers
+} from "lucide-react";
 
-const diagnosticLabels:Record<string,string>={supported:"证据支持",contradicted:"发现偏差",inconclusive:"尚不能确认",tool_error:"诊断失败"};
-const diagnosticLabel=(status:string|null|undefined)=>diagnosticLabels[status??""]??"未提交";
+const diagnosticLabels: Record<string, string> = {
+  supported: "证据支持",
+  contradicted: "发现偏差",
+  inconclusive: "尚不能确认",
+  tool_error: "诊断失败",
+};
+const diagnosticLabel = (status: string | null | undefined) => diagnosticLabels[status ?? ""] ?? "未提交";
 
-export default function CodeWorkshopPage(){
-  const [assignment,setAssignment]=useState<CodeAssignment|null>(null);
-  const [code,setCode]=useState("");const [trace,setTrace]=useState("");const [stop,setStop]=useState("none");
-  const [result,setResult]=useState<CodeSubmission|null>(null);const [history,setHistory]=useState<CodeSubmission[]>([]);
-  const [error,setError]=useState("");const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);
-  const draftKey=`code-workshop:${getCurrentUserId()}:${result?.id??"new"}`;
-  const restore=(s:CodeSubmission)=>{const key=`code-workshop:${getCurrentUserId()}:${s.id}`;setResult(s);setCode(localStorage.getItem(`${key}:code`)??s.code);setTrace(localStorage.getItem(`${key}:trace`)??s.iterates.join(", "));setStop(localStorage.getItem(`${key}:stop`)??s.stop_reason);window.history.replaceState(null,"",`/code-workshop?id=${encodeURIComponent(s.id)}`);};
-  useEffect(()=>{Promise.all([learningRequest<CodeAssignment>("/code-workshop/assignment"),learningRequest<{submissions:CodeSubmission[]}>("/code-workshop/submissions")]).then(async([a,b])=>{
-    setAssignment(a);setHistory(b.submissions);setCode(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:code`)??a.template);setTrace(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:trace`)??"");setStop(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:stop`)??"none");
-    const id=new URLSearchParams(window.location.search).get("id");if(id)restore(await learningRequest<CodeSubmission>(`/code-workshop/submissions/${encodeURIComponent(id)}`));
-  }).catch(e=>setError(e.message)).finally(()=>setLoading(false));},[]);
-  return <LearningShell title="把程序改动讲出依据" description="限定 Newton 作业的静态审阅首版。代码会保存与解析，手动提交的迭代轨迹另行诊断，二者分别呈现。">
-    <Notice error={error}/>{loading?<p role="status">正在恢复作业…</p>:!assignment?<p className="leading-7">作业暂不可用，请先处理上方提示后重新加载。</p>:<div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-      <aside><h2 className="text-xl font-semibold">{assignment.title}</h2><p className="mt-4 leading-7">f(x) = x² − 2<br/>x₀ = 1，区间 [1, 2]<br/>根误差目标 ≤ 10⁻⁴</p><p className="mt-4 break-words font-mono text-base sm:text-sm">{assignment.signature}</p><ul className="mt-5 list-disc space-y-3 pl-5 leading-7">{assignment.checks.map(c=><li key={c}>{c}</li>)}</ul><p className="mt-5 text-base sm:text-sm leading-7 text-ochre-700 dark:text-ochre-300">隔离执行环境尚未验收，学生代码不会在服务器运行。静态提示和手动轨迹不能证明代码运行正确。</p>
-        <h3 className="mt-7 font-semibold">提交版本</h3>{history.length===0?<p className="mt-3 text-[var(--text-secondary)]">还没有保存的版本。</p>:<ul className="mt-2">{[...history].reverse().map(s=><li key={s.id}><button type="button" disabled={busy} className="w-full rounded-lg p-3 text-left hover:bg-[var(--bg-hover)]" onClick={()=>restore(s)}>{s.previous_id?"修订版本":"首次提交"}<time className="mt-1 block text-base sm:text-xs text-[var(--text-muted)]">{new Date(s.created_at).toLocaleString("zh-CN")}</time></button></li>)}</ul>}
-      </aside>
-      <section className="min-w-0"><form onSubmit={async e=>{e.preventDefault();setBusy(true);setError("");try{
-        const values=trace.trim()?parseTrace(trace):[];
-        if(values.some(v=>typeof v!=="number"))throw new Error("作业轨迹暂只接受有限数值；请在实验台核对非有限观察。");
-        const body={assignment_id:assignment.id,code,iterates:values,stop_reason:stop,previous_id:result?.id??null};
-        const request_id=stableRequestId(localStorage,`${draftKey}:request`,body,()=>crypto.randomUUID());
-        const saved=await learningRequest<CodeSubmission>("/code-workshop/submissions",{...body,request_id});restore(saved);setHistory(previous=>[...previous.filter(s=>s.id!==saved.id),saved]);
-      }catch(e){setError(e instanceof Error?e.message:"审阅失败，代码仍保留");}finally{setBusy(false);}}}>
-        <label htmlFor="student-code" className="mb-3 block text-xl font-semibold">我的 Python 作业</label><p className="mb-3 leading-7 text-[var(--text-secondary)]">模板故意保留待修订的更新，请先检查再修改。提交后只做语法与限定规则审阅。</p><textarea id="student-code" required spellCheck={false} maxLength={8000} rows={14} className={`${learningInput} font-mono`} value={code} onChange={e=>{setCode(e.target.value);localStorage.setItem(`${draftKey}:code`,e.target.value);}}/>
-        <label htmlFor="code-trace" className="mt-6 mb-3 block font-semibold">可选：手动提交本地计算轨迹</label><p className="mb-3 text-base sm:text-sm leading-7 text-[var(--text-secondary)]">包含初值 1，用逗号或换行分隔。首版无法验证这些数值由上面的代码产生。</p><textarea id="code-trace" rows={3} className={`${learningInput} font-mono`} value={trace} onChange={e=>{setTrace(e.target.value);localStorage.setItem(`${draftKey}:trace`,e.target.value);}}/>
-        <label htmlFor="code-stop" className="mt-4 mb-2 block">轨迹的停止依据</label><select id="code-stop" className={learningInput} value={stop} onChange={e=>{setStop(e.target.value);localStorage.setItem(`${draftKey}:stop`,e.target.value);}}><option value="none">尚未停止 / 未提交轨迹</option><option value="residual">残差达到阈值</option><option value="step">相邻迭代差达到阈值</option><option value="exact">零残差</option><option value="iteration_limit">达到迭代上限</option></select>
-        <button type="submit" disabled={busy||!code.trim()} className={`${learningButton} mt-5`}>{busy?"保存与静态审阅中…":result?"保存修订并比较":"保存并静态审阅"}</button>
-      </form>
-      {result && <section className={`${learningPanel} mt-7`}><h2 className="text-xl font-semibold">已保存版本的静态审阅 · 代码未执行</h2><SavedCodeReview key={result.id} submission={result} edited={code!==result.code}/>
-        {result.trace_diagnosis && <div className="mt-5 border-t border-[var(--border-subtle)] pt-5"><h3 className="font-semibold">手动轨迹诊断 · {diagnosticLabel(result.trace_diagnosis.status)}</h3><p className="mt-2 leading-7">{result.trace_diagnosis.summary}</p><p className="mt-2 text-base sm:text-sm text-[var(--text-secondary)]">仅判断本次提交的数值过程，不计为独立成功或代码执行通过。</p></div>}
-        {result.comparison && <div className="mt-5 border-t border-[var(--border-subtle)] pt-5"><h3 className="font-semibold">与上一版本比较</h3><p className="mt-2 leading-7">代码{result.comparison.code_changed?"已有修改":"内容相同"}；静态提示 {result.comparison.previous_findings} → {result.comparison.current_findings} 项。</p><p className="mt-2 text-base sm:text-sm leading-7 text-[var(--text-secondary)]">提示数量减少不代表数学正确性提高。轨迹状态：{diagnosticLabel(result.comparison.previous_trace_status)} → {diagnosticLabel(result.comparison.current_trace_status)}。</p></div>}
-      </section>}
-      </section>
-    </div>}
-  </LearningShell>;
+export default function CodeWorkshopPage() {
+  const [assignment, setAssignment] = useState<CodeAssignment | null>(null);
+  const [code, setCode] = useState("");
+  const [trace, setTrace] = useState("");
+  const [stop, setStop] = useState("none");
+  const [result, setResult] = useState<CodeSubmission | null>(null);
+  const [history, setHistory] = useState<CodeSubmission[]>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const draftKey = `code-workshop:${getCurrentUserId()}:${result?.id ?? "new"}`;
+
+  const restore = (s: CodeSubmission) => {
+    const key = `code-workshop:${getCurrentUserId()}:${s.id}`;
+    setResult(s);
+    setCode(localStorage.getItem(`${key}:code`) ?? s.code);
+    setTrace(localStorage.getItem(`${key}:trace`) ?? s.iterates.join(", "));
+    setStop(localStorage.getItem(`${key}:stop`) ?? s.stop_reason);
+    window.history.replaceState(null, "", `/code-workshop?id=${encodeURIComponent(s.id)}`);
+  };
+
+  useEffect(() => {
+    Promise.all([
+      learningRequest<CodeAssignment>("/code-workshop/assignment"),
+      learningRequest<{ submissions: CodeSubmission[] }>("/code-workshop/submissions"),
+    ])
+      .then(async ([a, b]) => {
+        setAssignment(a);
+        setHistory(b.submissions);
+        setCode(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:code`) ?? a.template);
+        setTrace(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:trace`) ?? "");
+        setStop(localStorage.getItem(`code-workshop:${getCurrentUserId()}:new:stop`) ?? "none");
+        const id = new URLSearchParams(window.location.search).get("id");
+        if (id) restore(await learningRequest<CodeSubmission>(`/code-workshop/submissions/${encodeURIComponent(id)}`));
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 代码行数与行号槽
+  const lineCount = useMemo(() => {
+    return Math.max(code.split("\n").length, 12);
+  }, [code]);
+
+  // Tab 键支持缩进
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const nextCode = code.substring(0, start) + "    " + code.substring(end);
+      setCode(nextCode);
+      localStorage.setItem(`${draftKey}:code`, nextCode);
+      requestAnimationFrame(() => {
+        target.selectionStart = target.selectionEnd = start + 4;
+      });
+    }
+  };
+
+  return (
+    <LearningShell
+      title="算法工匠工坊 · 把程序改动讲出数学依据"
+      description="Newton 法经典作业的静态代码审阅与数值轨迹诊断。学生代码安全隔离不予执行，语法、逻辑漏洞与手动轨迹将分别呈现诊断依据。"
+    >
+      <Notice error={error} />
+
+      {loading ? (
+        <div className="p-12 text-center rounded-2xl border border-paper-300/70 bg-[var(--bg-card)] text-sm text-[var(--text-secondary)]">
+          正在恢复代码作业与版本树…
+        </div>
+      ) : !assignment ? (
+        <div className="p-12 text-center rounded-2xl border border-paper-300/70 bg-[var(--bg-card)] text-sm leading-relaxed text-cinnabar-700">
+          作业暂不可用，请先处理上方提示后重新加载。
+        </div>
+      ) : (
+        <div className="grid gap-8 lg:grid-cols-12 items-start">
+          {/* 左栏：规范看板与历史提交版本树 (3.5 cols) */}
+          <aside className="lg:col-span-4 space-y-6">
+            <AtelierFolioCard title={assignment.title} badge="Newton 法作业" badgeVariant="olive">
+              <div className="p-3.5 rounded-xl bg-dai-500/5 border border-dai-500/20 text-xs font-mono space-y-1 mb-4">
+                <div className="font-bold text-[var(--text-primary)]">目标方程：f(x) = x² − 2</div>
+                <div className="text-[var(--text-secondary)]">初值：x₀ = 1，定义区间 [1, 2]</div>
+                <div className="text-[var(--text-secondary)]">目标根误差：|x_k − √2| ≤ 10⁻⁴</div>
+              </div>
+
+              <div className="mb-4">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] font-semibold block mb-1">
+                  函数接口规范
+                </span>
+                <code className="block p-2 rounded-lg bg-paper-100 dark:bg-paper-800/60 border border-paper-200 dark:border-paper-700 text-xs font-mono text-olive-800 dark:text-olive-200 break-all">
+                  {assignment.signature}
+                </code>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] font-semibold block mb-2">
+                  静态规则要求
+                </span>
+                <ul className="space-y-1.5 text-xs text-[var(--text-secondary)] pl-1">
+                  {assignment.checks.map((c) => (
+                    <li key={c} className="flex items-start gap-1.5 leading-relaxed">
+                      <span className="text-olive-600 font-bold">•</span>
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-5 p-3 rounded-lg bg-ochre-500/10 border border-ochre-500/20 text-xs leading-relaxed text-ochre-800 dark:text-ochre-200">
+                隔离沙箱安全规范：学生代码不会在服务器直接执行。静态检查规则与手动轨迹不能等同于动态运行正确。
+              </div>
+
+              {/* 提交版本历史 */}
+              <div className="mt-6 border-t border-paper-200 dark:border-paper-800 pt-5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>提交与修订版本树</span>
+                </div>
+                {history.length === 0 ? (
+                  <p className="text-xs text-[var(--text-secondary)]">还没有保存的代码版本。</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {[...history].reverse().map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="w-full rounded-xl border border-paper-200 dark:border-paper-800 p-3 text-left hover:bg-olive-500/5 hover:border-olive-500/30 transition-all text-xs"
+                          onClick={() => restore(s)}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-semibold text-[var(--text-primary)]">
+                              {s.previous_id ? "修订版本" : "首次提交版本"}
+                            </span>
+                            <span className="font-mono text-[10px] text-[var(--text-muted)]">
+                              {s.id.slice(0, 8)}
+                            </span>
+                          </div>
+                          <time className="text-[11px] text-[var(--text-muted)] font-mono">
+                            {new Date(s.created_at).toLocaleString("zh-CN")}
+                          </time>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </AtelierFolioCard>
+          </aside>
+
+          {/* 右栏：水墨 IDE 代码编辑器与静态审阅 (8.5 cols) */}
+          <section className="lg:col-span-8 space-y-6">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setBusy(true);
+                setError("");
+                try {
+                  const values = trace.trim() ? parseTrace(trace) : [];
+                  if (values.some((v) => typeof v !== "number")) {
+                    throw new Error("作业轨迹暂只接受有限数值；请在数值实验台核对发散或非有限观察。");
+                  }
+                  const body = {
+                    assignment_id: assignment.id,
+                    code,
+                    iterates: values,
+                    stop_reason: stop,
+                    previous_id: result?.id ?? null,
+                  };
+                  const request_id = stableRequestId(localStorage, `${draftKey}:request`, body, () => crypto.randomUUID());
+                  const saved = await learningRequest<CodeSubmission>("/code-workshop/submissions", { ...body, request_id });
+                  restore(saved);
+                  setHistory((prev) => [...prev.filter((s) => s.id !== saved.id), saved]);
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : "审阅失败，代码仍保留");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              className="space-y-6"
+            >
+              {/* 水墨 IDE 编辑器 */}
+              <div className="rounded-2xl border border-paper-300 dark:border-paper-700 bg-[var(--bg-card)] shadow-soft overflow-hidden">
+                {/* 模拟编辑器窗口顶栏 */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-paper-100 dark:bg-paper-800/80 border-b border-paper-200 dark:border-paper-700">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-cinnabar-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-ochre-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-olive-500/80" />
+                    </div>
+                    <span className="ml-3 font-mono text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <FileCode className="w-3.5 h-3.5 text-olive-600" />
+                      newton_method.py
+                    </span>
+                  </div>
+                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-paper-200 dark:bg-paper-700 text-[var(--text-muted)] font-medium">
+                    Python 3 · UTF-8
+                  </span>
+                </div>
+
+                {/* 编辑器主体：行号槽 + 代码文本域 */}
+                <div className="flex bg-[var(--bg-input)] font-mono text-xs sm:text-sm">
+                  {/* 行号槽 Gutter */}
+                  <div className="select-none py-3 px-3 text-right text-[var(--text-muted)] border-r border-paper-200 dark:border-paper-800 bg-paper-50/50 dark:bg-paper-900/30 text-xs font-mono leading-6 opacity-60">
+                    {Array.from({ length: lineCount }).map((_, i) => (
+                      <div key={i}>{i + 1}</div>
+                    ))}
+                  </div>
+
+                  {/* 代码输入框 */}
+                  <textarea
+                    id="student-code"
+                    required
+                    spellCheck={false}
+                    maxLength={8000}
+                    rows={14}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-transparent p-3 leading-6 font-mono text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none resize-none"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      localStorage.setItem(`${draftKey}:code`, e.target.value);
+                    }}
+                  />
+                </div>
+
+                {/* 编辑器底栏 */}
+                <div className="px-4 py-2 bg-paper-100/70 dark:bg-paper-800/40 border-t border-paper-200 dark:border-paper-700/60 flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono">
+                  <span>模板保留了待修订的初始逻辑，请按规则修改。按 Tab 键可直接缩进 4 格。</span>
+                  <span>{code.length} 字符</span>
+                </div>
+              </div>
+
+              {/* 手动计算轨迹输入 */}
+              <AtelierFolioCard title="可选：手动提交本地推演轨迹" badge="数值校验" badgeVariant="dai">
+                <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">
+                  填写你在本地执行代码算出的实数序列（包含初值 1.0），用逗号或换行分隔。静态审阅系统将对这段轨迹的收敛性做独立诊断。
+                </p>
+                <textarea
+                  id="code-trace"
+                  rows={3}
+                  className={`${learningInput} font-mono text-xs`}
+                  value={trace}
+                  placeholder="例如：1.0, 1.5, 1.416667, 1.414216 ..."
+                  onChange={(e) => {
+                    setTrace(e.target.value);
+                    localStorage.setItem(`${draftKey}:trace`, e.target.value);
+                  }}
+                />
+
+                <div className="mt-4">
+                  <label htmlFor="code-stop" className="block text-xs font-semibold mb-1.5 text-[var(--text-secondary)]">
+                    该轨迹在本地的停机依据
+                  </label>
+                  <select
+                    id="code-stop"
+                    className={learningInput}
+                    value={stop}
+                    onChange={(e) => {
+                      setStop(e.target.value);
+                      localStorage.setItem(`${draftKey}:stop`, e.target.value);
+                    }}
+                  >
+                    <option value="none">尚未停止 / 未提交数值轨迹</option>
+                    <option value="residual">残差达到目标阈值 |f(x_k)| ≤ 10⁻⁴</option>
+                    <option value="step">{"相邻迭代差达到阈值 |x_k − x_{k-1}| ≤ 10⁻⁴"}</option>
+                    <option value="exact">零残差精确命中</option>
+                    <option value="iteration_limit">达到循环最大步数上限</option>
+                  </select>
+                </div>
+              </AtelierFolioCard>
+
+              {/* 提交按钮 */}
+              <div className="pt-2">
+                <button type="submit" disabled={busy || !code.trim()} className={learningButton}>
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  {busy ? "代码保存与静态审阅中…" : result ? "保存修订并进行版本比较" : "保存代码并开始静态审阅"}
+                </button>
+              </div>
+            </form>
+
+            {/* 审阅反馈与双版本对比 */}
+            {result && (
+              <AtelierFolioCard
+                title="已保存版本的静态审阅报告"
+                badge="静态规则"
+                badgeVariant="ochre"
+              >
+                <p className="text-xs text-[var(--text-secondary)] mb-4">
+                  代码保留于服务器版本库（未执行）。下方列出语法与命名规范分析结果：
+                </p>
+                <SavedCodeReview key={result.id} submission={result} edited={code !== result.code} />
+
+                {result.trace_diagnosis && (
+                  <div className="mt-6 border-t border-paper-200 dark:border-paper-800 pt-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className="w-4 h-4 text-olive-600" />
+                      <h4 className="font-semibold text-xs sm:text-sm text-[var(--text-primary)]">
+                        手动轨迹诊断 · {diagnosticLabel(result.trace_diagnosis.status)}
+                      </h4>
+                    </div>
+                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+                      {result.trace_diagnosis.summary}
+                    </p>
+                    <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                      此诊断仅评估提交数值本身的收敛性，不计为独立推演成功。
+                    </p>
+                  </div>
+                )}
+
+                {result.comparison && (
+                  <div className="mt-6 border-t border-paper-200 dark:border-paper-800 pt-5 space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 font-semibold text-[var(--text-primary)]">
+                      <Layers className="w-4 h-4 text-dai-600" />
+                      <span>与上一提交版本对比分析</span>
+                    </div>
+                    <p className="text-[var(--text-secondary)]">
+                      代码逻辑{result.comparison.code_changed ? "已有实质修改" : "内容保持相同"}；静态规则待修项：
+                      <strong className="font-mono mx-1">
+                        {result.comparison.previous_findings} → {result.comparison.current_findings} 项
+                      </strong>
+                    </p>
+                    <p className="text-[11px] text-[var(--text-muted)]">
+                      轨迹收敛判定：{diagnosticLabel(result.comparison.previous_trace_status)} → {diagnosticLabel(result.comparison.current_trace_status)}。
+                    </p>
+                  </div>
+                )}
+              </AtelierFolioCard>
+            )}
+          </section>
+        </div>
+      )}
+    </LearningShell>
+  );
 }
