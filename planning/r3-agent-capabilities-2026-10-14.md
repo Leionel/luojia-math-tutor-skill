@@ -45,45 +45,85 @@ UI总增量约7–11日；能力四片＋UI三片合计约17–27集中开发日
 
 ## 3A. Intelligent UI与Chat/学习工作区统一
 
-各工作区视觉统一标准与设计系统细化见专项规划：[学习工作区视觉重塑与统一规范 (UI/UX Specification)](r3-workspace-ui-design-and-unification-2026-10-14.md)。
+各工作区视觉统一标准与设计系统细化见专项规划：[学习工作区视觉重塑与统一规范 (UI/UX Specification)](r3-workspace-ui-design-and-unification-2026-10-14.md)。本节明确工作区架构、视觉规范落地、Agent 教学交互契约与 OpenUI 运行协议。
 
-### 产品组织与页面职责
+### 视觉规范与设计系统落地 (Scholarly Atelier Design System)
 
-桌面采用会话列表＋Chat＋可展开工作区；窄屏使用“对话/工作区”切换或可关闭的单层抽屉，保留输入、选中位置与回到触发点的键盘焦点。小操作在消息内完成，长阅读、曲线操作和代码编辑在工作区展开。原路由保留直达与浏览器返回能力；页面与Chat侧栏复用同一个领域View及数据加载，不嵌套整页iframe或另外造一份业务状态。
+为彻底解决“容器缺乏质感、表单孤岛、输入控件简陋、页面切页体验割裂”的问题，全面落地【现代书院水墨研学工坊（Scholarly Atelier）】设计语言：
 
-| 工作区 | 消息内组件 | 展开的领域View |
-|---|---|---|
-| Study | 当前任务卡、继续入口、下一步建议。 | 任务安排、过程提交、反馈确认及复习。 |
-| Reading | 原文片段、条件核对、针对性追问。 | 教材/上传原文、选段、笔记与条件标记。 |
-| Lab | 实验目的、参数对照、学生预测与结果摘要。 | 曲线、已揭示步骤、真实轨迹比较与历史。 |
-| Code Workshop | 保存代码片段、行号线索与修改建议。 | 编辑器、静态提示、保存版本比较与手动轨迹。 |
-| 自检/讲回 | 允许披露的任务入口/反馈/原句卡。 | 正式作答、交卷、原句和条件证据；锁内不挂答案组件。 |
+1. **字体与排印规范 (Typography)**：
+   * **研学题头与学术大标题**：放弃结构纤细怪异的装饰性字体（`ZCOOL XiaoWei`），全局采用经典学术宋体 **`Noto Serif SC`（思源宋体）**，呈现端庄严谨的学术治学骨骼。
+   * **正文与微交互说明**：采用 `Noto Sans SC`，字距舒展，行高 `leading-relaxed`。
+   * **数学公式与数值轨迹**：公式采用 `KaTeX` 精细渲染；算法代码、迭代步数与数值矩阵严格采用 **`JetBrains Mono`** 等宽字体。
+2. **六大工作区学术题头命名契约**：
+   * `/study`：`今日研学 · 循序推演`（日课流与多维收敛度量）
+   * `/reading`：`定理研读 · 前提与边界`（双栏学者批注与适用条件核对）
+   * `/lab`：`数值实验 · 动态探究`（即时算式蓝图、受控单变量探究与切线几何演播）
+   * `/assessment`：`认知自检 · 概念试金石`（三阶试金石卡牌推演与知识图谱雷达）
+   * `/teach-back`：`费曼讲坛 · 概念内化`（大字讲学幕布与原句条件引线）
+   * `/code-workshop`：`算法工坊 · 静态代码审阅`（水墨算法工匠 IDE 与行级诊断）
+3. **标准构件契约 (Atelier Component Primitives)**：
+   * **`AtelierFolioCard`（工坊书卷卡片）**：全站核心卡片容器。具备顶部微光发丝线（Hairline Highlight）、序号徽章槽（`01`、`02`）、语义印章（Olive 已核验 / Ochre 待补充 / Cinnabar 冲突 / Dai 依据）、柔和阴影（`shadow-soft`）与优雅的卡片底栏插槽。
+   * **`SocraticCompanionBubble`（苏格拉底伴读气泡）**：用于承载 Agent 的启发式思辨探针，避免直接灌输答案，引导学生重审前提。
+   * **`ConditionPillarBadge`（定理条件印章徽标）**：可交互的定理前提状态徽标（已具备 / 待补充 / 前提冲突 / 尚未映射），支持点击高亮原句。
 
-统一的是入口、讨论和对象连续性，不把所有用户历史合为一个会话。使用当前owner、session_id、已有task_id（存在时）与选中的domain ref绑定；跨工作区选段/步骤/代码版可变，每条历史消息的来源快照固定。更改函数、初值或代码后生成新对象/版本，Agent再次讨论前重读；当前Code作业是x²−2，不能把其它Lab函数的轨迹冒充该代码输出。
+### 产品组织与六大工作区认知映射
 
-### 共享会话与对象状态
+桌面采用“会话列表 ＋ Chat ＋ 可展开工作区”黄金三栏空间；窄屏使用“对话/工作区”无缝切换或可关闭单层抽屉，保留键盘焦点与输入草稿。小操作在消息卡片内即时完成，深层探究在展开的领域 View 进行。
 
-从当前 `useTutorConversation` 和 `TutorChat` 抽出共享控制器，统一会话加载、SSE、停止、错误/重试与消息刷新；原主Chat的编辑/截断重生成、图片核对、笔记和会话管理继续可用。页内伴学使用当前任务会话；明确开始独立专题时可以新建，不能因打开一个tab就另起对话。同一时刻只有一个主动发送控制，避免主Chat和页内聊天重复请求；切换工作区不自动中断流，用户停止/身份变化才取消相应请求。
+| 工作区 | 学生认知动作 (Input) | Agent 教学动作 (Policy) | 核心渲染组件 (Intelligent UI) | 展开的领域 View 资产 |
+|---|---|---|---|---|
+| **Study** | 提交求解近似值与迭代步长 | `confirm_local` / `offer_probe` | `StudyTaskCard`, `StepChips` | 日课三阶航标、残差衰减曲线、复习建议 |
+| **Reading** | 划选教材段落或定理前提 | `ask_missing_condition` / `explain` | `SourceExcerpt`, `ConditionChecklist` | 典籍原文、边注清单（Marginalia）、随堂批注 |
+| **Lab** | 输入待解函数、初值并预判 | `offer_experiment` | `PredictionForm`, `ParameterCompare` | 即时算式蓝图、切线动画画布、双轨迹叠图 |
+| **Code Workshop** | 编写算法代码并关联轨迹 | `correct_claim` / 行级诊断 | `CodeLineFeedback`, `DiffViewer` | 水墨 IDE、静态提示行号槽、版本比较树 |
+| **Assessment** | 作答概念与条件试金石题 | `three_tier_feedback` | `DiagnosticRadar`, `TierFeedback` | 三阶剥茧式反馈（条件探针➔支架➔全解） |
+| **Teach-back** | 自然语言阐释定理与边界 | `SocraticProbe` | `EvidenceThreading`, `ClaimCard` | 富文本讲学大幕布、原句与定理条件引线 |
 
-服务端LearningWorkspace/Repository仍保存正式任务、原话、实验和代码；浏览器只存可清理草稿与当前面板/焦点等视图状态，沿用私题同标签页暂存和账号切换清理。会话映射由服务端核对，localStorage键不是授权依据；URL只保留安全定位符，不放私题/代码全文。旧引用入口与历史会话兼容迁移，不批量改写历史记录。动作成功后重读对应实体、刷新当前卡片与工作区；历史快照显示当时状态，实时视图显示本次读取时间。
+统一的是入口、讨论和对象连续性，不把所有用户历史合为一个粗暴的大会话。使用当前 `owner`、`session_id`、已有 `task_id` 与选中的 `domain_ref` 强绑定。跨工作区选段、步骤、代码版可变，但每条历史消息的来源快照固定。
 
-### OpenUI接入范围与生成协议
+### 共享会话与对象状态生命周期
 
-首片即让模型选择和组合自有目录组件：文字/公式、SourceExcerpt、ConditionChecklist、PredictionForm、ParameterCompare、RunTraceChart、CodeLineFeedback、StudyTaskCard。目录复用现有React组件、数学排版与语义设计token；组件能力按当前任务/帮助状态开放。Agent选择呈现与反馈，实际数值、来源和可执行动作绑定服务端已验证对象，不能用模型生成曲线数据替代runner结果。
+从 `useTutorConversation` 和 `TutorChat` 抽出共享控制器，统一会话加载、SSE 流式交付、停止、错误重试与消息刷新；原主 Chat 的编辑/截断重生成、图片核对、笔记和会话管理继续可用：
 
-优先接 `@openuidev/react-lang` 与所需schema依赖，保持当前FastAPI/LangGraph/SSE；构建时输出目录prompt和版本供Python端使用，不因JavaScript集成包更换后端。SDK选定版本后锁定，先验证peer依赖、SSR边界、KaTeX、图表和格式遵循；已有模型可参与适配试验，不强制更换供应商或默认引入商业Gateway。
+```
+[用户在 Chat 提出主张] ──> [Agent 教学决策 (TeachingDecision)] ──> [组合 Intelligent UI 卡片]
+                                                                        │
+                                      ┌─────────────────────────────────┘
+                                      ▼
+                   [点击展开对应工作区 (如 Lab / Reading)]
+                                      │
+                                      ▼
+                   [工作区加载当前实体并承接上下文] 
+                   • 读取 localStorage 草稿恢复用户输入
+                   • 绑定 URL 安全定位符 (?id=...&step=...)
+                   • 严禁客户端造假：数值必须由后端 Runner 运算
+                                      │
+                                      ▼
+                   [学生在工作区完成探索 (如先预测、后运行)]
+                                      │
+                                      ▼
+                   [一键带回当前 Run/选段回到主 Chat 继续研讨]
+```
 
-在现有消息交付上增加独立UI块/事件与 `catalog_version`、稳定artifact_id、引用/version、结构及文字fallback；Markdown流、运行/Guard回执继续独立解释。完整消息持久化后才能启用业务按钮；部分流可展示只读骨架/已有文本，取消、未完成、缺关键字段、unknown组件或解析错误时锁定业务动作并提供文字/重新生成入口。目录schema合法不代表数学正确；renderer的宽容解析不能替代服务端关键字段校验。稳定组件ID与表单状态避免每次流更新重置已输入的内容，刷新后已保存业务状态由服务端恢复。
+服务端 `LearningWorkspace` / `Repository` 仍为业务唯一真理来源；浏览器仅保存可清理草稿（如 `lab-draft:${userId}`）与临时视图焦点。动作成功后重读实体并刷新工作区，历史快照维持当时数值，实时视图标明最新读取时刻。
 
-本片不放开现有静态Artifact的任意HTML/JS执行；intelligent UI由注册组件渲染。文章中的ChatGPT DIL编译器/沙箱是第三方逆向观察，不视为本项目可直接调用的官方API或必须复制的基础设施。
+### OpenUI 接入范围与生成协议
 
-### 动作桥与首片验收
+模型组合自有组件目录：`SourceExcerpt`、`ConditionChecklist`、`PredictionForm`、`ParameterCompare`、`RunTraceChart`、`CodeLineFeedback`、`StudyTaskCard`：
 
-动作分三类：本地展开/切图/选择已揭示行不请求模型；提交预测、预览、保存调用固定Learning API；“解释差异”等显式讨论动作把实际选择与引用送入同一会话。模型只能选择注册动作名与候选参数，不能指定任意URL/HTTP方法或自行签发可信artifact。所有动作经owner/session/message/artifact与当前source version重验；显示生成、执行、保存各自状态，UI出现不表示已经执行，导航不改变任务成绩。
+1. **真实性原则**：组件能力按当前任务/帮助状态开放。Agent 负责选择呈现逻辑与提问角度，实际数值、收敛状态、定理来源必须绑定服务端已验证对象，严禁用模型幻觉数值代替数值计算引擎的实际轨迹。
+2. **渐进增强与容错**：优先基于 `@openuidev/react-lang` 与 Zod Schema 构建。流式生成中，部分流仅展示只读骨架与已有文本；未完成、解析错误或关键字段缺失时，锁定业务执行按钮，提供文字 Fallback 与重试入口。
+3. **表单状态持久与防抖**：采用稳定的组件 ID（Stable Component Key），确保流式增量吐出时，用户正在输入的预测假说或参数不被重置清空。
 
-UI-a验收完整路径：Chat输入收敛判断→Agent组合条件/预测/实验建议卡→展开同一Lab→先预测再确认预览→观察实际新run→保存修订→同会话接续→刷新重开。检查原/新run和每条消息的引用未混、主Chat已有能力可用、侧栏/全页切换不丢草稿、停止/重试不双发、过期引用拒绝、独立检验无提前披露、部分生成无可执行按钮。桌面、约390px与键盘均能完成；UI-b/UI-c分别补选段/任务和代码版本路径。
+### 动作桥与端到端闭环验收
 
-阶段成果是能操作的闭环，不仅是静态卡片截图。记录组件/动作选择是否合适、错误/取消恢复、实际请求数与耗时；UI可用性、数学反馈、学习收益分开，不因渲染成功就宣称Agent推理提高。交互依据：`rule/inline-before-modal`、`rule/navigation-vs-action`、`rule/preserve-user-input`、`rule/cover-reachable-states` 与 `rule/keyboard-complete-flow`。
+动作分为三级：
+* **一级（本地交互）**：折叠展开、切换 Tab、查看已揭示步、代码行定位，不消耗模型或服务端预算；
+* **二级（受控执行）**：提交假说预测、请求预览、保存实验，调用固定的 Learning API（如 `/root-lab/runs`），由确定性算法引擎执行；
+* **三级（思辨研讨）**：“解释差异”、“追问发散原因”等显式探讨动作，将实际选择与实体引用送入共享会话。
+
+**完整闭环验收路径**：Chat 输入收敛判断 ➔ Agent 给出 `TeachingDecision` 并展示条件/预测卡 ➔ 展开同一 Lab ➔ 在参数配置台选定条件并先写下预测 ➔ 实时算式蓝图预演 ➔ 启动受控数值推演 ➔ 观测几何切线与迭代轨迹 ➔ 保存实验记录 ➔ 回到主 Chat 带着实验引用接续讨论 ➔ 页面刷新后历史引用与草稿完美恢复。严格覆盖移动端（~390px）、桌面端与键盘无障碍导航（`rule/keyboard-complete-flow`）。
 
 ## 4. R3.1：把证据转成合适的教学动作
 

@@ -632,3 +632,23 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
    - 根目录 `npm test` 971 项 Python 测试 + 88 项 Web 测试全部通过（全离线）。
    - 按分批要求提交：`b497bb2`、`67537af`。
    - 本地服务已启动（API :8000, Web :3000），6条工作区路径 curl 实测全部返回 HTTP 200。
+
+### 2026-10-14 学术字体系统重塑、自由数值实验工坊升级与 R3 §3A 深度完善
+
+针对用户提出的“标题字体不美观、自由实验卡片简陋以及继续完善 R3 规划中 3A 节”要求，完成以下升阶改造：
+1. **字体与题头重塑 (Scholarly Typography Overhaul)**：
+   - 彻底剔除结构纤细怪异的站酷小薇体（`ZCOOL XiaoWei`），全局改用经典学术宋体 **`Noto Serif SC`（思源宋体）** 作为大标题与典籍题头标准；
+   - 采纳方案 A 精炼学术型标题：`/study`（今日研学 · 循序推演）、`/reading`（定理研读 · 前提与边界）、`/lab`（数值实验 · 动态探究）、`/assessment`（认知自检 · 概念试金石）、`/teach-back`（费曼讲坛 · 概念内化）、`/code-workshop`（算法工坊 · 静态代码审阅）。
+2. **自由实验工作区重塑 (Open Lab Atelier Elevation)**：
+   - **左侧参数配置台**：替换为 `AtelierFolioCard`，提供快捷案题起点 Pills（⚡ 逼近 √2、🔄 拐点震荡、✂️ 二分收缩、🎯 不动点迭代），配备现代算法分段器（Segmented Control）、闭区间约束盒与科学假说先验框（含快捷灵感芯片）；
+   - **右侧动态算式蓝图与向导 (Live Blueprint Canvas)**：空态彻底告别简陋白框，构建出动态方程式大屏（实时根据输入渲染 $f(x)=0$ 与对应迭代格式）、参数快照 Pills、苏格拉底探究三步法向导以及 3 个一键起跑案题探针；
+   - **结果态推演卡片**：使用 `AtelierFolioCard` 统一收纳本次观测、预测复盘、切线播放器、历史单变量对照台与精致等宽斑马纹迭代数据表。
+3. **完善规划规范 §3A (R3 Intelligent UI & Workspace Architecture)**：
+   - 在 `planning/r3-agent-capabilities-2026-10-14.md` §3A 深度补充设计系统落地标准、六大工作区认知动作映射矩阵（Input ➔ Policy ➔ Component ➔ Artifact）、OpenUI 运行时真实性安全准则、以及端到端闭环动作桥验收标准。
+4. **验证与分批提交**：
+   - 前端 `npm run typecheck` 0 错误通过，`npm run lint` 0 错误通过。
+   - 遵循分批提交要求：
+     - `6c45680` style(web): adopt Noto Serif SC typography and refine academic workspace titles
+     - `e57406c` feat(web): elevate open lab parameters and canvas state cards
+     - 本轮提交文档规范修订。
+
