@@ -612,3 +612,23 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
 ### 2026-10-14 T04应用复核
 
 真实ASGI/编译工作流临时库诊断：首次harness压缩转交失败保留，修正后routing/Teacher/Guard/保存完成，先澄清指标与迭代条件、不给掌握度。Guard无repair不能归因数学核验；总provider3次，usage部分未知，未改业务/正式库/配置或push。回执planning/r2-t04-application-recheck-2026-10-14.md，暂不启动R3。
+
+### 2026-10-14 研学六大工作区视觉升级与先进UI经验重构
+
+落实补充规划 `planning/r3-workspace-ui-design-and-unification-2026-10-14.md`，深度重构提升 `study` / `reading` / `lab` / `assessment` / `teach-back` / `code-workshop` 六大研学工作区：
+1. **统一设计语言 (Atelier & Craft UI)**：
+   - 全局引入数学工程草纸微网格背景（28px radial dot pattern）与顶部玻璃化流光顶栏（backdrop-blur-md）。
+   - 顶部快捷工作区导航胶囊支持单键快捷键映射（`1`–`6`），带活动指示条。
+   - `AtelierFolioCard` 引入顶部微光发丝线（hairline highlight）与悬浮微升效果；按钮与输入框引入渐变质感与内阴影。
+2. **六大工作区专项美化与交互升级**：
+   - **`study` (今日日课)**：引入高质感方程展示卡片、快捷序列填入试算预设、全新 `NumericalTraceVisualizer` 收敛阶微雷达可视化、任务列表左侧重点色边饰条与未选中时的三阶研学推进微卡。
+   - **`reading` (典籍伴读)**：大纲章节按钮升级为左侧重点色饰条卡片，LaTeX 公式块升级为带一键复制的典籍卡片。
+   - **`lab` (数值实验)**：增加参与式探究与自由实验台的一级标签切换导航，解决未嵌入时两块视图重叠排布的问题。
+   - **`assessment` (试金石自检)**：顶部增加平滑答题进度条，多选题选项改为现代圆形字母徽标（`[A]`, `[B]`, `[C]`, `[D]`）与触感选中光圈，彻底移除原生裸露 radio。
+   - **`teach-back` (费曼讲学台)**：升级为“费曼讲坛模式”，新增三维论述支架（几何直观、定理前提、极端反例）；左侧下拉框重构成典籍卡片列表；论据映射增加锚定计数与状态微标。
+   - **`code-workshop` (算法工坊)**：编辑器增加未保存脏标记（amber pulse dot）、重置模板快捷键、底部状态栏（行列数/Spaces/字符数/UTF-8）、静态规则结构化微卡与本地轨迹收敛阶微雷达。
+3. **验证与交付**：
+   - `apps/web` 下 `npm run typecheck` 0 错误通过，`npm run lint` 0 错误通过。
+   - 根目录 `npm test` 971 项 Python 测试 + 88 项 Web 测试全部通过（全离线）。
+   - 按分批要求提交：`b497bb2`、`67537af`。
+   - 本地服务已启动（API :8000, Web :3000），6条工作区路径 curl 实测全部返回 HTTP 200。
