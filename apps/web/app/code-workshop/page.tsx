@@ -7,7 +7,8 @@ import {
   learningButton, 
   learningButtonSecondary,
   AtelierFolioCard,
-  SocraticCompanionBubble 
+  SocraticCompanionBubble,
+  NumericalTraceVisualizer
 } from "@/components/learning/learning-shell";
 import { 
   learningRequest, 
@@ -84,6 +85,19 @@ export default function CodeWorkshopPage() {
     return Math.max(code.split("\n").length, 12);
   }, [code]);
 
+  // 代码是否有未保存修改
+  const isDirty = (result && code !== result.code) || (!result && assignment && code !== assignment.template);
+
+  // 动态分析本地轨迹序列
+  const parsedTraceValues = useMemo(() => {
+    if (!trace.trim()) return [];
+    try {
+      return parseTrace(trace).filter((v): v is number => typeof v === "number");
+    } catch {
+      return [];
+    }
+  }, [trace]);
+
   // Tab 键支持缩进
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Tab") {
@@ -120,10 +134,15 @@ export default function CodeWorkshopPage() {
           {/* 左栏：规范看板与历史提交版本树 (3.5 cols) */}
           <aside className="lg:col-span-4 space-y-6">
             <AtelierFolioCard title={assignment.title} badge="Newton 法作业" badgeVariant="olive">
-              <div className="p-3.5 rounded-xl bg-dai-500/5 border border-dai-500/20 text-xs font-mono space-y-1 mb-4">
-                <div className="font-bold text-[var(--text-primary)]">目标方程：f(x) = x² − 2</div>
-                <div className="text-[var(--text-secondary)]">初值：x₀ = 1，定义区间 [1, 2]</div>
-                <div className="text-[var(--text-secondary)]">目标根误差：|x_k − √2| ≤ 10⁻⁴</div>
+              <div className="relative overflow-hidden p-4 rounded-xl bg-dai-500/[0.07] border border-dai-500/20 text-xs font-mono space-y-1.5 mb-4">
+                <div className="font-bold text-sm text-[var(--text-primary)]">目标方程：f(x) = x² − 2</div>
+                <div className="text-[var(--text-secondary)] flex items-center justify-between">
+                  <span>初值：x₀ = 1</span>
+                  <span>区间：[1, 2]</span>
+                </div>
+                <div className="pt-1.5 border-t border-dai-500/15 text-dai-800 dark:text-dai-200 font-semibold">
+                  收敛精度：|x_k − √2| ≤ 10⁻⁴
+                </div>
               </div>
 
               <div className="mb-4">
@@ -139,14 +158,14 @@ export default function CodeWorkshopPage() {
                 <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] font-semibold block mb-2">
                   静态规则要求
                 </span>
-                <ul className="space-y-1.5 text-xs text-[var(--text-secondary)] pl-1">
+                <div className="space-y-1.5 text-xs">
                   {assignment.checks.map((c) => (
-                    <li key={c} className="flex items-start gap-1.5 leading-relaxed">
-                      <span className="text-olive-600 font-bold">•</span>
-                      <span>{c}</span>
-                    </li>
+                    <div key={c} className="flex items-start gap-2 p-2 rounded-lg border border-paper-200 dark:border-paper-800 bg-[var(--bg-tertiary)] text-[var(--text-secondary)]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-olive-600 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{c}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
               <div className="mt-5 p-3 rounded-lg bg-ochre-500/10 border border-ochre-500/20 text-xs leading-relaxed text-ochre-800 dark:text-ochre-200">
@@ -235,11 +254,28 @@ export default function CodeWorkshopPage() {
                     <span className="ml-3 font-mono text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
                       <FileCode className="w-3.5 h-3.5 text-olive-600" />
                       newton_method.py
+                      {isDirty && (
+                        <span className="w-2 h-2 rounded-full bg-ochre-500 animate-pulse inline-block" title="代码已修改尚未保存" />
+                      )}
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-paper-200 dark:bg-paper-700 text-[var(--text-muted)] font-medium">
-                    Python 3 · UTF-8
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {assignment && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCode(assignment.template);
+                          localStorage.setItem(`${draftKey}:code`, assignment.template);
+                        }}
+                        className="text-[11px] px-2 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-paper-200 dark:hover:bg-paper-700 transition-all font-mono"
+                      >
+                        重置为初始模板
+                      </button>
+                    )}
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-paper-200 dark:bg-paper-700 text-[var(--text-muted)] font-medium">
+                      Python 3 · UTF-8
+                    </span>
+                  </div>
                 </div>
 
                 {/* 编辑器主体：行号槽 + 代码文本域 */}
@@ -270,8 +306,12 @@ export default function CodeWorkshopPage() {
 
                 {/* 编辑器底栏 */}
                 <div className="px-4 py-2 bg-paper-100/70 dark:bg-paper-800/40 border-t border-paper-200 dark:border-paper-700/60 flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono">
-                  <span>模板保留了待修订的初始逻辑，请按规则修改。按 Tab 键可直接缩进 4 格。</span>
-                  <span>{code.length} 字符</span>
+                  <span>按 Tab 键可直接缩进 4 格。函数必须符合规范接口。</span>
+                  <div className="flex items-center gap-3">
+                    <span>行数: {lineCount}</span>
+                    <span>字符: {code.length}</span>
+                    <span>Spaces: 4</span>
+                  </div>
                 </div>
               </div>
 
@@ -280,6 +320,23 @@ export default function CodeWorkshopPage() {
                 <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">
                   填写你在本地执行代码算出的实数序列（包含初值 1.0），用逗号或换行分隔。静态审阅系统将对这段轨迹的收敛性做独立诊断。
                 </p>
+
+                {/* 快捷填入典型序列 */}
+                <div className="flex flex-wrap gap-1.5 items-center mb-2.5">
+                  <span className="text-[var(--text-muted)] text-[11px]">快捷填入试算：</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const demo = "1.0, 1.5, 1.416667, 1.414216, 1.414214";
+                      setTrace(demo);
+                      localStorage.setItem(`${draftKey}:trace`, demo);
+                    }}
+                    className="px-2 py-0.5 rounded-md bg-paper-200/80 dark:bg-paper-800 text-[11px] text-olive-800 dark:text-olive-200 hover:bg-olive-500/10 hover:border-olive-500/30 border border-transparent transition-all font-mono"
+                  >
+                    标准牛顿二次收敛列 (x₀=1.0)
+                  </button>
+                </div>
+
                 <textarea
                   id="code-trace"
                   rows={3}
@@ -291,6 +348,9 @@ export default function CodeWorkshopPage() {
                     localStorage.setItem(`${draftKey}:trace`, e.target.value);
                   }}
                 />
+
+                {/* 动态收敛阶微雷达可视化 */}
+                <NumericalTraceVisualizer values={parsedTraceValues} />
 
                 <div className="mt-4">
                   <label htmlFor="code-stop" className="block text-xs font-semibold mb-1.5 text-[var(--text-secondary)]">

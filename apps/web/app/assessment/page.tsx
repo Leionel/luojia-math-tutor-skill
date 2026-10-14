@@ -149,17 +149,33 @@ export default function AssessmentPage() {
       ) : (
         <div className="max-w-4xl mx-auto space-y-6">
           {/* 状态看板 */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--bg-card)] border border-paper-300/80 dark:border-paper-700/80 shadow-soft">
-            <div>
-              <span className="text-xs font-mono uppercase text-[var(--text-muted)] font-semibold">自检状态</span>
-              <h2 className="font-title text-xl font-bold text-[var(--text-primary)]">
-                {completed
-                  ? `匹配得分 ${assessment.score?.percentage ?? Math.round((100 * (assessment.reference_matches ?? 0)) / assessment.questions.length)} 分 · ${assessment.reference_matches} / ${assessment.questions.length}`
-                  : `已确认进度 ${Object.keys(assessment.answers).length} / ${assessment.questions.length}`}
-              </h2>
+          <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-paper-300/80 dark:border-paper-700/80 shadow-soft space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono uppercase text-[var(--text-muted)] font-semibold">自检状态</span>
+                <h2 className="font-title text-xl font-bold text-[var(--text-primary)]">
+                  {completed
+                    ? `匹配得分 ${assessment.score?.percentage ?? Math.round((100 * (assessment.reference_matches ?? 0)) / assessment.questions.length)} 分 · ${assessment.reference_matches} / ${assessment.questions.length}`
+                    : `已确认进度 ${Object.keys(assessment.answers).length} / ${assessment.questions.length}`}
+                </h2>
+              </div>
+              <div className="text-xs font-medium px-3 py-1.5 rounded-full border border-paper-300 dark:border-paper-700 bg-[var(--bg-tertiary)]">
+                {completed ? "已完成交卷" : ended ? "已结束，不计分" : "首次确认选择后不能修改"}
+              </div>
             </div>
-            <div className="text-xs font-medium px-3 py-1.5 rounded-full border border-paper-300 dark:border-paper-700 bg-[var(--bg-tertiary)]">
-              {completed ? "已完成交卷" : ended ? "已结束，不计分" : "首次确认选择后不能修改"}
+
+            {/* 答题进度条 */}
+            <div className="w-full bg-paper-200 dark:bg-paper-800 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-olive-600 h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.round(
+                    ((completed ? assessment.questions.length : Object.keys(assessment.answers).length) /
+                      assessment.questions.length) *
+                      100
+                  )}%`,
+                }}
+              />
             </div>
           </div>
 
@@ -260,13 +276,14 @@ export default function AssessmentPage() {
                     <fieldset disabled={saved || busy || closed} className="space-y-2.5 my-2">
                       {q.options.map((o, i) => {
                         const isChosen = selected === i;
+                        const optionLetters = ["A", "B", "C", "D", "E", "F"];
                         return (
                           <label
                             key={o}
-                            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-xs sm:text-sm leading-relaxed transition-all ${
+                            className={`flex cursor-pointer items-start gap-3.5 rounded-xl border p-3.5 text-xs sm:text-sm leading-relaxed transition-all duration-150 ${
                               isChosen
-                                ? "border-olive-600 bg-olive-500/10 text-[var(--text-primary)] font-medium shadow-xs"
-                                : "border-paper-300 dark:border-paper-700/80 bg-[var(--bg-card)] hover:border-paper-400"
+                                ? "border-olive-600 bg-olive-500/10 text-[var(--text-primary)] font-medium shadow-xs ring-1 ring-olive-600/30"
+                                : "border-paper-300 dark:border-paper-700/80 bg-[var(--bg-card)] hover:border-paper-400 hover:bg-paper-50/50 dark:hover:bg-paper-800/40"
                             }`}
                           >
                             <input
@@ -275,9 +292,18 @@ export default function AssessmentPage() {
                               value={i}
                               checked={isChosen}
                               onChange={() => choose(q.id, i)}
-                              className="mt-0.5 h-4 w-4 shrink-0 accent-olive-600"
+                              className="sr-only"
                             />
-                            <span>{o}</span>
+                            <span
+                              className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-all ${
+                                isChosen
+                                  ? "bg-olive-600 text-white shadow-2xs"
+                                  : "border border-paper-300 dark:border-paper-700 text-[var(--text-muted)] bg-paper-100 dark:bg-paper-800"
+                              }`}
+                            >
+                              {optionLetters[i] ?? i + 1}
+                            </span>
+                            <span className="flex-1 pt-0.5">{o}</span>
                           </label>
                         );
                       })}

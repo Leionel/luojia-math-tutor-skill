@@ -8,7 +8,8 @@ import {
   learningButtonSecondary,
   learningInput, 
   AtelierFolioCard,
-  SocraticCompanionBubble
+  SocraticCompanionBubble,
+  NumericalTraceVisualizer
 } from "@/components/learning/learning-shell";
 import { 
   learningRequest, 
@@ -143,7 +144,7 @@ export default function StudyPage() {
   const parsedTraceValues = useMemo(() => {
     if (!trace.trim()) return [];
     try {
-      return parseTrace(trace);
+      return parseTrace(trace).filter((v): v is number => typeof v === "number");
     } catch {
       return [];
     }
@@ -271,10 +272,10 @@ export default function StudyPage() {
                       return (
                         <div
                           key={t.id}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                          className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                             isSelected
-                              ? "border-olive-600 bg-olive-500/5 shadow-xs ring-1 ring-olive-600/20"
-                              : "border-paper-200 dark:border-paper-800 bg-[var(--bg-input)] hover:border-paper-300"
+                              ? "border-l-4 border-l-olive-600 border-paper-300 dark:border-paper-700 bg-gradient-to-r from-olive-500/10 via-olive-500/5 to-transparent shadow-xs ring-1 ring-olive-600/20"
+                              : "border-l-4 border-l-transparent border-paper-200 dark:border-paper-800/80 bg-[var(--bg-card)] hover:border-paper-300 dark:hover:border-paper-700 hover:shadow-2xs hover:-translate-y-0.5"
                           }`}
                           onClick={() => start(t.id)}
                         >
@@ -339,14 +340,56 @@ export default function StudyPage() {
               <div className="lg:col-span-7">
                 {!task ? (
                   <AtelierFolioCard title="选择一项任务展开演算" badge="等待选择" badgeVariant="muted">
-                    <div className="py-12 text-center space-y-3">
-                      <Calculator className="w-10 h-10 text-[var(--text-muted)] mx-auto stroke-1" />
-                      <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
-                        从左侧日课列表中挑选一项，阅读记录、参考实验、练习完成与独立检验都会分别留痕保存。
-                      </p>
-                      <Link href="/reading" className="inline-flex items-center gap-1 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline">
-                        或者先去浏览教材选段 <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                    <div className="py-8 text-center space-y-5">
+                      <div className="w-12 h-12 rounded-2xl bg-olive-500/10 border border-olive-500/20 flex items-center justify-center mx-auto text-olive-700 dark:text-olive-300">
+                        <Calculator className="w-6 h-6 stroke-[1.5]" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-title text-base font-semibold text-[var(--text-primary)]">
+                          从左侧挑选任务，开启推演留痕
+                        </h3>
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+                          阅读记录、参考实验、练习完成与独立检验都会分别留痕保存，助教将实时分析收敛阶特征。
+                        </p>
+                      </div>
+
+                      {/* 研学推进三阶微卡 */}
+                      <div className="grid sm:grid-cols-3 gap-3 text-left pt-2">
+                        <div className="p-3.5 rounded-xl border border-paper-200 dark:border-paper-800/80 bg-[var(--bg-tertiary)]">
+                          <span className="text-[10px] font-mono uppercase text-olive-700 dark:text-olive-300 font-bold block mb-1">
+                            STEP 01
+                          </span>
+                          <div className="font-semibold text-xs text-[var(--text-primary)] mb-1">典籍与条件</div>
+                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                            明晰方程形态与初值，核验区间一阶导是否非零。
+                          </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl border border-paper-200 dark:border-paper-800/80 bg-[var(--bg-tertiary)]">
+                          <span className="text-[10px] font-mono uppercase text-dai-700 dark:text-dai-300 font-bold block mb-1">
+                            STEP 02
+                          </span>
+                          <div className="font-semibold text-xs text-[var(--text-primary)] mb-1">推演计算列</div>
+                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                            输入实数迭代点序列，自动绘制相邻步长衰减。
+                          </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl border border-paper-200 dark:border-paper-800/80 bg-[var(--bg-tertiary)]">
+                          <span className="text-[10px] font-mono uppercase text-ochre-700 dark:text-ochre-300 font-bold block mb-1">
+                            STEP 03
+                          </span>
+                          <div className="font-semibold text-xs text-[var(--text-primary)] mb-1">判定收敛阶</div>
+                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                            区分残差判定与区间萎缩，检验二次收敛性质。
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <Link href="/reading" className="inline-flex items-center gap-1.5 text-xs font-semibold text-olive-700 dark:text-olive-300 hover:underline">
+                          <span>或者先去浏览教材选段</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
                     </div>
                   </AtelierFolioCard>
                 ) : (
@@ -386,31 +429,48 @@ export default function StudyPage() {
                       </div>
                     ) : task.challenge && (
                       <div className="space-y-6">
-                        {/* 方程卡片 */}
-                        <div className="p-4 rounded-xl border border-dai-500/20 bg-dai-500/5">
-                          <span className="text-[11px] font-mono uppercase text-dai-700 dark:text-dai-300 tracking-wider font-semibold block mb-1">
-                            目标非线性方程
-                          </span>
-                          <div className="font-mono text-lg font-bold text-[var(--text-primary)]">
+                        {/* 方程展示卡片 (Elevated Math Studio Card) */}
+                        <div className="relative overflow-hidden p-5 rounded-2xl border border-dai-500/30 bg-gradient-to-br from-dai-500/[0.08] via-paper-50/40 dark:via-paper-900/40 to-transparent shadow-xs">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-mono uppercase text-dai-800 dark:text-dai-300 tracking-wider font-bold flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-dai-600" />
+                              目标非线性方程
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-dai-500/15 text-dai-800 dark:text-dai-200 text-[11px] font-mono font-medium border border-dai-500/25">
+                              Newton-Raphson
+                            </span>
+                          </div>
+                          <div className="font-mono text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-wide my-1.5">
                             f(x) = {task.challenge.function}
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
-                            <span>初始迭代点：<strong className="font-mono text-[var(--text-primary)]">{task.challenge.initial_value}</strong></span>
-                            <span>
-                              收敛目标：
-                              <strong className="font-mono text-[var(--text-primary)]">
+                          <div className="mt-3 pt-3 border-t border-dai-500/15 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[var(--text-secondary)]">
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-[var(--text-muted)]">初始迭代点:</span>
+                              <strong className="font-mono px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-paper-300 dark:border-paper-700 text-[var(--text-primary)]">
+                                x₀ = {task.challenge.initial_value}
+                              </strong>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-[var(--text-muted)]">收敛精度:</span>
+                              <strong className="font-mono px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-paper-300 dark:border-paper-700 text-[var(--text-primary)]">
                                 {task.challenge.goal === "root_error" ? "根误差" : "残差"} ≤ {task.challenge.tolerance}
                               </strong>
                             </span>
                             {task.challenge.interval && (
-                              <span>区间：<strong className="font-mono">[{task.challenge.interval.join(", ")}]</strong></span>
+                              <span className="flex items-center gap-1.5">
+                                <span className="text-[var(--text-muted)]">定义区间:</span>
+                                <strong className="font-mono px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-paper-300 dark:border-paper-700 text-[var(--text-primary)]">
+                                  [{task.challenge.interval.join(", ")}]
+                                </strong>
+                              </span>
                             )}
                           </div>
                         </div>
 
                         {task.state === "awaiting_check" && (
-                          <div className="p-3.5 rounded-xl border border-ochre-500/30 bg-ochre-500/5 text-xs text-ochre-800 dark:text-ochre-200">
-                            本次反馈已生成，请在下方点击“已读反馈，保存结果”，再按小珞的依据进行下一步修订或换题。
+                          <div className="p-3.5 rounded-xl border border-ochre-500/30 bg-ochre-500/5 text-xs text-ochre-800 dark:text-ochre-200 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-ochre-500 animate-pulse shrink-0" />
+                            <span>本次反馈已生成，请在下方点击“已读反馈，保存结果”，再按小珞的依据进行下一步修订或换题。</span>
                           </div>
                         )}
 
@@ -443,6 +503,24 @@ export default function StudyPage() {
                               </label>
                               <span className="text-[11px] text-[var(--text-muted)]">支持逗号、空格或换行分隔</span>
                             </div>
+
+                            {/* 快捷填入预设试算按钮 */}
+                            <div className="flex flex-wrap gap-1.5 items-center mb-2.5">
+                              <span className="text-[var(--text-muted)] text-[11px]">快捷填入试算：</span>
+                              <button
+                                type="button"
+                                disabled={locked}
+                                onClick={() => {
+                                  const demo = `${task.challenge?.initial_value ?? 1.5}, 1.416667, 1.414216, 1.414214`;
+                                  setTrace(demo);
+                                  localStorage.setItem(`learning-trace:${getCurrentUserId()}:${task.id}`, demo);
+                                }}
+                                className="px-2 py-0.5 rounded-md bg-paper-200/80 dark:bg-paper-800 text-[11px] text-olive-800 dark:text-olive-200 hover:bg-olive-500/10 hover:border-olive-500/30 border border-transparent transition-all font-mono"
+                              >
+                                填入典型二次收敛序列
+                              </button>
+                            </div>
+
                             <textarea
                               disabled={locked}
                               id="trace"
@@ -457,23 +535,8 @@ export default function StudyPage() {
                               }}
                             />
 
-                            {/* 动态解析的迭代微胶囊 */}
-                            {parsedTraceValues.length > 0 && (
-                              <div className="mt-3 p-3 rounded-xl bg-paper-100 dark:bg-paper-800/50 border border-paper-200 dark:border-paper-700/60 animate-fade-in">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-olive-800 dark:text-olive-200 mb-2">
-                                  <TrendingDown className="w-3.5 h-3.5" />
-                                  <span>已识别迭代步数（共 {parsedTraceValues.length} 个点）：</span>
-                                </div>
-                                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
-                                  {parsedTraceValues.map((val, i) => (
-                                    <span key={i} className="px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-paper-300 dark:border-paper-700">
-                                      <span className="text-[var(--text-muted)] mr-1">x_{i}=</span>
-                                      {typeof val === "number" ? val.toFixed(5) : String(val)}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            {/* 动态收敛阶微雷达可视化 */}
+                            <NumericalTraceVisualizer values={parsedTraceValues} />
                           </div>
 
                           <div>

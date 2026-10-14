@@ -118,10 +118,10 @@ export default function ReadingPage() {
                   <button
                     type="button"
                     key={u.id}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-left text-xs sm:text-sm transition-all ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl text-left text-xs sm:text-sm transition-all duration-200 ${
                       isSelected
-                        ? "bg-olive-600/10 text-olive-800 dark:text-olive-200 font-semibold border border-olive-600/30 shadow-xs"
-                        : "hover:bg-[var(--bg-hover)]/70 text-[var(--text-secondary)] border border-transparent"
+                        ? "border-l-4 border-l-olive-600 border-paper-300 dark:border-paper-700 bg-gradient-to-r from-olive-500/10 via-olive-500/5 to-transparent text-olive-900 dark:text-olive-100 font-semibold shadow-xs ring-1 ring-olive-600/20"
+                        : "border-l-4 border-l-transparent border-paper-200 dark:border-paper-800/80 bg-[var(--bg-card)] hover:border-paper-300 dark:hover:border-paper-700 hover:shadow-2xs hover:-translate-y-0.5 text-[var(--text-secondary)]"
                     }`}
                     onClick={() => {
                       setDoc(null);
@@ -238,7 +238,19 @@ export default function ReadingPage() {
                 </div>
 
                 {!doc && unit?.latex && (
-                  <div className="my-6 p-4 rounded-xl bg-paper-100 dark:bg-paper-800/60 border border-paper-200 dark:border-paper-700/60 overflow-x-auto shadow-xs">
+                  <div className="relative group my-6 p-4 sm:p-5 rounded-2xl bg-paper-100 dark:bg-paper-800/60 border border-paper-200 dark:border-paper-700/60 overflow-x-auto shadow-xs">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                        收敛迭代格式 (LaTeX)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(unit.latex!)}
+                        className="text-[10px] font-mono px-2 py-0.5 rounded bg-paper-200 dark:bg-paper-700 text-[var(--text-muted)] hover:text-olive-700 dark:hover:text-olive-300 hover:bg-olive-500/10 transition-all opacity-80 group-hover:opacity-100"
+                      >
+                        复制 LaTeX
+                      </button>
+                    </div>
                     <MathView math={unit.latex} display />
                   </div>
                 )}

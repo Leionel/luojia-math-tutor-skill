@@ -105,30 +105,37 @@ export default function TeachBackPage() {
           {/* 左栏：知识点选择与讲学历史谱系 (3.5 cols) */}
           <aside className="lg:col-span-4 space-y-6">
             <AtelierFolioCard title="选择要讲透的定理" badge="课题" badgeVariant="olive">
-              <label htmlFor="teach-unit" className="block text-xs font-semibold mb-2 text-[var(--text-secondary)]">
-                当前核心章节
-              </label>
-              <select
-                id="teach-unit"
-                className={learningInput}
-                value={selected}
-                disabled={busy}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setSelected(id);
-                  setResult(null);
-                  const key = `teach-back-draft:${getCurrentUserId()}:${id}:new`;
-                  setEvidence(evidenceDraft(key, {}));
-                  setText(localStorage.getItem(key) ?? "");
-                  window.history.replaceState(null, "", `/teach-back?unit=${encodeURIComponent(id)}`);
-                }}
-              >
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.title}
-                  </option>
-                ))}
-              </select>
+              <p className="text-xs text-[var(--text-secondary)] mb-3">
+                挑选一项课程章节，以讲授者视角梳理定理前提与反例：
+              </p>
+              <div className="space-y-1.5">
+                {units.map((u) => {
+                  const isSelected = selected === u.id;
+                  return (
+                    <button
+                      type="button"
+                      key={u.id}
+                      disabled={busy}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left text-xs sm:text-sm transition-all duration-200 ${
+                        isSelected
+                          ? "bg-olive-600/10 text-olive-800 dark:text-olive-200 font-semibold border border-olive-600/30 shadow-xs ring-1 ring-olive-600/20"
+                          : "hover:bg-[var(--bg-hover)]/70 text-[var(--text-secondary)] border border-transparent"
+                      }`}
+                      onClick={() => {
+                        setSelected(u.id);
+                        setResult(null);
+                        const key = `teach-back-draft:${getCurrentUserId()}:${u.id}:new`;
+                        setEvidence(evidenceDraft(key, {}));
+                        setText(localStorage.getItem(key) ?? "");
+                        window.history.replaceState(null, "", `/teach-back?unit=${encodeURIComponent(u.id)}`);
+                      }}
+                    >
+                      <span className="truncate pr-2">{u.title}</span>
+                      <BookOpen className={`w-4 h-4 shrink-0 ${isSelected ? "text-olive-600" : "text-[var(--text-muted)]"}`} />
+                    </button>
+                  );
+                })}
+              </div>
 
               <div className="mt-6 border-t border-paper-200 dark:border-paper-800 pt-5">
                 <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
@@ -179,21 +186,40 @@ export default function TeachBackPage() {
               </div>
             ) : (
               <>
-                {/* 课题指南条 */}
-                <div className="p-4 rounded-xl bg-olive-500/5 border border-olive-500/20 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-title text-lg font-semibold text-[var(--text-primary)]">{unit.title}</h2>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      讲清适用边界，给出一个切线无法收敛的反例。
-                    </p>
+                {/* 课题指南条与三维论述支架 (Socratic Podium Stage) */}
+                <div className="relative overflow-hidden p-5 rounded-2xl border border-olive-500/25 bg-gradient-to-br from-olive-500/[0.08] via-paper-50/40 dark:via-paper-900/40 to-transparent shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-mono uppercase text-olive-800 dark:text-olive-200 tracking-wider font-bold flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5 text-olive-600" />
+                        讲学课题 · 费曼探针
+                      </span>
+                      <h2 className="font-title text-lg sm:text-xl font-bold text-[var(--text-primary)]">{unit.title}</h2>
+                    </div>
+                    <Link
+                      href={`/reading?unit=${encodeURIComponent(unit.id)}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-olive-500/30 bg-[var(--bg-card)] text-olive-800 dark:text-olive-200 hover:bg-olive-500/10 transition-all shadow-2xs"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>对照教材原文依据 →</span>
+                    </Link>
                   </div>
-                  <Link
-                    href={`/reading?unit=${encodeURIComponent(unit.id)}`}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-olive-700 dark:text-olive-300 hover:underline"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>查阅教材原文依据 →</span>
-                  </Link>
+
+                  {/* 讲授三维思考支架 */}
+                  <div className="grid sm:grid-cols-3 gap-2.5 pt-3 border-t border-olive-500/15 text-xs">
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)]/80 border border-paper-200 dark:border-paper-800">
+                      <span className="font-semibold text-olive-800 dark:text-olive-200 block mb-0.5">1. 几何直观</span>
+                      <span className="text-[11px] text-[var(--text-secondary)]">用切线与横轴交点说明逼近原理</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)]/80 border border-paper-200 dark:border-paper-800">
+                      <span className="font-semibold text-dai-800 dark:text-dai-200 block mb-0.5">2. 定理前提</span>
+                      <span className="text-[11px] text-[var(--text-secondary)]">讲清为何必须 f&apos;(x) ≠ 0 与初值充分近</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)]/80 border border-paper-200 dark:border-paper-800">
+                      <span className="font-semibold text-ochre-800 dark:text-ochre-200 block mb-0.5">3. 经典反例</span>
+                      <span className="text-[11px] text-[var(--text-secondary)]">给出一个切线水平摆动或发散的反例</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 讲授与原句引线表单 */}
@@ -242,6 +268,24 @@ export default function TeachBackPage() {
                         </label>
                         <span className="text-[11px] text-[var(--text-muted)] font-mono">{text.length} / 4000 字符</span>
                       </div>
+
+                      {/* 快捷讲学论述参考 */}
+                      <div className="flex flex-wrap gap-1.5 items-center mb-2.5">
+                        <span className="text-[var(--text-muted)] text-[11px]">快捷讲学论述参考：</span>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            const demo = "牛顿法的核心是用当前切线交点逼近零点。当区间内一阶导数远离零时切线稳定，但如果选点靠近极值点或者出现拐点，切线斜率过平可能导致点被甩出区间。为了保证局部二次收敛，必须满足 f'(x) ≠ 0 以及初值充分靠近真实根。";
+                            setText(demo);
+                            localStorage.setItem(draftKey, demo);
+                          }}
+                          className="px-2 py-0.5 rounded-md bg-paper-200/80 dark:bg-paper-800 text-[11px] text-olive-800 dark:text-olive-200 hover:bg-olive-500/10 hover:border-olive-500/30 border border-transparent transition-all"
+                        >
+                          填入经典 Newton 收敛性讲学范本
+                        </button>
+                      </div>
+
                       <textarea
                         id="teach-text"
                         required
@@ -259,9 +303,14 @@ export default function TeachBackPage() {
 
                     {/* 原句与定理条件映射字段 */}
                     <div className="rounded-xl border border-paper-200 dark:border-paper-800 bg-[var(--bg-tertiary)] p-4 sm:p-5">
-                      <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-[var(--text-primary)]">
-                        <Quote className="w-4 h-4 text-olive-600" />
-                        <span>将我的论述原句与定理必备条件对应起来</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                          <Quote className="w-4 h-4 text-olive-600" />
+                          <span>将我的论述原句与定理必备条件对应起来</span>
+                        </div>
+                        <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full border border-olive-500/30 bg-olive-500/10 text-olive-800 dark:text-olive-200 font-medium">
+                          已锚定 {Object.values(evidence).filter((v) => v && v.trim()).length} / {unit.conditions.length} 项
+                        </span>
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed">
                         从上方讲学文本中截取一句话填入对应卡片。尚不确定的条件可留空，保存后逐项补充；对应原句不代表已自动核验正确。
@@ -269,14 +318,25 @@ export default function TeachBackPage() {
 
                       <div className="space-y-3">
                         {unit.conditions.map((c, i) => (
-                          <div key={c} className="rounded-xl border border-paper-300 dark:border-paper-700/80 bg-[var(--bg-card)] p-3">
-                            <label htmlFor={`teach-evidence-${i}`} className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
-                              前提 {i + 1}：{c}
-                            </label>
+                          <div key={c} className="rounded-xl border border-paper-300 dark:border-paper-700/80 bg-[var(--bg-card)] p-3.5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label htmlFor={`teach-evidence-${i}`} className="block text-xs font-semibold text-[var(--text-primary)]">
+                                前提 {i + 1}：{c}
+                              </label>
+                              {evidence[i]?.trim() ? (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-olive-500/10 text-olive-800 dark:text-olive-200 font-medium border border-olive-500/25">
+                                  已挂钩原句
+                                </span>
+                              ) : (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-paper-200 dark:bg-paper-800 text-[var(--text-muted)]">
+                                  待挂钩
+                                </span>
+                              )}
+                            </div>
                             <input
                               id={`teach-evidence-${i}`}
                               maxLength={4000}
-                              className={`${learningInput} text-xs py-2`}
+                              className={`${learningInput} text-xs py-2 font-serif`}
                               value={evidence[i] ?? ""}
                               onChange={(e) => {
                                 const value = { ...evidence, [i]: e.target.value };
