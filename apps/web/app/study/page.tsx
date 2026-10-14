@@ -1,16 +1,82 @@
 "use client";
 import Link from "next/link";
-import {useCallback, useEffect, useState} from "react";
-import {LearningShell, Notice, learningButton, learningInput, learningPanel} from "@/components/learning/learning-shell";
-import {learningRequest, parseTrace, stableRequestId, type StudyToday, type StudyTask, type LearningOverview} from "@/lib/learning-api";
-import {getCurrentUserId} from "@/lib/demo-auth";
-import {recommendationHref} from "@/lib/study-summary";
-import type {LearningRecommendation} from "@/lib/learning-api";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { 
+  LearningShell, 
+  Notice, 
+  learningButton, 
+  learningButtonSecondary,
+  learningInput, 
+  AtelierFolioCard,
+  SocraticCompanionBubble
+} from "@/components/learning/learning-shell";
+import { 
+  learningRequest, 
+  parseTrace, 
+  stableRequestId, 
+  type StudyToday, 
+  type StudyTask, 
+  type LearningOverview 
+} from "@/lib/learning-api";
+import { getCurrentUserId } from "@/lib/demo-auth";
+import { recommendationHref } from "@/lib/study-summary";
+import type { LearningRecommendation } from "@/lib/learning-api";
+import { 
+  Sparkles, 
+  CheckCircle2, 
+  ArrowRight, 
+  Clock, 
+  RefreshCw, 
+  BookOpen, 
+  Calculator,
+  ChevronRight,
+  TrendingDown
+} from "lucide-react";
 
-const states: Record<string, string> = {planned: "待开始", in_progress: "进行中", awaiting_check: "反馈待确认", verified_complete: "独立检验通过", assisted_complete: "练习已完成", needs_revision: "需要修订", unknown: "尚不能确认", read_complete: "已读"};
+const states: Record<string, { label: string; variant: "olive" | "ochre" | "cinnabar" | "dai" | "muted" }> = {
+  planned: { label: "待开始", variant: "muted" },
+  in_progress: { label: "演算中", variant: "ochre" },
+  awaiting_check: { label: "反馈待确认", variant: "ochre" },
+  verified_complete: { label: "独立检验通过", variant: "olive" },
+  assisted_complete: { label: "练习已完成", variant: "olive" },
+  needs_revision: { label: "需要修订", variant: "cinnabar" },
+  unknown: { label: "尚不能确认", variant: "muted" },
+  read_complete: { label: "已读完", variant: "olive" },
+};
 
-function PendingTasks({tasks,busy,start}:{tasks:StudyTask[];busy:boolean;start:(id:string)=>void}){
-  return tasks.length>0?<section className="mt-6 border-t border-[var(--border-subtle)] pt-5"><h3 className="font-semibold">其他未完成任务</h3><p className="mt-2 text-base sm:text-sm leading-7 text-[var(--text-secondary)]">包括此前开始的独立检验；刷新或跨日后仍可继续。</p><ul className="mt-3 space-y-3">{tasks.map(t=><li key={t.id}><button type="button" disabled={busy} onClick={()=>start(t.id)} className="min-h-12 text-left text-olive-700 dark:text-olive-300 underline">{t.title} · {states[t.state]??t.state}</button></li>)}</ul></section>:null;
+function PendingTasks({ tasks, busy, start }: { tasks: StudyTask[]; busy: boolean; start: (id: string) => void }) {
+  if (tasks.length === 0) return null;
+  return (
+    <section className="mt-8 rounded-xl border border-paper-300/70 dark:border-paper-800/70 bg-[var(--bg-card)] p-4 sm:p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <Clock className="w-4 h-4 text-olive-600" />
+        <h3 className="font-semibold text-sm">此前的探索与未完成任务</h3>
+      </div>
+      <p className="text-xs text-[var(--text-secondary)] mb-3">
+        包含开始过的独立检验；随时可恢复草稿并接续推演。
+      </p>
+      <ul className="space-y-2">
+        {tasks.map((t) => {
+          const st = states[t.state] ?? { label: t.state, variant: "muted" as const };
+          return (
+            <li key={t.id}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => start(t.id)}
+                className="w-full flex items-center justify-between p-2.5 rounded-lg border border-paper-200 dark:border-paper-800/60 hover:bg-olive-500/5 hover:border-olive-500/30 text-left text-xs sm:text-sm transition-all"
+              >
+                <span className="font-medium truncate pr-2">{t.title}</span>
+                <span className="shrink-0 text-xs text-olive-700 dark:text-olive-300 font-medium">
+                  {st.label} →
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
 export default function StudyPage() {
@@ -21,66 +87,485 @@ export default function StudyPage() {
   const [minutes, setMinutes] = useState(15);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [pending,setPending]=useState<StudyTask[]>([]);
-  const [recommendation,setRecommendation]=useState<LearningRecommendation|null>(null);
+  const [pending, setPending] = useState<StudyTask[]>([]);
+  const [recommendation, setRecommendation] = useState<LearningRecommendation | null>(null);
+
   const reload = useCallback(async () => {
-    const [value,overview]=await Promise.all([learningRequest<StudyToday>("/study/today"),learningRequest<LearningOverview>("/learning/overview")]);
-    setToday(value);setPending(overview.pending_tasks.filter(t=>!value.plan?.tasks.some(p=>p.id===t.id)));setRecommendation(overview.recommendation);
+    const [value, overview] = await Promise.all([
+      learningRequest<StudyToday>("/study/today"),
+      learningRequest<LearningOverview>("/learning/overview"),
+    ]);
+    setToday(value);
+    setPending(overview.pending_tasks.filter((t) => !value.plan?.tasks.some((p) => p.id === t.id)));
+    setRecommendation(overview.recommendation);
   }, []);
+
   const openTask = useCallback((value: StudyTask) => {
     setTask(value);
     const key = `learning-trace:${getCurrentUserId()}:${value.id}`;
     setTrace(localStorage.getItem(key) ?? value.feedback?.input?.iterates?.join(",") ?? "");
     setStop(localStorage.getItem(`${key}:stop`) ?? value.feedback?.input?.stop_reason ?? "residual");
-    window.history.replaceState(null,"",`/study?task=${encodeURIComponent(value.id)}`);
-  },[]);
+    window.history.replaceState(null, "", `/study?task=${encodeURIComponent(value.id)}`);
+  }, []);
+
   useEffect(() => {
-    reload().then(async()=>{
-      const selected = new URLSearchParams(window.location.search).get("task");
-      if (selected) openTask(await learningRequest<StudyTask>(`/study/tasks/${encodeURIComponent(selected)}`));
-    }).catch(e=>setError(e.message));
-  },[reload,openTask]);
+    reload()
+      .then(async () => {
+        const selected = new URLSearchParams(window.location.search).get("task");
+        if (selected) {
+          openTask(await learningRequest<StudyTask>(`/study/tasks/${encodeURIComponent(selected)}`));
+        }
+      })
+      .catch((e) => setError(e.message));
+  }, [reload, openTask]);
+
   const act = async (action: () => Promise<void>) => {
-    setBusy(true); setError("");
-    try {await action(); await reload();} catch(e) {setError(e instanceof Error ? e.message : "请求失败");} finally {setBusy(false);}
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "请求失败");
+    } finally {
+      setBusy(false);
+    }
   };
-  const locked = busy || !!task && ["planned", "awaiting_check", "assisted_complete", "verified_complete"].includes(task.state);
-  const start = (id: string) => act(async () => {openTask(await learningRequest<StudyTask>(`/study/tasks/${id}/start`, {}));});
-  const recommendedTaskId=recommendation&&/^\/study\?task=([A-Za-z0-9_-]{1,80})$/.exec(recommendationHref(recommendation))?.[1];
-  return <LearningShell title="今天，向前一步" description="从到期复习和过程修订开始。完成阅读后，提交自己的求根轨迹，再用新题检查理解。">
-    <Notice error={error} />
-    {!today ? <p role="status">{error ? "连接失败，可重新加载。" : "正在读取今日任务…"}</p> : <>
-      {!today.persistent && <p className="mb-5 text-base sm:text-sm text-ochre-700 dark:text-ochre-300">当前为内存演示模式，服务重启会清空记录。设置 COURSE_STORE_PATH 后可持久保存。</p>}
-      {recommendation&&<section aria-label="建议的下一步" className="mb-6 rounded-2xl border border-olive-500/25 bg-olive-500/5 p-5"><p className="text-xs font-medium tracking-wider text-olive-700 dark:text-olive-300">基于已保存状态 · 只读建议</p><h2 className="mt-2 font-title text-xl font-semibold">{recommendation.title}</h2><p className="mt-2 leading-7 text-[var(--text-secondary)]">{recommendation.reason}</p>{recommendedTaskId?<button type="button" disabled={busy} onClick={()=>act(async()=>openTask(await learningRequest<StudyTask>(`/study/tasks/${recommendedTaskId}`)))} className="mt-3 min-h-11 text-olive-700 underline underline-offset-4 dark:text-olive-300">打开原任务 →</button>:recommendationHref(recommendation)==="/study"?<a href="#study-content" className="mt-3 inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">在下方选择 →</a>:<Link href={recommendationHref(recommendation)} className="mt-3 inline-flex min-h-11 items-center text-olive-700 underline underline-offset-4 dark:text-olive-300">查看下一步 →</Link>}</section>}
-      <div id="study-content"/>
-      {!today.plan && !task ? <><div className={`${learningPanel} max-w-xl`}><h2 className="text-xl font-semibold">留一段时间给数值分析</h2><p className="my-4 text-base sm:text-sm text-[var(--text-secondary)]">最多安排三项任务，未完成的记录会保留。</p><label htmlFor="minutes" className="block mb-2">今日时长</label><select id="minutes" name="minutes" className={`${learningInput} mb-4`} value={minutes} onChange={e=>setMinutes(Number(e.target.value))}><option value={15}>15 分钟</option><option value={30}>30 分钟</option></select><button type="button" disabled={busy} className={learningButton} onClick={()=>act(async()=>setToday(await learningRequest<StudyToday>("/study/plans", {minutes})))}>生成今日任务</button></div><PendingTasks tasks={pending} busy={busy} start={start}/></> :
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <section><div className="mb-5 flex items-baseline justify-between"><h2 className="text-xl font-semibold">{today.local_date}</h2><span className="text-[var(--text-secondary)]">{today.plan ? `${today.plan.minutes} 分钟` : "此前任务"}</span></div>{today.plan?.stale && <p role="status" className="mb-4 text-cinnabar-700">课程版本已变化，旧任务保留供核对。</p>}
-          <ol className="divide-y divide-[var(--border-subtle)]">{(today.plan?.tasks??[]).map(t=><li key={t.id} className="py-5"><div className="flex items-start justify-between gap-3"><h3 className="text-lg font-medium">{t.title}</h3><span className="shrink-0 text-base sm:text-sm text-olive-700 dark:text-olive-300">{states[t.state] ?? t.state}</span></div><p className="mt-2 mb-3 text-base sm:text-sm leading-6 text-[var(--text-secondary)]">{t.reason}</p><button type="button" disabled={busy} onClick={()=>start(t.id)} className="text-olive-700 dark:text-olive-300 underline underline-offset-4">{t.state === "planned" ? "开始任务" : "继续 / 回看"}</button></li>)}</ol>
-          {today.reviews.length > 0 && <div className="mt-6 border-t border-[var(--border-subtle)] pt-5"><h3 className="font-semibold">后续复习</h3>{today.reviews.map(r=><p key={r.id} className="mt-2 text-base sm:text-sm text-[var(--text-secondary)]">{r.id === "NA_NEWTON" ? "牛顿法" : r.id} · {new Date(r.due_at).toLocaleDateString("zh-CN")} · {today.review_source_status[r.id]==="current"?`阶段 ${Math.max(0,r.stage+1)}`:"旧来源待核对；阶段仅作历史记录"}</p>)}</div>}
-          <PendingTasks tasks={pending} busy={busy} start={start}/>
-          {!today.plan && <button type="button" className="mt-5 min-h-12 text-olive-700 dark:text-olive-300 underline" onClick={()=>{setTask(null);window.history.replaceState(null,"","/study");}}>安排今天的新计划</button>}
-        </section>
-        <section className={`${learningPanel} min-w-0 self-start`}>
-          {!task ? <><h2 className="text-xl font-semibold">从左侧选一项任务</h2><p className="mt-3 leading-7 text-[var(--text-secondary)]">阅读记录、参考实验、练习完成与独立检验会分别保存。</p><Link href="/reading" className="mt-6 inline-block text-olive-700 underline">先看看教材伴读</Link></> : <>
-            <h2 className="text-xl font-semibold">{task.title}</h2>
-            {task.state === "planned" && <button type="button" disabled={busy} className={`${learningButton} mt-4`} onClick={()=>start(task.id)}>开始这项任务</button>}
-            {task.kind === "reading" ? <><p className="my-4 text-[var(--text-secondary)]">阅读课程摘录，核对适用条件，尝试条件辨析。</p><Link href={`/reading?unit=${task.unit_id}`} className="inline-block text-olive-700 dark:text-olive-300 underline">打开对应材料 →</Link><button type="button" disabled={busy || task.state === "read_complete"} className={`${learningButton} block mt-5`} onClick={()=>act(async()=>openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/read-complete`,{})))}>标记已读</button></> : task.challenge && <>
-              <p className="mt-4 break-words font-mono">f(x) = {task.challenge.function}</p><p className="mt-2 text-base sm:text-sm text-[var(--text-secondary)]">初值 {task.challenge.initial_value}；目标：{task.challenge.goal === "root_error" ? "根误差" : "残差"} ≤ {task.challenge.tolerance}</p>
-              {task.challenge.interval && <p className="mt-2 text-base sm:text-sm text-[var(--text-secondary)]">核对区间 [{task.challenge.interval.join(", ")}]；轨迹至少含初值与一次更新。</p>}
-              {task.state === "awaiting_check" && <p role="status" className="mt-4 leading-7 text-ochre-700 dark:text-ochre-300">本次反馈等待确认。先点击下方“已读反馈，保存结果”，再按反馈修订或换题。</p>}
-              <form className="mt-5 space-y-4" onSubmit={e=>{e.preventDefault(); act(async()=>{const attempt={...task.challenge, iterates:parseTrace(trace), brackets:[], stop_reason:stop}; const request_id=stableRequestId(localStorage,`learning-request:${getCurrentUserId()}:${task.id}`,attempt,()=>crypto.randomUUID()); openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/attempts`,{request_id,attempt}));});}}>
-                <label className="block" htmlFor="trace">我的迭代值（包含初值）</label><textarea disabled={locked} id="trace" name="trace" className={`${learningInput} font-mono`} rows={5} placeholder="用逗号或换行分隔，填写自己算出的轨迹" value={trace} onChange={e=>{setTrace(e.target.value); localStorage.setItem(`learning-trace:${getCurrentUserId()}:${task.id}`,e.target.value);}} />
-                <label className="block" htmlFor="stop">我的停止依据</label><select disabled={locked} id="stop" name="stop" className={learningInput} value={stop} onChange={e=>{setStop(e.target.value);localStorage.setItem(`learning-trace:${getCurrentUserId()}:${task.id}:stop`,e.target.value);}}><option value="residual">残差达到阈值</option><option value="step">相邻迭代差达到阈值</option><option value="exact">零残差</option><option value="iteration_limit">达到迭代上限</option><option value="none">尚未停止</option></select><button type="submit" disabled={locked} className={learningButton}>核对我的过程</button>
-              </form>
-              {task.feedback && <div className="mt-6 border-t border-[var(--border-subtle)] pt-5"><h3 className="font-semibold">过程反馈</h3><p className="mt-3 leading-7">{task.feedback.summary}</p>{task.feedback.next_probe && <p className="mt-2 leading-7 text-[var(--text-secondary)]">{task.feedback.next_probe}</p>}<p className="mt-3 text-olive-700 dark:text-olive-300">{states[task.state]}</p>
-                {task.feedback.delivery === "pending" && <button type="button" disabled={busy} className={`${learningButton} mt-4`} onClick={()=>act(async()=>openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/ack`,{attempt_id:task.feedback?.attempt_id,feedback_id:task.feedback?.feedback_id})))}>已读反馈，保存结果</button>}
-                {["assisted_complete","verified_complete"].includes(task.state) && <button type="button" disabled={busy} className={`${learningButton} mt-4`} onClick={()=>act(async()=>openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/probe`,{})))}>换一题独立检验</button>}
-              </div>}
-            </>}
-          </>}
-        </section>
-      </div>}
-    </>}
-  </LearningShell>;
+
+  const locked = busy || (!!task && ["planned", "awaiting_check", "assisted_complete", "verified_complete"].includes(task.state));
+  const start = (id: string) => act(async () => {
+    openTask(await learningRequest<StudyTask>(`/study/tasks/${id}/start`, {}));
+  });
+
+  const recommendedTaskId = recommendation && /^\/study\?task=([A-Za-z0-9_-]{1,80})$/.exec(recommendationHref(recommendation))?.[1];
+
+  // 动态分析输入的轨迹点
+  const parsedTraceValues = useMemo(() => {
+    if (!trace.trim()) return [];
+    try {
+      return parseTrace(trace);
+    } catch {
+      return [];
+    }
+  }, [trace]);
+
+  return (
+    <LearningShell
+      title="今日日课 · 向前一步"
+      description="从到期复习与过程修订开始。完成核心阅读后，亲手推演并提交求根迭代序列，再通过独立算题检验理解深浅。"
+    >
+      <Notice error={error} />
+
+      {!today ? (
+        <div className="flex items-center justify-center p-12 rounded-2xl border border-paper-300/60 bg-[var(--bg-card)]">
+          <RefreshCw className="w-5 h-5 animate-spin text-olive-600 mr-3" />
+          <p className="text-sm text-[var(--text-secondary)]">{error ? "连接失败，可重新加载。" : "正在展开今日研学计划…"}</p>
+        </div>
+      ) : (
+        <>
+          {!today.persistent && (
+            <div className="mb-6 flex items-center gap-2 p-3.5 rounded-xl border border-ochre-500/30 bg-ochre-500/5 text-xs sm:text-sm text-ochre-800 dark:text-ochre-200">
+              <span className="font-semibold">演示提示：</span>
+              当前为内存演示模式，服务重启后将恢复初始状态；配置 COURSE_STORE_PATH 可持久化保留成长记录。
+            </div>
+          )}
+
+          {/* 助教基于历史记录的主动建议 */}
+          {recommendation && (
+            <div className="mb-8">
+              <SocraticCompanionBubble
+                title="助教小珞的今日导学建议"
+                content={
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] mb-1">
+                      {recommendation.title}
+                    </h3>
+                    <p className="mb-3 text-xs sm:text-sm leading-relaxed">{recommendation.reason}</p>
+                    {recommendedTaskId ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => act(async () => openTask(await learningRequest<StudyTask>(`/study/tasks/${recommendedTaskId}`)))}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline"
+                      >
+                        打开对应历史任务 <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : recommendationHref(recommendation) === "/study" ? (
+                      <a href="#study-content" className="inline-flex items-center gap-1.5 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline">
+                        在下方任务单中挑选 <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <Link href={recommendationHref(recommendation)} className="inline-flex items-center gap-1.5 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline">
+                        前往该知识模块 <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </div>
+                }
+              />
+            </div>
+          )}
+
+          <div id="study-content" />
+
+          {/* 尚未生成今日任务时的启程卡 */}
+          {!today.plan && !task ? (
+            <div className="max-w-2xl mx-auto space-y-6">
+              <AtelierFolioCard
+                index="01"
+                title="开启今日数值研学日课"
+                badge="规划时长"
+                badgeVariant="olive"
+              >
+                <p className="text-sm text-[var(--text-secondary)] mb-5 leading-relaxed">
+                  系统将根据艾宾浩斯复习曲线与前日推演表现，合理精选不超过 3 项核心微任务。
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="minutes" className="block text-xs font-semibold mb-2 text-[var(--text-secondary)]">
+                      今日研习时间预算
+                    </label>
+                    <select
+                      id="minutes"
+                      name="minutes"
+                      className={`${learningInput} max-w-xs`}
+                      value={minutes}
+                      onChange={(e) => setMinutes(Number(e.target.value))}
+                    >
+                      <option value={15}>15 分钟 · 快速温故与重点单步验算</option>
+                      <option value={30}>30 分钟 · 完整收敛推导与深度对比</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={learningButton}
+                    onClick={() => act(async () => setToday(await learningRequest<StudyToday>("/study/plans", { minutes })))}
+                  >
+                    <Sparkles className="w-4 h-4 mr-1.5" />
+                    生成今日研学航标
+                  </button>
+                </div>
+              </AtelierFolioCard>
+              <PendingTasks tasks={pending} busy={busy} start={start} />
+            </div>
+          ) : (
+            /* 任务与演练双栏空间 */
+            <div className="grid gap-8 lg:grid-cols-12 items-start">
+              {/* 左侧：日课推进航标 (4 cols) */}
+              <div className="lg:col-span-5 space-y-5">
+                <AtelierFolioCard
+                  title={today.local_date}
+                  badge={today.plan ? `${today.plan.minutes} 分钟预算` : "此前任务"}
+                  badgeVariant="dai"
+                >
+                  {today.plan?.stale && (
+                    <div className="mb-4 p-3 rounded-lg bg-cinnabar-500/10 border border-cinnabar-500/20 text-xs text-cinnabar-700">
+                      课程知识库版本已更新，已保留旧版本供前后核对。
+                    </div>
+                  )}
+
+                  <div className="space-y-3 mt-2">
+                    {(today.plan?.tasks ?? []).map((t, idx) => {
+                      const isSelected = task?.id === t.id;
+                      const st = states[t.state] ?? { label: t.state, variant: "muted" as const };
+                      return (
+                        <div
+                          key={t.id}
+                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? "border-olive-600 bg-olive-500/5 shadow-xs ring-1 ring-olive-600/20"
+                              : "border-paper-200 dark:border-paper-800 bg-[var(--bg-input)] hover:border-paper-300"
+                          }`}
+                          onClick={() => start(t.id)}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-paper-200 dark:bg-paper-800 text-[var(--text-muted)] font-bold">
+                                {idx + 1}
+                              </span>
+                              <h4 className="font-semibold text-sm text-[var(--text-primary)]">{t.title}</h4>
+                            </div>
+                            <span className="text-xs px-2 py-0.5 rounded-full border border-current text-olive-700 dark:text-olive-300 font-medium shrink-0">
+                              {st.label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[var(--text-secondary)] leading-relaxed pl-6 mb-2">
+                            {t.reason}
+                          </p>
+                          <div className="pl-6 flex items-center text-xs font-medium text-olive-700 dark:text-olive-300">
+                            <span>{t.state === "planned" ? "开始这项任务" : "继续 / 回顾推演"}</span>
+                            <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {today.reviews.length > 0 && (
+                    <div className="mt-6 border-t border-paper-200 dark:border-paper-800 pt-4">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>后续巩固计划</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs text-[var(--text-secondary)]">
+                        {today.reviews.map((r) => (
+                          <div key={r.id} className="flex items-center justify-between py-1 border-b border-paper-100 dark:border-paper-800/40">
+                            <span>{r.id === "NA_NEWTON" ? "牛顿法求根" : r.id}</span>
+                            <span className="font-mono">{new Date(r.due_at).toLocaleDateString("zh-CN")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!today.plan && (
+                    <button
+                      type="button"
+                      className="mt-4 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline"
+                      onClick={() => {
+                        setTask(null);
+                        window.history.replaceState(null, "", "/study");
+                      }}
+                    >
+                      重新安排今日的新任务 →
+                    </button>
+                  )}
+                </AtelierFolioCard>
+
+                <PendingTasks tasks={pending} busy={busy} start={start} />
+              </div>
+
+              {/* 右侧：演算与检验核心舞台 (7 cols) */}
+              <div className="lg:col-span-7">
+                {!task ? (
+                  <AtelierFolioCard title="选择一项任务展开演算" badge="等待选择" badgeVariant="muted">
+                    <div className="py-12 text-center space-y-3">
+                      <Calculator className="w-10 h-10 text-[var(--text-muted)] mx-auto stroke-1" />
+                      <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
+                        从左侧日课列表中挑选一项，阅读记录、参考实验、练习完成与独立检验都会分别留痕保存。
+                      </p>
+                      <Link href="/reading" className="inline-flex items-center gap-1 text-xs font-medium text-olive-700 dark:text-olive-300 hover:underline">
+                        或者先去浏览教材选段 <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </AtelierFolioCard>
+                ) : (
+                  <AtelierFolioCard
+                    title={task.title}
+                    badge={states[task.state]?.label ?? task.state}
+                    badgeVariant={states[task.state]?.variant ?? "muted"}
+                  >
+                    {task.state === "planned" && (
+                      <div className="mb-4">
+                        <button type="button" disabled={busy} className={learningButton} onClick={() => start(task.id)}>
+                          正式开始这项任务
+                        </button>
+                      </div>
+                    )}
+
+                    {task.kind === "reading" ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                          重点阅读知识包摘录，仔细核对定理的前提约束，尝试条件辨析。
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          <Link href={`/reading?unit=${task.unit_id}`} className={learningButtonSecondary}>
+                            <BookOpen className="w-4 h-4 text-olive-600" />
+                            打开对应教材材料
+                          </Link>
+                          <button
+                            type="button"
+                            disabled={busy || task.state === "read_complete"}
+                            className={learningButton}
+                            onClick={() => act(async () => openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/read-complete`, {})))}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            标记本篇已读完
+                          </button>
+                        </div>
+                      </div>
+                    ) : task.challenge && (
+                      <div className="space-y-6">
+                        {/* 方程卡片 */}
+                        <div className="p-4 rounded-xl border border-dai-500/20 bg-dai-500/5">
+                          <span className="text-[11px] font-mono uppercase text-dai-700 dark:text-dai-300 tracking-wider font-semibold block mb-1">
+                            目标非线性方程
+                          </span>
+                          <div className="font-mono text-lg font-bold text-[var(--text-primary)]">
+                            f(x) = {task.challenge.function}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
+                            <span>初始迭代点：<strong className="font-mono text-[var(--text-primary)]">{task.challenge.initial_value}</strong></span>
+                            <span>
+                              收敛目标：
+                              <strong className="font-mono text-[var(--text-primary)]">
+                                {task.challenge.goal === "root_error" ? "根误差" : "残差"} ≤ {task.challenge.tolerance}
+                              </strong>
+                            </span>
+                            {task.challenge.interval && (
+                              <span>区间：<strong className="font-mono">[{task.challenge.interval.join(", ")}]</strong></span>
+                            )}
+                          </div>
+                        </div>
+
+                        {task.state === "awaiting_check" && (
+                          <div className="p-3.5 rounded-xl border border-ochre-500/30 bg-ochre-500/5 text-xs text-ochre-800 dark:text-ochre-200">
+                            本次反馈已生成，请在下方点击“已读反馈，保存结果”，再按小珞的依据进行下一步修订或换题。
+                          </div>
+                        )}
+
+                        {/* 交互输入表单 */}
+                        <form
+                          className="space-y-4"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            act(async () => {
+                              const attempt = {
+                                ...task.challenge,
+                                iterates: parseTrace(trace),
+                                brackets: [],
+                                stop_reason: stop,
+                              };
+                              const request_id = stableRequestId(
+                                localStorage,
+                                `learning-request:${getCurrentUserId()}:${task.id}`,
+                                attempt,
+                                () => crypto.randomUUID()
+                              );
+                              openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/attempts`, { request_id, attempt }));
+                            });
+                          }}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label htmlFor="trace" className="block text-xs font-semibold text-[var(--text-secondary)]">
+                                我的迭代点序列（包含初值 x₀）
+                              </label>
+                              <span className="text-[11px] text-[var(--text-muted)]">支持逗号、空格或换行分隔</span>
+                            </div>
+                            <textarea
+                              disabled={locked}
+                              id="trace"
+                              name="trace"
+                              className={`${learningInput} font-mono text-xs sm:text-sm`}
+                              rows={4}
+                              placeholder="例如：1.0, 1.416667, 1.414216 ..."
+                              value={trace}
+                              onChange={(e) => {
+                                setTrace(e.target.value);
+                                localStorage.setItem(`learning-trace:${getCurrentUserId()}:${task.id}`, e.target.value);
+                              }}
+                            />
+
+                            {/* 动态解析的迭代微胶囊 */}
+                            {parsedTraceValues.length > 0 && (
+                              <div className="mt-3 p-3 rounded-xl bg-paper-100 dark:bg-paper-800/50 border border-paper-200 dark:border-paper-700/60 animate-fade-in">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-olive-800 dark:text-olive-200 mb-2">
+                                  <TrendingDown className="w-3.5 h-3.5" />
+                                  <span>已识别迭代步数（共 {parsedTraceValues.length} 个点）：</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+                                  {parsedTraceValues.map((val, i) => (
+                                    <span key={i} className="px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-paper-300 dark:border-paper-700">
+                                      <span className="text-[var(--text-muted)] mr-1">x_{i}=</span>
+                                      {typeof val === "number" ? val.toFixed(5) : String(val)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label htmlFor="stop" className="block text-xs font-semibold mb-2 text-[var(--text-secondary)]">
+                              我判定的停机依据
+                            </label>
+                            <select
+                              disabled={locked}
+                              id="stop"
+                              name="stop"
+                              className={learningInput}
+                              value={stop}
+                              onChange={(e) => {
+                                setStop(e.target.value);
+                                localStorage.setItem(`learning-trace:${getCurrentUserId()}:${task.id}:stop`, e.target.value);
+                              }}
+                            >
+                              <option value="residual">残差达到目标阈值 |f(x_k)| ≤ ε</option>
+                              <option value="step">{"相邻迭代差达到阈值 |x_k - x_{k-1}| ≤ ε"}</option>
+                              <option value="exact">零残差精准命中</option>
+                              <option value="iteration_limit">已到达最大迭代步数上限</option>
+                              <option value="none">尚未停止 / 未达到停机条件</option>
+                            </select>
+                          </div>
+
+                          <button type="submit" disabled={locked} className={learningButton}>
+                            <Sparkles className="w-4 h-4 mr-1.5" />
+                            核对我的计算过程
+                          </button>
+                        </form>
+
+                        {/* 过程反馈区块 */}
+                        {task.feedback && (
+                          <div className="mt-8 border-t border-paper-200 dark:border-paper-800 pt-5">
+                            <SocraticCompanionBubble
+                              title="小珞对你演算过程的诊断"
+                              content={
+                                <div className="space-y-3">
+                                  <p className="font-medium text-sm text-[var(--text-primary)] leading-relaxed">
+                                    {task.feedback.summary}
+                                  </p>
+                                  {task.feedback.next_probe && (
+                                    <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-dai-500/20 text-xs">
+                                      <span className="font-semibold text-dai-700 dark:text-dai-300 mr-1">思考探针：</span>
+                                      {task.feedback.next_probe}
+                                    </div>
+                                  )}
+                                  <div className="pt-2 flex flex-wrap gap-3">
+                                    {task.feedback.delivery === "pending" && (
+                                      <button
+                                        type="button"
+                                        disabled={busy}
+                                        className={learningButton}
+                                        onClick={() =>
+                                          act(async () =>
+                                            openTask(
+                                              await learningRequest<StudyTask>(`/study/tasks/${task.id}/ack`, {
+                                                attempt_id: task.feedback?.attempt_id,
+                                                feedback_id: task.feedback?.feedback_id,
+                                              })
+                                            )
+                                          )
+                                        }
+                                      >
+                                        已读反馈，保存本次结果
+                                      </button>
+                                    )}
+                                    {["assisted_complete", "verified_complete"].includes(task.state) && (
+                                      <button
+                                        type="button"
+                                        disabled={busy}
+                                        className={learningButtonSecondary}
+                                        onClick={() => act(async () => openTask(await learningRequest<StudyTask>(`/study/tasks/${task.id}/probe`, {})))}
+                                      >
+                                        换一题独立检验 →
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </AtelierFolioCard>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </LearningShell>
+  );
 }
