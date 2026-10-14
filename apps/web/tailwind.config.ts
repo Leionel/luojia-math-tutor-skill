@@ -116,8 +116,8 @@ const config: Config = {
       fontFamily: {
         sans: ["Noto Sans SC", "system-ui", "-apple-system", "sans-serif"],
         serif: ["Noto Serif SC", "STSong", "serif"],
-        title: ["ZCOOL XiaoWei", "Noto Serif SC", "serif"],
-        display: ["ZCOOL XiaoWei", "Noto Serif SC", "serif"],
+        title: ["Noto Serif SC", "STSong", "serif"],
+        display: ["Noto Serif SC", "STSong", "serif"],
         body: ["Noto Sans SC", "system-ui", "sans-serif"],
         "ui-sans": ["Noto Sans SC", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],

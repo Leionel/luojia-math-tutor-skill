@@ -116,8 +116,8 @@ export default function CodeWorkshopPage() {
 
   return (
     <LearningShell
-      title="算法工匠工坊 · 把程序改动讲出数学依据"
-      description="Newton 法经典作业的静态代码审阅与数值轨迹诊断。学生代码安全隔离不予执行，语法、逻辑漏洞与手动轨迹将分别呈现诊断依据。"
+      title="算法工坊 · 静态代码审阅"
+      description="Newton 法等经典作业的代码规范核对与数值轨迹诊断。学生代码安全隔离不予执行，呈现严密数学依据。"
     >
       <Notice error={error} />
 

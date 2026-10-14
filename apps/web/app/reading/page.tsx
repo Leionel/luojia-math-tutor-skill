@@ -99,8 +99,8 @@ export default function ReadingPage() {
 
   return (
     <LearningShell
-      title="带着条件读教材 · 学者伴读"
-      description="从精选课程摘录追溯公式与严密适用边界，也可同步研读自上传的教材原稿。留下思考与证据锚点。"
+      title="定理研读 · 前提与边界"
+      description="精读教材经典选段与公式推导，严密辨析定理适用的前置约束条件，留下学者思考与证据锚点。"
     >
       <Notice error={error} />
 

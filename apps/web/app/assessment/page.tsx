@@ -78,8 +78,8 @@ export default function AssessmentPage() {
 
   return (
     <LearningShell
-      title="非线性方程求根 · 试金石自检"
-      description="六道辨析题，深度覆盖适用条件、单步更新与停止依据。首次有效作答将留痕存盘，交卷后支持三层递进解析与弱项定向复盘。"
+      title="认知自检 · 概念试金石"
+      description="非线性方程求根辨析试题，全面覆盖适用条件、单步更新与停止依据。支持三层剥茧式解析与弱项定向复盘。"
     >
       <Notice error={error} />
 

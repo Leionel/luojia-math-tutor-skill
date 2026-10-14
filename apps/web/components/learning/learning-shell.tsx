@@ -44,12 +44,12 @@ export function LearningShell({
   }, []);
 
   const navItems = [
-    { href: "/study", label: "今日日课", keyHint: "1", icon: Layers },
-    { href: "/reading", label: "典籍伴读", keyHint: "2", icon: BookOpen },
+    { href: "/study", label: "今日研学", keyHint: "1", icon: Layers },
+    { href: "/reading", label: "定理研读", keyHint: "2", icon: BookOpen },
     { href: "/lab", label: "数值实验", keyHint: "3", icon: Sparkles },
     { href: "/assessment", label: "认知自检", keyHint: "4", icon: CheckCircle2 },
-    { href: "/teach-back", label: "讲学台", keyHint: "5", icon: HelpCircle },
-    { href: "/code-workshop", label: "代码工坊", keyHint: "6", icon: ArrowUpRight },
+    { href: "/teach-back", label: "费曼讲坛", keyHint: "5", icon: HelpCircle },
+    { href: "/code-workshop", label: "算法工坊", keyHint: "6", icon: ArrowUpRight },
   ];
 
   return (

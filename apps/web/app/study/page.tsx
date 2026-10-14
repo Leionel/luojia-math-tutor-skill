@@ -152,8 +152,8 @@ export default function StudyPage() {
 
   return (
     <LearningShell
-      title="今日日课 · 向前一步"
-      description="从到期复习与过程修订开始。完成核心阅读后，亲手推演并提交求根迭代序列，再通过独立算题检验理解深浅。"
+      title="今日研学 · 循序推演"
+      description="结合到期复习与前日推演，有序完成核心任务；亲手计算并提交迭代序列，验证局部收敛阶。"
     >
       <Notice error={error} />
 
