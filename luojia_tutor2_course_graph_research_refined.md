@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+## 2026-10-14 独立评测后的R3边界
+
+独立只读任务确认当前固定题证据消融不能代表Graph/全系统增益，也没有经真人审核的当前应用模型失败簇。R3暂不启动，Graph/Memory/BKT/额外Agent或自主实验设计无新证据支持。优先补少量数学签核、实际模型回答与R4过程展示；Demo中精确卡与Agent的贡献须分别说明，不能仅由修订推断Agent教学价值。原报告 `planning/r2-independent-evaluation-2026-10-14.md`，现状入口 `planning/README.md`；本轮无图谱/业务改动。
+
 ## 2026-10-14 E1消融与展示口径
 
 N01/N02两题的应用harness仅增减固定题exact_check，保留相同参考轨迹、学生原话与周围prompt；因此只能研究精确证据增益，不代表裸LLM/全系统或Graph收益。四条固定回复验证采集链，无真实模型数学分或真人gold；线性/讲回公平对照待建立。R4源码讲解明确原句绑定、领域Oracle与模型意见边界，以及当前root_proposal仍由学生改参数，未交付Agent实验设计。当前状态见 `planning/README.md`。

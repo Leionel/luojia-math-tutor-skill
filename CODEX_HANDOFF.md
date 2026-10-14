@@ -1,5 +1,9 @@
 # CODEX 交接文档
 
+## 2026-10-14 新任务独立评测与R3决策
+
+用户要求开独立页面评测，已新建并完成任务“R2 独立评测与 R3 启动判断”（01a13991-415a-7343-a7e3-4bd3cfe83832）。只读基线23aace8，复跑两对固定ASGI采集与包check，复算N01/N02，复用既有全量/E0产物，无业务改动/付费/正式库。原报告归档 `planning/r2-independent-evaluation-2026-10-14.md`：R2工程准备成立、质量未验，R3暂不启动；live采集字段尚需补，零学习写入应限定mastery/mistake/独立成绩，Demo修订不能单独归因Agent（精确卡也已提供证据）。AI独立复核不是真人gold；下一步少量数学签核与真实UI段排练，真实模型获准后采集/评分。若当前应用反复出现缺条件过早判错，再考虑一片澄清策略，Graph/Memory/Agent实验设计仍无启动证据。唯一现状入口 `planning/README.md`；主任务仅归档报告/索引，未实施R3，原dirty保留。
+
 ## 2026-10-14 R2/E1应用配对与R4展示材料
 
 用户授权开做数学/教学能力对照与Demo准备，起点 `97c8869`。新增 `scripts/r2_application_capture.py`：N01/N02各D0/D1新临时双库、真实ASGI/SSE与编译工作流/消息保存，只在harness移除D0 exact_check，全Teacher输入除此一致；四条固定回复、外连阻断、真实模型评分0、无人gold、无学习写入。新两题rubric仍Agent准备/待真人审核；线性/讲回四题not_run，D0有同一参考轨迹，不能冒称裸LLM对比。根JSON/API933/Web80、最终定向5/5、R2 E0 13/13合同20/20实例通过。本轮无业务源码/Web改动，复用前轮构建证据。R4脚本/源码链/追问在 `planning/r4-demo-and-source-guide-2026-10-14.md`，视频/真实模型段未录。现状只看 `planning/README.md`，详细回执仍R2文件；无人签署/供应商预算未过时不开live，R1质量/R0 Gate未解除，原dirty保留，未push。

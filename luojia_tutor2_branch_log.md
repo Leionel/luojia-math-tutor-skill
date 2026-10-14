@@ -1,5 +1,9 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-14 独立评测归档
+
+新建独立只读任务在23aace8复跑R2两对固定应用采集、材料check与数学代入，保留原dirty，无代码更改。报告 `planning/r2-independent-evaluation-2026-10-14.md`：R2工程准备可信、数学教学质量待验，R3暂不启动；先少量真人判据与R4真实UI段，live需补阶段/回答/计量；演示须区分精确卡与Agent贡献，零学习写入限mastery/mistake/独立成绩。独立AI意见不升gold。主任务仅归档/索引，现状只看 `planning/README.md`。
+
 ## 2026-10-14 E1应用采集与R4材料接续
 
 两道公开Newton题的D0/D1离线应用采集复用真实ASGI/SSE、编译图与保存，harness只移除D0 exact_check；新临时双库每臂重置，全prompt仅该字段不同。四条固定回复不是模型质量，外连拒绝、无学习写入，rubric待真人。R4真实闭环120秒脚本与三条源码讲解已写，录像/真实模型段未做。根JSON/API933/Web80、定向5/5、E0追加13/13合同20/20实例通过；不改业务代码，不重复Web构建。见R2回执和 `planning/r4-demo-and-source-guide-2026-10-14.md`；唯一入口 `planning/README.md`。原dirty保留，无付费/正式库/push。
