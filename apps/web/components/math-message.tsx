@@ -17,6 +17,8 @@ import type {LabRun} from "@/lib/learning-api";
 import type {TutorMeta} from "@/lib/api";
 import Link from "next/link";
 import {StudyResumeCard} from "./learning/study-resume-card";
+import {IntelligentUI,TeachingDecisionReceipt} from "./learning/intelligent-ui";
+import {resolveIntelligentUI,type WorkspaceIntent} from "@/lib/intelligent-ui";
 
 function cleanMathForSpeech(text: string) {
   return text
@@ -280,7 +282,7 @@ export function MathMessage({
   webSearchReport,
   answerGuard,
   agentRun,
-  learningMeta, messageId, learningContext, actionsDisabled, onLabSaved,
+  learningMeta, messageId, learningContext, actionsDisabled, onLabSaved,onOpenWorkspace,
   reviewData,
   onSimilar,
   onEdit,
@@ -308,6 +310,7 @@ export function MathMessage({
   learningContext?: LearningContextRef;
   actionsDisabled?: boolean;
   onLabSaved?: (run: LabRun) => void;
+  onOpenWorkspace?: (intent:WorkspaceIntent)=>void;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
@@ -463,7 +466,7 @@ export function MathMessage({
               )}
               {rootDiagnosis && <RootDiagnosticCard report={rootDiagnosis} sessionId={sessionId} complete={!isGenerating && !isThinking && !isIncomplete} onRevision={onRootRevision} onProbe={onRootProbe}/> }
               <LatexRenderer content={content} complete={!isGenerating && !isThinking && !isIncomplete} />
-              {!isUser && !isGenerating && !isThinking && !isIncomplete && <RootActionCards meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onSaved={onLabSaved}/>}
+              {!isUser && !isGenerating && !isThinking && !isIncomplete && <><TeachingDecisionReceipt value={learningMeta?.teaching_decision}/><IntelligentUI meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onWorkspace={onOpenWorkspace} onSaved={onLabSaved}/>{!resolveIntelligentUI(learningMeta,messageId)?.artifact.selections.some(item=>item.component==="ParameterCompare")&&<RootActionCards meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onSaved={onLabSaved}/>}</>}
               {isThinking && (
                 <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
                   <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />

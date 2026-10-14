@@ -1,9 +1,9 @@
 "use client";
 import {studyRequested} from "./learning-context";
 import {useEffect, useRef, useState} from "react";
-import {createSession, getAgentRun, listMessages, streamTutor, type Message, type TutorMeta, type TutorMode} from "./api";
+import {createSession,listMessages,streamTutor,getAgentRun, type Message, type TutorMeta, type TutorMode} from "./api";
 import {mergeAgentRun, type AgentRun} from "./agent-run";
-import {ChatLifetime} from "./chat-lifetime";
+import {TutorConversationController} from "./tutor-conversation-controller";
 import {getCurrentUserId} from "./demo-auth";
 import {getPreferredModel, getUserApiKey} from "./local-settings";
 import type {LearningContextRef} from "./learning-context";
@@ -12,31 +12,37 @@ export type ConversationMessage = Message & {status?: "thinking" | "typing" | "e
 const pendingMeta: TutorMeta = {intent:"pending", subject:"数值分析", concepts:[], verified:false, is_correct:null, mistake:null, verifier_summary:"本轮进行中"};
 
 /** Shared by notebook and embedded lab; full chat uses the same lifetime and renderer. */
-export function useTutorConversation({sessionId, scope, subject, context, onSession}: {
+export function useTutorConversation({sessionId, subject, context, onSession}: {
   sessionId?: string; scope: string; subject: string; context?: LearningContextRef; onSession?: (id: string) => void;
 }) {
-  const lifetime = useRef(new ChatLifetime());
+  const lifetime = useRef(new TutorConversationController({create:createSession,history:listMessages,stream:streamTutor}));
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [activeSession, setActiveSession] = useState(sessionId);
   const activeSessionRef = useRef(sessionId);
+  const createdSessionRef = useRef<string|undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     const owner = getCurrentUserId();
-    const manager = lifetime.current; manager.invalidate();
+    const manager = lifetime.current;
+    if(sessionId && sessionId===createdSessionRef.current && sessionId===manager.sessionId && activeSessionRef.current===sessionId){createdSessionRef.current=undefined;return;}
+    manager.invalidate();manager.adoptSession(sessionId);
     const lease = manager.begin(owner)!;
     const valid = () => manager.current(lease, getCurrentUserId()) && !lease.controller.signal.aborted;
     setLoading(true); setBusy(false); setError(""); setMessages([]);
     activeSessionRef.current = sessionId; setActiveSession(sessionId);
-    if (sessionId) listMessages(sessionId, lease.controller.signal).then(next => {if (valid()) setMessages(next);})
+    if (sessionId) manager.history(sessionId, lease.controller.signal).then(next => {if (valid()) setMessages(next);})
       .catch(e => {if (valid()) setError(e.message);}).finally(() => {if (valid()) setLoading(false); manager.finish(lease);});
     else {setLoading(false); manager.finish(lease);}
-    const authChanged = () => {manager.invalidate(); activeSessionRef.current=undefined; setMessages([]); setError("身份已变化，请刷新后继续。"); setBusy(false);};
+  }, [sessionId]);
+  useEffect(()=>{
+    const manager=lifetime.current;
+    const authChanged = () => {manager.invalidate();manager.adoptSession(undefined); activeSessionRef.current=undefined; setMessages([]); setError("身份已变化，请刷新后继续。"); setBusy(false);};
     const storageChanged = (event: StorageEvent) => {if (event.key?.startsWith("luojia_auth_") || event.key === null) authChanged();};
     window.addEventListener("luojia-auth-change", authChanged); window.addEventListener("storage", storageChanged);
     return () => {manager.invalidate(); window.removeEventListener("luojia-auth-change", authChanged); window.removeEventListener("storage", storageChanged);};
-  }, [sessionId, scope]);
+  }, []);
 
   async function submit(value: string, mode: TutorMode = "socratic") {
     if (loading || error || !value.trim()) return false;
@@ -51,15 +57,15 @@ export function useTutorConversation({sessionId, scope, subject, context, onSess
     };
     try {
       if (!session) {
-        const created=await createSession(subject, lease.controller.signal);
+        const createdId=await manager.ensureSession(lease,getCurrentUserId,subject);
         if (!valid() || lease.controller.signal.aborted) return false;
-        session=created.session_id; activeSessionRef.current=session; setActiveSession(session); onSession?.(session);
+        session=createdId; activeSessionRef.current=session;createdSessionRef.current=session; setActiveSession(session); onSession?.(session);
       }
       if (!valid()) return false;
       const base={session_id:session, created_at:new Date().toISOString()};
       setMessages(items=>[...items, {...base,id:crypto.randomUUID(),role:"user",content:value},
         {...base,id:assistantId,role:"assistant",content:"",status:"thinking"}]);
-      await streamTutor({session_id:session, message:value, subject, mode, learning_context:context,
+      await manager.stream(lease,{session_id:session, message:value, subject, mode, learning_context:context,
         web_search_mode:context?"off":"auto", study_action:!context&&studyRequested(value)?"current_tasks":undefined,user_api_key:!context&&studyRequested(value)?null:getUserApiKey()||null, model:!context&&studyRequested(value)?undefined:getPreferredModel(), abortSignal:lease.controller.signal},
         meta=>update(m=>({...m,learning_meta:{...meta,agent_run:mergeAgentRun(m.learning_meta?.agent_run,meta.agent_run)}})),
         token=>update(m=>({...m,content:m.content+token,status:"typing"})),
@@ -67,7 +73,7 @@ export function useTutorConversation({sessionId, scope, subject, context, onSess
         text=>update(m=>({...m,content:m.content+text})),
         ({summary,elapsedMs})=>update(m=>({...m,thinking_summary:summary,thinking_elapsed_ms:elapsedMs})), undefined,
         run=>{lastRun=run;update(m=>({...m,learning_meta:{...(m.learning_meta??pendingMeta),agent_run:mergeAgentRun(m.learning_meta?.agent_run,run)}}));});
-      const history=await listMessages(session, lease.controller.signal);
+      const history=await manager.history(session, lease.controller.signal);
       if (valid()) setMessages(history);
       return true;
     } catch (e) {

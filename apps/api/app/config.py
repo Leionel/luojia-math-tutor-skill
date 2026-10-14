@@ -112,6 +112,7 @@ autoload_env_file()
 
 
 class Settings(BaseModel):
+    teaching_decision_enabled: bool = os.getenv("TEACHING_DECISION_ENABLED", "true").lower() == "true"
     app_env: str = os.getenv("APP_ENV", "local")
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./luojia_tutor.db")
     llm_provider: str = os.getenv("LLM_PROVIDER", "deepseek")

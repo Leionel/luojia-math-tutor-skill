@@ -191,11 +191,13 @@ def build_verifier_prompt(state: dict) -> list[dict[str, Any]]:
 def build_teacher_prompt(state: dict) -> list[dict[str, Any]]:
     verification = state.get("verification_result") or {}
     deterministic = state.get("verifier_result")
+    from app.tutor.teaching_decision import decision_prompt
     return _with_node_slots(
         state, "teach",
+        teaching_decision=decision_prompt(state) if state.get("teaching_decision_enabled") else None,
         verification={"llm_review": verification,
                       "deterministic": asdict(deterministic) if isinstance(deterministic, VerifyResult) else {}},
-        instruction="遵循 resolved_policy；分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。",
+        instruction="遵循 resolved_policy 的披露边界；启用 teaching_decision 时依据当前证据选择动作，不强制走固定追问链。分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。" if state.get("teaching_decision_enabled") else "遵循 resolved_policy；分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。",
         tool_protocol=("本轮仅解释保存的参考轨迹；不请求执行工具、代码或自动保存。" if state.get("learning_context") else
                        "仅在本轮提供原生工具时调用 numerical_run 或 math_differentiate；无工具时明确未核验。"
                        "不生成或执行Python协议，不自动保存记录。结果仅支持其声明的范围，不证明全部结论。"),

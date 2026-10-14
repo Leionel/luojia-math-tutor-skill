@@ -17,16 +17,17 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node scripts/validate-json.js && node scripts/run-api-tests.js && npm.cmd run test:web:ui",
+    "test": "node scripts/validate-json.js && node scripts/export_intelligent_ui_catalog.mjs --check && node scripts/run-api-tests.js && npm.cmd run test:web:ui",
     "test:knowledge": "node scripts/validate-json.js",
     "test:api": "node scripts/run-api-tests.js",
-    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/learning-browser-storage.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts lib/learning-input.test.ts lib/message-status.test.ts lib/delivery-guard.test.ts lib/agent-run.test.ts lib/numerical-lab.test.ts lib/chat-lifetime.test.ts lib/reference-upgrade.test.ts",
+    "test:web:ui": "cd apps/web && node --experimental-strip-types --test lib/ui-runtime.test.ts lib/math-expression.test.ts lib/html-sanitize.test.ts lib/demo-auth.test.ts lib/learning-browser-storage.test.ts lib/message-parser.test.ts lib/course-graph-layout.test.ts lib/visual-artifact.test.ts lib/tutor-stream.test.ts lib/learning-input.test.ts lib/message-status.test.ts lib/delivery-guard.test.ts lib/agent-run.test.ts lib/numerical-lab.test.ts lib/chat-lifetime.test.ts lib/reference-upgrade.test.ts lib/intelligent-ui.test.ts lib/tutor-conversation-controller.test.ts",
     "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
     "dev:web": "cd apps/web && npm.cmd run dev",
     "build:web": "cd apps/web && npm.cmd run build",
     "test:web": "cd apps/web && npm.cmd run build",
     "rollback": "python scripts/rollback_knowledge.py",
-    "eval:agent": "python scripts/eval_agent_reliability.py"
+    "eval:agent": "python scripts/eval_agent_reliability.py",
+    "generate:ui-catalog": "node scripts/export_intelligent_ui_catalog.mjs"
   },
   "keywords": [
     "math",

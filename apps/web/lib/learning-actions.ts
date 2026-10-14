@@ -14,7 +14,10 @@ export type RootActionState = {state: "proposed" | "previewed" | "saved" | "expi
 
 export function sameContext(a: LearningContextRef | undefined, b: LearningContextRef | undefined) {
   return !!a && !!b && a.kind === "root_lab" && b.kind === "root_lab" && a.record_id === b.record_id && a.input_hash === b.input_hash
-    && a.runner_version === b.runner_version && a.graph_revision === b.graph_revision && a.selected_step === b.selected_step;
+    && a.runner_version === b.runner_version && a.graph_revision === b.graph_revision && a.selected_step === b.selected_step
+    && (a.activity_claim?.request_id??null)===(b.activity_claim?.request_id??null)
+    && (a.activity_claim?.revision_count??null)===(b.activity_claim?.revision_count??null)
+    && (a.activity_claim?.claim_kind??null)===(b.activity_claim?.claim_kind??null);
 }
 export function parseRootProposals(value: unknown): RootProposal[] {
   if (!Array.isArray(value)) return [];

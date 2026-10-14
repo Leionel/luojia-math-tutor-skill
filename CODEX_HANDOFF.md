@@ -472,3 +472,8 @@ A0–A2 与冻结规划提交 `ebdc909` 已推送 `feature/course-graph-2.0`；�
 CI run 37771507944 终态 failure：Web/知识成功，API 8 个 S5 内容/fixture 哈希绑定失败。原哈希绑定的是 Windows CRLF 工作区字节，Git blob/Ubuntu checkout 为 LF；本轮以 `.gitattributes` 固定 S5 JSON LF 并更新 3 处哈希值，本地相关 80 项通过。修复版远端结论需新 SHA 验收。
 
 修复与 A3 分别提交 `8e58e6e`、`6367ce1` 并推送；`6367ce1` 的 CI #26（37772411831）API/Web/知识数据均成功。R0 正式库/授权链、A5 工程 Gate 与质量 Gate 不因 CI 成功自动完成。
+
+
+## 2026-10-14 R3.1 提交收尾与统一实现复核
+
+用户要求先提交并复核另一个 agent 的统一实现。复核当前 HEAD 48ef116 与画布提交 8edd92e：Lab 复用真实领域视图；Reading/Study 仍为静态示例，原文来源、今日任务和跨工作区引用尚未统一，Code 未整合。修复异步引用检查把 Reading/Study URL 强制改为 Lab 的问题。详细问题与证据边界见 planning/r3-unification-review-2026-10-14.md。本轮仅本地提交 R3.1 相关改动，无 push/deploy；无关 R2、原删除和探索产物保留。

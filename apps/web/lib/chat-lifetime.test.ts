@@ -16,6 +16,11 @@ test("lazy session creation locks before await; a switched view rejects every ol
   chat.finish(next); assert.equal(chat.current(next,"alice"),false);
 });
 const context={kind:"root_lab" as const,record_id:"lab-one",input_hash:"a".repeat(64),runner_version:"v1",graph_revision:"graph1",selected_step:null};
+test("generic preview controls cannot attach to a selected activity claim or newer revision",()=>{
+  const claim={...context,activity_claim:{activity_id:"newton-cycle-v1" as const,activity_version:"newton-participation-v1" as const,claim_kind:"explanation" as const,request_id:"claim-a",revision_count:0}};
+  assert.equal(sameContext(context,claim),false);
+  assert.equal(sameContext(claim,{...claim,activity_claim:{...claim.activity_claim,revision_count:1}}),false);
+});
 const proposal={version:"tutor-artifact-v1",kind:"root_parameter_proposal",action:"preview_root_lab",artifact_id:"a1",run_id:"r1",origin:"server",context,
   parameters:{initial_value:-2,tolerance:0.0001,max_iterations:20},created_at:"2026-10-03T00:00:00Z",expires_at:"2026-10-04T00:00:00Z",evidence_kind:"reference_help",independent_success:false,preview_budget:3};
 test("only the fixed card contract can render; forged operation names and nonfinite drafts are rejected",()=>{

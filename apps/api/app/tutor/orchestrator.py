@@ -48,6 +48,11 @@ class TutorOrchestrator:
         learning_objective = state.get("learning_objective") or ""
         pedagogical_action = state.get("pedagogical_action") or ""
         action_descriptions = {
+            "confirm_local": "确认有依据的局部步骤",
+            "correct_claim": "区分正确步骤与不成立的推广",
+            "ask_missing_condition": "先补齐判断所需的条件",
+            "offer_experiment": "建议通过对照实验观察",
+            "offer_probe": "提供一个针对性的自检问题",
             "explain": "讲解概念或解题过程",
             "hint": "提供当前步骤的提示",
             "ask_question": "核对步骤并提出针对性问题",
@@ -233,6 +238,7 @@ class TutorOrchestrator:
             "learning_objective": state.get("learning_objective", ""),
             "route": state.get("metrics", {}).get("route", ""),
             "answer_guard": state.get("answer_guard"),
+            "teaching_decision": state.get("teaching_decision"),
         }
 
     async def stream_reply(self, session_id: str, user_id: str, message: str,
@@ -595,6 +601,9 @@ class TutorOrchestrator:
                              "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
                              "route": "intent_clarification"}
         intent = learning_meta["intent"]
+        if final_state.get("intelligent_ui") and not awaiting_input:
+            from app.tutor.teaching_decision import bind_ui
+            learning_meta["intelligent_ui"] = bind_ui(final_state["intelligent_ui"], trace.run_id, visible_output)
         if not root_submission:
             from app.tutor.help_boundary import assert_reference_help_allowed
             await asyncio.to_thread(assert_reference_help_allowed, user_id)
@@ -616,6 +625,8 @@ class TutorOrchestrator:
         learning_meta["agent_run"] = trace.snapshot(message_id=message_id)
         yield sse("run_event",learning_meta["agent_run"])
         yield sse("meta_update", learning_meta)
+        if learning_meta.get("intelligent_ui"):
+            yield sse("intelligent_ui", {"message_id": message_id, "artifact": learning_meta["intelligent_ui"]})
         metrics = dict(final_state.get("metrics", {}))
         metrics["model_request_usage"] = trace.snapshot()["usage"]
         metrics["total_ms"] = round(

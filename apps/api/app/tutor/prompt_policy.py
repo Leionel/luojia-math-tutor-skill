@@ -24,6 +24,7 @@ def resolve_teaching_policy(intent: Intent, mode: str, hint_level: HintLevel,
         from app.tutor.intent_router import ACTION_BY_INTENT
         action = ACTION_BY_INTENT[intent].value
     return {
+        "allowed_actions": ["confirm_local", "correct_claim", "ask_missing_condition", "offer_experiment", "explain", "offer_probe"],
         "action": action,
         "disclosure": "full" if full else "scaffolded",
         "hint_level": int(hint_level),

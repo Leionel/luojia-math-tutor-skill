@@ -507,7 +507,9 @@ export function TutorChat() {
       if(!alive.current||owner!==getCurrentUserId()||generation!==viewGeneration.current||selection!==contextSelection.current)return;
       setLearningContext(snapshot);
       const query=new URLSearchParams(sessionId?{session:sessionId}:{});
-      appendContextQuery(query,snapshot.ref,owner);if(workspaceOpenRef.current)query.set("workspace","lab");
+      const visibleWorkspace=new URLSearchParams(window.location.search).get("workspace");
+      appendContextQuery(query,snapshot.ref,owner);
+      if(workspaceOpenRef.current && visibleWorkspace)query.set("workspace",visibleWorkspace);
       window.history.replaceState(null,"",`/chat?${query}`);
       if(sessionId)referenceBrowserStorage(false,localStorage,sessionStorage).setItem(referenceChatKey(owner,snapshot.ref),sessionId);
     }catch(error){if(alive.current&&owner===getCurrentUserId()&&generation===viewGeneration.current&&selection===contextSelection.current)setContextError(error instanceof Error?error.message:"来源引用不可用");}
@@ -516,8 +518,8 @@ export function TutorChat() {
   function openWorkspace(intent:WorkspaceIntent={}, tab: WorkspaceTab = "lab") {
     setActiveWorkspaceTab(tab);
     setWorkspacePrediction(intent.prediction);setWorkspaceOpen(true);setIsMobileLearningOpen(false);setIsMobileSidebarOpen(false);
+    const query=new URLSearchParams(window.location.search);query.set("workspace",tab);window.history.replaceState(null,"",`/chat?${query}`);
     if(intent.ref?.kind==="root_lab")void selectWorkspaceReference(intent.ref);
-    else {const query=new URLSearchParams(window.location.search);query.set("workspace",tab);window.history.replaceState(null,"",`/chat?${query}`);}
   }
   function switchWorkspaceTab(tab: WorkspaceTab) {
     setActiveWorkspaceTab(tab);

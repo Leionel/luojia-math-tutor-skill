@@ -100,7 +100,7 @@ def worker(output):
             for arm in ("D0", "D1"):
                 with tempfile.TemporaryDirectory(prefix="r2-pair-") as temporary:
                     folder = Path(temporary)
-                    settings = Settings(database_url=f"sqlite:///{folder / 'student.db'}", llm_api_key="", typed_math_tools_enabled=False)
+                    settings = Settings(database_url=f"sqlite:///{folder / 'student.db'}", llm_api_key="", typed_math_tools_enabled=False, teaching_decision_enabled=False)
                     repository = Repository(settings)
                     course = CourseService(store=CourseStore(str(folder / "course.db")))
                     try:

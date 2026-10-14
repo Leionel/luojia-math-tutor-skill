@@ -675,3 +675,8 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
      - `e57406c` feat(web): elevate open lab parameters and canvas state cards
      - 本轮提交文档规范修订。
 
+
+
+## 2026-10-14 R3.1 提交收尾与统一实现复核
+
+用户要求先提交并复核另一个 agent 的统一实现。复核当前 HEAD 48ef116 与画布提交 8edd92e：Lab 复用真实领域视图；Reading/Study 仍为静态示例，原文来源、今日任务和跨工作区引用尚未统一，Code 未整合。修复异步引用检查把 Reading/Study URL 强制改为 Lab 的问题。详细问题与证据边界见 planning/r3-unification-review-2026-10-14.md。本轮仅本地提交 R3.1 相关改动，无 push/deploy；无关 R2、原删除和探索产物保留。

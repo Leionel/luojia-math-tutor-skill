@@ -35,6 +35,8 @@ export type WebSearchReport = {
 };
 
 export type TutorMeta = {
+  teaching_decision?: unknown;
+  intelligent_ui?: unknown;
   study_summary?: import("./study-summary").StudySummary;
   step_check?: StepCheck | null;
   mastery_estimate_notice?: string;
