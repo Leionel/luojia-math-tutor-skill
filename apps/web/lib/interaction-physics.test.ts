@@ -1,0 +1,147 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  clampPaneWidth,
+  defaultPaneWidth,
+  shouldInterceptCompositionEnter,
+  PANE_CONSTRAINTS,
+} from "./interaction-physics.ts";
+
+test("interaction physics: clamps split pane widths within safe hardware boundaries", () => {
+  // Sidebar (200 - 600, default 260)
+  assert.equal(clampPaneWidth("sidebar", 150), 200);
+  assert.equal(clampPaneWidth("sidebar", 400), 400);
+  assert.equal(clampPaneWidth("sidebar", 800), 600);
+  assert.equal(clampPaneWidth("sidebar", NaN), 260);
+  assert.equal(clampPaneWidth("sidebar", Infinity), 260);
+
+  // Learning Panel (200 - 600, default 320)
+  assert.equal(clampPaneWidth("learning", 100), 200);
+  assert.equal(clampPaneWidth("learning", 350), 350);
+  assert.equal(clampPaneWidth("learning", 750), 600);
+  assert.equal(clampPaneWidth("learning", -Infinity), 320);
+
+  // Workspace Split Canvas (380 - 1000, default 580)
+  assert.equal(clampPaneWidth("workspace", 200), 380);
+  assert.equal(clampPaneWidth("workspace", 650), 650);
+  assert.equal(clampPaneWidth("workspace", 1200), 1000);
+  assert.equal(clampPaneWidth("workspace", NaN), 580);
+});
+
+test("interaction physics: double click baseline returns golden pane defaults", () => {
+  assert.equal(defaultPaneWidth("sidebar"), 260);
+  assert.equal(defaultPaneWidth("learning"), 320);
+  assert.equal(defaultPaneWidth("workspace"), 580);
+  assert.equal(defaultPaneWidth("workspace"), PANE_CONSTRAINTS.workspace.default);
+});
+
+test("interaction physics: IME guard prevents Chinese pinyin enter misfire", () => {
+  const baseTime = 1000;
+
+  // 1. Normal standalone Enter without IME -> Not intercepted (Allowed to send)
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+    }),
+    false,
+    "Standard Enter must proceed to submit"
+  );
+
+  // 2. Shift + Enter -> Intercepted (Newline, no submit)
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: true,
+      isComposing: false,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+    }),
+    true,
+    "Shift+Enter must be intercepted"
+  );
+
+  // 3. Actively composing (User typing Chinese pinyin letters) -> Intercepted
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: true,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+    }),
+    true,
+    "Active IME composition must be intercepted"
+  );
+
+  // 4. Composition ended just 20ms ago (OS-level key event race condition) -> Intercepted!
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      lastCompositionEndedAt: baseTime - 20,
+      now: baseTime,
+      cooldownMs: 60,
+    }),
+    true,
+    "Enter within 20ms of compositionend must be intercepted by cooldown window"
+  );
+
+  // 5. Composition ended 80ms ago (Valid prompt submission after confirmation) -> Allowed
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      lastCompositionEndedAt: baseTime - 80,
+      now: baseTime,
+      cooldownMs: 60,
+    }),
+    false,
+    "Enter after cooldown window expires must proceed to submit"
+  );
+
+  // 6. IME KeyCode 229 -> Intercepted
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+      keyCode: 229,
+    }),
+    true,
+    "KeyCode 229 must be intercepted"
+  );
+
+  // 7. Mobile coarse pointer -> Intercepted
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "Enter",
+      shiftKey: false,
+      isComposing: false,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+      isCoarsePointer: true,
+    }),
+    true,
+    "Coarse touch pointer must be intercepted"
+  );
+
+  // 8. Non-enter keys
+  assert.equal(
+    shouldInterceptCompositionEnter({
+      key: "a",
+      isComposing: false,
+      lastCompositionEndedAt: 0,
+      now: baseTime,
+    }),
+    true,
+    "Non-Enter keys must return true (not submit)"
+  );
+});

@@ -9,6 +9,7 @@ import { DesmosModal } from "./desmos-modal";
 import { getAuthHeaders } from "@/lib/demo-auth";
 import { useTheme } from "@/lib/theme-context";
 import { ModeSwitcher } from "./mode-switcher";
+import { shouldInterceptCompositionEnter } from "@/lib/interaction-physics";
 import type { TutorMode } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -79,6 +80,9 @@ export function TutorInput({
   const [showAIAsst, setShowAIAsst] = useState(false);
   const { reading } = useTheme();
   const [mounted, setMounted] = useState(false);
+  // CJK 输入法双重互锁守卫（借鉴 Claude ChatComposer 物理算法，防止拼音回车误触发送）
+  const isComposingRef = useRef(false);
+  const compositionEndedAtRef = useRef(0);
 
   useEffect(() => {
     setMounted(true);
@@ -257,8 +261,25 @@ export function TutorInput({
             el.style.height = 'auto';
             el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
           }}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false;
+            compositionEndedAtRef.current = performance.now();
+          }}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) {
+            const intercepted = shouldInterceptCompositionEnter({
+              key: event.key,
+              shiftKey: event.shiftKey,
+              isComposing: event.nativeEvent.isComposing || isComposingRef.current,
+              lastCompositionEndedAt: compositionEndedAtRef.current,
+              now: performance.now(),
+              keyCode: (event as unknown as { keyCode?: number }).keyCode,
+              isCoarsePointer: window.matchMedia("(pointer: coarse)").matches,
+            });
+
+            if (!intercepted) {
               event.preventDefault();
               submit();
               requestAnimationFrame(() => {

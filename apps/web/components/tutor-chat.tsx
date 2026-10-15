@@ -33,6 +33,7 @@ import {CanvasWorkspace, type WorkspaceTab} from "./learning/canvas-workspace";
 import type {WorkspaceIntent} from "@/lib/intelligent-ui";
 import type {RootContextRef} from "@/lib/learning-context";
 import {ReferenceSelection} from "@/lib/reference-selection";
+import { clampPaneWidth, defaultPaneWidth, type ResizablePane } from "@/lib/interaction-physics";
 
 type LocalMessage = {
   id: string;
@@ -127,14 +128,45 @@ const MIN_WORKSPACE_WIDTH = 380;
 const MAX_WORKSPACE_WIDTH = 1000;
 const DEFAULT_WORKSPACE_WIDTH = 580;
 
-function ResizeHandle({target,className="",onStart}:{target:string;className?:string;onStart:(target:string)=>void}) {
-  return <div
-    className={`group relative z-10 w-1.5 cursor-col-resize transition-colors hover:bg-olive-400/50 active:bg-olive-500/70 ${className}`}
-    onMouseDown={event=>{event.preventDefault();onStart(target);}}
-  >
-    <div className="absolute inset-y-0 -left-2 -right-2" />
-    <div className="absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-[var(--border-primary)] opacity-0 transition-opacity group-hover:opacity-100" />
-  </div>;
+function ResizeHandle({
+  target,
+  className = "",
+  onStart,
+  onReset,
+  isActive = false,
+}: {
+  target: ResizablePane;
+  className?: string;
+  onStart: (target: ResizablePane) => void;
+  onReset?: (target: ResizablePane) => void;
+  isActive?: boolean;
+}) {
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      tabIndex={0}
+      title="拖拽调节宽度，双击复位默认宽度，Esc可取消"
+      className={`group relative z-20 w-1.5 shrink-0 cursor-col-resize select-none transition-colors ${
+        isActive ? "bg-olive-500/80" : "hover:bg-olive-400/50 active:bg-olive-500/70"
+      } ${className}`}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onStart(target);
+      }}
+      onDoubleClick={(event) => {
+        event.preventDefault();
+        onReset?.(target);
+      }}
+    >
+      <div className="absolute inset-y-0 -left-2 -right-2" />
+      <div
+        className={`absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-[var(--border-primary)] transition-opacity ${
+          isActive ? "opacity-100 bg-olive-600" : "opacity-0 group-hover:opacity-100"
+        }`}
+      />
+    </div>
+  );
 }
 
 export function TutorChat() {
@@ -158,7 +190,7 @@ export function TutorChat() {
   const [workspaceOpen,updateWorkspaceOpen]=useState(false);
   const workspaceOpenRef=useRef(false);
   function setWorkspaceOpen(value:boolean){workspaceOpenRef.current=value;updateWorkspaceOpen(value);}
-  const [workspaceWidth, setWorkspaceWidth] = useState(DEFAULT_WORKSPACE_WIDTH);
+  const [workspaceWidth, setWorkspaceWidth] = useState(defaultPaneWidth("workspace"));
   const [isWorkspaceMaximized, setIsWorkspaceMaximized] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>("lab");
 
@@ -167,8 +199,8 @@ export function TutorChat() {
       const saved = localStorage.getItem("luojia_workspace_width");
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= MIN_WORKSPACE_WIDTH && parsed <= MAX_WORKSPACE_WIDTH) {
-          setWorkspaceWidth(parsed);
+        if (!isNaN(parsed)) {
+          setWorkspaceWidth(clampPaneWidth("workspace", parsed));
         }
       }
     } catch {}
@@ -254,7 +286,27 @@ export function TutorChat() {
   };
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
   const [isLearningCollapsed, setIsLearningCollapsed] = useState(false);
-  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const [isResizing, setIsResizing] = useState<ResizablePane | null>(null);
+  const dragOriginWidthRef = useRef<number>(0);
+
+  const handleResizeStart = (target: ResizablePane) => {
+    if (target === "sidebar") dragOriginWidthRef.current = sidebarWidth;
+    else if (target === "learning") dragOriginWidthRef.current = learningWidth;
+    else if (target === "workspace") dragOriginWidthRef.current = workspaceWidth;
+    setIsResizing(target);
+  };
+
+  const handleResetWidth = (target: ResizablePane) => {
+    const width = defaultPaneWidth(target);
+    if (target === "sidebar") {
+      setSidebarWidth(width);
+    } else if (target === "learning") {
+      setLearningWidth(width);
+    } else if (target === "workspace") {
+      setWorkspaceWidth(width);
+      try { localStorage.setItem("luojia_workspace_width", String(width)); } catch {}
+    }
+  };
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -344,13 +396,11 @@ export function TutorChat() {
       const mouseX = e.clientX - containerRect.left;
 
       if (isResizing === "sidebar") {
-        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, mouseX));
-        setSidebarWidth(newWidth);
+        setSidebarWidth(clampPaneWidth("sidebar", mouseX));
       } else if (isResizing === "learning") {
-        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, containerRect.width - mouseX));
-        setLearningWidth(newWidth);
+        setLearningWidth(clampPaneWidth("learning", containerRect.width - mouseX));
       } else if (isResizing === "workspace") {
-        const newWidth = Math.min(MAX_WORKSPACE_WIDTH, Math.max(MIN_WORKSPACE_WIDTH, containerRect.width - mouseX));
+        const newWidth = clampPaneWidth("workspace", containerRect.width - mouseX);
         setWorkspaceWidth(newWidth);
         try { localStorage.setItem("luojia_workspace_width", String(newWidth)); } catch {}
       }
@@ -360,14 +410,31 @@ export function TutorChat() {
       setIsResizing(null);
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (isResizing === "sidebar") {
+          setSidebarWidth(dragOriginWidthRef.current);
+        } else if (isResizing === "learning") {
+          setLearningWidth(dragOriginWidthRef.current);
+        } else if (isResizing === "workspace") {
+          setWorkspaceWidth(dragOriginWidthRef.current);
+          try { localStorage.setItem("luojia_workspace_width", String(dragOriginWidthRef.current)); } catch {}
+        }
+        setIsResizing(null);
+      }
+    };
+
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("keydown", handleKeyDown);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -961,7 +1028,15 @@ export function TutorChat() {
             </button>
           </div>
         )}
-        {!isZenMode && !isSidebarCollapsed && <ResizeHandle onStart={setIsResizing} target="sidebar" className="hidden lg:block" />}
+        {!isZenMode && !isSidebarCollapsed && (
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "sidebar"}
+            target="sidebar"
+            className="hidden lg:block"
+          />
+        )}
 
         {!isZenMode && isSidebarCollapsed && (
           <button
@@ -1200,7 +1275,13 @@ export function TutorChat() {
         </main>
 
         {!isZenMode && workspaceOpen && desktopWorkspace && (
-          <ResizeHandle onStart={setIsResizing} target="workspace" className="hidden xl:block" />
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "workspace"}
+            target="workspace"
+            className="hidden xl:block"
+          />
         )}
         {workspaceOpen && desktopWorkspace && !isZenMode && (
           <aside
@@ -1277,7 +1358,15 @@ export function TutorChat() {
             </MobileDrawer>
           </div>
         )}
-        {!workspaceOpen && !isZenMode && !isLearningCollapsed && <ResizeHandle onStart={setIsResizing} target="learning" className="hidden xl:block" />}
+        {!workspaceOpen && !isZenMode && !isLearningCollapsed && (
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "learning"}
+            target="learning"
+            className="hidden xl:block"
+          />
+        )}
         {!workspaceOpen && !isZenMode && !isLearningCollapsed && (
           <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
             {rightPanelContent}
@@ -1375,6 +1464,14 @@ export function TutorChat() {
           setInputValue((prev) => (prev ? `${prev}\n${text}` : text));
         }}
       />
+      {/* Pointer Shield: 拖拽分栏期间挂载全屏透明事件护盾，彻底防止指针滑入SVG/公式/Canvas导致丢帧与脱轨 */}
+      {isResizing && (
+        <div
+          className="fixed inset-0 z-[9999] cursor-col-resize select-none bg-transparent"
+          style={{ pointerEvents: "auto" }}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }
