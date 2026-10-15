@@ -95,6 +95,9 @@ export function AppHeader({
 
       {/* Right: Functional Navigation & Actions */}
       <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
+        <Link href="/admin/knowledge" aria-label="教师审核" title="教师审核：知识候选与证据" className="inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-dai-700 dark:text-dai-300 hover:bg-dai-500/10">
+          <BookmarkCheck className="h-4 w-4" aria-hidden="true"/><span className="hidden md:inline">教师审核</span>
+        </Link>
         <button type="button" disabled={signingOut} onClick={signOut} aria-label="退出登录并清除本机未提交草稿" title="退出登录并清除本机未提交草稿" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><LogOut className="h-4 w-4"/></button>
         <Link href="/study" className="inline-flex items-center gap-1.5 rounded-lg border border-olive-600/25 bg-olive-600/5 px-3 py-2 text-xs font-semibold text-olive-700 dark:text-olive-300" title="今日任务、教材伴读、求根实验与章节自检">
           <BookOpen className="h-3.5 w-3.5" /><span>今日学习</span>

@@ -132,3 +132,14 @@ test("reading reference restoration rejects hash mismatch, corrupted spans, and 
  assert.equal(restoreReadingReference(JSON.stringify({kind: "reading", ...source, start: -1, end: 10}), source, 50), null);
 });
 
+
+import {readingSourceRef} from "./learning-context.ts";
+test("ordinary course discussion has no condition-comparison authority and uses Unicode offsets",()=>{
+ const ref=readingSourceRef({id:"NA_NEWTON",source_hash:"a".repeat(64),graph_revision:"g1"},"甲📘乙");
+ assert.equal(ref.end,3);assert.equal(ref.section_id,null);
+ assert.equal("condition_hash" in ref,false);assert.equal("problem_text" in ref,false);
+ const document=readingSourceRef({id:"document1",source_hash:"b".repeat(64)},"摘录","section2");
+ assert.equal(document.section_id,"section2");assert.equal(document.graph_revision,null);
+ assert.throws(()=>readingSourceRef({id:"unit",source_hash:"a".repeat(64),graph_revision:"g1"},"a".repeat(6001)));
+ assert.throws(()=>readingSourceRef({id:"unit",source_hash:"a".repeat(64)},"摘录"));
+});

@@ -30,7 +30,7 @@ export interface CanvasWorkspaceProps {
   sessionId?: string;
   onDiscuss?: (ref: RootContextRef) => void;
   onSaved?: (run: LabRun) => void;
-  onAskTutor?: (prompt: string) => void;
+  readingRef?: ReadingContextRef;
   onDiscussReading?: (ref: ReadingContextRef, prompt: string) => void;
   onDiscussStudy?: (prompt: string, taskRef?: LearningContextRef | null) => void;
   onStartStudyTask?: (task: StudyTask) => void;
@@ -47,7 +47,7 @@ export function CanvasWorkspace({
   sessionId,
   onDiscuss,
   onSaved,
-  onAskTutor,
+  readingRef,
   onDiscussReading,
   onDiscussStudy,
   onStartStudyTask,
@@ -159,11 +159,10 @@ export function CanvasWorkspace({
         <div className={activeTab === "reading" ? "h-full" : "hidden"}>
           <ReadingDomainView
             mode="canvas"
+            initialReference={readingRef}
             onDiscuss={(ref, prompt) => {
               if (onDiscussReading) {
                 onDiscussReading(ref, prompt);
-              } else if (onAskTutor) {
-                onAskTutor(prompt);
               }
             }}
           />
@@ -175,8 +174,6 @@ export function CanvasWorkspace({
             onDiscussTask={(prompt, taskRef) => {
               if (onDiscussStudy) {
                 onDiscussStudy(prompt, taskRef);
-              } else if (onAskTutor) {
-                onAskTutor(prompt);
               }
             }}
             onStartTask={onStartStudyTask}

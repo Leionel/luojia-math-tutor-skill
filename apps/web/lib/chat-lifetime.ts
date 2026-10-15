@@ -16,4 +16,5 @@ export class ChatLifetime {
   cancel() { this.active?.controller.abort(); }
   invalidate() { this.cancel(); this.active = null; this.revision += 1; }
   get version() { return this.revision; }
+  get busy() { return this.active !== null; }
 }

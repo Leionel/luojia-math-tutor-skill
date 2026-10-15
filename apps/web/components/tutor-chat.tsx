@@ -32,6 +32,7 @@ import {ContextBanner} from "./learning/context-banner";
 import {CanvasWorkspace, type WorkspaceTab} from "./learning/canvas-workspace";
 import type {WorkspaceIntent} from "@/lib/intelligent-ui";
 import type {RootContextRef} from "@/lib/learning-context";
+import {ReferenceSelection} from "@/lib/reference-selection";
 
 type LocalMessage = {
   id: string;
@@ -182,6 +183,11 @@ export function TutorChat() {
       setActiveWorkspaceTab("lab");
       setWorkspaceOpen(true);
     }
+    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "true") {
+      const restored = new URLSearchParams(window.location.search);
+      restored.set("workspace", ws === "true" ? "lab" : ws);
+      window.history.replaceState(null, "", `/chat?${restored}`);
+    }
   }
   const [workspacePrediction,setWorkspacePrediction]=useState<string>();
   const [desktopWorkspace,setDesktopWorkspace]=useState(false);
@@ -202,7 +208,7 @@ export function TutorChat() {
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
   const lifetime=useRef(new TutorConversationController({create:createSession,history:listMessages,stream:streamTutor}));
   const viewGeneration=useRef(0);
-  const contextSelection=useRef(0);
+  const contextSelection=useRef(new ReferenceSelection());
   const alive=useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeRunRef = useRef<AgentRun | undefined>(undefined);
@@ -504,7 +510,11 @@ export function TutorChat() {
     | { ok: false; error: string };
 
   async function validateAndBindReference(ref: LearningContextRef | null): Promise<BindResult> {
+    if (lifetime.current.busy) return {ok:false,error:"本轮回答进行中，请结束后再切换讨论来源。"};
+    const owner = getCurrentUserId(), generation = viewGeneration.current;
+    const selectionCurrent = contextSelection.current.begin(() => alive.current && owner === getCurrentUserId() && generation === viewGeneration.current);
     if (!ref) {
+      setContextLoading(false);
       setLearningContext(null);
       setContextError("");
       const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
@@ -513,11 +523,10 @@ export function TutorChat() {
       window.history.replaceState(null, "", `/chat${query.size ? `?${query}` : ""}`);
       return { ok: true, snapshot: null };
     }
-    const owner = getCurrentUserId(), generation = viewGeneration.current, selection = ++contextSelection.current;
     setContextLoading(true); setContextError("");
     try {
       const snapshot = await learningRequest<LearningTaskSnapshot>("/tutor/context", ref, AbortSignal.timeout(15000));
-      if (!alive.current || owner !== getCurrentUserId() || generation !== viewGeneration.current || selection !== contextSelection.current) {
+      if (!selectionCurrent()) {
         return { ok: false, error: "环境已切换，校验终止" };
       }
       setLearningContext(snapshot);
@@ -526,16 +535,16 @@ export function TutorChat() {
       appendContextQuery(query, snapshot.ref, owner);
       if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
       window.history.replaceState(null, "", `/chat?${query}`);
-      if (sessionId) referenceBrowserStorage(false, localStorage, sessionStorage).setItem(referenceChatKey(owner, snapshot.ref), sessionId);
+      if (sessionId) referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref), localStorage, sessionStorage).setItem(referenceChatKey(owner, snapshot.ref), sessionId);
       return { ok: true, snapshot };
     } catch (error) {
       const msg = error instanceof Error ? error.message : "来源引用不可用";
-      if (alive.current && owner === getCurrentUserId() && generation === viewGeneration.current && selection === contextSelection.current) {
+      if (selectionCurrent()) {
         setContextError(msg);
       }
       return { ok: false, error: msg };
     } finally {
-      if (alive.current && generation === viewGeneration.current && selection === contextSelection.current) {
+      if (selectionCurrent()) {
         setContextLoading(false);
       }
     }
@@ -568,7 +577,7 @@ export function TutorChat() {
     explicitSnapshot?: LearningTaskSnapshot | null
   ) {
     const activeSnapshot = explicitSnapshot !== undefined ? explicitSnapshot : learningContext;
-    if (isStreaming || contextLoading || (explicitSnapshot === undefined && contextError)) return;
+    if (isStreaming || (explicitSnapshot === undefined && (contextLoading || contextError))) return;
     if (activeSnapshot && (rootSubmission || imageUrls?.length)) {
       setRootError("请先移除实验或文献引用，再发送自己的作答或图片。"); return;
     }
@@ -1037,9 +1046,9 @@ export function TutorChat() {
             </button>
           </div>
           {(learningContext || contextError || contextLoading) && <div className="mx-auto w-full max-w-4xl px-4 pt-4">
-            {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {lifetime.current.invalidate();setLearningContext(null); setContextError(""); window.history.replaceState(null, "", "/chat");}}/>}
+            {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {void validateAndBindReference(null);}}/>}
             {contextLoading && <p role="status" className="p-3">正在核对实验引用…</p>}
-            {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {setLearningContext(null); setContextError(""); window.history.replaceState(null, "", "/chat");}}>移除失效引用，继续普通聊天</button></div>}
+            {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {void validateAndBindReference(null);}}>移除失效引用，继续普通聊天</button></div>}
           </div>}
           <div
             className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
@@ -1213,7 +1222,7 @@ export function TutorChat() {
                 if (window.innerWidth < 1280) closeWorkspace();
               }}
               onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
-              onAskTutor={(prompt) => void submit(prompt, "socratic")}
+              readingRef={learningContext?.ref.kind === "reading" ? learningContext.ref : undefined}
               onDiscussReading={async (ref, prompt) => {
                 const res = await validateAndBindReference(ref);
                 if (!res.ok) return;
@@ -1250,10 +1259,7 @@ export function TutorChat() {
                     closeWorkspace();
                   }}
                   onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
-                  onAskTutor={(prompt) => {
-                    closeWorkspace();
-                    void submit(prompt, "socratic");
-                  }}
+                  readingRef={learningContext?.ref.kind === "reading" ? learningContext.ref : undefined}
                   onDiscussReading={async (ref, prompt) => {
                     closeWorkspace();
                     const res = await validateAndBindReference(ref);

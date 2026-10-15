@@ -50,6 +50,7 @@ export function LearningShell({
     { href: "/assessment", label: "认知自检", keyHint: "4", icon: CheckCircle2 },
     { href: "/teach-back", label: "费曼讲坛", keyHint: "5", icon: HelpCircle },
     { href: "/code-workshop", label: "算法工坊", keyHint: "6", icon: ArrowUpRight },
+    { href: "/admin/knowledge", label: "教师审核", keyHint: "", icon: CheckCircle2 },
   ];
 
   return (

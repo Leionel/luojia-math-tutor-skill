@@ -89,6 +89,7 @@ export function Sidebar({
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#617a55]/10 to-transparent pointer-events-none -mt-5 -mx-5" />
 
       {/* Section: Sessions */}
+      <Link href="/admin/knowledge" className="relative mb-4 inline-flex min-h-12 items-center gap-2 rounded-xl border border-dai-600/25 px-3 text-sm font-medium text-dai-700 hover:bg-dai-500/10 dark:text-dai-300">教师审核</Link>
       <div className="mb-4 flex items-center gap-3">
         <div className="h-px bg-[var(--border-subtle)] flex-1"></div>
         <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-[var(--text-muted)] font-body">最近会话 Sessions</div>

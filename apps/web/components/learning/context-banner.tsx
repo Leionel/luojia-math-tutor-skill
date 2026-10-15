@@ -32,12 +32,12 @@ export function ContextBanner({snapshot, onRemove, disabled=false}: {
       {reading && (
         <div className="mt-2 rounded-lg border border-paper-200 dark:border-paper-800 bg-[var(--bg-card)] p-2.5 text-xs space-y-1">
           <div className="flex items-center justify-between text-[var(--text-muted)]">
-            <span>出处来源：{reading.source_kind === "unit" || reading.ref.section_id === null ? "武汉大学《数值分析》课程教学大纲单元" : `上传文档 (ID: ${reading.ref.source_id.slice(0, 8)}…)`}</span>
+            <span>出处来源：{reading.ref.section_id === null ? "课程整理包（非教材逐字引文）" : `上传文档 (ID: ${reading.ref.source_id.slice(0, 8)}…)`}</span>
             <span className="font-mono">字符 {reading.citation.start}–{reading.citation.end}</span>
           </div>
           <div className="text-[var(--text-secondary)]">
             {reading.source_kind === "unit" || reading.ref.section_id === null ? (
-              <span className="text-olive-700 dark:text-olive-300">✓ 内容指纹匹配（SHA-256 一致），已排定教学单元材料</span>
+              <span className="text-olive-700 dark:text-olive-300">内容指纹匹配仅表示版本一致，不代表数学结论已审核</span>
             ) : (
               <span className="text-ochre-700 dark:text-ochre-400">⚠ 用户上传材料，内容尚未经教师或系统金标数学核验</span>
             )}

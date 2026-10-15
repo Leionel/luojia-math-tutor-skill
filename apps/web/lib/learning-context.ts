@@ -8,6 +8,13 @@ export type CodeContextRef={kind:"code_static";record_id:string;code_hash:string
 export type ReadingContextRef={kind:"reading";source_id:string;source_hash:string;section_id:string|null;start:number;end:number;graph_revision:string|null;problem_text?:string|null;claimed_known?:number[];condition_hash?:string|null};
 export type TeachBackContextRef={kind:"teach_back";record_id:string;source_hash:string;condition_hash:string;graph_revision:string;condition_id:string};
 export type LearningContextRef=RootContextRef|LinearContextRef|IntegrationContextRef|ReadingContextRef|CodeContextRef|TeachBackContextRef;
+/** Ordinary source discussion carries no condition-card comparison fields. */
+export function readingSourceRef(source:{id:string;source_hash:string;graph_revision?:string},quote:string,sectionId:string|null=null):ReadingContextRef {
+ const end=Array.from(quote).length;
+ if(!source.id||!/^[a-f0-9]{64}$/.test(source.source_hash)||end<1||end>6000)throw Error("请选择 1–6000 字符的有效来源；长文请在完整研读页选段。");
+ if(sectionId===null&&!source.graph_revision)throw Error("课程来源缺少版本，请重新加载。");
+ return {kind:"reading",source_id:source.id,source_hash:source.source_hash,section_id:sectionId,start:0,end,graph_revision:sectionId===null?source.graph_revision!:null};
+}
 const PRIVATE_CHAT_HANDOFF_PREFIX="luojia_private_chat_ref_v1:";
 const PRIVATE_CHAT_HANDOFF_MAX_AGE=30*60*1000;
 export function needsPrivateChatHandoff(ref:LearningContextRef){return ref.kind==="reading"&&Boolean(ref.problem_text);}

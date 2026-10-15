@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { 
   BookOpen, 
@@ -36,21 +36,24 @@ import { getCurrentUserId } from "@/lib/demo-auth";
 import { notesForSource } from "@/lib/learning-input";
 import { ReadingExplanation } from "./reading-explanation";
 import { ReadingDiscussion } from "./reading-discussion";
-import type { ReadingContextRef } from "@/lib/learning-context";
+import {readingSourceRef, type ReadingContextRef} from "@/lib/learning-context";
 
 export interface ReadingDomainViewProps {
   mode: "full" | "canvas";
   initialUnitId?: string;
+  initialReference?: ReadingContextRef;
   onDiscuss?: (ref: ReadingContextRef, prompt: string) => void;
 }
 
 export function ReadingDomainView({
   mode,
   initialUnitId,
+  initialReference,
   onDiscuss,
 }: ReadingDomainViewProps) {
+  const initialSelection = useRef({mode, reference: initialReference});
   const [units, setUnits] = useState<ReadingUnit[]>([]);
-  const [selected, setSelected] = useState<string>(initialUnitId || "NA_NEWTON");
+  const [selected, setSelected] = useState<string>(initialReference?.section_id === null ? initialReference.source_id : initialUnitId || "NA_NEWTON");
   const [documentId, setDocumentId] = useState("");
   const [documents, setDocuments] = useState<{ id: string; filename: string }[]>([]);
   const [doc, setDoc] = useState<ReadingDocument | null>(null);
@@ -64,9 +67,10 @@ export function ReadingDomainView({
 
   // 初始化加载真实数据
   useEffect(() => {
+    const {mode, reference: initialReference} = initialSelection.current;
     let active = true;
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    const urlUnit = params?.get("unit");
+    const urlUnit = mode === "full" ? params?.get("unit") : null;
     if (urlUnit) setSelected(urlUnit);
 
     Promise.all([
@@ -80,13 +84,13 @@ export function ReadingDomainView({
         setNotes(notesRes.notes);
         setDocuments(docsRes.documents);
 
-        const savedDocId = params?.get("document");
+        const savedDocId = mode === "canvas" && initialReference?.section_id != null ? initialReference.source_id : params?.get("document");
         if (savedDocId) {
           const loadedDoc = await learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(savedDocId)}`);
           if (!active) return;
           setDoc(loadedDoc);
           setDocumentId(savedDocId);
-          const savedSection = params?.get("section");
+          const savedSection = mode === "canvas" ? initialReference?.section_id : params?.get("section");
           setSectionId(
             loadedDoc.sections.some((s) => s.id === savedSection)
               ? savedSection!
@@ -136,30 +140,10 @@ export function ReadingDomainView({
   // 严格构造 ReadingContextRef（对齐底层契约）
   const buildCurrentReadingRef = (): ReadingContextRef | null => {
     if (!sourceId || !sourceHash) return null;
-    const quoteLength = Array.from(displayedQuote).length;
-    if (doc) {
-      return {
-        kind: "reading",
-        source_id: doc.id,
-        source_hash: doc.source_hash,
-        section_id: sectionId,
-        start: 0,
-        end: quoteLength,
-        graph_revision: null,
-      };
-    }
-    if (unit) {
-      return {
-        kind: "reading",
-        source_id: unit.id,
-        source_hash: unit.source_hash,
-        section_id: null, // 课程知识包单元的 section_id 必须为 null
-        start: 0,
-        end: quoteLength,
-        graph_revision: unit.graph_revision,
-        condition_hash: unit.condition_hash,
-      };
-    }
+    try {
+      if (doc && section) return readingSourceRef(doc, displayedQuote, section.id);
+      if (unit) return readingSourceRef(unit, displayedQuote);
+    } catch (error) {setError(error instanceof Error ? error.message : "来源不可用");}
     return null;
   };
 
@@ -265,10 +249,10 @@ export function ReadingDomainView({
             <div className="rounded-xl border border-paper-200 dark:border-paper-800 bg-[var(--bg-input)]/40 p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-mono font-semibold text-olive-700 dark:text-olive-300">
-                  【教材文献原文摘录】
+                  {doc ? "【用户上传材料摘录 · 未审核】" : "【课程整理包摘录 · 非教材逐字引文】"}
                 </span>
                 <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                  严格保留断句与原始符号
+                  指纹仅绑定版本，不代表数学审核
                 </span>
               </div>
               <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-[var(--text-primary)] font-serif border-l-2 border-olive-600/70 pl-3">

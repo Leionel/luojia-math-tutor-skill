@@ -39,3 +39,34 @@ test("record versions and selected steps are pinned; dirty parameters cannot sav
   assert.equal(previewMatches(preview,{...proposal.parameters,initial_value:0}),false);
   assert.equal(previewMatches(preview,{...proposal.parameters,max_iterations:10}),false);
 });
+
+
+// Deferred source validation must not revive an explicitly cleared reference.
+import {ReferenceSelection} from "./reference-selection.ts";
+test("clearing a reference and a newer selection supersede pending validation", async () => {
+  const selection = new ReferenceSelection();
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => {finish=resolve;});
+  const old = selection.begin(() => true);
+  let bound = "lab";
+  const validation = pending.then(() => {if(old()) bound="late lab";});
+  const cleared = selection.begin(() => true);
+  bound = "none";
+  finish(); await validation;
+  assert.equal(bound,"none"); assert.equal(cleared(),true);
+  const latest = selection.begin(() => true);
+  assert.equal(cleared(),false); assert.equal(latest(),true);
+});
+test("reference validation cannot finish in a changed account or session", () => {
+  const selection = new ReferenceSelection();
+  let environment=true;
+  const current = selection.begin(() => environment);
+  assert.equal(current(),true); environment=false; assert.equal(current(),false);
+});
+test("conversation busy state blocks source replacement until generation releases its lease", () => {
+  const lifetime = new ChatLifetime();
+  assert.equal(lifetime.busy,false);
+  const lease=lifetime.begin("alice")!;
+  assert.equal(lifetime.busy,true);
+  lifetime.finish(lease); assert.equal(lifetime.busy,false);
+});
