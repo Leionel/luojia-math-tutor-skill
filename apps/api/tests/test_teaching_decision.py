@@ -267,11 +267,19 @@ def test_newton_inquiry_full_cycle_experiment_and_revision(workspace):
     actions = LearningActions(workspace, workspace.repository)
     preview_req = PreviewActionRequest(
         context=ref,
-        parameters=RootPreviewParameters(initial_value=-2.0, tolerance=1e-6, max_iterations=20),
+        parameters=RootPreviewParameters(**{**proposal_card["parameters"], "initial_value": -2.0}),
         request_id="preview-req-1",
+        prediction="预计新初值会避开0与1的循环，但数值观察还不能证明一般收敛。",
     )
+    with pytest.raises(ValueError, match="预测"):
+        actions.preview("alice", session, message, proposal_card["artifact_id"], preview_req.model_copy(update={"prediction": None}))
+    with pytest.raises(ValueError, match="只改变初值"):
+        actions.preview("alice", session, message, proposal_card["artifact_id"], preview_req.model_copy(update={
+            "parameters": preview_req.parameters.model_copy(update={"tolerance": preview_req.parameters.tolerance / 10})}))
     preview_res = actions.preview("alice", session, message, proposal_card["artifact_id"], preview_req)
     assert preview_res["parameters"]["initial_value"] == -2.0
+    assert preview_res["student_prediction"] == preview_req.prediction
+    assert preview_res["prediction_timing"] == "before_preview"
     # 验证确实收敛到了约 -1.769292 的负实根
     assert abs(preview_res["rows"][-1]["x"] - (-1.769292)) < 1e-4
 

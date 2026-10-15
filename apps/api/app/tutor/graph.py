@@ -63,6 +63,7 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    targeted_result: Any
     teaching_decision_enabled: bool
     teaching_decision: dict
     intelligent_ui: dict
@@ -702,6 +703,22 @@ class TutorWorkflow:
             and not _has_completed_math_operation(state.get("verifier_result"))
         )
         state = {**state, "teaching_decision_enabled": self.settings.teaching_decision_enabled}
+        if self.settings.teaching_decision_enabled:
+            from app.knowledge.targeted_retrieval import TargetedCourseRetriever, infer_target_goal
+            goal = infer_target_goal(state.get("pedagogical_action"))
+            if goal:
+                metrics = dict(state.get("metrics", {}))
+                started = time.perf_counter()
+                try:
+                    query = " ".join([state.get("message", ""), (state.get("learning_context") or {}).get("title", "")])
+                    result = await asyncio.wait_for(asyncio.to_thread(
+                        TargetedCourseRetriever().retrieve, query, goal), timeout=0.2)
+                    state = {**state, "targeted_result": result}
+                    metrics.update(targeted_retrieval_status=result.status, targeted_snippet_count=len(result.snippets))
+                except (TimeoutError, ValueError, KeyError, RuntimeError):
+                    metrics["targeted_retrieval_status"] = "unavailable"
+                metrics["targeted_retrieval_ms"] = round((time.perf_counter()-started)*1000, 2)
+                state = {**state, "metrics": metrics}
         return await self._stream_generation(
             state,
             config,

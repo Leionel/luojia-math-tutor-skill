@@ -56,6 +56,15 @@ const meta = {
   answer_guard: { status: "passed" },
   agent_run: { status: "succeeded", message_id: "msg-a" },
 } as unknown as TutorMeta;
+test("Python decision receipts accept nullable experiment fields and validate controlled proposals", () => {
+  assert.ok(parseTeachingDecision({...decision, experiment_proposal: null}));
+  const proposal = {question_to_test: "Does changing the initial value break the cycle?", changed_parameter: "initial_value",
+    suggested_value: -2, candidate_values: [-2, 1.5], observable: "residual and iteration trace"};
+  assert.ok(parseTeachingDecision({...decision, action: "offer_experiment", experiment_proposal: proposal}));
+  assert.equal(parseTeachingDecision({...decision, action: "offer_experiment", experiment_proposal: null}), null);
+  assert.equal(parseTeachingDecision({...decision, experiment_proposal: proposal}), null);
+  assert.equal(parseTeachingDecision({...decision, action: "offer_experiment", experiment_proposal: {...proposal, suggested_value: NaN}}), null);
+});
 test("browser and Python share the checked-in component catalog", () => {
   const catalog = JSON.parse(
     readFileSync(

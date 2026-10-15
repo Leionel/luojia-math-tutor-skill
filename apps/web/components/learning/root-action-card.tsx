@@ -29,6 +29,7 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
   const [tolerance, setTolerance] = useState(String(proposal.parameters.tolerance));
   const [limit, setLimit] = useState(String(proposal.parameters.max_iterations));
   const [observation, setObservation] = useState("");
+  const [prediction, setPrediction] = useState("");
   const [state, setState] = useState<RootActionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -80,7 +81,9 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
     const current = () => version === generation.current && owner === getCurrentUserId() && !controller.signal.aborted;
     try {
       if (action === "preview") {
-        const body = {context, parameters, request_id: stableRequestId(localStorage, `lab-action:${owner}:${proposal.artifact_id}`, {context, parameters}, () => crypto.randomUUID())};
+        const predictionText = prediction.trim() || undefined;
+        if (proposal.experiment_proposal && !predictionText) { setError("请先写下对照实验预测。"); return; }
+        const body = {context, parameters, prediction: predictionText, request_id: stableRequestId(localStorage, `lab-action:${owner}:${proposal.artifact_id}`, {context, parameters, prediction: predictionText}, () => crypto.randomUUID())};
         await learningRequest(`${path}/preview`, body, controller.signal);
       } else {
         if (!state?.preview || !matches || !observation.trim()) return;
@@ -105,6 +108,11 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
       </div>
     </div>
     <div className="space-y-4 p-5">
+      {proposal.experiment_proposal && <label htmlFor={`${id}-prediction`} className="block text-sm">
+        先写下你的预测（保存为学生原话，尚未核验）
+        <textarea id={`${id}-prediction`} className={`${learningInput} mt-2`} rows={2} maxLength={1000}
+          value={prediction} disabled={blocked} onChange={e=>setPrediction(e.target.value)} />
+      </label>}
       {proposal.experiment_proposal && (
         <div className="rounded-xl atelier-hairline border border-olive-500/25 bg-olive-500/10 p-3.5 text-xs space-y-1.5">
           <div className="flex items-center justify-between text-olive-800 dark:text-olive-200 font-medium">
@@ -137,8 +145,8 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
       {!attached && <p className="text-sm leading-6 text-ochre-700 dark:text-ochre-300">这张卡片属于另一实验或迭代步骤。<Link href={`/lab?id=${encodeURIComponent(proposal.context.record_id)}`} className="underline">回看原实验</Link>，或针对当前步骤重新提问。</p>}
       <div className="grid grid-cols-2 gap-3">
         <label htmlFor={`${id}-initial`} className="text-sm">初值 x₀<input id={`${id}-initial`} inputMode="decimal" value={initial} disabled={blocked} onChange={e=>setInitial(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
-        <label htmlFor={`${id}-tolerance`} className="text-sm">阈值<input id={`${id}-tolerance`} inputMode="decimal" value={tolerance} disabled={blocked} onChange={e=>setTolerance(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
-        <label htmlFor={`${id}-limit`} className="col-span-2 text-sm">迭代上限 · 1–100<input id={`${id}-limit`} type="number" min={1} max={100} step={1} value={limit} disabled={blocked} onChange={e=>setLimit(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
+        <label htmlFor={`${id}-tolerance`} className="text-sm">阈值<input id={`${id}-tolerance`} inputMode="decimal" value={tolerance} disabled={blocked || !!proposal.experiment_proposal} onChange={e=>setTolerance(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
+        <label htmlFor={`${id}-limit`} className="col-span-2 text-sm">迭代上限 · 1–100<input id={`${id}-limit`} type="number" min={1} max={100} step={1} value={limit} disabled={blocked || !!proposal.experiment_proposal} onChange={e=>setLimit(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
       </div>
       {!saved && <button type="button" disabled={blocked || !parameters || (state?.preview_ids.length ?? 0)>=proposal.preview_budget} onClick={()=>void act("preview")} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-olive-500/40 text-olive-800 transition-colors hover:bg-olive-500/10 focus-visible:outline-2 focus-visible:outline-olive-600 disabled:opacity-45 dark:text-olive-200">{busy?<Loader2 aria-hidden="true" className="size-4 animate-spin"/>:<FlaskConical aria-hidden="true" className="size-4"/>}预览参数 · {state?.preview_ids.length ?? 0}/{proposal.preview_budget}</button>}
       {state?.preview && <div className="rounded-lg bg-[var(--bg-tertiary)] p-4">

@@ -68,8 +68,16 @@ const decisionSchema = z
       )
       .max(6),
     ui_status: z.literal("fallback").optional(),
+    experiment_proposal: z.object({
+      question_to_test: z.string().min(1).max(300),
+      changed_parameter: z.literal("initial_value"),
+      suggested_value: z.number().finite().min(-1e25).max(1e25),
+      candidate_values: z.array(z.number().finite().min(-1e25).max(1e25)).max(2).default([]),
+      observable: z.string().min(1).max(200),
+    }).strict().nullable().optional(),
   })
-  .strict();
+  .strict().refine(value => value.action === "offer_experiment" ? !!value.experiment_proposal : !value.experiment_proposal,
+    "Experiment proposal must match the teaching action");
 const artifactSchema = z
   .object({
     catalog_version: z.literal(UI_CATALOG_VERSION),
@@ -110,6 +118,7 @@ export function evidenceText(data: unknown): string {
   if (typeof value.k === "number" && typeof value.x === "number")
     return `第 ${value.k} 步：近似值 ${value.x}${typeof value.fx === "number" ? `，函数值 ${value.fx}` : ""}`;
   return [
+    value.title,
     value.concept,
     value.excerpt,
     value.quote,
@@ -123,6 +132,8 @@ export function evidenceText(data: unknown): string {
       ? `适用前提：${value.assumptions.join("；")}`
       : null,
     value.data ? evidenceText(value.data) : null,
+    typeof value.provenance === "string" ? `来源：${value.provenance}` : null,
+    value.scope === "reference_provenance_only" ? "资料摘录用于核对前提；检索命中不代表本题已满足条件。" : null,
   ]
     .filter(
       (part): part is string => typeof part === "string" && part.length > 0,

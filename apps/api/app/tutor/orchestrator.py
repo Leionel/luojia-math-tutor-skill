@@ -574,8 +574,8 @@ class TutorOrchestrator:
                                  verification_kind="none", mastery_delta=0,
                                  verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
             decision = learning_meta.get("teaching_decision") or {}
-            offer_exp = decision.get("action") == "offer_experiment"
-            exp_prop = decision.get("experiment_proposal")
+            offer_exp = decision.get("status") == "accepted" and decision.get("action") == "offer_experiment"
+            exp_prop = decision.get("experiment_proposal") if offer_exp else None
             if snapshot["ref"]["kind"]=="root_lab" and (not snapshot.get("student_claim") or offer_exp) and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
                 from app.tutor.learning_actions import root_proposal
                 learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id, exp_prop)]

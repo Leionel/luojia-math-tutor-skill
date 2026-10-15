@@ -6,7 +6,7 @@ import type { ReviewData } from "./review-card";
 import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
 import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown, FlaskConical, BookOpen, CalendarCheck2 } from "lucide-react";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown, FlaskConical, BookOpen, CalendarCheck2, Code2 } from "lucide-react";
 import { useScrollPinning } from "@/lib/use-scroll-pinning";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
@@ -209,14 +209,14 @@ export function TutorChat() {
 
   function restoreWorkspace(query:URLSearchParams){
     const ws = query.get("workspace");
-    if (ws === "lab" || ws === "reading" || ws === "study") {
+    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "code") {
       setActiveWorkspaceTab(ws);
       setWorkspaceOpen(true);
     } else if (ws === "true") {
       setActiveWorkspaceTab("lab");
       setWorkspaceOpen(true);
     }
-    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "true") {
+    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "code" || ws === "true") {
       const restored = new URLSearchParams(window.location.search);
       restored.set("workspace", ws === "true" ? "lab" : ws);
       window.history.replaceState(null, "", `/chat?${restored}`);
@@ -565,7 +565,7 @@ export function TutorChat() {
     }
   }
 
-  type BindResult = 
+  type BindResult =
     | { ok: true; snapshot: LearningTaskSnapshot | null }
     | { ok: false; error: string };
 
@@ -628,11 +628,11 @@ export function TutorChat() {
   function closeWorkspace(){setWorkspaceOpen(false);const query=new URLSearchParams(window.location.search);query.delete("workspace");window.history.replaceState(null,"",`/chat${query.size?`?${query}`:""}`);}
 
   async function submit(
-    value: string, 
-    forcedMode?: TutorMode, 
-    requestedHint: boolean = false, 
-    imageUrls?: string[], 
-    rootSubmission?: RootSubmission, 
+    value: string,
+    forcedMode?: TutorMode,
+    requestedHint: boolean = false,
+    imageUrls?: string[],
+    rootSubmission?: RootSubmission,
     parentRunId?: string,
     explicitSnapshot?: LearningTaskSnapshot | null
   ) {
@@ -1049,7 +1049,7 @@ export function TutorChat() {
               <div className="flex items-center gap-1.5">
                 <span className="font-title text-xs font-semibold text-[var(--text-primary)]">学术伴读工坊</span>
                 <span className="text-[10px] text-olive-700 dark:text-olive-300 bg-olive-500/10 px-1.5 py-0.5 rounded-full font-mono border border-olive-500/20">
-                  {workspaceOpen ? (activeWorkspaceTab === "lab" ? "实验联动中" : activeWorkspaceTab === "reading" ? "文献对照中" : "日课演练中") : "随时可开启分栏画布"}
+                  {workspaceOpen ? ({lab: "实验联动中", reading: "文献对照中", study: "日课演练中", code: "代码审阅中"}[activeWorkspaceTab]) : "随时可开启分栏画布"}
                 </span>
               </div>
             </div>
@@ -1100,6 +1100,21 @@ export function TutorChat() {
               >
                 <CalendarCheck2 className="size-3" />
                 <span>今日日课</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "code") openWorkspace({ ref: learningContext?.ref }, "code");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "code"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <Code2 className="size-3" />
+                <span>算法工坊</span>
               </button>
             </div>
 
@@ -1318,6 +1333,12 @@ export function TutorChat() {
                 if (window.innerWidth < 1280) closeWorkspace();
               }}
               onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
+              codeRef={learningContext?.ref.kind === "code_static" ? learningContext.ref : undefined}
+              onDiscussCode={async (ref, prompt) => {
+                const res = await validateAndBindReference(ref);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
               readingRef={learningContext?.ref.kind === "reading" ? learningContext.ref : undefined}
               onDiscussReading={async (ref, prompt) => {
                 const res = await validateAndBindReference(ref);
@@ -1335,7 +1356,7 @@ export function TutorChat() {
         {workspaceOpen && !desktopWorkspace && !isZenMode && (
           <div className="xl:hidden">
             <MobileDrawer
-              title={`学术工坊 · ${activeWorkspaceTab === "lab" ? "数值实验台" : activeWorkspaceTab === "reading" ? "经典研读录" : "今日日课案"}`}
+              title={`学术工坊 · ${{lab: "数值实验台", reading: "经典研读录", study: "今日日课案", code: "算法工坊案"}[activeWorkspaceTab]}`}
               side="right"
               breakpoint={1280}
               onClose={closeWorkspace}
@@ -1365,6 +1386,13 @@ export function TutorChat() {
                   onDiscussStudy={async (prompt, taskRef) => {
                     closeWorkspace();
                     const res = await validateAndBindReference(taskRef || null);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                  }}
+                  codeRef={learningContext?.ref.kind === "code_static" ? learningContext.ref : undefined}
+                  onDiscussCode={async (ref, prompt) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(ref);
                     if (!res.ok) return;
                     void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
                   }}

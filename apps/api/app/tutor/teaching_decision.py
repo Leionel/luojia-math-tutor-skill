@@ -10,7 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, FiniteFloat
 
 from app.math_tools.verifier import VerifyResult
 from app.tutor.prompt_policy import resolve_teaching_policy
@@ -33,9 +33,9 @@ class Assessment(BaseModel):
 class ExperimentProposal(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     question_to_test: str = Field(min_length=1, max_length=300)
-    changed_parameter: Literal["initial_value", "tolerance", "max_iterations"] = "initial_value"
-    suggested_value: float = Field(ge=-1e25, le=1e25)
-    candidate_values: list[float] = Field(default_factory=list, max_length=2)
+    changed_parameter: Literal["initial_value"] = "initial_value"
+    suggested_value: FiniteFloat = Field(ge=-1e25, le=1e25)
+    candidate_values: list[FiniteFloat] = Field(default_factory=list, max_length=2)
     observable: str = Field(min_length=1, max_length=200)
 
 
@@ -76,6 +76,34 @@ def source_bundle(state: dict, tool_evidence: list | None = None) -> dict:
     for hit in state.get("hits", [])[:5]:
         item = hit.item
         sources.append({"id": f"knowledge:{item.id}", "kind": "reference", "data": {"concept": item.concept_zh, "excerpt": item.description[:900]}})
+    from app.knowledge.targeted_retrieval import TargetedRetrievalResult, TargetedEvidenceSnippet
+    result = state.get("targeted_result")
+    targeted = result.snippets if isinstance(result, TargetedRetrievalResult) else state.get("targeted_snippets", [])
+    for snippet in (targeted or [])[:3]:
+        if (not isinstance(snippet, TargetedEvidenceSnippet) or snippet.review_status != "verified"
+                or not re.fullmatch(r"targeted:[0-2]", snippet.id)
+                or snippet.scope != "reference_provenance_only"
+                or not re.fullmatch(r"[a-f0-9]{64}", snippet.content_hash) or not snippet.graph_revision):
+            continue
+        sid = snippet.id if hasattr(snippet, "id") else snippet.get("id")
+        title = snippet.title if hasattr(snippet, "title") else snippet.get("title", "")
+        content = snippet.content if hasattr(snippet, "content") else snippet.get("content", "")
+        provenance = snippet.provenance if hasattr(snippet, "provenance") else snippet.get("provenance", "")
+        goal = snippet.goal if hasattr(snippet, "goal") else snippet.get("goal", "")
+        sources.append({
+            "id": sid,
+            "kind": "reference",
+            "data": {
+                "title": title,
+                "excerpt": content[:900],
+                "provenance": provenance,
+                "goal": goal,
+                "scope": "reference_provenance_only",
+                "review_status": snippet.review_status,
+                "content_hash": snippet.content_hash,
+                "graph_revision": snippet.graph_revision,
+            }
+        })
     for index, evidence in enumerate(tool_evidence or []):
         sources.append({"id": f"tool:{index}", "kind": "scoped_check" if evidence.get("execution_succeeded") else "unavailable", "data": evidence})
     # Version of selected source AND claim; never reapply a decision to another turn.
@@ -146,6 +174,10 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
                 raise ValueError("missing_experiment_proposal")
             context = state.get("learning_context") or {}
             params = context.get("parameters") or {}
+            if (context.get("ref") or {}).get("kind") != "root_lab" or params.get("method") != "newton":
+                raise ValueError("invalid_experiment_context")
+            if any(abs(value) > 1e25 or value == params.get("initial_value") for value in decision.experiment_proposal.candidate_values):
+                raise ValueError("invalid_experiment_candidates")
             if decision.experiment_proposal.changed_parameter in params:
                 cur_val = params[decision.experiment_proposal.changed_parameter]
                 if isinstance(cur_val, (int, float)) and abs(cur_val - decision.experiment_proposal.suggested_value) < 1e-12:
@@ -154,7 +186,7 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
             raise ValueError("unrequested_experiment_proposal")
         accepted = {"version": DECISION_VERSION, "status": "accepted", "origin": "model_opinion", **decision.model_dump(), **bundle}
     except (ValueError, TypeError, ValidationError) as error:
-        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence", "missing_experiment_proposal", "experiment_parameter_unchanged", "unrequested_experiment_proposal"}:
+        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence", "missing_experiment_proposal", "experiment_parameter_unchanged", "unrequested_experiment_proposal", "invalid_experiment_context", "invalid_experiment_candidates"}:
             fallback["reason_code"] = str(error)
         return fallback, None
 

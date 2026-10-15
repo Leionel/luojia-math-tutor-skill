@@ -191,10 +191,12 @@ def build_verifier_prompt(state: dict) -> list[dict[str, Any]]:
 def build_teacher_prompt(state: dict) -> list[dict[str, Any]]:
     verification = state.get("verification_result") or {}
     deterministic = state.get("verifier_result")
-    from app.tutor.teaching_decision import decision_prompt
+    from app.tutor.teaching_decision import decision_prompt, source_bundle
     return _with_node_slots(
         state, "teach",
         teaching_decision=decision_prompt(state) if state.get("teaching_decision_enabled") else None,
+        targeted_evidence=[source for source in source_bundle(state)["sources"]
+                           if source["id"].startswith("targeted:")],
         verification={"llm_review": verification,
                       "deterministic": asdict(deterministic) if isinstance(deterministic, VerifyResult) else {}},
         instruction="遵循 resolved_policy 的披露边界；启用 teaching_decision 时依据当前证据选择动作，不强制走固定追问链。分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。" if state.get("teaching_decision_enabled") else "遵循 resolved_policy；分别说明确定性检查和LLM审查的证据，未检查不声称验证通过。",

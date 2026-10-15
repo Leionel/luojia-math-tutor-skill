@@ -22,6 +22,7 @@ class PreviewActionRequest(BaseModel):
     context: LearningContextRef
     parameters: RootPreviewParameters
     request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    prediction: str | None = Field(default=None, min_length=1, max_length=1000, pattern=r"\S")
 
 
 class SavePreviewRequest(BaseModel):
@@ -92,8 +93,16 @@ class LearningActions:
         with self.store.transaction():
             proposal, snapshot = self._proposal(owner, session, message, artifact, request.context)
             self._unexpired(proposal)
+            if proposal.get("experiment_proposal"):
+                if not request.prediction:
+                    raise ValueError("请先写下对照实验预测，再确认预览。")
+                if (request.parameters.tolerance != proposal["parameters"]["tolerance"]
+                        or request.parameters.max_iterations != proposal["parameters"]["max_iterations"]
+                        or request.parameters.initial_value == proposal["parameters"]["initial_value"]):
+                    raise ValueError("本次对照只改变初值，阈值与迭代预算须保持不变。")
             shape_hash = digest({"session": session, "message": message, "artifact": artifact,
-                                 "context": request.context.model_dump(), "parameters": request.parameters.model_dump()})
+                                 "context": request.context.model_dump(), "parameters": request.parameters.model_dump(),
+                                 "prediction": request.prediction})
             old = self.store.learning_record(owner, self.course_id, "lab_preview", request.request_id)
             if old:
                 if old["input_hash"] != shape_hash:
@@ -109,12 +118,14 @@ class LearningActions:
             params = {**snapshot["parameters"], "initial_value": request.parameters.initial_value,
                       "tolerance": request.parameters.tolerance}
             lab_request = LabRequest(attempt=params, max_iterations=request.parameters.max_iterations,
-                                     prediction="参考参数预览（未填写学生预测）", request_id=request.request_id)
+                                     prediction=request.prediction or "参考参数预览（未填写学生预测）", request_id=request.request_id)
             computed = run_reference(lab_request)
             self._proposal(owner, session, message, artifact, request.context)
             result = {**computed, "id": request.request_id, "input_hash": shape_hash,
                       "context": request.context.model_dump(), "parameters": lab_request.attempt.model_dump(),
                       "max_iterations": request.parameters.max_iterations, "artifact_id": artifact,
+                      "student_prediction": request.prediction,
+                      "prediction_timing": "before_preview" if request.prediction else "not_provided",
                       "session_id": session, "message_id": message, "created_at": datetime.now(timezone.utc).isoformat()}
             if len(json.dumps(result, ensure_ascii=False, allow_nan=False).encode()) > 65536:
                 raise ValueError("预览输出超出预算，本次未保存。")
@@ -147,7 +158,9 @@ class LearningActions:
                 request_id=f"saved-{digest([session,artifact,request.preview_id])[:48]}"))
             if saved["rows"] != preview["rows"]:
                 raise ValueError("计算结果已变化，请重新预览。")
-            saved.update(prediction_timing="after_preview", linked_preview_id=request.preview_id)
+            saved.update(prediction_timing="after_preview", linked_preview_id=request.preview_id,
+                         student_prediction=preview.get("student_prediction"),
+                         observation=request.observation)
             self.workspace.save(owner, "lab", saved["id"], saved)
             self.workspace.save(owner, "learning_action", artifact, {**state, "state":"saved", "saved_run_id":saved["id"]})
             return saved

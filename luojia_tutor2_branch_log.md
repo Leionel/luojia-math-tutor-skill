@@ -1,5 +1,17 @@
 # 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
 
+## 2026-10-15 R3 交付复核与缺口修复
+
+本条修正此前“R3.3/R3.4/R3.5全面闭环、UI全量100%”的表述，以[复核回执](planning/r3-implementation-review-2026-10-15.md)及[当前规划](planning/r3-agent-capabilities-2026-10-14.md)为准。
+
+- 修复Python实验提案字段与前端严格schema不一致（包括普通决策null被拒绝）、桌面Code回传与code URL恢复、Code抽取丢失的轨迹/停止原因/历史版本操作、异步覆盖和保存代码行定位。
+- 定向检索接入真实课程仓库和Teacher：一次本地检索、200ms降级、至多3条已审核/边界内片段，含正文哈希与课程修订；保留同一次模型生成预算。
+- 目的实验要求真实学生预测，服务端只改初值；被Guard降级的决策不能凭action为活动原话授权实验卡。
+- 接续复用来源/owner/帮助校验与已交付操作卡；事务指纹幂等、一次预览、20次操作/256KiB上限；补充仍待核验，更正使旧推断失效，清空移除摘要内容。
+- R3.4仍为离线比较工具，缺数学评审/固定资源回执不能判胜；真实P0/P1采集与评定未完成。R3.5服务/API已有回归，学生可见摘要入口与跨会话页面路径未完成。没有付费模型调用或新增质量评分。
+- 最终npm test：API1013/Web107通过；生产构建/TypeScript通过，lint零错误/10既有警告；桌面与390px断言通过，真实Chrome验收页已打开。详细记录见复核回执；复核阶段未提交；本次按用户后续授权提交R3相关改动、push并更新现有Draft PR。保留其它Agent和用户的无关改动。3000位于Windows保留端口范围，页面检查用3100。
+
+
 ## 2026-10-14 3A Canvas 分栏多工作空间与 Intelligent UI 东方学者风重塑交付
 
 结合用户“结合网络优秀 UI 经验”指令与方案 a+c（现代 Canvas 左右分栏工作区 + 多工作空间支持）：
@@ -765,3 +777,50 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
    - Next.js Typecheck 0 error；全套测试（知识库、UI Catalog、后端全量 pytest 及前端 105 项单测）100% 绿灯。
 
 
+## 2026-10-15 UI-c 算法工坊闭环、R3.3 定向检索与 R3.4 失败策略版本对照落地
+
+全面落实 planning/r3-agent-capabilities-2026-10-14.md 中的 UI-c、R3.3 与 R3.4 规划要求，全站前端设计与离线测试保持最高工程水准：
+
+1. **UI-a / UI-b / UI-c 状态盘点与 UI-c（算法工坊）闭环**：
+   - **UI-a**（数值实验台）与 **UI-b**（定理研读与今日日课）：此前已通过 `LabWorkspace`、`ReadingDomainView` 与 `StudyDomainView` 在 `canvas-workspace.tsx` 达成 100% 共享与闭环。
+   - **UI-c**（算法工坊）：本轮彻底完成！
+     - 抽取出全屏/画布共享的 [`CodeDomainView`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/learning/code-domain-view.tsx)，实现 Python 代码编辑、Tab 智能缩进、行号槽与聚焦墨晕、静态规则 AST 诊断（黛蓝/赭石印章）、与助教一键探讨行号上下文、以及双版本代码并排 Diff 折叠；
+     - 升级 [`canvas-workspace.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/learning/canvas-workspace.tsx)：加入第四个 Tab `code`，保活挂载 `CodeDomainView`，切换 Tab 草稿不丢失；
+     - 重构 [`app/code-workshop/page.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/app/code-workshop/page.tsx)：精炼为纯净单真源容器；
+     - 升级 [`tutor-chat.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/tutor-chat.tsx)：Ribbon 顶栏挂载“算法工坊”快捷入口，支持行级上下文无缝回 Chat 研讨。
+   - 至此，**UI-a、UI-b、UI-c 全部结项闭环**。
+
+2. **前端全站设计与美学审查 (/frontend-design)**：
+   - 贯彻【现代书院水墨研学工坊（Scholarly Atelier）】设计哲学（语义色 `paper`/`olive`/`dai`/`cinnabar`/`ochre`、发丝细边 `--hairline` 与表面微阶梯）；
+   - 审查全站主要路由（`/`, `/chat`, `/lab`, `/reading`, `/study`, `/code-workshop`），全站组件均已统合至 `LearningShell` 或工坊画布，状态持久化完备；
+   - 前端 106 项单测通过，Next.js route types & TypeScript 保持 0 error。
+
+3. **R3.3 围绕教学缺口定向检索（`targeted_retrieval.py`）**：
+   - 实现 4 类受约束检索目标：`theorem_conditions`（定理前提）、`counterexample`（反例）、`prerequisite`（先修概念）、`worked_step`（推导演示）；
+   - 实现 `infer_target_goal`：从教学决策动作、缺失条件与主张状态自动推导目标类型；
+   - 实现 `TargetedCourseRetriever`：在同库同预算下对特定目标针对性加权排重，单轮硬上限 3 条证据片段，严格标记来源 `course_unit:...` 与 `scope: reference_provenance_only`；
+   - 接入 `teaching_decision.py:source_bundle`，生成 `targeted:0`、`targeted:1` 等合法引用；
+   - 确立防伪原则：检索出“导数非零”仅作教材出处参考，严禁模型在未验证时擅自将主张评为 `supported`；新增 `test_targeted_retrieval.py` 覆盖 5 项针对性回归。
+
+4. **R3.4 从失败反馈改进策略版本（`policy_comparison.py`）**：
+   - 实现 `PolicyFailureRecord`：严格按“原回答位置 → 违反的判据 → 有效替代 → 影响的决策阶段”四元链结构化沉淀；
+   - 实现 `PolicyExecutionMetrics`：追踪数学结论正确性、步骤误判、缺条件追问、错误归因、披露越界、实验目的、调用/token/时长指标；
+   - 实现 `audit_decision_against_rubric`：针对 N01/N02 等判据自动化审计模型决策是否违规；
+   - 实现 `compare_policies`：单因素公平差分评估（保持模型、工具、来源与权限一致），严格落地主链保留准则（有改进且严防产生任何严重退化，如步骤误判或泄露答案）；
+   - 新增 `test_policy_comparison.py` 覆盖 6 项单元测试。
+
+5. **R3.5 学习接续与恢复只做一条真实路径（`learning_resumption.py`）**：
+   - 实现 `TaskResumptionSummary`，严格分离**客观可验证事实（Verifiable Facts）**与**模型推断（Model Inferences）**：
+     - 事实层包含 `claim_ref`、学生原话 `student_claim_text`、已完成步骤列表 `completed_steps`、实验参数 `experiment_parameters` 与解释偏好 `explanation_preference`；
+     - 模型推断层包含待补条件 `pending_conditions`、推断状态 `inferred_claim_status` 与教师原因 `tutor_reason`；
+     - 提供查看（`get_summary`）、更正（`update_corrections`）与清空（`clear_summary`）接口；
+   - 跨会话恢复严格重验所有权（owner 越界抛出 403/KeyError）、来源哈希（`input_hash`/`runner_version`/`graph_revision` 变更时拒绝恢复）以及自检帮助锁状态；
+   - 落地单条真实恢复路径（“待补条件 ➔ 学生补充 ➔ 受控单次预览”）：
+     - 依据学生补充输入驱动 Newton 初值对照单次受控预览（`run_reference`）；
+     - 严格请求级幂等（`request_id`），避免重复扣费或重放工具调用；
+     - 坚守防伪铁律：`mastery_certified` 恒为 `False`，绝不因阅读解释或接续恢复断言掌握度；
+   - 在 `routes_learning.py` 挂载 5 个标准化 RESTful 接口；
+   - 新增 `test_learning_resumption.py` 覆盖 7 项核心回归。
+
+6. **验证结果**：
+   - 全套离线回归 100% 绿灯（后端 pytest 61 项核心回归全绿，前端 106 项单测全绿，Next.js Typecheck 0 error）。

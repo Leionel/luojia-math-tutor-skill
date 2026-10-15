@@ -2,22 +2,24 @@
 
 import React from "react";
 import Link from "next/link";
-import { 
-  FlaskConical, 
-  BookOpen, 
-  CalendarCheck2, 
-  Maximize2, 
-  Minimize2, 
-  ExternalLink, 
+import {
+  FlaskConical,
+  BookOpen,
+  CalendarCheck2,
+  Code2,
+  Maximize2,
+  Minimize2,
+  ExternalLink,
   X,
 } from "lucide-react";
 import { LabWorkspace } from "./lab-workspace";
 import { ReadingDomainView } from "./reading-domain-view";
 import { StudyDomainView } from "./study-domain-view";
-import type { RootContextRef, ReadingContextRef, LearningContextRef } from "@/lib/learning-context";
+import { CodeDomainView } from "./code-domain-view";
+import type { RootContextRef, ReadingContextRef, LearningContextRef, CodeContextRef } from "@/lib/learning-context";
 import type { LabRun, StudyTask } from "@/lib/learning-api";
 
-export type WorkspaceTab = "lab" | "reading" | "study";
+export type WorkspaceTab = "lab" | "reading" | "study" | "code";
 
 export interface CanvasWorkspaceProps {
   activeTab: WorkspaceTab;
@@ -34,6 +36,8 @@ export interface CanvasWorkspaceProps {
   onDiscussReading?: (ref: ReadingContextRef, prompt: string) => void;
   onDiscussStudy?: (prompt: string, taskRef?: LearningContextRef | null) => void;
   onStartStudyTask?: (task: StudyTask) => void;
+  codeRef?: CodeContextRef;
+  onDiscussCode?: (ref: CodeContextRef, prompt: string) => void;
 }
 
 export function CanvasWorkspace({
@@ -51,13 +55,15 @@ export function CanvasWorkspace({
   onDiscussReading,
   onDiscussStudy,
   onStartStudyTask,
+  codeRef,
+  onDiscussCode,
 }: CanvasWorkspaceProps) {
   return (
     <div className="flex h-full flex-col bg-[var(--bg-primary)]">
       {/* 1. Canvas Atelier Ribbon / Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-paper-200/80 dark:border-paper-800/80 atelier-hairline bg-[var(--bg-card)]/90 backdrop-blur-md px-4 py-2.5">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-paper-200/80 dark:border-paper-800/80 atelier-hairline bg-[var(--bg-card)]/90 backdrop-blur-md px-3 py-2.5">
         {/* Left: Tab Switcher Pills */}
-        <div className="flex items-center gap-1 rounded-xl bg-paper-100/80 dark:bg-paper-900/60 p-1 atelier-hairline border border-paper-200/60 dark:border-paper-800/60">
+        <div className="flex min-w-0 max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-xl bg-paper-100/80 dark:bg-paper-900/60 p-1 atelier-hairline border border-paper-200/60 dark:border-paper-800/60">
           <button
             type="button"
             onClick={() => onTabChange("lab")}
@@ -96,6 +102,19 @@ export function CanvasWorkspace({
             <CalendarCheck2 className="w-3.5 h-3.5 text-olive-600" />
             <span>今日日课案</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => onTabChange("code")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === "code"
+                ? "bg-[var(--bg-card)] text-olive-800 dark:text-olive-200 shadow-2xs border border-paper-200 dark:border-paper-700"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5 text-olive-600" />
+            <span>算法工坊案</span>
+          </button>
         </div>
 
         {/* Right: Window Controls */}
@@ -107,7 +126,9 @@ export function CanvasWorkspace({
                 ? "/lab"
                 : activeTab === "reading"
                 ? "/reading"
-                : "/study"
+                : activeTab === "study"
+                ? "/study"
+                : `/code-workshop${codeRef ? `?id=${encodeURIComponent(codeRef.record_id)}` : ""}`
             }
             target="_blank"
             rel="noopener noreferrer"
@@ -177,6 +198,18 @@ export function CanvasWorkspace({
               }
             }}
             onStartTask={onStartStudyTask}
+          />
+        </div>
+
+        <div className={activeTab === "code" ? "h-full p-4" : "hidden"}>
+          <CodeDomainView
+            mode="canvas"
+            initialSubmissionId={codeRef?.record_id}
+            onDiscussFinding={(ref, prompt) => {
+              if (onDiscussCode) {
+                onDiscussCode(ref, prompt);
+              }
+            }}
           />
         </div>
       </div>

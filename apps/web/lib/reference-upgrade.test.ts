@@ -133,7 +133,7 @@ test("reading reference restoration rejects hash mismatch, corrupted spans, and 
 });
 
 
-import {readingSourceRef} from "./learning-context.ts";
+import {readingSourceRef, codeContextRef} from "./learning-context.ts";
 test("ordinary course discussion has no condition-comparison authority and uses Unicode offsets",()=>{
  const ref=readingSourceRef({id:"NA_NEWTON",source_hash:"a".repeat(64),graph_revision:"g1"},"甲📘乙");
  assert.equal(ref.end,3);assert.equal(ref.section_id,null);
@@ -142,4 +142,19 @@ test("ordinary course discussion has no condition-comparison authority and uses 
  assert.equal(document.section_id,"section2");assert.equal(document.graph_revision,null);
  assert.throws(()=>readingSourceRef({id:"unit",source_hash:"a".repeat(64),graph_revision:"g1"},"a".repeat(6001)));
  assert.throws(()=>readingSourceRef({id:"unit",source_hash:"a".repeat(64)},"摘录"));
+});
+
+test("code workshop reference enforces finding bounds and returns to code-workshop",()=>{
+ const submission = {
+   id: "sub-123",
+   code_hash: "c".repeat(64),
+   static_rule_version: "v2",
+   findings: [{kind: "naming", line: 3, message: "变量命名规范"}],
+ } as unknown as Parameters<typeof codeContextRef>[0];
+ const ref = codeContextRef(submission, 0);
+ assert.equal(ref.kind, "code_static");
+ assert.equal(ref.record_id, "sub-123");
+ assert.equal(ref.selected_finding, 0);
+ assert.equal(referenceHref({ref} as unknown as Parameters<typeof referenceHref>[0]), "/code-workshop?id=sub-123");
+ assert.throws(() => codeContextRef(submission, 1));
 });

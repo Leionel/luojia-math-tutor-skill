@@ -4,7 +4,7 @@ import type {LabRun} from "./learning-api";
 export type PreviewParameters = {initial_value: number; tolerance: number; max_iterations: number};
 export type ExperimentProposal = {
   question_to_test: string;
-  changed_parameter: "initial_value" | "tolerance" | "max_iterations";
+  changed_parameter: "initial_value";
   suggested_value: number;
   candidate_values?: number[];
   observable: string;
@@ -37,8 +37,8 @@ export function parseRootProposals(value: unknown): RootProposal[] {
     const expValid = !exp || (
       typeof exp.question_to_test === "string" && exp.question_to_test.length > 0
       && typeof exp.observable === "string" && exp.observable.length > 0
-      && (exp.changed_parameter === "initial_value" || exp.changed_parameter === "tolerance" || exp.changed_parameter === "max_iterations")
-      && typeof exp.suggested_value === "number" && Number.isFinite(exp.suggested_value)
+      && exp.changed_parameter === "initial_value"
+      && typeof exp.suggested_value === "number" && Number.isFinite(exp.suggested_value) && Math.abs(exp.suggested_value) <= 1e25
     );
     const item = v as Record<string, unknown>;
     return item.version === "tutor-artifact-v1" && item.kind === "root_parameter_proposal" && item.action === "preview_root_lab"

@@ -1,5 +1,46 @@
 # CODEX 交接文档
 
+## 2026-10-15 R3 交付复核与缺口修复
+
+本条修正此前“R3.3/R3.4/R3.5全面闭环、UI全量100%”的表述，以[复核回执](planning/r3-implementation-review-2026-10-15.md)及[当前规划](planning/r3-agent-capabilities-2026-10-14.md)为准。
+
+- 修复Python实验提案字段与前端严格schema不一致（包括普通决策null被拒绝）、桌面Code回传与code URL恢复、Code抽取丢失的轨迹/停止原因/历史版本操作、异步覆盖和保存代码行定位。
+- 定向检索接入真实课程仓库和Teacher：一次本地检索、200ms降级、至多3条已审核/边界内片段，含正文哈希与课程修订；保留同一次模型生成预算。
+- 目的实验要求真实学生预测，服务端只改初值；被Guard降级的决策不能凭action为活动原话授权实验卡。
+- 接续复用来源/owner/帮助校验与已交付操作卡；事务指纹幂等、一次预览、20次操作/256KiB上限；补充仍待核验，更正使旧推断失效，清空移除摘要内容。
+- R3.4仍为离线比较工具，缺数学评审/固定资源回执不能判胜；真实P0/P1采集与评定未完成。R3.5服务/API已有回归，学生可见摘要入口与跨会话页面路径未完成。没有付费模型调用或新增质量评分。
+- 最终npm test：API1013/Web107通过；生产构建/TypeScript通过，lint零错误/10既有警告；桌面与390px断言通过，真实Chrome验收页已打开。详细记录见复核回执；复核阶段未提交；本次按用户后续授权提交R3相关改动、push并更新现有Draft PR。保留其它Agent和用户的无关改动。3000位于Windows保留端口范围，页面检查用3100。
+
+
+## 2026-10-15 R3.3 / R3.4 / R3.5 与 UI-c 算法工坊全面闭环落地
+
+全面推进 R3 核心能力与工作区闭环：
+1. **UI-a / UI-b / UI-c 状态盘点与 UI-c 结项**：
+   - UI-a（数值实验台）与 UI-b（经典研读与今日日课）此前已闭环；
+   - 本轮完成 UI-c（算法工坊）：抽象出 `CodeDomainView`，接入 `canvas-workspace.tsx` 第四个 Tab（`code`），重构 `/code-workshop` 独立路由为纯净容器；
+   - 包含 Python 代码编辑器（带 Tab 缩进、行号槽与聚焦墨晕）、AST 静态规范印章诊断、双版本代码并排 Diff 折叠、以及 `onDiscussCode` 行号上下文一键直达 Chat 研讨；
+   - 至此，UI-a、UI-b、UI-c 全部闭环并达成 100% 逻辑复用与草稿保活。
+2. **R3.3 围绕教学缺口定向检索**：
+   - 新建 `apps/api/app/knowledge/targeted_retrieval.py`：定义 4 类受约束检索目标（`theorem_conditions`, `counterexample`, `prerequisite`, `worked_step`）；
+   - 实现 `TargetedCourseRetriever` 与 `infer_target_goal`：单轮硬上限 3 条证据片段，严格标记 `course_unit:...` 来源与 `scope: reference_provenance_only`；
+   - 接入 `teaching_decision.py:source_bundle`，生成 `targeted:0` 等合法引用；严格落实防伪原则（检索到定理不等于学生满足前提条件）；
+   - 新增 `apps/api/tests/test_targeted_retrieval.py` 覆盖 5 项针对性回归。
+3. **R3.4 从失败反馈改进策略版本**：
+   - 新建 `apps/api/app/tutor/policy_comparison.py`：沉淀“原回答位置 → 违反的判据 → 有效替代 → 影响的决策阶段”四元链结构；
+   - 定义 `PolicyExecutionMetrics` 与 `PolicyComparisonReport`；
+   - 实现 `audit_decision_against_rubric` 与 `compare_policies`：单因素公平对比，主链严格保留防退化标准（有收益且无任何步骤误判或泄露答案严重退化）；
+   - 新增 `apps/api/tests/test_policy_comparison.py` 覆盖 6 项单元测试。
+4. **R3.5 学习接续与恢复只做一条真实路径**：
+   - 新建 `apps/api/app/tutor/learning_resumption.py`：设计 `TaskResumptionSummary`，客观可验证事实（`claim_ref`、学生原话、已完成步骤、实验参数、解释偏好）与模型推断（待补条件、推断状态、教师原因）严格分层保存；
+   - 支持学生端查看、更正偏好/原话与清空；
+   - 跨会话重验用户所有权（防跨账号泄露）、来源版本哈希（防过期或篡改实验）与自检帮助锁状态；
+   - 闭环单条真实恢复路径（“待补条件 ➔ 学生补充 ➔ 受控单次预览”）：依据补充参数执行单次 Newton 对照预览，严格 `request_id` 幂等防重复执行与扣费，铁律保障 `mastery_certified: False`（决不因接续恢复虚构学生掌握度）；
+   - 在 `routes_learning.py` 挂载 5 个 RESTful 接口；
+   - 新增 `apps/api/tests/test_learning_resumption.py` 覆盖 7 项单元测试。
+5. **前端全站美学审查 (/frontend-design) 与验证**：
+   - 严格遵循现代书院水墨工坊（Scholarly Atelier）规范（语义色 `paper`/`olive`/`dai`/`cinnabar`/`ochre`、发丝细边 `--hairline` 与表面微阶梯）；
+   - 前端 106 项单测通过，Next.js Typecheck 0 error；后端 pytest 61 项核心回归全绿。
+
 ## 2026-10-15 R3.1 / R3.2 教学决策与受控对照实验提案、Newton 选项一闭环落地
 
 完成 R3.1、R3.2 教学动作与选项一（Newton 探究式全流程闭环）的落地与端到端验证：

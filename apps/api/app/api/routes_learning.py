@@ -12,6 +12,8 @@ from app.tutor.learning_workspace import LearningWorkspace
 from app.tutor.newton_activity import NewtonActivity
 from app.tutor.reading_explanation import source_excerpt, explain
 from app.tutor.learning_extensions import assignment, create_teach_back, model_teach_back, submit_code
+from app.tutor.learning_context import ReferenceContext
+from app.tutor.learning_resumption import ResumeActionRef
 
 router = APIRouter(prefix="/api", tags=["learning-workspace"])
 
@@ -353,3 +355,92 @@ def submit(assessment_id: str, principal: Principal = Depends(get_principal)):
 @router.post("/assessments/{assessment_id}/end")
 def end_assessment(assessment_id: str, principal: Principal = Depends(get_principal)):
     return invoke(lambda: workspace().end_assessment(principal.user_id, assessment_id))
+
+
+# --- R3.5 Learning Resumption & State Recovery ---
+class SaveSummaryRequest(Body):
+    task_id: str = Field(min_length=1, max_length=100)
+    claim_ref: ReferenceContext
+    student_claim_text: str = Field(min_length=1, max_length=2000, pattern=r"\S")
+    completed_steps: list[str] = Field(default_factory=list, max_length=20)
+    experiment_parameters: dict = Field(default_factory=dict)
+    pending_conditions: list[str] = Field(default_factory=list, max_length=10)
+    explanation_preference: Literal["socratic", "direct"] = "socratic"
+    inferred_claim_status: Literal["supported", "partially_supported", "contradicted", "unknown"] | None = None
+    tutor_reason: str = Field(default="", max_length=500)
+    suggested_proposal: dict | None = None
+    help_exposed: bool = False
+
+
+class CorrectionRequest(Body):
+    explanation_preference: Literal["socratic", "direct"] | None = None
+    corrected_claim_text: str | None = Field(default=None, min_length=1, max_length=2000, pattern=r"\S")
+
+
+class ResumeStepRequest(Body):
+    request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    supplemented_condition: str = Field(min_length=1, max_length=1000)
+    changed_parameter_value: FiniteFloat | None = Field(default=None, ge=-1e25, le=1e25)
+    action_ref: ResumeActionRef | None = None
+    prediction: str | None = Field(default=None, min_length=1, max_length=1000, pattern=r"\S")
+
+
+@router.post("/learning/resumption/save")
+def save_resumption_summary(body: SaveSummaryRequest, principal: Principal = Depends(get_principal), service: LearningWorkspace = Depends(get_learning_workspace)):
+    from app.tutor.learning_resumption import LearningResumptionService
+    svc = LearningResumptionService(service)
+    return invoke(lambda: svc.save_summary(
+        owner=principal.user_id,
+        task_id=body.task_id,
+        claim_ref=body.claim_ref.model_dump(),
+        student_claim_text=body.student_claim_text,
+        completed_steps=body.completed_steps,
+        experiment_parameters=body.experiment_parameters,
+        pending_conditions=body.pending_conditions,
+        explanation_preference=body.explanation_preference,
+        inferred_claim_status=body.inferred_claim_status,
+        tutor_reason=body.tutor_reason,
+        suggested_proposal=body.suggested_proposal,
+        help_exposed=body.help_exposed,
+    ))
+
+
+@router.get("/learning/resumption/{task_id}")
+def get_resumption_summary(task_id: str, principal: Principal = Depends(get_principal), service: LearningWorkspace = Depends(get_learning_workspace)):
+    from app.tutor.learning_resumption import LearningResumptionService
+    svc = LearningResumptionService(service)
+    return invoke(lambda: svc.get_summary(principal.user_id, task_id))
+
+
+@router.post("/learning/resumption/{task_id}/corrections")
+def update_resumption_corrections(task_id: str, body: CorrectionRequest, principal: Principal = Depends(get_principal), service: LearningWorkspace = Depends(get_learning_workspace)):
+    from app.tutor.learning_resumption import LearningResumptionService
+    svc = LearningResumptionService(service)
+    return invoke(lambda: svc.update_corrections(
+        owner=principal.user_id,
+        task_id=task_id,
+        explanation_preference=body.explanation_preference,
+        corrected_claim_text=body.corrected_claim_text,
+    ))
+
+
+@router.delete("/learning/resumption/{task_id}")
+def clear_resumption_summary(task_id: str, principal: Principal = Depends(get_principal), service: LearningWorkspace = Depends(get_learning_workspace)):
+    from app.tutor.learning_resumption import LearningResumptionService
+    svc = LearningResumptionService(service)
+    return invoke(lambda: svc.clear_summary(principal.user_id, task_id))
+
+
+@router.post("/learning/resumption/{task_id}/resume")
+def resume_task_step(task_id: str, body: ResumeStepRequest, principal: Principal = Depends(get_principal), service: LearningWorkspace = Depends(get_learning_workspace)):
+    from app.tutor.learning_resumption import LearningResumptionService
+    svc = LearningResumptionService(service)
+    return invoke(lambda: svc.resume_step(
+        owner=principal.user_id,
+        task_id=task_id,
+        request_id=body.request_id,
+        supplemented_condition=body.supplemented_condition,
+        changed_parameter_value=body.changed_parameter_value,
+        action_ref=body.action_ref.model_dump() if body.action_ref else None,
+        prediction=body.prediction,
+    ))
