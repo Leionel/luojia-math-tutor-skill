@@ -8,3 +8,4 @@ evaluation/r1/a0-development-cases.json text eol=lf
 evaluation/r2/b4-variants-v1.json text eol=lf
 apps/api/app/tutor/learning_workspace.py text eol=lf
 apps/api/app/tutor/learning_extensions.py text eol=crlf
+protocol/intelligent-ui-prompt.txt text eol=lf
