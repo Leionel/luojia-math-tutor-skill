@@ -94,3 +94,41 @@ test("B5 return links keep the saved object and leave private code out of URLs",
  assert.notEqual(referenceChatKey("alice",code),referenceChatKey("bob",code));
  assert.notEqual(referenceChatKey("alice",code),referenceChatKey("alice",{...code,code_hash:"b".repeat(64)}));
 });
+
+test("reading unit and document references enforce field contracts and prevent section_id confusion",()=>{
+ // 1. 课程大纲单元：section_id 必为 null
+ const unitRef = {kind: "reading" as const, source_id: "NA_NEWTON", source_hash: "a".repeat(64), section_id: null, start: 0, end: 15, graph_revision: "v1"};
+ const unitSnapshot = {ref: unitRef, source_kind: "unit", citation: {quote: "定理2.1收敛性", start: 0, end: 15, conditions: []}} as unknown as Parameters<typeof referenceHref>[0];
+ assert.equal(referenceHref(unitSnapshot), "/reading?unit=NA_NEWTON");
+ assert.ok(referenceChatKey("alice", unitRef).includes(":course"));
+
+ // 2. 上传文档：section_id 为章节 ID（非 source_document_id）
+ const docRef = {kind: "reading" as const, source_id: "doc_abc123", source_hash: "b".repeat(64), section_id: "sec_4", start: 10, end: 30, graph_revision: null};
+ const docSnapshot = {ref: docRef, source_kind: "document", citation: {quote: "弦截法推导", start: 10, end: 30, conditions: []}} as unknown as Parameters<typeof referenceHref>[0];
+ assert.equal(referenceHref(docSnapshot), "/reading?document=doc_abc123&section=sec_4");
+ assert.ok(referenceChatKey("alice", docRef).includes(":sec_4"));
+
+ // 3. 严禁混淆：若将 source_document_id 填入 section_id，生成的链接与键严格不相符
+ const confusedRef = {...docRef, section_id: docRef.source_id};
+ assert.notEqual(referenceChatKey("alice", docRef), referenceChatKey("alice", confusedRef));
+ assert.notEqual(referenceHref(docSnapshot), referenceHref({ref: confusedRef} as unknown as Parameters<typeof referenceHref>[0]));
+});
+
+test("reading reference restoration rejects hash mismatch, corrupted spans, and cross-owner handoff",()=>{
+ const source = {source_id: "doc_test", source_hash: "1".repeat(64), section_id: "sec_1", graph_revision: null};
+ const rawValid = JSON.stringify({kind: "reading", ...source, start: 5, end: 20});
+ assert.deepEqual(restoreReadingReference(rawValid, source, 50), {kind: "reading", ...source, start: 5, end: 20});
+
+ // Hash 漂移（文档内容已重新解析/更新）严格拒绝恢复
+ const rawDriftedHash = JSON.stringify({kind: "reading", ...source, source_hash: "2".repeat(64), start: 5, end: 20});
+ assert.equal(restoreReadingReference(rawDriftedHash, source, 50), null);
+
+ // 选段超出当前新正文长度严格拒绝
+ const rawOverflow = JSON.stringify({kind: "reading", ...source, start: 5, end: 60});
+ assert.equal(restoreReadingReference(rawOverflow, source, 50), null);
+
+ // 选段倒置或负数严格拒绝
+ assert.equal(restoreReadingReference(JSON.stringify({kind: "reading", ...source, start: 20, end: 5}), source, 50), null);
+ assert.equal(restoreReadingReference(JSON.stringify({kind: "reading", ...source, start: -1, end: 10}), source, 50), null);
+});
+

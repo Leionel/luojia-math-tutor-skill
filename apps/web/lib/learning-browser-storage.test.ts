@@ -32,10 +32,11 @@ test("old private reading questions and their discussion drafts move to tab stor
 });
 
 test("logout clears learning drafts and private handoffs from both stores, not preferences",()=>{
- const local=storage({"reading-note:alice:source":"未保存笔记","code-workshop:alice:new:code":"print(1)","luojia_user_api_key":"synthetic-key","luojia-theme":"dark"});
+ const local=storage({"reading-note:alice:source":"未保存笔记","trace-draft:alice:task_1":"x0=1.5;x1=1.414","code-workshop:alice:new:code":"print(1)","luojia_user_api_key":"synthetic-key","luojia-theme":"dark"});
  const session=storage({"reading-selection:alice:source":"私题","luojia_private_chat_ref_v1:ref":"私题","pendingQuiz":"待讨论"});
  clearLearningBrowserState(local,session);
  assert.equal(local.getItem("reading-note:alice:source"),null);
+ assert.equal(local.getItem("trace-draft:alice:task_1"),null);
  assert.equal(local.getItem("code-workshop:alice:new:code"),null);
  assert.equal(local.getItem("luojia_user_api_key"),null);
  assert.equal(session.length,0);
