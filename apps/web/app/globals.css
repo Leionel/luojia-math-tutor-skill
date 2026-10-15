@@ -53,6 +53,14 @@
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
+
+  /* 视网膜高分屏物理发丝补偿与工坊微阶梯 */
+  --hairline: 1px;
+  --hairline-color: var(--border-subtle);
+  --atelier-surface-0: var(--bg-primary);
+  --atelier-surface-1: var(--bg-secondary);
+  --atelier-surface-2: var(--bg-card);
+  --atelier-composer-shadow: 0 4px 20px -2px rgba(42, 43, 38, 0.05), inset 0 0 0 var(--hairline) var(--border-primary);
 }
 
 html.dark {
@@ -101,6 +109,19 @@ html.dark {
   --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.55);
   --shadow-bubble: 0 2px 14px -2px rgba(0, 0, 0, 0.4);
   --shadow-input: 0 8px 32px -4px rgba(0, 0, 0, 0.55);
+
+  --hairline-color: var(--border-subtle);
+  --atelier-surface-0: var(--bg-primary);
+  --atelier-surface-1: var(--bg-secondary);
+  --atelier-surface-2: var(--bg-card);
+  --atelier-composer-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4), inset 0 0 0 var(--hairline) var(--border-primary);
+}
+
+/* 高分屏视网膜物理发丝细线补偿 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx), (resolution >= 2x) {
+  :root, html.dark {
+    --hairline: 0.5px;
+  }
 }
 
 * {
@@ -267,3 +288,20 @@ html.dark .katex-block {
 html.dark .katex-inline {
   color: #e2e8f0;
 }
+
+/* 学术工坊发丝边与宣纸微阶梯实用类 (Scholarly Atelier Hairline & Surface Staircase) */
+.atelier-hairline {
+  box-shadow: 0 0 0 var(--hairline) var(--hairline-color);
+}
+
+.atelier-card-shell {
+  border: var(--hairline) solid var(--hairline-color);
+  background-color: var(--atelier-surface-2);
+}
+
+.atelier-composer-shell {
+  box-shadow: var(--atelier-composer-shadow);
+  border: var(--hairline) solid var(--border-primary);
+}
+
+

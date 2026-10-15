@@ -11,6 +11,8 @@ import {
   computeEdgeFades,
   computeThinkingAccordionState,
   formatThoughtAsQuote,
+  resolveHairlineWidth,
+  getAtelierSurfaceVar,
 } from "./interaction-physics.ts";
 
 test("interaction physics: clamps split pane widths within safe hardware boundaries", () => {
@@ -238,5 +240,22 @@ test("interaction physics: thought formatting as quote for mathematical discussi
     "> 推演残差条件\n> 假设导数非零"
   );
 });
+
+test("interaction physics: retina hairline border width resolution", () => {
+  // Standard 1x displays -> 1px
+  assert.equal(resolveHairlineWidth(1), 1);
+  assert.equal(resolveHairlineWidth(1.5), 1);
+
+  // Retina 2x / 3x displays -> 0.5px
+  assert.equal(resolveHairlineWidth(2), 0.5);
+  assert.equal(resolveHairlineWidth(3), 0.5);
+});
+
+test("interaction physics: atelier surface staircase variables", () => {
+  assert.equal(getAtelierSurfaceVar(0), "var(--atelier-surface-0)");
+  assert.equal(getAtelierSurfaceVar(1), "var(--atelier-surface-1)");
+  assert.equal(getAtelierSurfaceVar(2), "var(--atelier-surface-2)");
+});
+
 
 

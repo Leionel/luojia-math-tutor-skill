@@ -55,9 +55,9 @@ export function CanvasWorkspace({
   return (
     <div className="flex h-full flex-col bg-[var(--bg-primary)]">
       {/* 1. Canvas Atelier Ribbon / Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-paper-200 dark:border-paper-800 bg-[var(--bg-card)]/90 backdrop-blur-md px-4 py-2.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-paper-200/80 dark:border-paper-800/80 atelier-hairline bg-[var(--bg-card)]/90 backdrop-blur-md px-4 py-2.5">
         {/* Left: Tab Switcher Pills */}
-        <div className="flex items-center gap-1 rounded-xl bg-paper-100 dark:bg-paper-900/60 p-1 border border-paper-200/60 dark:border-paper-800/60">
+        <div className="flex items-center gap-1 rounded-xl bg-paper-100/80 dark:bg-paper-900/60 p-1 atelier-hairline border border-paper-200/60 dark:border-paper-800/60">
           <button
             type="button"
             onClick={() => onTabChange("lab")}

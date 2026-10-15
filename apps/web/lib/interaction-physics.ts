@@ -128,4 +128,33 @@ export function formatThoughtAsQuote(rawThought: string): string {
     .join("\n");
 }
 
+/**
+ * 视网膜高分屏物理发丝边宽度解析 (Hairline resolution)
+ * 当 devicePixelRatio >= 2 时，物理 1px 细线视觉粗重，需补偿为 0.5px。
+ */
+export function resolveHairlineWidth(devicePixelRatio: number = 1): number {
+  if (devicePixelRatio >= 2) {
+    return 0.5;
+  }
+  return 1;
+}
+
+/**
+ * 学术工坊微阶梯表面层级 (Atelier Surface Staircase)
+ * 映射层级 0 (底层案台), 1 (工作区底色), 2 (卡片与输入容器)
+ */
+export type AtelierSurfaceLevel = 0 | 1 | 2;
+
+export function getAtelierSurfaceVar(level: AtelierSurfaceLevel): string {
+  switch (level) {
+    case 0:
+      return "var(--atelier-surface-0)";
+    case 1:
+      return "var(--atelier-surface-1)";
+    case 2:
+      return "var(--atelier-surface-2)";
+  }
+}
+
+
 

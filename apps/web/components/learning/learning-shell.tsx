@@ -188,9 +188,9 @@ export function AtelierFolioCard({
   };
 
   return (
-    <section className={`relative rounded-2xl border border-paper-300/80 dark:border-paper-700/80 bg-[var(--bg-card)] p-5 sm:p-6 shadow-soft hover:shadow-card hover:border-paper-400 dark:hover:border-paper-600 transition-all duration-300 overflow-hidden ${className}`}>
+    <section className={`relative rounded-2xl atelier-hairline border border-paper-300/80 dark:border-paper-700/80 bg-[var(--bg-card)] p-5 sm:p-6 shadow-soft hover:shadow-card hover:border-paper-400 dark:hover:border-paper-600 transition-all duration-300 overflow-hidden ${className}`}>
       {/* 顶部微光发丝线 (Top Hairline Highlight) */}
-      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-[var(--hairline)] bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent pointer-events-none" />
 
       <div className="flex items-center justify-between border-b border-paper-200/60 dark:border-paper-800/60 pb-3.5 mb-4 gap-3">
         <div className="flex items-center gap-2.5 min-w-0">

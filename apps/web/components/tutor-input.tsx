@@ -203,7 +203,7 @@ export function TutorInput({
 
   return (
     <div className="bg-transparent p-2 sm:p-4 pb-2 transition-colors duration-300">
-      <div className="mx-auto max-w-4xl rounded-xl border border-[#d8cfb4] dark:border-[#3e3f36] bg-[#fbf9f4]/95 dark:bg-[#1f201c]/95 backdrop-blur-xl shadow-input transition-all duration-300 relative group focus-within:border-olive-600/70 focus-within:ring-2 focus-within:ring-olive-600/15">
+      <div className="mx-auto max-w-4xl rounded-xl atelier-composer-shell bg-[#fbf9f4]/95 dark:bg-[#1f201c]/95 backdrop-blur-xl transition-all duration-300 relative group focus-within:border-olive-600/70 focus-within:ring-2 focus-within:ring-olive-600/15">
         {previewUrl && (
           <div className="relative p-4 pb-0 bg-transparent">
             <div className="relative inline-block border border-[var(--border-subtle)] rounded-xl overflow-hidden bg-white/60 dark:bg-black/40 shadow-xs">
