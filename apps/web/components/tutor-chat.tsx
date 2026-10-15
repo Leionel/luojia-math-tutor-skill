@@ -499,21 +499,50 @@ export function TutorChat() {
     }
   }
 
-  async function selectWorkspaceReference(ref:RootContextRef) {
-    const owner=getCurrentUserId(),generation=viewGeneration.current,selection=++contextSelection.current;
-    setContextLoading(true);setContextError("");
+  type BindResult = 
+    | { ok: true; snapshot: LearningTaskSnapshot | null }
+    | { ok: false; error: string };
+
+  async function validateAndBindReference(ref: LearningContextRef | null): Promise<BindResult> {
+    if (!ref) {
+      setLearningContext(null);
+      setContextError("");
+      const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
+      const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
+      if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
+      window.history.replaceState(null, "", `/chat${query.size ? `?${query}` : ""}`);
+      return { ok: true, snapshot: null };
+    }
+    const owner = getCurrentUserId(), generation = viewGeneration.current, selection = ++contextSelection.current;
+    setContextLoading(true); setContextError("");
     try {
-      const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",ref,AbortSignal.timeout(15000));
-      if(!alive.current||owner!==getCurrentUserId()||generation!==viewGeneration.current||selection!==contextSelection.current)return;
+      const snapshot = await learningRequest<LearningTaskSnapshot>("/tutor/context", ref, AbortSignal.timeout(15000));
+      if (!alive.current || owner !== getCurrentUserId() || generation !== viewGeneration.current || selection !== contextSelection.current) {
+        return { ok: false, error: "环境已切换，校验终止" };
+      }
       setLearningContext(snapshot);
-      const query=new URLSearchParams(sessionId?{session:sessionId}:{});
-      const visibleWorkspace=new URLSearchParams(window.location.search).get("workspace");
-      appendContextQuery(query,snapshot.ref,owner);
-      if(workspaceOpenRef.current && visibleWorkspace)query.set("workspace",visibleWorkspace);
-      window.history.replaceState(null,"",`/chat?${query}`);
-      if(sessionId)referenceBrowserStorage(false,localStorage,sessionStorage).setItem(referenceChatKey(owner,snapshot.ref),sessionId);
-    }catch(error){if(alive.current&&owner===getCurrentUserId()&&generation===viewGeneration.current&&selection===contextSelection.current)setContextError(error instanceof Error?error.message:"来源引用不可用");}
-    finally{if(alive.current&&generation===viewGeneration.current&&selection===contextSelection.current)setContextLoading(false);}
+      const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
+      const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
+      appendContextQuery(query, snapshot.ref, owner);
+      if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
+      window.history.replaceState(null, "", `/chat?${query}`);
+      if (sessionId) referenceBrowserStorage(false, localStorage, sessionStorage).setItem(referenceChatKey(owner, snapshot.ref), sessionId);
+      return { ok: true, snapshot };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "来源引用不可用";
+      if (alive.current && owner === getCurrentUserId() && generation === viewGeneration.current && selection === contextSelection.current) {
+        setContextError(msg);
+      }
+      return { ok: false, error: msg };
+    } finally {
+      if (alive.current && generation === viewGeneration.current && selection === contextSelection.current) {
+        setContextLoading(false);
+      }
+    }
+  }
+
+  async function selectWorkspaceReference(ref: RootContextRef) {
+    await validateAndBindReference(ref);
   }
   function openWorkspace(intent:WorkspaceIntent={}, tab: WorkspaceTab = "lab") {
     setActiveWorkspaceTab(tab);
@@ -529,10 +558,19 @@ export function TutorChat() {
   }
   function closeWorkspace(){setWorkspaceOpen(false);const query=new URLSearchParams(window.location.search);query.delete("workspace");window.history.replaceState(null,"",`/chat${query.size?`?${query}`:""}`);}
 
-  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false, imageUrls?: string[], rootSubmission?: RootSubmission, parentRunId?:string) {
-    if (isStreaming || contextLoading || contextError) return;
-    if (learningContext && (rootSubmission || imageUrls?.length)) {
-      setRootError("请先移除实验引用，再发送自己的作答或图片。"); return;
+  async function submit(
+    value: string, 
+    forcedMode?: TutorMode, 
+    requestedHint: boolean = false, 
+    imageUrls?: string[], 
+    rootSubmission?: RootSubmission, 
+    parentRunId?: string,
+    explicitSnapshot?: LearningTaskSnapshot | null
+  ) {
+    const activeSnapshot = explicitSnapshot !== undefined ? explicitSnapshot : learningContext;
+    if (isStreaming || contextLoading || (explicitSnapshot === undefined && contextError)) return;
+    if (activeSnapshot && (rootSubmission || imageUrls?.length)) {
+      setRootError("请先移除实验或文献引用，再发送自己的作答或图片。"); return;
     }
     const manager=lifetime.current,lease=manager.begin(getCurrentUserId());
     if(!lease)return;
@@ -547,7 +585,7 @@ export function TutorChat() {
         if(!valid())return;
         activeSession=createdId;setSessionId(activeSession);
       }
-      if(learningContext)referenceBrowserStorage(needsPrivateChatHandoff(learningContext.ref),localStorage,sessionStorage).setItem(referenceChatKey(getCurrentUserId(),learningContext.ref),activeSession);
+      if(activeSnapshot)referenceBrowserStorage(needsPrivateChatHandoff(activeSnapshot.ref),localStorage,sessionStorage).setItem(referenceChatKey(getCurrentUserId(),activeSnapshot.ref),activeSession);
       const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
       setMessages(current=>[...current,userMessage,{id:assistantId,role:"assistant",content:"",status:"thinking"}]);
       setMeta(null);setThinkingChains({});setThinkingElapsed(0);activeRunRef.current=undefined;
@@ -562,20 +600,20 @@ export function TutorChat() {
 
       await manager.stream(lease,
         {
-          study_action: !learningContext && !rootSubmission && !imageUrls?.length && studyRequested(value)?"current_tasks":undefined,
+          study_action: !activeSnapshot && !rootSubmission && !imageUrls?.length && studyRequested(value)?"current_tasks":undefined,
           root_submission: rootSubmission,
-          learning_context: learningContext?.ref,
+          learning_context: activeSnapshot?.ref,
           parent_run_id:parentRunId,
           session_id: activeSession,
           message: value,
           subject: "auto",
           mode: forcedMode || mode,
-          user_api_key: !learningContext && studyRequested(value)?null:getUserApiKey() || null,
-          model: !learningContext && studyRequested(value)?undefined:getPreferredModel(),
+          user_api_key: !activeSnapshot && studyRequested(value)?null:getUserApiKey() || null,
+          model: !activeSnapshot && studyRequested(value)?undefined:getPreferredModel(),
           requested_hint: requestedHint,
           image_urls: imageUrls,
           abortSignal: abortControllerRef.current.signal,
-          web_search_mode: learningContext?"off":webSearch,
+          web_search_mode: activeSnapshot?"off":webSearch,
           reasoning_effort: reasoningEffort,
         },
         (nextMeta) => {
@@ -1176,6 +1214,16 @@ export function TutorChat() {
               }}
               onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
               onAskTutor={(prompt) => void submit(prompt, "socratic")}
+              onDiscussReading={async (ref, prompt) => {
+                const res = await validateAndBindReference(ref);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
+              onDiscussStudy={async (prompt, taskRef) => {
+                const res = await validateAndBindReference(taskRef || null);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
             />
           </aside>
         )}
@@ -1205,6 +1253,18 @@ export function TutorChat() {
                   onAskTutor={(prompt) => {
                     closeWorkspace();
                     void submit(prompt, "socratic");
+                  }}
+                  onDiscussReading={async (ref, prompt) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(ref);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                  }}
+                  onDiscussStudy={async (prompt, taskRef) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(taskRef || null);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
                   }}
                 />
               </div>
