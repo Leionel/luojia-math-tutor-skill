@@ -23,6 +23,7 @@
      - `d7ba8ac` feat(web): shared domain views and real api integration for reading and study
      - `654d8ce` feat(web): atomic reference validation and explicit snapshot passing in chat
      - `4f05644` feat(web): tab draft preservation and precise source provenance in context banner
+     - `881ae36` test(web): add regression coverage for reading field contracts, hash drift rejection, and trace draft logout cleanup
 
 ## 2026-10-14 R3.1 与 3A UI-a 首版交付
 

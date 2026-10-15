@@ -704,3 +704,4 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
    - `d7ba8ac` feat(web): shared domain views and real api integration for reading and study
    - `654d8ce` feat(web): atomic reference validation and explicit snapshot passing in chat
    - `4f05644` feat(web): tab draft preservation and precise source provenance in context banner
+   - `881ae36` test(web): add regression coverage for reading field contracts, hash drift rejection, and trace draft logout cleanup
