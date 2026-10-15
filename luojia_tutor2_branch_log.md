@@ -736,3 +736,32 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
    - 前端单测由 90 项扩充至 105 项全绿通过；
    - 后端 982 项 pytest 全量离线通过。
 
+
+## 2026-10-15 R3.1 / R3.2 教学决策与 Newton 探究闭环落地（选项一）
+
+落实 planning/r3-agent-capabilities-2026-10-14.md 中的 R3.1、R3.2 规范与选项一（Newton 探究式学习“预测→反例→解释→修订”闭环）：
+
+1. **R3.1 基于证据选择教学动作与权限控制 (`teaching_decision.py`)**：
+   - 定义 `TeachingDecision` 强类型 Pydantic Schema（`claim_ref`, `evidence_refs`, `known_conditions`, `missing_conditions`, `claim_status`, `action`, `disclosure`, `reason`, `assessments`, `experiment_proposal`）；
+   - 在 `resolve_decision` 实现严格确定性校验与降级防线：
+     - `evidence_refs` 与子评估必须真实来自于 `source_bundle` 中的可用证据；
+     - `action` 与 `claim_status` 严格互锁（如 `confirm_local` 必须基于 `supported`/`partially_supported`；`ask_missing_condition` 必须提供 `missing_conditions`；非 unknown 必须有除学生原话外的证据引用支撑）；
+     - `disclosure` 权限严格与提示策略同步。
+
+2. **R3.2 受控单变量对照实验提案契约 (`teaching_decision.py` / `learning_actions.py`)**：
+   - 定义 `ExperimentProposal` 强类型模型（`question_to_test` 实验目的, `changed_parameter` 单一变量, `suggested_value` 推荐数值, `candidate_values` 候选数值, `observable` 预期观察指标）；
+   - 规则互锁：`action == "offer_experiment"` 时必须携带合法 proposal 且建议数值不能与当前初值完全相同（避免假对照）；非 `offer_experiment` 动作禁止附带该提案；
+   - 在 `learning_actions.py:root_proposal` 接入 `experiment_proposal`，自动生成 `suggested_parameters` 供给学生端交互；
+   - 允许被解释绑定的 `root_lab`（`activity_claim`）在收到 `offer_experiment` 教学动作时，安全受控解锁参数提案卡片。
+
+3. **选项一：Newton 探究式闭环深度完善与直达回链 (`root-action-card.tsx`)**：
+   - 升级 `RootActionCard`：水墨发丝边质感呈现“🎯 助教建议对照实验（单变量对照）”、实验目的、预期观察与建议初值；
+   - 提供【一键填入建议初值】按钮，学生无需手工复制即可将模型建议填入参数台，点击预览后由后端 Newton 真实数值引擎运算；
+   - 在实验保存后，若当前卡片属于 Newton 活动（`activity_claim` 存在），卡片提供【回到 Newton 探究活动提交修订 →】直达链接，打通“反例振荡观察 ➔ 提出解释 ➔ 助教提案 ➔ 填入初值并计算 ➔ 观察收敛实根 ➔ 回到活动提交修订 ➔ 助教确认”的完整闭环。
+
+4. **端到端测试与质量防线**：
+   - 后端新增 `test_newton_inquiry_full_cycle_experiment_and_revision` 端到端集成测试，覆盖从预测、振荡反例、解释、实验提案、初值 -2.0 运算验证收敛至 -1.769292 负实根、保存后修订、到 `confirm_local` 确认全流程；
+   - 前端 `chat-lifetime.test.ts` 覆盖 `ExperimentProposal` 解析契约与非法参数过滤；
+   - Next.js Typecheck 0 error；全套测试（知识库、UI Catalog、后端全量 pytest 及前端 105 项单测）100% 绿灯。
+
+

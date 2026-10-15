@@ -96,12 +96,44 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
     } catch (e) {if (current()) setError(e instanceof Error ? e.message : "操作未完成，请重试");}
     finally {if (version === generation.current) {locked.current = false; setBusy(false);}}
   }
-  return <section aria-label="调整实验参数" className="mt-5 overflow-hidden rounded-2xl border border-olive-500/25 bg-[var(--bg-card)] shadow-[0_6px_24px_-16px_rgba(63,76,49,.35)]">
+  return <section aria-label="调整实验参数" className="mt-5 overflow-hidden rounded-2xl atelier-hairline border border-olive-500/25 bg-[var(--bg-card)] shadow-[0_6px_24px_-16px_rgba(63,76,49,.35)]">
     <div className="flex items-start gap-3 border-b border-olive-500/15 bg-olive-500/5 px-5 py-4">
       <FlaskConical aria-hidden="true" className="mt-1 size-5 shrink-0 text-olive-700 dark:text-olive-300"/>
-      <div><h3 className="font-serif text-lg font-semibold">换一个初值，看看会怎样</h3><p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">沿用原函数和方法。由你调整参数，确认后预览。</p></div>
+      <div>
+        <h3 className="font-serif text-lg font-semibold">{proposal.experiment_proposal ? "受控对照实验提案" : "换一个初值，看看会怎样"}</h3>
+        <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{proposal.experiment_proposal ? "根据当前论点设计的单参数对照试验。确认后预览。" : "沿用原函数和方法。由你调整参数，确认后预览。"}</p>
+      </div>
     </div>
     <div className="space-y-4 p-5">
+      {proposal.experiment_proposal && (
+        <div className="rounded-xl atelier-hairline border border-olive-500/25 bg-olive-500/10 p-3.5 text-xs space-y-1.5">
+          <div className="flex items-center justify-between text-olive-800 dark:text-olive-200 font-medium">
+            <span>🎯 助教建议对照实验</span>
+            <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-olive-500/20">单变量对照</span>
+          </div>
+          <p className="text-[var(--text-secondary)] leading-relaxed"><strong className="text-[var(--text-primary)]">实验目的：</strong>{proposal.experiment_proposal.question_to_test}</p>
+          <p className="text-[var(--text-secondary)] leading-relaxed"><strong className="text-[var(--text-primary)]">预期观察：</strong>{proposal.experiment_proposal.observable}</p>
+          {proposal.suggested_parameters && (
+            <div className="pt-1 flex items-center justify-between">
+              <span className="text-[var(--text-muted)]">建议参数：<span className="font-mono font-bold text-olive-700 dark:text-olive-300">x₀ = {proposal.suggested_parameters.initial_value}</span></span>
+              {!saved && !expired && (
+                <button
+                  type="button"
+                  disabled={blocked}
+                  onClick={() => {
+                    if (proposal.suggested_parameters) {
+                      setInitial(String(proposal.suggested_parameters.initial_value));
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-olive-600/15 text-olive-800 dark:text-olive-200 hover:bg-olive-600/25 text-xs font-medium transition-colors"
+                >
+                  一键填入建议初值
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {!attached && <p className="text-sm leading-6 text-ochre-700 dark:text-ochre-300">这张卡片属于另一实验或迭代步骤。<Link href={`/lab?id=${encodeURIComponent(proposal.context.record_id)}`} className="underline">回看原实验</Link>，或针对当前步骤重新提问。</p>}
       <div className="grid grid-cols-2 gap-3">
         <label htmlFor={`${id}-initial`} className="text-sm">初值 x₀<input id={`${id}-initial`} inputMode="decimal" value={initial} disabled={blocked} onChange={e=>setInitial(e.target.value)} className={`${learningInput} mt-2 font-mono`}/></label>
@@ -120,7 +152,27 @@ function RootActionCard({proposal, sessionId, messageId, context, disabled, onSa
         <label htmlFor={`${id}-observation`} className="block text-sm">预览后的观察<textarea id={`${id}-observation`} rows={3} maxLength={1000} value={observation} disabled={blocked} onChange={e=>setObservation(e.target.value)} placeholder="哪个变化和你的理解一致？还需要核对什么条件？" className={`${learningInput} mt-2`}/></label>
         <button type="button" disabled={blocked || !matches || !observation.trim()} onClick={()=>void act("save")} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-olive-700 px-4 font-medium text-paper-50 transition-colors hover:bg-olive-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive-600 disabled:opacity-45">保存这次实验<ArrowRight aria-hidden="true" className="size-4"/></button>
       </>}
-      {saved && <p className="flex items-center gap-2 text-sm text-olive-700 dark:text-olive-300"><Check aria-hidden="true" className="size-4"/>已保存 · <Link href={`/lab?id=${encodeURIComponent(saved.id)}`} className="inline-flex min-h-12 items-center underline">回看新实验</Link></p>}
+      {saved && (
+        <div className="space-y-1.5 pt-1 text-sm text-olive-700 dark:text-olive-300">
+          <p className="flex items-center gap-2 font-medium">
+            <Check aria-hidden="true" className="size-4 text-olive-600 dark:text-olive-400"/>
+            已保存新实验 · 选中的参数与轨迹已生效
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+            <Link href={`/lab?id=${encodeURIComponent(saved.id)}`} className="inline-flex min-h-9 items-center underline">
+              回看新实验
+            </Link>
+            {proposal.context.activity_claim && (
+              <Link
+                href={`/lab?activity=newton-cycle-v1&run=${encodeURIComponent(proposal.context.record_id)}&claim=${encodeURIComponent(proposal.context.activity_claim.request_id)}`}
+                className="inline-flex min-h-9 items-center font-medium text-olive-800 dark:text-olive-200 underline"
+              >
+                回到 Newton 探究活动提交修订 →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
       {expired && !saved && <p className="text-sm text-ochre-700 dark:text-ochre-300">卡片已过期，请重新讨论当前实验。</p>}
       {error && <p role="alert" className="text-sm leading-6 text-cinnabar-700 dark:text-cinnabar-300">{error}</p>}
       <p className="text-xs leading-6 text-[var(--text-muted)]">预览计作参考帮助；保存记录你的观察，不计独立完成。</p>

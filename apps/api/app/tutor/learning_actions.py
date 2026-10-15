@@ -32,9 +32,9 @@ class SavePreviewRequest(BaseModel):
     observation: str = Field(min_length=1, max_length=1000, pattern=r"\S")
 
 
-def root_proposal(snapshot, run_id):
+def root_proposal(snapshot, run_id, experiment_proposal=None):
     now = datetime.now(timezone.utc)
-    return {
+    proposal = {
         "version": "tutor-artifact-v1", "kind": "root_parameter_proposal",
         "artifact_id": str(uuid4()), "run_id": run_id, "origin": "server",
         "context": snapshot["ref"], "action": "preview_root_lab",
@@ -45,6 +45,15 @@ def root_proposal(snapshot, run_id):
         "evidence_kind": "reference_help", "independent_success": False,
         "preview_budget": 3,
     }
+    if experiment_proposal:
+        proposal["experiment_proposal"] = experiment_proposal
+        if experiment_proposal.get("changed_parameter") == "initial_value":
+            proposal["suggested_parameters"] = {
+                **proposal["parameters"],
+                "initial_value": float(experiment_proposal["suggested_value"]),
+            }
+    return proposal
+
 
 
 class LearningActions:

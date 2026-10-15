@@ -1,5 +1,23 @@
 # CODEX 交接文档
 
+## 2026-10-15 R3.1 / R3.2 教学决策与受控对照实验提案、Newton 选项一闭环落地
+
+完成 R3.1、R3.2 教学动作与选项一（Newton 探究式全流程闭环）的落地与端到端验证：
+1. **R3.1 证据驱动的教学决策**：
+   - TeachingDecision 强类型 Schema 与校验：支持 claim_ref, evidence_refs, known_conditions, missing_conditions, claim_status, action, disclosure, reason, assessments, experiment_proposal；
+   - 严格防伪与权限校验：引用必须存在于服务端的上下文快照或真实检定中，状态与动作互锁（如 confirm_local 须基于 supported/partially_supported，ask_missing_condition 须有缺失条件等）。
+2. **R3.2 受控单变量对照实验提案**：
+   - 强类型 ExperimentProposal：包含 question_to_test（实验目的）、changed_parameter（单一变量，如 initial_value）、suggested_value（建议参数）、candidate_values、observable（预期观察指标）；
+   - 规则保障：action == "offer_experiment" 时必须携带合法 proposal 且建议参数与原初值不同；非 offer_experiment 动作禁止附带该提案；
+   - learning_actions.py:root_proposal 自动附带 suggested_parameters；
+   - 允许带解释的 root_lab（activity_claim）在收到 offer_experiment 时安全受控生成对照实验卡片。
+3. **选项一：Newton 探究式闭环完善**：
+   - 前端 RootActionCard 呈现实验目的、预期观察、建议参数，并支持“一键填入建议初值”；
+   - 实验保存后，提供直达原活动提交修订的链接（回到 Newton 探究活动提交修订 →）；
+   - 测试覆盖：新增 test_newton_inquiry_full_cycle_experiment_and_revision，跑穿“预测 ➔ 观察反例振荡 ➔ 提出解释 ➔ 助教提案 ➔ 填入初值 -2.0 预览收敛到负实根 ➔ 保存实验 ➔ 提交活动修订 ➔ 助教确认”全链路；
+   - 质量：全套离线测试（后端 pytest + 前端 105 项单测）100% 绿灯，Next.js Typecheck 0 error。
+
+
 ## 2026-10-15 Reading与Study真实领域视图闭环与统一引用绑定
 
 用户针对此前画布静态 mock 数据与跨工作区提问逻辑提出四项核心改进：

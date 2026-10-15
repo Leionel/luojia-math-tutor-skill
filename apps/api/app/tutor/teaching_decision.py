@@ -30,6 +30,15 @@ class Assessment(BaseModel):
     evidence_refs: list[str] = Field(max_length=8)
 
 
+class ExperimentProposal(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    question_to_test: str = Field(min_length=1, max_length=300)
+    changed_parameter: Literal["initial_value", "tolerance", "max_iterations"] = "initial_value"
+    suggested_value: float = Field(ge=-1e25, le=1e25)
+    candidate_values: list[float] = Field(default_factory=list, max_length=2)
+    observable: str = Field(min_length=1, max_length=200)
+
+
 class TeachingDecision(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     claim_ref: Literal["claim:current"]
@@ -41,6 +50,8 @@ class TeachingDecision(BaseModel):
     disclosure: Literal["full", "scaffolded"]
     reason: str = Field(min_length=1, max_length=360)
     assessments: list[Assessment] = Field(default_factory=list, max_length=6)
+    experiment_proposal: ExperimentProposal | None = None
+
 
 
 class UISelection(BaseModel):
@@ -86,8 +97,9 @@ def decision_prompt(state: dict) -> dict:
                 "known_conditions": ["condition explicitly stated or scoped by evidence"], "missing_conditions": ["needed but unknown condition"],
                 "claim_status": "supported|partially_supported|contradicted|unknown", "action": "one allowed action",
                 "disclosure": policy["disclosure"], "reason": "short teaching reason, not hidden reasoning",
-                "assessments": [{"claim": "a local subclaim", "status": "supported|partially_supported|contradicted|unknown", "evidence_refs": ["available id"]}]},
-            "instruction": "同一次回答先输出 [TEACHING_DECISION]严格JSON[/TEACHING_DECISION]，可选 [INTELLIGENT_UI]JSON数组[/INTELLIGENT_UI]，最后 [OUTPUT]学生正文。判断只是模型意见，不更改 verified/mastery。局部正确可直接承认，不必强制提问；混合主张分别评价。unknown不是错误，缺函数/方法/初值/比较量时先澄清。full要给完整过程，不强迫预测或追问。选择UI仅使用组件名和已有evidence_ref，不造数据，不把学生预测代填。正文即使UI不可用也须独立完整。"}
+                "assessments": [{"claim": "a local subclaim", "status": "supported|partially_supported|contradicted|unknown", "evidence_refs": ["available id"]}],
+                "experiment_proposal": {"question_to_test": "实验目的", "changed_parameter": "initial_value", "suggested_value": -2.0, "candidate_values": [1.5], "observable": "观察指标"}},
+            "instruction": "同一次回答先输出 [TEACHING_DECISION]严格JSON[/TEACHING_DECISION]，可选 [INTELLIGENT_UI]JSON数组[/INTELLIGENT_UI]，最后 [OUTPUT]学生正文。判断只是模型意见，不更改 verified/mastery。局部正确可直接承认，不必强制提问；混合主张分别评价。unknown不是错误，缺函数/方法/初值/比较量时先澄清。action为offer_experiment时必须提供experiment_proposal（且changed_parameter推荐值与当前不同）；非offer_experiment时禁止包含该字段。full要给完整过程，不强迫预测或追问。选择UI仅使用组件名和已有evidence_ref，不造数据，不把学生预测代填。正文即使UI不可用也须独立完整。"}
 
 
 def _section(raw: str, name: str):
@@ -129,11 +141,23 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
             raise ValueError("missing_question_basis")
         if decision.claim_status != "unknown" and not any(ref != "claim:current" for ref in refs):
             raise ValueError("no_supporting_evidence")
+        if decision.action == "offer_experiment":
+            if not decision.experiment_proposal:
+                raise ValueError("missing_experiment_proposal")
+            context = state.get("learning_context") or {}
+            params = context.get("parameters") or {}
+            if decision.experiment_proposal.changed_parameter in params:
+                cur_val = params[decision.experiment_proposal.changed_parameter]
+                if isinstance(cur_val, (int, float)) and abs(cur_val - decision.experiment_proposal.suggested_value) < 1e-12:
+                    raise ValueError("experiment_parameter_unchanged")
+        elif decision.experiment_proposal is not None:
+            raise ValueError("unrequested_experiment_proposal")
         accepted = {"version": DECISION_VERSION, "status": "accepted", "origin": "model_opinion", **decision.model_dump(), **bundle}
     except (ValueError, TypeError, ValidationError) as error:
-        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence"}:
+        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence", "missing_experiment_proposal", "experiment_parameter_unchanged", "unrequested_experiment_proposal"}:
             fallback["reason_code"] = str(error)
         return fallback, None
+
     if "[INTELLIGENT_UI]" not in raw:
         return accepted, None
     try:

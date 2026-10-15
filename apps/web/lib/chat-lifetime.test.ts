@@ -29,6 +29,26 @@ test("only the fixed card contract can render; forged operation names and nonfin
     assert.deepEqual(parseRootProposals([{...proposal,...patch}]),[]);
   }
   assert.deepEqual(parseRootProposals({html:"<script>"}),[]);
+
+  // R3.2: experiment_proposal parsing & contract enforcement
+  const withExp = {
+    ...proposal,
+    experiment_proposal: {
+      question_to_test: "测试初值敏感性",
+      changed_parameter: "initial_value",
+      suggested_value: -2,
+      candidate_values: [1.5],
+      observable: "观察收敛到根",
+    },
+    suggested_parameters: { ...proposal.parameters, initial_value: -2 },
+  };
+  const parsedExp = parseRootProposals([withExp]);
+  assert.equal(parsedExp.length, 1);
+  assert.equal(parsedExp[0]?.experiment_proposal?.suggested_value, -2);
+  assert.equal(parsedExp[0]?.suggested_parameters?.initial_value, -2);
+
+  // Malformed experiment proposal is rejected
+  assert.deepEqual(parseRootProposals([{ ...withExp, experiment_proposal: { question_to_test: "", suggested_value: NaN } }]), []);
 });
 test("record versions and selected steps are pinned; dirty parameters cannot save the previous preview",()=>{
   assert.equal(sameContext(context,{...context}),true);

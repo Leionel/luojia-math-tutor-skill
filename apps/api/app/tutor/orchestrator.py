@@ -573,9 +573,12 @@ class TutorOrchestrator:
             learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,
                                  verification_kind="none", mastery_delta=0,
                                  verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
-            if snapshot["ref"]["kind"]=="root_lab" and not snapshot.get("student_claim") and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
+            decision = learning_meta.get("teaching_decision") or {}
+            offer_exp = decision.get("action") == "offer_experiment"
+            exp_prop = decision.get("experiment_proposal")
+            if snapshot["ref"]["kind"]=="root_lab" and (not snapshot.get("student_claim") or offer_exp) and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
                 from app.tutor.learning_actions import root_proposal
-                learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id)]
+                learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id, exp_prop)]
         if final_state.get("root_diagnosis"):
             report = final_state["root_diagnosis"]
             learning_meta.update(root_diagnosis=report, verification_kind="root_oracle",
