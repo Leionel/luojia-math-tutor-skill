@@ -5,6 +5,10 @@ import {
   defaultPaneWidth,
   shouldInterceptCompositionEnter,
   PANE_CONSTRAINTS,
+  computePinState,
+  shouldShowJumpControl,
+  isUserScrollCooldownActive,
+  computeEdgeFades,
 } from "./interaction-physics.ts";
 
 test("interaction physics: clamps split pane widths within safe hardware boundaries", () => {
@@ -145,3 +149,58 @@ test("interaction physics: IME guard prevents Chinese pinyin enter misfire", () 
     "Non-Enter keys must return true (not submit)"
   );
 });
+
+test("interaction physics: scroll pinning calculations and tolerance", () => {
+  // 1. Bottom edge within 40px tolerance -> Pinned
+  const pin1 = computePinState(1000, 570, 400, 40); // distanceFromBottom = 30px
+  assert.equal(pin1.distanceFromBottom, 30);
+  assert.equal(pin1.isPinned, true);
+
+  // 2. Exact boundary at 40px -> Pinned
+  const pin2 = computePinState(1000, 560, 400, 40); // distanceFromBottom = 40px
+  assert.equal(pin2.isPinned, true);
+
+  // 3. Beyond 40px -> Not pinned
+  const pin3 = computePinState(1000, 550, 400, 40); // distanceFromBottom = 50px
+  assert.equal(pin3.isPinned, false);
+
+  // 4. Overscrolled past bottom -> Distance bounded at 0, pinned
+  const pin4 = computePinState(1000, 610, 400, 40);
+  assert.equal(pin4.distanceFromBottom, 0);
+  assert.equal(pin4.isPinned, true);
+});
+
+test("interaction physics: jump control visibility threshold", () => {
+  assert.equal(shouldShowJumpControl(50, 120), false);
+  assert.equal(shouldShowJumpControl(120, 120), false);
+  assert.equal(shouldShowJumpControl(121, 120), true);
+  assert.equal(shouldShowJumpControl(300, 120), true);
+});
+
+test("interaction physics: user scroll cooldown protection window", () => {
+  const baseTime = 5000;
+  // User scrolled 100ms ago -> within 150ms window -> cooldown ACTIVE (no autoscroll)
+  assert.equal(isUserScrollCooldownActive(baseTime - 100, baseTime, 150), true);
+  // User scrolled 150ms ago -> active
+  assert.equal(isUserScrollCooldownActive(baseTime - 150, baseTime, 150), true);
+  // User scrolled 160ms ago -> cooldown EXPIRED (safe to autoscroll)
+  assert.equal(isUserScrollCooldownActive(baseTime - 160, baseTime, 150), false);
+});
+
+test("interaction physics: 7-stop edge fade calculation with top/bottom boundary detection", () => {
+  // At top: fadeTop must be 0 (no white fringe on header)
+  const atTop = computeEdgeFades(0, 500, 24);
+  assert.equal(atTop.fadeTop, 0);
+  assert.equal(atTop.fadeBottom, 24);
+
+  // Scrolled into content: fadeTop is 24px
+  const inMiddle = computeEdgeFades(50, 200, 24);
+  assert.equal(inMiddle.fadeTop, 24);
+  assert.equal(inMiddle.fadeBottom, 24);
+
+  // At bottom: fadeBottom must be 0
+  const atBottom = computeEdgeFades(800, 1, 24);
+  assert.equal(atBottom.fadeTop, 24);
+  assert.equal(atBottom.fadeBottom, 0);
+});
+

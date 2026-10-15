@@ -6,7 +6,8 @@ import type { ReviewData } from "./review-card";
 import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
 import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, FlaskConical, BookOpen, CalendarCheck2 } from "lucide-react";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown, FlaskConical, BookOpen, CalendarCheck2 } from "lucide-react";
+import { useScrollPinning } from "@/lib/use-scroll-pinning";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
 import { TutorCompanion } from "./tutor-companion";
@@ -308,22 +309,14 @@ export function TutorChat() {
     }
   };
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
-
-  useEffect(() => {
-    if (autoScroll && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isStreaming, thinkingElapsed, autoScroll]);
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
-      setAutoScroll(isAtBottom);
-    }
-  };
+  const {
+    containerRef: scrollContainerRef,
+    showJumpControl,
+    markUserInput,
+    handleScroll,
+    scrollToBottom,
+    maskStyle: scrollMaskStyle,
+  } = useScrollPinning([messages, isStreaming, thinkingElapsed]);
 
   const reviewData = useMemo<ReviewData | null>(() => {
     if (!meta || meta.verified === false || meta.is_correct === null) return null;
@@ -1129,6 +1122,14 @@ export function TutorChat() {
             className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
             ref={scrollContainerRef}
             onScroll={handleScroll}
+            onWheel={markUserInput}
+            onTouchMove={markUserInput}
+            onKeyDown={(e) => {
+              if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) {
+                markUserInput();
+              }
+            }}
+            style={scrollMaskStyle}
           >
             <div className="mx-auto max-w-4xl px-4 py-8 pb-32">
               {messages.length === 1 && messages[0].id === "welcome" && <TutorCompanion compact/>}
@@ -1230,6 +1231,20 @@ export function TutorChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
+          {/* Jump to bottom shortcut: 浮出水墨风格“跳至最新”快捷微胶囊 */}
+          {showJumpControl && (
+            <div className="pointer-events-none sticky bottom-2 z-30 flex justify-center px-4 w-full mb-1">
+              <button
+                type="button"
+                onClick={() => scrollToBottom(true)}
+                className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-olive-500/30 bg-paper-50/95 dark:bg-paper-900/95 px-3.5 py-1.5 text-xs font-serif font-medium text-olive-800 dark:text-olive-200 shadow-md backdrop-blur-md hover:bg-paper-100 dark:hover:bg-paper-800 hover:border-olive-500/50 hover:shadow-lg transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
+                title="回到底部最新消息"
+              >
+                <ChevronDown className="size-3.5 text-olive-600 dark:text-olive-400 animate-bounce" />
+                <span>跳至最新消息</span>
+              </button>
+            </div>
+          )}
           {isStreaming && (
             <div className="flex justify-center mb-2">
               <button

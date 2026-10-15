@@ -48,3 +48,56 @@ export function shouldInterceptCompositionEnter(ctx: CompositionEnterContext): b
 
   return false;
 }
+
+/**
+ * 视口图钉与吸附算法（逆向自 Claude useClaudeScrollPinning）：
+ * 当距离底部小于容差 (默认 40px) 时判定为吸附状态 (Pinned)
+ */
+export function computePinState(
+  scrollHeight: number,
+  scrollTop: number,
+  clientHeight: number,
+  pinTolerance = 40
+): { isPinned: boolean; distanceFromBottom: number } {
+  const distanceFromBottom = Math.max(0, scrollHeight - scrollTop - clientHeight);
+  return {
+    distanceFromBottom,
+    isPinned: distanceFromBottom <= pinTolerance,
+  };
+}
+
+/**
+ * 是否浮出“跳至最新”快捷按钮：
+ * 远离底部超过阈值 (默认 120px) 时展示
+ */
+export function shouldShowJumpControl(distanceFromBottom: number, threshold = 120): boolean {
+  return distanceFromBottom > threshold;
+}
+
+/**
+ * 用户交互冷却保护判定：
+ * 距离用户最后一次主动滚轮/触控小于冷却窗口 (默认 150ms) 时，禁止自动滚底
+ */
+export function isUserScrollCooldownActive(
+  lastUserInputAt: number,
+  now: number,
+  cooldownMs = 150
+): boolean {
+  return now - lastUserInputAt <= cooldownMs;
+}
+
+/**
+ * 7-Stop 非线性边缘渐变羽化尺寸感知计算：
+ * 触顶 (scrollTop <= 2) 时 top 为 0，避免顶栏白边；触底时 bottom 为 0
+ */
+export function computeEdgeFades(
+  scrollTop: number,
+  distanceFromBottom: number,
+  fadeSize = 24
+): { fadeTop: number; fadeBottom: number } {
+  return {
+    fadeTop: scrollTop <= 2 ? 0 : fadeSize,
+    fadeBottom: distanceFromBottom <= 2 ? 0 : fadeSize,
+  };
+}
+
