@@ -1,5 +1,29 @@
 # CODEX 交接文档
 
+## 2026-10-15 Reading与Study真实领域视图闭环与统一引用绑定
+
+用户针对此前画布静态 mock 数据与跨工作区提问逻辑提出四项核心改进：
+1. **真实数据与共享视图**：彻底移除假原文与 mock 假任务。抽象共享 `ReadingDomainView` 与 `StudyDomainView`（支持 `mode="full" | "canvas"`），使独立路由（`/reading`、`/study`）与画布分栏无缝共用一套组件与草稿状态。真实接入 `/reading/units`、`/reading/documents` 与 `/study/today`。
+2. **规范来源类型与审核状态**：严禁将 SHA-256 内容指纹统一标注为“教材已核验”。严格区分出处来源与真实审核状态：
+   - 课程大纲整理包（`unit`）：出处为武汉大学大纲单元，状态为“SHA-256 一致 · 已排定教学单元材料”；
+   - 用户上传材料（`document`）：出处为文档ID与章节，状态为“用户上传材料 · 未经权威数学金标核验”；
+   - 今日计划：明确区分“今日已排定计划”、“无排定计划（推荐基础演练）”、“加载失败”与“计划已过期（stale）”，推荐内容显式标注，绝不显示为用户今日排定任务。
+3. **严格遵守字段契约与防闭包穿透**：
+   - `ReadingContextRef` 构造契约：大纲单元时 `section_id` 必须为 `null`；文档章节时为 `section.id`（绝非 `source_document_id`）；选段起止以实际展示文本的 Unicode 码点长度为准；
+   - 消除伪造的 `kind: "study"` 引用：无实体日课任务讨论统一显式以无引用普通探讨模式发送，并在 Prompt 附带任务标题；
+   - 重构 `validateAndBindReference`：异步校验返回显式 `{ ok: true, snapshot } | { ok: false, error }`，失败或环境切换立即阻断，不吞错误；
+   - 重构 `submit`：引入 `explicitSnapshot` 参数，将校验成功的快照原子穿透传递给 `submit` 和 `streamTutor`，切断 React 异步 `setState` 闭包捕获旧 Lab 引用的可能性。
+4. **多工作区保活与三者一致性**：
+   - 画布多工作区采用保活挂载模式，切换 Tab 仅切换视图显示，不触碰当前引用、不中断正在生成的 SSE 提问流。
+   - 各工作区独立草稿与选中项持久保留。
+   - 严格达成“界面展示对象、实际请求引用、保存后的历史来源三者完全一致”。
+5. **工程验证与分批提交**：
+   - Next.js Typecheck 0 error、88 项前端测试全部通过、FastAPI 后端测试全绿。
+   - 分批提交记录：
+     - `d7ba8ac` feat(web): shared domain views and real api integration for reading and study
+     - `654d8ce` feat(web): atomic reference validation and explicit snapshot passing in chat
+     - `4f05644` feat(web): tab draft preservation and precise source provenance in context banner
+
 ## 2026-10-14 R3.1 与 3A UI-a 首版交付
 
 用户要求开做并随后要求先交付。完成 Chat＋Lab 共享领域视图、同会话预测/观察/解释/修订、OpenUI 1.0.0 自有组件目录、单调用教学决策与来源绑定。决策为模型意见，不提升数学 verified 或掌握度；输入预算不足/无效协议/交付修复回退。固定动作仍由服务器预览与保存接口执行。UI-b/c、R3.2目的实验、真实模型增益接续，未倒填质量成绩。

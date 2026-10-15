@@ -680,3 +680,27 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
 ## 2026-10-14 R3.1 提交收尾与统一实现复核
 
 用户要求先提交并复核另一个 agent 的统一实现。复核当前 HEAD 48ef116 与画布提交 8edd92e：Lab 复用真实领域视图；Reading/Study 仍为静态示例，原文来源、今日任务和跨工作区引用尚未统一，Code 未整合。修复异步引用检查把 Reading/Study URL 强制改为 Lab 的问题。详细问题与证据边界见 planning/r3-unification-review-2026-10-14.md。本轮仅本地提交 R3.1 相关改动，无 push/deploy；无关 R2、原删除和探索产物保留。
+
+## 2026-10-15 Reading与Study真实领域视图闭环与统一引用绑定落地
+
+落实用户提出的“真实数据接入、来源规范、原子校验与闭包防范”指导意见，全面消除静态假数据并完成端到端闭环：
+1. **共享领域视图与真实数据接入**：
+   - 抽象 `ReadingDomainView` (`mode: "full" | "canvas"`) 与 `StudyDomainView` (`mode: "full" | "canvas"`)，使独立页面（`/reading`、`/study`）与画布分栏无缝共用一套组件与草稿状态。
+   - 彻底移除假原文与 mock 假任务，真实接入 `/reading/units`、`/reading/documents` 与 `/study/today` 接口。
+   - 严禁将 SHA-256 内容指纹统一标注为“教材已核验”：严格区分出处来源与真实审核状态：
+     - 课程整理包（`source_kind === "unit"`）：标为“🏛 课程大纲整理包 · 已排定教学单元材料”，出处为武汉大学教学大纲，状态为“SHA-256 一致”；
+     - 用户上传材料（`source_kind === "document"`）：标为“📄 用户上传材料 · 辅助文献”，出处为真实文档ID与章节，明确提示“未经权威数学金标核验”。
+   - 严格区分今日计划状态：区分“今日已排定计划”、“无计划（推荐基础演练）”、“加载失败”与“计划已过期（stale）”，推荐内容显式标注，绝不显示为用户今日排定任务。
+2. **原子校验与引用传递闭环**：
+   - `ReadingContextRef` 构造严格遵守规范契约：大纲单元时 `section_id` 必须为 `null`；文档章节时为 `section.id`（绝非 `source_document_id`）；选段起止严格采用 Unicode 码点真实长度。
+   - 消除伪造的 `kind: "study"` 引用：无实体日课任务讨论统一显式以无引用普通探讨模式发送，并在 Prompt 中附带任务说明。
+   - 重构 `validateAndBindReference`：异步校验返回显式 `{ ok: true, snapshot } | { ok: false, error }`，失败或环境切换立即阻断，不吞错误。
+   - 重构 `submit`：增加 `explicitSnapshot` 参数，将校验成功的快照原子穿透传递给 `submit` 和 `streamTutor`，切断 React 异步 `setState` 闭包捕获旧 Lab 引用的可能性。
+3. **多工作区保活与三者一致性**：
+   - 画布多工作区采用保活挂载模式，切换 Tab 仅切换视图显示，不触碰当前引用、不中断正在生成的 SSE 提问流。
+   - 各工作区独立草稿与选中项持久保留。
+   - 严格达成“界面展示对象、实际请求引用、保存后的历史来源三者完全一致”。
+4. **分批提交记录**：
+   - `d7ba8ac` feat(web): shared domain views and real api integration for reading and study
+   - `654d8ce` feat(web): atomic reference validation and explicit snapshot passing in chat
+   - `4f05644` feat(web): tab draft preservation and precise source provenance in context banner

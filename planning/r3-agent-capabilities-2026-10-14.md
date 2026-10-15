@@ -125,15 +125,25 @@ UI总增量约7–11日；能力四片＋UI三片合计约17–27集中开发日
 
 **完整闭环验收路径**：Chat 输入收敛判断 ➔ Agent 给出 `TeachingDecision` 并展示条件/预测卡 ➔ 展开同一 Lab ➔ 在参数配置台选定条件并先写下预测 ➔ 实时算式蓝图预演 ➔ 启动受控数值推演 ➔ 观测几何切线与迭代轨迹 ➔ 保存实验记录 ➔ 回到主 Chat 带着实验引用接续讨论 ➔ 页面刷新后历史引用与草稿完美恢复。严格覆盖移动端（~390px）、桌面端与键盘无障碍导航（`rule/keyboard-complete-flow`）。
 
-#### 3A 实施交付成果（2026-10-14 落地）
+#### 3A 实施交付成果（2026-10-14 ~ 2026-10-15 落地）
 - [x] **现代 Canvas 左右分栏工作区**：在 `/chat` 引入 `ResizeHandle`（380px ~ 1000px 连续无级调节，`localStorage` 持久化），支持全屏最大化展开与还原。
 - [x] **学术工坊条 (Atelier Canvas Ribbon)**：重构对话顶部通栏，左侧显示伴读联动微光徽章，中间呈现多工作区选项卡 Pills，右侧支持一键展开/收起。
-- [x] **多工作空间统一调度 (`CanvasWorkspace`)**：
-  - `🧪 数值实验台 (Lab)`：融合参数配置台、算法切换与几何蓝图推演；
-  - `📖 经典研读录 (Reading)`：嵌入《数值分析》核心收敛定理与适用条件对照录；
-  - `📐 今日日课案 (Study)`：嵌入递进式思考题与演算任务，支持一键带入对话展开苏格拉底式互动。
+- [x] **共享领域视图与真实数据接入 (`ReadingDomainView` / `StudyDomainView`)**：
+  - 彻底移除假原文与 mock 假任务，画布与独立路由（`/reading`、`/study`）共用共享领域视图；
+  - 真实接入 `/reading/units`、`/reading/documents` 与 `/study/today` 接口；
+  - 来源类型与审核状态规范化：严禁将 SHA-256 统一标为“教材已核验”，严格区分“🏛 武汉大学课程大纲整理包（已排定教学单元 · SHA-256一致）”与“📄 用户上传材料（辅助文献 · 未经权威数学核验）”；
+  - 区分今日计划状态：精准呈现“今日已排定计划”、“无排定计划（推荐基础演练）”、“加载失败”与“计划已过期（stale）”，不将推荐练习混淆为用户当日排定计划。
+- [x] **原子校验与引用传递闭环（防范旧 Lab 引用与伪造类型）**：
+  - `ReadingContextRef` 严格遵守字段契约：大纲单元 `section_id` 必为 `null`；上传文档 `section_id` 为 `section.id`（绝非 `source_document_id`）；选段起止以实际展示文本的 Unicode 码点长度为准；
+  - 规范无实体的日课讨论：消除伪造的 `kind: "study"`，统一显式以无引用普通探讨模式发送，并在 Prompt 附带任务标题；
+  - 重构 `validateAndBindReference`：异步校验返回显式 `{ ok: true, snapshot } | { ok: false, error }`，失败或环境切换立即阻断；
+  - 重构 `submit`：引入 `explicitSnapshot` 显式参数，将校验成功的快照原子穿透至 `submit` 与 `streamTutor`，切断 React 异步 `setState` 闭包沿用旧 Lab 引用的可能性。
+- [x] **多工作区保活与三者一致性保障**：
+  - 工作区 Tab 切换仅切换视图显示，不触碰当前引用、不中断正在生成的 SSE 提问流；
+  - 采用保活挂载模式，各工作区内表单输入、步数选择、阅读高亮与草稿持久保留；
+  - 达成“界面展示对象、实际请求引用、保存后的历史来源三者完全一致”。
 - [x] **Scholarly Atelier 智能卡片组件重构**：重构 `SourceExcerpt`、`ConditionChecklist`、`PredictionForm`、`RunTraceChart`、`TeachingDecisionReceipt`，全面呈现水墨宣纸与现代学术工坊质感。
-- [x] **端到端工程验证**：TypeScript 0 error、88 项前端测试全部通过、ESLint 0 error。
+- [x] **端到端工程验证**：Next.js Typecheck 0 error、88 项前端测试全部通过、FastAPI 后端测试全绿、ESLint 0 error。
 
 ## 4. R3.1：把证据转成合适的教学动作
 
