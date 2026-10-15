@@ -1,5 +1,9 @@
 # 珞珈数智助教 2.0：课程知识图谱、Teaching Case 与动态知识演化的细化调研
 
+### 2026-10-15 提交与PR更新验证
+
+用户授权commit、push与更新现有PR。R3实现提交为 `6825c9d`，另补OpenUI生成提示文件的LF检出规则。干净提交副本的 `npm test`：API994 passed / 1 skipped（没有本机 `.env`）、Web107 passed；JSON与UI目录通过。此前工作区API1013含未提交R2本地测试，不作为远端提交计数。生产构建/TypeScript通过，lint零错误/10既有警告。PR保持Draft，R3.4真实策略评测和R3.5学生可见恢复入口继续按复核记录推进。
+
 ## 2026-10-15 R3 交付复核与缺口修复
 
 本条修正此前“R3.3/R3.4/R3.5全面闭环、UI全量100%”的表述，以[复核回执](planning/r3-implementation-review-2026-10-15.md)及[当前规划](planning/r3-agent-capabilities-2026-10-14.md)为准。

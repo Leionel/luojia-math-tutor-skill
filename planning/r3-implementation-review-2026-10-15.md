@@ -50,3 +50,7 @@
 ![桌面Code画布与已保存版本讨论](assets/r3-review-code-desktop.png)
 
 ![390px Code抽屉与草稿恢复](assets/r3-review-code-mobile.png)
+
+## 提交副本验证
+
+用户授权提交和push后，使用不含其它Agent未提交文件的干净副本复验：API **994 passed / 1 skipped**（`.env`缺失检查），Web **107 passed**，JSON与UI Catalog通过。日志 `results/r3-review/committed-tests.log`。补充 `protocol/intelligent-ui-prompt.txt text eol=lf`，避免Windows新检出使生成目录检查失败；重新检出文件已确认LF与已提交字节完全相同。PR使用该计数，工作区1013项回执保留为当时状态。
