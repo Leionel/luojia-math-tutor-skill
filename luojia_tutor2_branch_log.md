@@ -712,6 +712,27 @@ A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 377
 复核基线93aa00d：修普通Reading带condition_hash导致409、Study抽取丢失提交/确认/独立检验及错误计划接口、清除引用与异步绑定竞争、显式快照被旧loading挡住、工作区刷新参数丢失；教师审核入口补到Chat顶栏/侧栏和六页导航。保留新UI。真实隔离浏览器闭环、Web94/94、TS通过、lint0错10既有警告；API全量969过2失败，直接诊断为固定核验worker超时，预算未放宽。细节与剩余门禁见 planning/r3-domain-unification-fixes-2026-10-15.md。原dirty/正式服务保留，无供应商消费，本轮未commit/push。
 
 
-## 2026-10-15 全量收尾与人工验收准备
+## 2026-10-15 Open Claude UI (CDS) 交互物理学与东方水墨宣纸美学融合落地
 
-接续工作区修复，固定本步worker延迟加载原生工具，使用严格轻量私有协议，5秒预算/子进程回收/数学判据不变；修R2包跨平台CRLF/LF检出哈希差异，未改包、题目或签署。最终根JSON/目录/API982/Web94全部通过，隔离生产构建（含类型）通过，早期失败日志保留。修复、截图与人工验收清单见 planning/r3-domain-worker-closeout-2026-10-15.md。用户要求打开完整本地页面亲自验收；不能代记通过。无模型供应商消费、正式库改动或部署；原无关dirty保留。
+以 `https://github.com/Caho1/open-claude-ui`（CDS 逆向交互物理学与视觉哲学）为蓝本，与珞珈数智助教的“水墨宣纸·学术工坊（Scholarly Atelier）”设计语言完成全量深度融合。分四阶段全套 TDD 推进，测试无破坏，前后端全套 100% 绿灯。
+
+1. **Phase 1: 分栏防吞护盾、双击基线归位与 CJK 拼音回车互锁守卫** (`85c8ec0`)
+   - 提取 `clampPaneWidth`, `defaultPaneWidth`, `shouldInterceptCompositionEnter`（60ms 选词冷却窗口、`keyCode === 229`、粗指针拦截）；
+   - 在 `tutor-chat.tsx` 中挂载全屏透明防吞护盾（Pointer Shield），彻底杜绝拖拽分栏时被公式/SVG 坐标系吞噬事件，支持双击黄金比例复位与 Escape 取消回滚；
+   - 在 `tutor-input.tsx` 建立拼音输入法互锁守卫，彻底消灭中文选词误发送。
+2. **Phase 2: 视口防抢夺图钉与 7 档非线性水墨边缘羽化遮罩** (`dcf1f7a`)
+   - 封装 `useScrollPinning` 自定义 Hook（40px 底部吸附容差、150ms 用户主动滚动冷却保护、瞬时 `auto` 对齐防抖、>120px 浮出东方水墨微徽章“跳至最新”快捷胶囊）；
+   - 在聊天消息容器挂载 7 档非线性 Alpha 水墨羽化遮罩（`mask-image`，触顶触底动态感应消除白边）。
+3. **Phase 3: 思维链生成互斥锁、纯 CSS Grid 弹性伸缩与引用探讨** (`5b7f2c8`)
+   - `ThinkingProgressBanner` 与 `ThinkingSummaryView` 接入 `computeThinkingAccordionState`，流式思考中保持锁定理智呈现，防视口剧烈跳跃；
+   - 纯 CSS Grid `grid-rows-[0fr] -> grid-rows-[1fr]` 替代 JS 高度测量与重排；
+   - 加入水墨微呼吸脉冲指示点与一键“作为引用探讨（Copy as Quote）”。
+4. **Phase 4: 视网膜高分屏物理发丝细边补偿与工坊微阶梯** (`4e71579`)
+   - 在 `globals.css` 注入 Retina 媒体查询发丝细边补偿（`--hairline: 0.5px`）、工坊表面微阶梯变量（`--atelier-surface-0/1/2`）及 `.atelier-hairline`、`.atelier-composer-shell`、`.atelier-card-shell` 实用类；
+   - 提取 `resolveHairlineWidth` 与 `getAtelierSurfaceVar` 并在 `interaction-physics.test.ts` 覆盖单测；
+   - 全面升级 `AtelierFolioCard`、`ContextBanner`、`CanvasWorkspace` 边缘细腻度与背景阶梯。
+5. **验证结果**：
+   - Next.js Typecheck 0 error；
+   - 前端单测由 90 项扩充至 105 项全绿通过；
+   - 后端 982 项 pytest 全量离线通过。
+
