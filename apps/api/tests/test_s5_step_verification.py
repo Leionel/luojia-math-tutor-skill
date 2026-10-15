@@ -1,5 +1,9 @@
 import asyncio
 import time
+import json
+import subprocess
+import sys
+from pathlib import Path
 from dataclasses import asdict, replace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -10,6 +14,7 @@ from app.agents.typed_tools import ToolCall, MathToolResult
 from app.config import Settings
 from app.math_tools.step_checker import check_step, digest
 from app.math_tools.step_runtime import verify_student_step
+from app.math_tools.step_protocol import StepCheckRequest
 from app.math_tools.verifier import VerifyResult, parse_math
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
@@ -17,6 +22,43 @@ from app.tutor.graph import TutorWorkflow
 from app.tutor.intent_router import Intent
 from app.tutor.orchestrator import TutorOrchestrator
 from test_agent_graph import make_repository, make_state, make_config, install_fake_stream
+
+
+def test_private_step_worker_avoids_unrelated_native_tool_bootstrap():
+    """A fresh step checker must not pay for the other tool schemas/runner."""
+    worker = Path(__file__).resolve().parents[1] / "app/agents/math_worker.py"
+    script = (
+        "import runpy,sys; namespace=runpy.run_path(sys.argv[1]); "
+        "namespace['main'](); "
+        "assert 'app.agents.typed_tools' not in sys.modules; "
+        "assert 'pydantic' not in sys.modules; "
+        "assert 'app.math_tools.numerical_lab' not in sys.modules"
+    )
+    message = "我算 ∫2x dx = x² + C，对吗？"
+    packet = {"name": "student_step_check", "arguments": {"version": "step-v1", "message": message}}
+    result = subprocess.run([sys.executable, "-I", "-c", script, str(worker)],
+                            input=json.dumps(packet).encode(), capture_output=True, timeout=10)
+    assert result.returncode == 0, result.stderr.decode(errors="replace")
+    verdict = json.loads(result.stdout)["verification"]
+    assert verdict["verified"] is True and verdict["is_correct"] is True
+    assert verdict["input_hash"] == digest(message)
+
+
+@pytest.mark.parametrize("packet", [None, [], {},
+    {"version": "step-v1", "message": "x=x", "code": "print(1)"},
+    {"version": "step-v2", "message": "x=x"},
+    {"version": True, "message": "x=x"},
+    {"version": "step-v1", "message": 1},
+    {"version": "step-v1", "message": ""},
+    {"version": "step-v1", "message": "x" * 4097}])
+def test_private_step_protocol_rejects_extra_fields_and_coercion(packet):
+    with pytest.raises(ValueError):
+        StepCheckRequest.from_packet(packet)
+
+
+def test_private_step_protocol_keeps_the_unicode_message_and_size_limit():
+    text = "📘" * 4096
+    assert StepCheckRequest.from_packet({"version": "step-v1", "message": text}).message == text
 
 
 @pytest.mark.parametrize("message,correct,eligible", [
@@ -182,7 +224,7 @@ async def test_real_graph_sqlite_and_saved_metadata(message, should_update, tmp_
     restored = repository.list_messages(session["session_id"])[-1]["learning_meta"]
     assert restored["step_check"] == meta["step_check"]
     assert restored["step_check"]["input_hash"] == digest(message)
-    assert restored["step_check"]["eligible_learning_evidence"] is should_update
+    assert restored["step_check"]["eligible_learning_evidence"] is should_update, restored["step_check"]
     assert repository.upsert_mastery.called is should_update
     repository.add_mistake_event.assert_not_called()
     if not should_update:

@@ -2968,3 +2968,13 @@ A0–A2 目标 SHA `ebdc909` 的远端 CI 未绿：S5 JSON 的 CRLF 工作区哈
 ## 2026-10-14 R3.1 提交收尾与统一实现复核
 
 用户要求先提交并复核另一个 agent 的统一实现。复核当前 HEAD 48ef116 与画布提交 8edd92e：Lab 复用真实领域视图；Reading/Study 仍为静态示例，原文来源、今日任务和跨工作区引用尚未统一，Code 未整合。修复异步引用检查把 Reading/Study URL 强制改为 Lab 的问题。详细问题与证据边界见 planning/r3-unification-review-2026-10-14.md。本轮仅本地提交 R3.1 相关改动，无 push/deploy；无关 R2、原删除和探索产物保留。
+
+
+## 2026-10-15 Reading / Study 统一后修复与教师入口
+
+复核基线93aa00d：修普通Reading带condition_hash导致409、Study抽取丢失提交/确认/独立检验及错误计划接口、清除引用与异步绑定竞争、显式快照被旧loading挡住、工作区刷新参数丢失；教师审核入口补到Chat顶栏/侧栏和六页导航。保留新UI。真实隔离浏览器闭环、Web94/94、TS通过、lint0错10既有警告；API全量969过2失败，直接诊断为固定核验worker超时，预算未放宽。细节与剩余门禁见 planning/r3-domain-unification-fixes-2026-10-15.md。原dirty/正式服务保留，无供应商消费，本轮未commit/push。
+
+
+## 2026-10-15 全量收尾与人工验收准备
+
+接续工作区修复，固定本步worker延迟加载原生工具，使用严格轻量私有协议，5秒预算/子进程回收/数学判据不变；修R2包跨平台CRLF/LF检出哈希差异，未改包、题目或签署。最终根JSON/目录/API982/Web94全部通过，隔离生产构建（含类型）通过，早期失败日志保留。修复、截图与人工验收清单见 planning/r3-domain-worker-closeout-2026-10-15.md。用户要求打开完整本地页面亲自验收；不能代记通过。无模型供应商消费、正式库改动或部署；原无关dirty保留。

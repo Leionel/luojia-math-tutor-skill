@@ -16,10 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from app.math_tools.numerical_lab import NumericalTask
-
-MAX_INPUT = 8192
-MAX_OUTPUT = 65536
-TOOL_VERSION = "v1"
+from app.agents.tool_limits import MAX_INPUT, MAX_OUTPUT, TOOL_VERSION
 
 
 class DifferentiateArgs(BaseModel):

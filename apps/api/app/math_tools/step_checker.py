@@ -1,16 +1,9 @@
 """Extract a bounded student claim and bind the scoped checker to its source."""
 import hashlib
 import re
-from pydantic import BaseModel, ConfigDict, Field
 from app.math_tools.verifier import (VerifyResult, verify_derivative, verify_determinant_2x2,
     verify_equivalent, verify_integral, verify_lhopital_conditions)
 from app.tutor.misconception import Mistake, MISTAKES, detect_mistake
-
-
-class StepCheckRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-    version: str = Field(pattern="^step-v1$")
-    message: str = Field(min_length=1, max_length=4096)
 
 
 def digest(value):

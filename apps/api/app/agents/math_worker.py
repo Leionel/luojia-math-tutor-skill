@@ -10,10 +10,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # -I omits the user site used by this Windows interpreter's installed packages.
 # Add that fixed directory without processing .pth files or PYTHONPATH.
 sys.path.append(site.getusersitepackages())
-from app.agents.typed_tools import MAX_INPUT, validate_call, ToolCall, expression_tree
+from app.agents.tool_limits import MAX_INPUT
 
 
 def differentiate(expression):
+    from app.agents.typed_tools import expression_tree
     import sympy as sp
     x = sp.Symbol("x", real=True)
     def construct(node):
@@ -49,12 +50,16 @@ def main():
         if set(data) != {"name", "arguments"}: raise ValueError("fields")
         if data["name"] == "student_step_check":
             from dataclasses import asdict
-            from app.math_tools.step_checker import StepCheckRequest, check_step
-            request = StepCheckRequest.model_validate(data["arguments"], strict=True)
+            from app.math_tools.step_protocol import StepCheckRequest
+            request = StepCheckRequest.from_packet(data["arguments"])
+            from app.math_tools.step_checker import check_step
             verification, mistake = check_step(request.message)
             print(json.dumps({"verification": asdict(verification), "mistake_code": mistake.code if mistake else None},
                              ensure_ascii=True, allow_nan=False))
             return
+        # Student-step checks do not need the native-tool schemas/numerical
+        # runner. Keep their import cost out of the existing five-second limit.
+        from app.agents.typed_tools import validate_call, ToolCall
         call = ToolCall(call_id="worker", **data)
         args = validate_call(call)
         if call.name == "math_differentiate":

@@ -1,3 +1,10 @@
 *.skill filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
 evaluation/s5/*.json text eol=lf
+
+# R2 unsigned packet binds exact source bytes; keep the original packet hashes
+# reproducible on both Windows and Linux without rewriting review material.
+evaluation/r1/a0-development-cases.json text eol=lf
+evaluation/r2/b4-variants-v1.json text eol=lf
+apps/api/app/tutor/learning_workspace.py text eol=lf
+apps/api/app/tutor/learning_extensions.py text eol=crlf

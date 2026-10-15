@@ -1,11 +1,12 @@
 """Private fixed-worker operation; never advertised as a model tool."""
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import asyncio
 import re
 import time
 
 from app.agents.typed_tools import run_fixed_worker
-from app.math_tools.step_checker import StepCheckRequest, digest, candidate_binding
+from app.math_tools.step_checker import digest, candidate_binding
+from app.math_tools.step_protocol import StepCheckRequest
 from app.math_tools.verifier import VerifyResult, CHECKER_VERSION
 from app.tutor.misconception import MISTAKES
 
@@ -41,7 +42,7 @@ async def verify_student_step(message: str, timeout=5, owner=None):
         remaining = min(timeout, 5) - (time.perf_counter() - started)
         if remaining <= 0:
             return unknown("核验时间预算已耗尽", "timeout")
-        worker = asyncio.create_task(run_fixed_worker(_StepCall(), request.model_dump(), timeout=remaining))
+        worker = asyncio.create_task(run_fixed_worker(_StepCall(), asdict(request), timeout=remaining))
         if owner:
             monitor = asyncio.create_task(watch_help())
             done, _ = await asyncio.wait([worker, monitor], return_when=asyncio.FIRST_COMPLETED)
