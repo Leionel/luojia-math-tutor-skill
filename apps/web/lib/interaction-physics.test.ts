@@ -9,6 +9,8 @@ import {
   shouldShowJumpControl,
   isUserScrollCooldownActive,
   computeEdgeFades,
+  computeThinkingAccordionState,
+  formatThoughtAsQuote,
 } from "./interaction-physics.ts";
 
 test("interaction physics: clamps split pane widths within safe hardware boundaries", () => {
@@ -203,4 +205,38 @@ test("interaction physics: 7-stop edge fade calculation with top/bottom boundary
   assert.equal(atBottom.fadeTop, 24);
   assert.equal(atBottom.fadeBottom, 0);
 });
+
+test("interaction physics: thinking accordion state machine locking during live generation", () => {
+  // 1. Live thinking active -> MUST be open, CANNOT toggle (Locked to avoid layout jitter)
+  const liveState = computeThinkingAccordionState({
+    isThinkingLive: true,
+    userExpanded: false, // Even if user preferred collapsed, live generation overrides
+  });
+  assert.equal(liveState.isOpen, true, "Must be forced open during active streaming thought");
+  assert.equal(liveState.canToggle, false, "Must revoke collapse capability during streaming");
+
+  // 2. Finished thinking -> Yields control back to user preference
+  const finishedCollapsed = computeThinkingAccordionState({
+    isThinkingLive: false,
+    userExpanded: false,
+  });
+  assert.equal(finishedCollapsed.isOpen, false);
+  assert.equal(finishedCollapsed.canToggle, true);
+
+  const finishedExpanded = computeThinkingAccordionState({
+    isThinkingLive: false,
+    userExpanded: true,
+  });
+  assert.equal(finishedExpanded.isOpen, true);
+  assert.equal(finishedExpanded.canToggle, true);
+});
+
+test("interaction physics: thought formatting as quote for mathematical discussion", () => {
+  assert.equal(formatThoughtAsQuote(""), "");
+  assert.equal(
+    formatThoughtAsQuote("推演残差条件\n假设导数非零"),
+    "> 推演残差条件\n> 假设导数非零"
+  );
+});
+
 

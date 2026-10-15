@@ -19,6 +19,7 @@ import Link from "next/link";
 import {StudyResumeCard} from "./learning/study-resume-card";
 import {IntelligentUI,TeachingDecisionReceipt} from "./learning/intelligent-ui";
 import {resolveIntelligentUI,type WorkspaceIntent} from "@/lib/intelligent-ui";
+import { computeThinkingAccordionState, formatThoughtAsQuote } from "@/lib/interaction-physics";
 
 function cleanMathForSpeech(text: string) {
   return text
@@ -137,36 +138,160 @@ function ThinkingProgressBanner({
   const steps = chain ? parseThinkingChain(chain) : [];
   const dots = ".".repeat((elapsed % 3) + 1);
 
+  // 核心互斥物理：流式生成中强制展开呈现，避免折叠带来的视口剧烈跳跃
+  const { isOpen, canToggle } = computeThinkingAccordionState({
+    isThinkingLive: true,
+    userExpanded: isExpanded,
+  });
+
   return (
     <div className="mb-3">
-      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/25 text-xs text-olive-800 dark:text-olive-300 font-serif shadow-xs">
-        <BrainCircuit className="w-3.5 h-3.5 text-olive-700 dark:text-olive-400 animate-spin" style={{ animationDuration: '4s' }} />
+      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/25 text-xs text-olive-800 dark:text-olive-300 font-serif shadow-xs select-none">
+        {/* 水墨微呼吸跳动点 */}
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-olive-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-olive-600 dark:bg-olive-400" />
+        </span>
         <span className="font-semibold tracking-wide">
-          小珞正在处理问题（{elapsed}s）{dots}
+          小珞正在理智推演（{elapsed}s）{dots}
         </span>
         {steps.length > 0 && (
           <button
-            onClick={onToggle}
-            className="inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[11px] font-mono text-olive-900 dark:text-olive-200 transition-colors cursor-pointer"
+            type="button"
+            disabled={!canToggle}
+            onClick={canToggle ? onToggle : undefined}
+            className={cn(
+              "inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-mono text-olive-900 dark:text-olive-200 transition-colors",
+              canToggle
+                ? "hover:bg-black/10 dark:hover:bg-white/15 cursor-pointer"
+                : "cursor-default opacity-80"
+            )}
+            title={canToggle ? (isOpen ? "收起规划" : "展开规划") : "推演进行中，已锁定理智呈现"}
           >
-            <span>{isExpanded ? "收起规划" : `查看 ${steps.length} 步演练`}</span>
-            <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", isExpanded && "rotate-90")} />
+            <span>{isOpen ? "实时推演中" : `查看 ${steps.length} 步演练`}</span>
+            <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", isOpen && "rotate-90")} />
           </button>
         )}
       </div>
 
-      <AnimatePresence>
-        {isExpanded && steps.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -4 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="overflow-hidden mt-2"
-          >
-            <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
-              <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
-                {steps.map((step, idx) => (
+      {/* 纯 CSS Grid 弹性伸缩容器（零 JS 高度测量与抖动） */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-250 ease-out",
+          isOpen && steps.length > 0 ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+            <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
+              {steps.map((step, idx) => (
+                <div key={idx} className="relative">
+                  <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
+                    {getStepIcon(step.type)}
+                  </div>
+                  <div className="flex items-center gap-2 select-none mb-0.5">
+                    <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
+                      {displayThinkingTitle(step.title)}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
+                      阶段 {idx + 1}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
+                    <LatexRenderer content={step.content} complete={false} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ThinkingSummaryView({
+  summary,
+  elapsedMs,
+  isExpanded,
+  onToggle,
+}: {
+  summary: string;
+  elapsedMs?: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const steps = parseThinkingChain(summary);
+  const [didCopy, setDidCopy] = useState(false);
+
+  // 状态机：已完成思考，交还展开控制权
+  const { isOpen } = computeThinkingAccordionState({
+    isThinkingLive: false,
+    userExpanded: isExpanded,
+  });
+
+  const handleCopyQuote = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const quote = formatThoughtAsQuote(summary);
+    if (quote && typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(quote);
+      setDidCopy(true);
+      setTimeout(() => setDidCopy(false), 2000);
+    }
+  };
+
+  return (
+    <div className="mt-2.5 mb-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group cursor-pointer"
+          onClick={onToggle}
+        >
+          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isOpen && "rotate-90")} />
+          <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">推演步骤</span>
+          {elapsedMs ? (
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+              {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
+            </span>
+          ) : null}
+          {steps.length > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-olive-500/15 text-olive-700 dark:text-olive-300 font-mono">
+              {steps.length} 阶段
+            </span>
+          )}
+        </button>
+
+        {/* 一键复制为引用探讨格式 */}
+        <button
+          type="button"
+          onClick={handleCopyQuote}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-olive-700 dark:hover:text-olive-300 hover:bg-olive-500/10 transition-colors cursor-pointer border border-transparent hover:border-olive-500/20"
+          title="将推演过程复制为引用格式，方便在输入框中探讨"
+        >
+          {didCopy ? (
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">✓ 已复制引用</span>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span>复制为引用</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 纯 CSS Grid 弹性伸缩容器 */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-250 ease-out",
+          isOpen ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+            <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
+              {steps.length > 0 ? (
+                steps.map((step, idx) => (
                   <div key={idx} className="relative">
                     <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
                       {getStepIcon(step.type)}
@@ -180,89 +305,17 @@ function ThinkingProgressBanner({
                       </span>
                     </div>
                     <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
-                      <LatexRenderer content={step.content} complete={false} />
+                      <LatexRenderer content={step.content} complete={true} />
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-[var(--text-muted)] italic text-xs whitespace-pre-wrap">{summary}</div>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function ThinkingSummaryView({
-  summary,
-  elapsedMs,
-  isExpanded,
-  onToggle
-}: {
-  summary: string;
-  elapsedMs?: number;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const steps = parseThinkingChain(summary);
-
-  return (
-    <div className="mt-2.5 mb-2">
-      <button
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group cursor-pointer"
-        onClick={onToggle}
-      >
-        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isExpanded && "rotate-90")} />
-        <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">处理步骤</span>
-        {elapsedMs ? (
-          <span className="text-[10px] text-[var(--text-muted)] font-mono">
-            {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
-          </span>
-        ) : null}
-        {steps.length > 0 && (
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-olive-500/15 text-olive-700 dark:text-olive-300 font-mono">
-            {steps.length} 阶段
-          </span>
-        )}
-      </button>
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -4 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="overflow-hidden mt-2"
-          >
-            <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
-              <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
-                {steps.length > 0 ? (
-                  steps.map((step, idx) => (
-                    <div key={idx} className="relative">
-                      <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
-                        {getStepIcon(step.type)}
-                      </div>
-                      <div className="flex items-center gap-2 select-none mb-0.5">
-                        <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
-                          {displayThinkingTitle(step.title)}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
-                          阶段 {idx + 1}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
-                        <LatexRenderer content={step.content} complete={true} />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[var(--text-muted)] italic text-xs">{summary}</div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

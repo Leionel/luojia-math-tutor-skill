@@ -101,3 +101,31 @@ export function computeEdgeFades(
   };
 }
 
+/**
+ * 思维链折叠状态机计算（逆向自 Claude ThinkingAccordion）：
+ * 生成活跃态 (isThinkingLive = true) 下强制锁定展开 (open = true)，禁止用户收起；
+ * 生成结束后交还控制权，遵循用户本地展开偏好 (userExpanded)。
+ */
+export function computeThinkingAccordionState(params: {
+  isThinkingLive: boolean;
+  userExpanded: boolean;
+}): { isOpen: boolean; canToggle: boolean } {
+  if (params.isThinkingLive) {
+    return { isOpen: true, canToggle: false };
+  }
+  return { isOpen: params.userExpanded, canToggle: true };
+}
+
+/**
+ * 格式化思维链为引用探讨文本
+ */
+export function formatThoughtAsQuote(rawThought: string): string {
+  const trimmed = rawThought.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .split("\n")
+    .map((line) => `> ${line}`)
+    .join("\n");
+}
+
+
