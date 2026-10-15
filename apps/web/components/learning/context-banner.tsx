@@ -6,15 +6,49 @@ import {referenceDescription,referenceHref,type LearningTaskSnapshot} from "@/li
 export function ContextBanner({snapshot, onRemove, disabled=false}: {
   snapshot: LearningTaskSnapshot; onRemove?: () => void; disabled?: boolean;
 }) {
+  const reading = snapshot.ref.kind === "reading" && "citation" in snapshot ? (snapshot as import("@/lib/learning-context").ReadingSnapshot) : null;
+
   return <div className="flex min-w-0 items-start gap-3 rounded-xl border border-olive-500/20 bg-olive-500/5 p-4 text-[var(--text-primary)]">
     <BookOpen aria-hidden="true" className="mt-1 size-5 shrink-0 text-olive-600 dark:text-olive-300"/>
     <div className="min-w-0 flex-1">
-      <p className="font-medium">正在讨论 · {snapshot.title}</p>
-      <p className="mt-1 break-all font-mono text-sm leading-6">{referenceDescription(snapshot)}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">参考帮助 · 不计掌握度{"omitted_rows" in snapshot && snapshot.omitted_rows > 0 ? ` · 引用 ${snapshot.rows.length}/${snapshot.total_rows} 步` : ""}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-semibold bg-olive-500/15 text-olive-800 dark:text-olive-200">
+          {reading
+            ? (reading.source_kind === "unit" || reading.ref.section_id === null ? "🏛 课程整理包" : "📄 用户上传材料")
+            : snapshot.ref.kind === "root_lab" || snapshot.ref.kind === "linear_lab" || snapshot.ref.kind === "integration_lab"
+            ? "🧪 实验快照"
+            : snapshot.ref.kind === "code_static"
+            ? "💻 静态源码"
+            : snapshot.ref.kind === "teach_back"
+            ? "🗣️ 讲回对照"
+            : "📌 学习上下文"}
+        </span>
+        <p className="font-medium text-sm sm:text-base">正在讨论 · {snapshot.title}</p>
+      </div>
+
+      <p className="mt-1 break-all font-mono text-xs sm:text-sm leading-5 sm:leading-6 text-[var(--text-secondary)]">{referenceDescription(snapshot)}</p>
+
+      {/* 来源类型、真实出处与审核状态严格区分 */}
+      {reading && (
+        <div className="mt-2 rounded-lg border border-paper-200 dark:border-paper-800 bg-[var(--bg-card)] p-2.5 text-xs space-y-1">
+          <div className="flex items-center justify-between text-[var(--text-muted)]">
+            <span>出处来源：{reading.source_kind === "unit" || reading.ref.section_id === null ? "武汉大学《数值分析》课程教学大纲单元" : `上传文档 (ID: ${reading.ref.source_id.slice(0, 8)}…)`}</span>
+            <span className="font-mono">字符 {reading.citation.start}–{reading.citation.end}</span>
+          </div>
+          <div className="text-[var(--text-secondary)]">
+            {reading.source_kind === "unit" || reading.ref.section_id === null ? (
+              <span className="text-olive-700 dark:text-olive-300">✓ 内容指纹匹配（SHA-256 一致），已排定教学单元材料</span>
+            ) : (
+              <span className="text-ochre-700 dark:text-ochre-400">⚠ 用户上传材料，内容尚未经教师或系统金标数学核验</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <p className="mt-2 text-xs sm:text-sm leading-6 text-[var(--text-secondary)]">参考帮助 · 不计掌握度{"omitted_rows" in snapshot && snapshot.omitted_rows > 0 ? ` · 引用 ${snapshot.rows.length}/${snapshot.total_rows} 步` : ""}</p>
       {"student_claim" in snapshot && snapshot.student_claim && <div className="mt-2 rounded-lg border border-olive-500/20 bg-[var(--bg-card)] p-3 text-sm"><p className="text-xs text-[var(--text-muted)]">学生选中的原话 · 尚未审核</p><p className="mt-1 whitespace-pre-wrap break-words leading-6">{snapshot.student_claim.text}</p></div>}
       {"condition" in snapshot && <div className="mt-2 rounded-lg border border-olive-500/20 bg-[var(--bg-card)] p-3 text-sm"><p className="font-medium">选中的条件：{snapshot.condition.condition}</p><p className="mt-2 whitespace-pre-wrap break-words leading-6">{snapshot.condition.student_quote??"尚未对应原句"}</p><p className="mt-2 text-xs text-[var(--text-muted)]">{snapshot.model_status==="model_review"?"模型意见未核验":"尚无可用模型意见"} · 不计掌握度</p></div>}
-      {"content_review_status" in snapshot && <p className="mt-1 text-xs">{snapshot.content_review_status==="development_card"?"开发条件卡，尚非教师金标":"上传来源内容未作数学核验"}</p>}
+      {"content_review_status" in snapshot && snapshot.ref.kind !== "reading" && <p className="mt-1 text-xs">{snapshot.content_review_status==="development_card"?"开发条件卡，尚非教师金标":"上传来源内容未作数学核验"}</p>}
       {"condition_review" in snapshot && snapshot.condition_review && <div className="mt-3 rounded-lg border border-olive-500/20 bg-[var(--bg-card)] p-3 text-sm"><p className="font-medium">题目条件对照 · 尚未经数学核验</p><p className="mt-2 whitespace-pre-wrap break-words">{snapshot.condition_review.problem_text}</p><ul className="mt-2 space-y-1">{snapshot.condition_review.conditions.map(row=><li key={row.index}>{row.status==="student_reported_known_unverified"?"我标记为已给出（未核验）":"尚不确定"}：{row.condition}</li>)}</ul><p className="mt-2 font-medium">下一问：{snapshot.condition_review.next_question}</p><p className="mt-1 text-xs text-[var(--text-muted)]">开发条件卡 · 不计掌握度</p></div>}
       {"task" in snapshot && snapshot.task.domain==="linear_system" && <details className="mt-2 text-sm"><summary className="min-h-12 cursor-pointer py-3">查看引用中的矩阵与右端项</summary><pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all">{JSON.stringify({A:snapshot.task.matrix,b:snapshot.task.rhs,x0:snapshot.task.initial},null,2)}</pre></details>}
       {"linear_check" in snapshot && <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">第 {snapshot.linear_check.checked_step} 步已按保存的方法复算；残差是 ∥Ax−b∥∞，不等于解误差。{snapshot.linear_check.condition_sufficient?"本例满足严格行对角占优的充分条件；显示的理论误差界不含舍入误差。":"严格行对角占优未证，不能据此判定收敛或发散；解误差仍待其他依据。"}</p>}

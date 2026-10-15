@@ -143,9 +143,9 @@ export function CanvasWorkspace({
         </div>
       </div>
 
-      {/* 2. Workspace Main Body */}
+      {/* 2. Workspace Main Body - Preserves draft and object states across tab switches */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "lab" && (
+        <div className={activeTab === "lab" ? "h-full" : "hidden"}>
           <LabWorkspace
             embedded
             initialRef={initialRef}
@@ -154,9 +154,9 @@ export function CanvasWorkspace({
             onDiscuss={onDiscuss}
             onSaved={onSaved}
           />
-        )}
+        </div>
 
-        {activeTab === "reading" && (
+        <div className={activeTab === "reading" ? "h-full" : "hidden"}>
           <ReadingDomainView
             mode="canvas"
             onDiscuss={(ref, prompt) => {
@@ -167,9 +167,9 @@ export function CanvasWorkspace({
               }
             }}
           />
-        )}
+        </div>
 
-        {activeTab === "study" && (
+        <div className={activeTab === "study" ? "h-full" : "hidden"}>
           <StudyDomainView
             mode="canvas"
             onDiscussTask={(prompt, taskRef) => {
@@ -181,7 +181,7 @@ export function CanvasWorkspace({
             }}
             onStartTask={onStartStudyTask}
           />
-        )}
+        </div>
       </div>
     </div>
   );
