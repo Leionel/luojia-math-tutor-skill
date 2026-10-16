@@ -1,0 +1,20 @@
+{
+  "version": "learning-ui-v1",
+  "sdk": "@openuidev/react-lang@1.0.0",
+  "root": "LearningUI",
+  "components": {
+    "SourceExcerpt": "Display a server supplied source excerpt; select an evidence_ref only.",
+    "ConditionChecklist": "Review known and missing conditions from the teaching decision; model opinions remain unverified.",
+    "PredictionForm": "Write a local prediction and open the same-session Lab; never submit a prediction automatically.",
+    "ParameterCompare": "Open the existing server-bound parameter preview and save controls.",
+    "RunTraceChart": "Display saved trajectory values from the selected server reference, never model supplied numbers."
+  },
+  "selection_limit": 4,
+  "selection_schema": {"component": "catalog name", "evidence_ref": "an available evidence id"},
+  "rules": [
+    "Select components using JSON; the server compiles the validated selection to OpenUI Lang.",
+    "Do not supply data, URLs, methods, HTML, JavaScript or action identifiers.",
+    "An empty selection is valid when plain Markdown is sufficient.",
+    "Numeric evidence and business actions are resolved by the application."
+  ]
+}

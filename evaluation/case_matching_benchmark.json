@@ -1,0 +1,142 @@
+[
+  {
+    "id": "Q01",
+    "query": "牛顿法为什么初值选不好会发散？",
+    "expected_case_id": "CASE_NEWTON_INITIAL_VALUE",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "error_debugging"
+  },
+  {
+    "id": "Q02",
+    "query": "为什么牛顿法初值很重要？",
+    "expected_case_id": "CASE_NEWTON_INITIAL_VALUE",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "error_debugging"
+  },
+  {
+    "id": "Q03",
+    "query": "重根情况下牛顿法的收敛速度是多少？",
+    "expected_case_id": "CASE_NEWTON_MULTIPLE_ROOT",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "convergence_analysis"
+  },
+  {
+    "id": "Q04",
+    "query": "牛顿法算重根为什么变慢了？",
+    "expected_case_id": "CASE_NEWTON_MULTIPLE_ROOT",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "convergence_analysis"
+  },
+  {
+    "id": "Q05",
+    "query": "残差很小是不是就说明算对了？",
+    "expected_case_id": "CASE_RESIDUAL_VS_ERROR",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "concept_explanation"
+  },
+  {
+    "id": "Q06",
+    "query": "残差和误差有什么区别？",
+    "expected_case_id": "CASE_RESIDUAL_VS_ERROR",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "concept_explanation"
+  },
+  {
+    "id": "Q07",
+    "query": "二分法需要满足什么条件？",
+    "expected_case_id": "CASE_BISECTION_REQUIREMENTS",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "concept_explanation"
+  },
+  {
+    "id": "Q08",
+    "query": "什么时候不能用二分法求根？",
+    "expected_case_id": "CASE_BISECTION_REQUIREMENTS",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "concept_explanation"
+  },
+  {
+    "id": "Q09",
+    "query": "二分法中点函数值同号怎么更新？",
+    "expected_case_id": "CASE_BISECTION_BRACKET_UPDATE",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "error_debugging"
+  },
+  {
+    "id": "Q10",
+    "query": "二分法要做多少次才能精确到 1e-4？",
+    "expected_case_id": "CASE_BISECTION_ERROR_BOUND",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "derivation"
+  },
+  {
+    "id": "Q11",
+    "query": "不动点迭代什么时候收敛？",
+    "expected_case_id": "CASE_FIXED_POINT_CONTRACTION",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "convergence_analysis"
+  },
+  {
+    "id": "Q12",
+    "query": "牛顿法公式是怎么推出来的？",
+    "expected_case_id": "CASE_NEWTON_DERIVATION",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "derivation"
+  },
+  {
+    "id": "Q13",
+    "query": "牛顿切线法的几何意义是什么？",
+    "expected_case_id": "CASE_NEWTON_DERIVATION",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "derivation"
+  },
+  {
+    "id": "Q14",
+    "query": "牛顿法局部收敛的条件是什么？",
+    "expected_case_id": "CASE_NEWTON_LOCAL_CONVERGENCE",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "convergence_analysis"
+  },
+  {
+    "id": "Q15",
+    "query": "怎么用 Python 写牛顿迭代法？",
+    "expected_case_id": "CASE_NEWTON_CODE_UPDATE",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "code_task"
+  },
+  {
+    "id": "Q16",
+    "query": "求根算法什么时候停止迭代最安全？",
+    "expected_case_id": "CASE_STOPPING_CRITERION",
+    "expected_decision": ["SAME_CASE", "VARIANT_OF_CASE"],
+    "category": "code_task"
+  },
+  {
+    "id": "Q17",
+    "query": "如何计算量子力学一维谐振子的基态波函数？",
+    "expected_case_id": null,
+    "expected_decision": ["NEW_CASE", "UNCERTAIN"],
+    "category": "out_of_domain"
+  },
+  {
+    "id": "Q18",
+    "query": "请介绍留数定理在围道积分中的应用",
+    "expected_case_id": null,
+    "expected_decision": ["NEW_CASE", "UNCERTAIN"],
+    "category": "out_of_domain"
+  },
+  {
+    "id": "Q19",
+    "query": "神经网络的反向传播梯度下降公式是什么？",
+    "expected_case_id": null,
+    "expected_decision": ["NEW_CASE", "UNCERTAIN"],
+    "category": "out_of_domain"
+  },
+  {
+    "id": "Q20",
+    "query": "红楼梦中贾宝玉的性格特征是什么？",
+    "expected_case_id": null,
+    "expected_decision": ["NEW_CASE", "UNCERTAIN"],
+    "category": "out_of_domain"
+  }
+]

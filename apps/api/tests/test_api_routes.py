@@ -12,6 +12,14 @@ from app.knowledge.schema import KnowledgeItem
 from app.api import routes_knowledge
 
 
+@pytest.fixture
+def successful_tutor_stream(monkeypatch):
+    """Explicit offline model fixture for tests of successful SSE flows."""
+    async def fake_stream(self, messages, **kwargs):
+        yield {"type": "content", "content": "[OUTPUT] 先回顾导数定义，再选出可以使用的求导规则。"}
+    monkeypatch.setattr("app.llm.openai_compatible.OpenAICompatibleClient.stream", fake_stream)
+
+
 def test_health_route():
     client = TestClient(app)
     response = client.get("/health")
@@ -216,7 +224,7 @@ def parse_sse_events(streaming_body: bytes) -> list[dict]:
     return events
 
 
-def test_tutor_sse_opening_precedes_meta_and_message():
+def test_tutor_sse_opening_precedes_meta_and_message(successful_tutor_stream):
     client = TestClient(app)
     session = client.post(
         "/api/sessions",
@@ -343,7 +351,7 @@ def test_tutor_sse_meta_correct_integral():
     assert meta["verified"] is True
 
 
-def test_tutor_sse_hint_level_with_hint_request():
+def test_tutor_sse_hint_level_with_hint_request(successful_tutor_stream):
     """When user requests a hint, hint_level should be >= LIGHT_HINT (1)."""
     client = TestClient(app)
     session = client.post("/api/sessions", json={"user_id": "demo-user", "subject": "calculus"})
@@ -351,7 +359,7 @@ def test_tutor_sse_hint_level_with_hint_request():
 
     resp = client.post("/api/tutor/stream", json={
         "session_id": session_id,
-        "message": "请给我下一层提示。",
+        "message": "请提示如何对 x^2 求导，不要完整解答。",
         "mode": "socratic",
         "requested_hint": True,
     })
@@ -363,6 +371,31 @@ def test_tutor_sse_hint_level_with_hint_request():
     meta = meta_events[0]["data"]
 
     assert meta["hint_level"] >= 1, f"Expected hint_level >= 1, got {meta['hint_level']}"
+
+
+def test_tutor_without_model_returns_error_not_fake_answer():
+    client = TestClient(app)
+    session_id = client.post("/api/sessions", json={"user_id": "no-model-user", "subject": "calculus"}).json()["session_id"]
+    response = client.post("/api/tutor/stream", json={"session_id": session_id,
+                           "user_id": "no-model-user", "message": "什么是导数？"})
+    events = parse_sse_events(response.read())
+    assert not any(e["event"] in {"message", "done"} for e in events)
+    error = next(e["data"] for e in events if e["event"] == "error")
+    assert error["code"] == "model_not_configured"
+
+
+def test_vague_hint_without_context_clarifies_without_assessment():
+    client = TestClient(app)
+    session_id = client.post("/api/sessions", json={"user_id": "clarify-user", "subject": "calculus"}).json()["session_id"]
+    response = client.post("/api/tutor/stream", json={"session_id": session_id,
+                           "user_id": "clarify-user", "message": "请给我下一层提示。", "requested_hint": True})
+    events = parse_sse_events(response.read())
+    assert not any(e["event"] == "meta" for e in events)
+    meta = next(e["data"] for e in events if e["event"] == "meta_update")
+    assert meta["intent"] == "intent_clarification" and not meta["verified"]
+    assert meta["is_correct"] is None and meta["mastery_delta"] == 0
+    mastery = client.get("/api/users/clarify-user/mastery").json()
+    assert mastery["items"] == []
 
 
 def test_tutor_sse_mastery_update_persists():

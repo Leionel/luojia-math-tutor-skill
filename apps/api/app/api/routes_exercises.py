@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from app.auth import Principal, get_principal, resolve_user_id
 from app.config import Settings
-from app.main_deps import get_app_settings, get_repository
+from app.main_deps import get_app_settings, get_repository, ensure_reference_help_allowed
 from app.memory.repository import Repository
 from app.tutor.exercise_generator import get_fallback_exercises
 
@@ -25,6 +25,7 @@ def similar_exercises(
     principal: Principal = Depends(get_principal),
     settings: Settings = Depends(get_app_settings),
 ):
-    resolve_user_id(principal, payload.user_id, settings)
+    user_id = resolve_user_id(principal, payload.user_id, settings)
+    ensure_reference_help_allowed(user_id)
     exercises = get_fallback_exercises(payload.concept, payload.difficulty, payload.count)
     return {"exercises": exercises}

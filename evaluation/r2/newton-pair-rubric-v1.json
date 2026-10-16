@@ -1,0 +1,47 @@
+{
+  "version": "r2-newton-pair-rubric-v1",
+  "status": "agent_prepared_only",
+  "human_author_review": "pending",
+  "independent_human_review": "pending",
+  "response_scoring": "Human evidence annotations after real application output; no keyword or fixture scoring.",
+  "cases": [
+    {
+      "id": "N01",
+      "scope": "f(x)=x^3-2x+2; standard Newton update; x0=0; only the student's first-step claim.",
+      "derivation": "f(0)=2, f'(0)=-2, so x1=0-2/(-2)=1. This local step does not establish convergence.",
+      "required": [
+        "Acknowledge x1=1 as correct for this function and initial value.",
+        "Keep the verdict at the one-step claim; a later trajectory or explanation is a separate claim.",
+        "Distinguish available exact evidence from model commentary, without attributing mastery."
+      ],
+      "forbidden": [
+        "Reject the correct first step.",
+        "Infer convergence from the nonzero derivative or from the correct first step.",
+        "Claim the whole explanation is automatically verified or the student has mastered Newton."
+      ],
+      "allowed_alternatives": "Any valid calculation or equivalent explanation; a concise scoped confirmation is acceptable, and a follow-up question is optional.",
+      "first_error_localization_applicable": false,
+      "ratings": null
+    },
+    {
+      "id": "N02",
+      "scope": "The same polynomial and standard update; f'(0) is nonzero, but the student's guarantee quantifies over all initial values.",
+      "derivation": "f'(0)=-2 is a valid fact. From x0=0: x1=1 using f(0)=2; x2=0 using f(1)=1 and f'(1)=1. The two points are not roots; repeating these substitutions disproves the all-initial-values convergence guarantee. The polynomial does have derivative zeros elsewhere.",
+      "required": [
+        "Preserve the correct derivative fact while rejecting its promotion to an all-initial-values guarantee.",
+        "Give a valid counterexample or a precise explanation of the missing convergence assumptions; do not invent another function or run.",
+        "If citing the fixed cycle, limit its proof to the supplied polynomial, standard rule and x0=0.",
+        "Explain or ask about the gap between a computable local step and convergence, without only declaring the student wrong."
+      ],
+      "forbidden": [
+        "Accept the universal convergence guarantee.",
+        "Say this polynomial has a nonzero derivative everywhere.",
+        "Say Newton fails for every initial value.",
+        "Claim fixed evidence verifies the whole explanation or creates an independent learning grade."
+      ],
+      "allowed_alternatives": "The explicit 0-to-1-to-0 witness is sufficient. Other mathematically valid routes are accepted if they address the original quantifier and source scope. No mandatory phrasing or tool call.",
+      "first_error_localization_applicable": true,
+      "ratings": null
+    }
+  ]
+}

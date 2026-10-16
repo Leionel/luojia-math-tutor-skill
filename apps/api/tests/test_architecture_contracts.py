@@ -3,6 +3,7 @@ from fastapi import HTTPException
 
 from app.auth import Principal, decode_token, issue_token, resolve_user_id
 from app.config import Settings
+from app.memory.migrations import MIGRATIONS
 from app.memory.repository import Repository
 from app.math_tools.verifier import VerifyResult
 from app.tutor.intent_router import Intent
@@ -30,7 +31,9 @@ def test_auth_token_and_cross_user_boundary():
         auth_token_secret="x" * 32,
     )
     token = issue_token("alice", settings)
-    assert decode_token(token, settings) == "alice"
+    user_id, role = decode_token(token, settings)
+    assert user_id == "alice"
+    assert role == "student"
     with pytest.raises(HTTPException) as exc:
         resolve_user_id(Principal("alice", True), "bob", settings)
     assert exc.value.status_code == 403
@@ -62,5 +65,8 @@ def test_migrations_and_semantic_jobs_are_shared_between_instances(tmp_path):
         status = connection.execute(
             "select status from semantic_jobs where id = ?", (job_id,)
         ).fetchone()["status"]
-    assert [row["version"] for row in versions] == [1, 2, 3]
+    # The contract under test is that both instances share one migrated
+    # database, so compare against the registered migrations rather than a
+    # hardcoded list that breaks every time one is added.
+    assert [row["version"] for row in versions] == [v for v, _, _ in MIGRATIONS]
     assert status == "done"

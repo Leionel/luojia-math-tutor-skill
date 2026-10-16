@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError("");
     try {
       await authenticate("login", userId, password);
-      router.push("/chat");
+      router.replace("/study");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "登录失败");
     } finally {
@@ -39,45 +39,45 @@ export default function LoginPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="w-full border border-[#d6d0ba] dark:border-[#3e3f36] bg-[#faf7f2]/90 dark:bg-[#1e1e1b]/90 p-10 backdrop-blur-md relative rounded-lg shadow-lg"
+      className="w-full border border-[#d6d0ba] dark:border-[#3e3f36] bg-[#faf7f2]/90 dark:bg-[#1e1e1b]/90 p-6 sm:p-10 backdrop-blur-md relative rounded-lg shadow-lg"
     >
       <div className="absolute top-0 left-0 w-2 h-full bg-[#617a55] rounded-l-lg" />
-      
+
       <motion.div variants={itemVariants} className="mb-8">
         <h2 className="text-3xl font-bold font-title tracking-wide text-[#2a2b26] dark:text-[#e6e4dc] mb-2">
           登录系统
         </h2>
         <p className="text-sm font-body text-[#757a6b] dark:text-[#8d8a7d]">
-          请输入凭证以进入珞珈数智助教。
+          登录后继续你的任务、教材笔记与实验记录。
         </p>
       </motion.div>
 
       <motion.form variants={itemVariants} onSubmit={handleLogin} className="space-y-6">
         <div className="space-y-2">
-          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">用户名</label>
+          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest" htmlFor="account-id">账号</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757a6b]" />
-            <input 
-              type="text" 
+            <input
+              id="account-id" type="text" autoComplete="username" minLength={3} maxLength={64}
               required
               value={userId}
               onChange={(event) => setUserId(event.target.value)}
               className="w-full bg-transparent border border-[#d6d0ba] dark:border-[#3e3f36] p-3 pl-10 text-[#2a2b26] dark:text-[#e6e4dc] font-body text-sm focus:outline-none focus:border-[#617a55] focus:shadow-[0_0_10px_-2px_rgba(97,122,85,0.3)] transition-all placeholder:text-[#a0a596] dark:placeholder:text-[#5c5a4d] rounded-md"
-              placeholder="user@domain.com"
+              placeholder="注册时使用的账号，例如 luojia_student"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest">密码</label>
+          <label className="text-sm font-body text-[#4a4d44] dark:text-[#c5c2b6] tracking-widest" htmlFor="account-password">密码</label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757a6b]" />
-            <input 
-              type="password" 
+            <input
+              id="account-password" type="password" autoComplete="current-password"
               required
               minLength={10}
               value={password}
@@ -91,7 +91,7 @@ export default function LoginPage() {
         {error && <p role="alert" className="text-sm text-[#c44a3d]">{error}</p>}
 
         <motion.div variants={itemVariants} className="pt-4">
-          <button 
+          <button
             type="submit"
             disabled={isAuthenticating}
             className="group relative w-full flex h-12 items-center justify-center overflow-hidden border border-[#617a55] bg-[#617a55]/10 px-8 font-title text-lg text-[#617a55] transition-all hover:bg-[#617a55] hover:text-[#faf7f2] rounded-md disabled:opacity-50 disabled:cursor-not-allowed"

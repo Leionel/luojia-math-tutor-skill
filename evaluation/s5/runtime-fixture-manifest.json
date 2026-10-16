@@ -1,0 +1,131 @@
+{
+  "version": "s5-manifest-v1",
+  "split": "runner_fixture",
+  "scope": "owned_offline_graph_fixtures",
+  "cases": [
+    {
+      "id": "runtime-correct",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "family": "correct",
+      "input_sha256": "6fbf0d52ce79d9911ce8acaf545d9d482fbbc719e2f87a73754250f1f8ca9f5a",
+      "rubric_sha256": "652a888f03807ffd75e7c1d847f6e34750771b8bf6766720870166ac8b7e7dc4",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": false,
+        "false_success": false
+      },
+      "gold_status": "synthetic_fixture",
+      "runtime_expectation": {
+        "is_correct": true,
+        "eligible_learning_evidence": true,
+        "origin": "student_claim",
+        "mastery_writes": 1,
+        "mistake_writes": 0
+      }
+    },
+    {
+      "id": "runtime-incorrect",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "family": "incorrect",
+      "input_sha256": "2462473cf709fe0e88c049d60bc43bc8ea3f379da913c83a068d0f3b937319e3",
+      "rubric_sha256": "7b3b9b83f4ce0a21ca9a53d1907f25922c57d98a3d312fcd032359118e9010ef",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": false,
+        "false_success": false
+      },
+      "gold_status": "synthetic_fixture",
+      "runtime_expectation": {
+        "is_correct": false,
+        "eligible_learning_evidence": true,
+        "origin": "student_claim",
+        "mastery_writes": 1,
+        "mistake_writes": 1
+      }
+    },
+    {
+      "id": "runtime-reference",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "family": "reference",
+      "input_sha256": "8bc30a210d891c390ef06f833def8913a6ea30fd82dfdbc1f7ba66060832a74f",
+      "rubric_sha256": "48051340ca33e786b43b1db9b1e144ed848ea12adfd7d99d4da020c6c9e6a020",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": false,
+        "false_success": false
+      },
+      "gold_status": "synthetic_fixture",
+      "runtime_expectation": {
+        "is_correct": null,
+        "eligible_learning_evidence": false,
+        "origin": "system_calculation",
+        "mastery_writes": 0,
+        "mistake_writes": 0
+      }
+    },
+    {
+      "id": "runtime-unknown",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "family": "unknown",
+      "input_sha256": "e576394bac7d24c371bb5054634061ad51ba717cf612a2cf2af61a3657e7daf1",
+      "rubric_sha256": "9821874c49636ae22ae89e160e28bdefcbb115a6323d5c37eef1f6424f5a650e",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": false,
+        "appropriate_abstention": false,
+        "inappropriate_abstention": false,
+        "checker_coverage": false,
+        "verification_overclaim": false,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": false,
+        "false_success": false
+      },
+      "gold_status": "synthetic_fixture",
+      "runtime_expectation": {
+        "is_correct": null,
+        "eligible_learning_evidence": false,
+        "origin": "none",
+        "mastery_writes": 0,
+        "mistake_writes": 0
+      }
+    }
+  ]
+}

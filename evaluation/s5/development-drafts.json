@@ -1,0 +1,136 @@
+{
+  "version": "s5-development-drafts-v1",
+  "status": "drafts_not_reviewed_gold",
+  "cases": [
+    {
+      "id": "dev-equivalence",
+      "prompt": "这一步 2x=x+x 对吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "normal_representation",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-derivative",
+      "prompt": "我算 d(x²)/dx=2x，对吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "normal_representation",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-domain",
+      "prompt": "这一步 x/x=1 对所有实数成立，对吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "scope",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-premise",
+      "prompt": "x 为正数，sqrt(x²)=x 对吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "clarification",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-linear-residual",
+      "prompt": "A=[[3,1],[1,2]]，b=[5,5]，我算 x=[1,2]。如何核对残差？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "linear_residual",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-linear-uniqueness",
+      "prompt": "A=[[1,2],[2,4]]，b=[3,6]，x=[1,1] 的残差为零，是否说明解唯一？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "linear_conditions",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-newton-cycle",
+      "prompt": "f(x)=x³−2x+2，从 x0=0 做 Newton。每个迭代点导数非零就保证任意初值收敛吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "newton_quantifier",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    },
+    {
+      "id": "dev-newton-context",
+      "prompt": "我修改了初值，但引用的是修改前保存的实验。你能把旧轨迹当成新参数结果吗？",
+      "rubric_draft": {
+        "status": "draft_not_gold",
+        "family": "newton_context",
+        "required": [
+          "核对输入、条件与来源",
+          "只声明实际支持的范围"
+        ],
+        "forbidden": [
+          "缺少证据时声称整题已核验",
+          "把系统参考结果计为学生独立成绩"
+        ]
+      }
+    }
+  ],
+  "confirmation": "4 candidates pending separate real review; no sealed inputs created",
+  "episodes": "2 development workflows pending S5.2"
+}

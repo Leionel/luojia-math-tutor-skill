@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珞珈数智助教 2.0 · 课程知识图谱与 Teaching Case 全景工程规划</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- KaTeX CDN for Math Formula Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        apple: {
+                            black: '#000000',
+                            card: '#161617',
+                            cardHover: '#1c1c1e',
+                            border: 'rgba(255, 255, 255, 0.1)',
+                            borderLight: 'rgba(255, 255, 255, 0.15)',
+                            textPrimary: '#f5f5f7',
+                            textSecondary: '#86868b',
+                            textTertiary: '#6e6e73',
+                            blue: '#2997ff',
+                            indigo: '#5e5ce6',
+                            green: '#30d158',
+                            amber: '#ff9f0a',
+                            red: '#ff453a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', '"PingFang SC"', 'Inter', 'sans-serif'],
+                        mono: ['ui-monospace', '"SF Mono"', '"JetBrains Mono"', 'Menlo', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #86868b;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Inter", sans-serif;
+            letter-spacing: -0.011em;
+            scroll-behavior: smooth;
+        }
+        /* Apple 官网签名磨砂玻璃导航栏与卡片 */
+        .apple-nav-blur {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .apple-card {
+            background: #161617;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .apple-card:hover {
+            background: #1c1c1e;
+            border-color: rgba(255, 255, 255, 0.16);
+            transform: translateY(-2px);
+        }
+        .apple-card-subtle {
+            background: #0d0d0e;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+        }
+        /* 官网质感大标题金属渐变 */
+        .apple-title-gradient {
+            background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .apple-blue-gradient {
+            background: linear-gradient(180deg, #ffffff 0%, #2997ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Apple 胶囊标签 */
+        .apple-pill-blue { background: rgba(41, 151, 255, 0.12); color: #2997ff; border: 1px solid rgba(41, 151, 255, 0.28); }
+        .apple-pill-green { background: rgba(48, 209, 88, 0.12); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.28); }
+        .apple-pill-amber { background: rgba(255, 159, 10, 0.12); color: #ff9f0a; border: 1px solid rgba(255, 159, 10, 0.28); }
+        .apple-pill-red { background: rgba(255, 69, 58, 0.12); color: #ff453a; border: 1px solid rgba(255, 69, 58, 0.28); }
+
+        pre code {
+            font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+            font-size: 0.8rem;
+            line-height: 1.65;
+        }
+        /* 侧栏收缩与展开动画 */
+        #sidebar {
+            transition: width 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease, margin 0.35s ease;
+        }
+        #sidebar.collapsed {
+            width: 0px !important;
+            min-width: 0px !important;
+            opacity: 0;
+            margin-right: 0 !important;
+            overflow: hidden;
+            pointer-events: none;
+        }
+    </style>
+    <script>
+        // 侧边栏隐藏/展开控制
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+            const floatBtn = document.getElementById('floating-sidebar-btn');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                toggleBtn.innerHTML = '<span class="text-xs">◨</span><span>收起目录</span>';
+                floatBtn.classList.add('hidden');
+            } else {
+                sidebar.classList.add('collapsed');
+                toggleBtn.innerHTML = '<span class="text-xs">◧</span><span>展开目录</span>';
+                floatBtn.classList.remove('hidden');
+            }
+        }
+        // 平滑滚动
+        function scrollToId(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    </script>
+</head>
+<body class="antialiased min-h-screen">
+
+    <!-- Apple-style Fixed Header -->
+    <header class="apple-nav-blur sticky top-0 z-50 px-6 py-3 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-apple-textPrimary font-semibold tracking-tight text-sm flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-apple-blue inline-block"></span>
+                    <span>珞珈数智助教</span>
+                    <span class="text-xs text-apple-textSecondary font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10">v2.0 Spec</span>
+                </span>
+            </div>
+            
+            <!-- Center Metadata -->
+            <div class="hidden md:flex items-center space-x-6 text-xs text-apple-textSecondary font-mono">
+                <span>REPO: Leionel/luojia-math-tutor-skill</span>
+                <span>•</span>
+                <span class="text-apple-amber">PILOT: 《数值分析》· 非线性方程求根</span>
+            </div>
+
+            <!-- Right Controls: Toggle Sidebar Button -->
+            <div class="flex items-center space-x-3">
+                <button id="sidebar-toggle-btn" onclick="toggleSidebar()" 
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-white/5 hover:bg-white/10 text-apple-textPrimary border border-white/10 transition-all">
+                    <span class="text-xs">◨</span>
+                    <span>收起目录</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Floating Restore Sidebar Button (shown when sidebar is hidden) -->
+    <button id="floating-sidebar-btn" onclick="toggleSidebar()" 
+        class="hidden fixed bottom-8 left-8 z-50 flex items-center space-x-2 px-4 py-2.5 rounded-full shadow-2xl text-xs font-medium text-white bg-apple-card border border-white/20 hover:border-apple-blue backdrop-blur-xl transition-all hover:scale-105">
+        <span>📑</span>
+        <span>展开大纲目录</span>
+    </button>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-10 flex gap-10 relative">
+
+        <!-- Collapsible Sidebar -->
+        <aside id="sidebar" class="w-64 flex-shrink-0">
+            <div class="sticky top-20 space-y-4">
+                
+                <!-- Quick Navigation Box -->
+                <div class="p-4 apple-card-subtle space-y-2">
+                    <div class="flex items-center justify-between text-xs text-apple-textSecondary uppercase tracking-widest font-mono">
+                        <span>大纲导航</span>
+                        <button onclick="toggleSidebar()" class="text-apple-textTertiary hover:text-white transition-colors" title="隐藏目录">✕</button>
+                    </div>
+                    <nav class="space-y-1 text-xs font-medium text-apple-textSecondary">
+                        <a href="#sec-current" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">00. 系统现状深度剖析</a>
+                        <a href="#sec-axiom" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">01. 核心公理与设计哲学</a>
+                        <a href="#sec-literature" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">02. 11部前沿文献理论基石</a>
+                        <a href="#sec-entities" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">03. 四大核心对象详细建模</a>
+                        <a href="#sec-matcher" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">04. 三级判别漏斗与排他比对</a>
+                        <a href="#sec-boundary" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">05. 课程知识边界与动态演化</a>
+                        <a href="#sec-overlay" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">06. 学生认知叠加态建模</a>
+                        <a href="#sec-pilot" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">07. 数值分析试点单元全景</a>
+                        <a href="#sec-mapping" class="block py-1.5 px-2.5 rounded-lg hover:text-apple-textPrimary hover:bg-white/5 transition-colors">08. 现有代码库改造对接映射</a>
+                        <a href="#sec-anti-patterns" class="block py-1.5 px-2.5 rounded-lg text-apple-red font-bold hover:bg-apple-red/10 transition-colors">09. 坚决不踩的九大禁令红线</a>
+                    </nav>
+                </div>
+
+                <!-- Mathematical Invariant Mini-Card -->
+                <div class="p-4 apple-card-subtle space-y-1.5 text-xs">
+                    <div class="text-[10px] uppercase tracking-wider text-apple-textTertiary font-mono">Architecture Invariant</div>
+                    <div class="text-sm font-semibold text-apple-textPrimary font-mono">$$G_{\text{stu}} = G_{\text{crs}} + S_{\text{stu}}$$</div>
+                    <p class="text-[11px] text-apple-textSecondary leading-snug">
+                        课程图谱全局唯一受控，学生状态以轻量属性叠加，严禁克隆整图。
+                    </p>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Main Content Stream -->
+        <main class="flex-1 min-w-0 space-y-16 pb-28">
+
+            <!-- Hero Section (Apple Pro Style) -->
+            <section class="space-y-6 pt-4 text-left">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-apple-blue">
+                    <span>Pro Academic Architecture</span>
+                    <span>•</span>
+                    <span>严谨理工科智能体知识基础设施</span>
+                </div>
+                
+                <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight apple-title-gradient leading-[1.1]">
+                    课程知识图谱、Teaching Case<br>
+                    <span class="apple-blue-gradient">与动态教学知识层全景工程方案</span>
+                </h1>
+
+                <p class="text-base sm:text-lg text-apple-textSecondary max-w-3xl leading-relaxed font-normal">
+                    深度融合武汉大学理科真实教学大纲、两份顶层调研方案与当前仓库现有代码，确立以《数值分析》为试点、以课程边界为强约束、以 Teaching Case 为归纳中枢的严谨理工科 AI Tutor 演进范式。
+                </p>
+
+                <!-- Core Axiom Card -->
+                <div class="p-6 apple-card border border-white/15 space-y-2.5">
+                    <div class="flex items-center justify-between text-xs text-apple-textTertiary font-mono uppercase tracking-wider">
+                        <span>Golden Axiom · 核心公理</span>
+                        <span class="text-apple-amber">Principle 1</span>
+                    </div>
+                    <div class="text-lg sm:text-2xl font-bold text-apple-textPrimary tracking-tight">
+                        "Query is Evidence, Case is Abstraction, Knowledge Unit is Ontology."
+                    </div>
+                    <div class="text-sm text-apple-textSecondary leading-relaxed">
+                        中文即：<strong>学生问题是交互证据；教学案例是归纳抽象层；知识节点才是正式课程知识本体。</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 00. 现状深度剖析：系统现有架构、代码实现与瓶颈诊断 -->
+            <section id="sec-current" class="space-y-6">
+                <div class="border-b border-white/10 pb-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 00</span>
+                        <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                            系统现状深度剖析：已有架构与代码实现到底是什么？
+                        </h2>
+                    </div>
+                    <span class="text-xs font-mono text-apple-textTertiary hidden sm:inline">Baseline Audit</span>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-6">
+                    <p class="text-sm text-apple-textSecondary leading-relaxed">
+                        在启动 2.0 之前，必须准确理解当前公开仓库中已经沉淀的工程实现。<strong>项目绝非一个普通的 Chatbot 或简陋套壳，而是已经拥有基于 LangGraph 的多节点工作流、多模态公式解析、SymPy 符号沙箱与 BKT 记忆系统的成熟全栈底座</strong>。
+                    </p>
+
+                    <!-- LangGraph Topology Vector Diagram -->
+                    <div class="p-5 apple-card-subtle space-y-3">
+                        <div class="flex items-center justify-between text-xs font-mono text-apple-textSecondary">
+                            <span class="text-apple-textPrimary font-semibold">1.0 运行时状态机流转拓扑 (LangGraph Topology)</span>
+                            <span class="text-apple-blue font-mono">apps/api/app/tutor/graph.py</span>
+                        </div>
+                        <div class="w-full overflow-x-auto py-2">
+                            <svg class="w-full max-w-4xl mx-auto" viewBox="0 0 840 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="10" y="95" width="60" height="40" rx="20" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <text x="40" y="120" fill="#f5f5f7" font-size="11" font-family="-apple-system, sans-serif" font-weight="bold" text-anchor="middle">START</text>
+
+                                <path d="M70 115 L100 115" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <rect x="100" y="90" width="105" height="50" rx="10" fill="#161617" stroke="#5e5ce6" stroke-width="1.5"/>
+                                <text x="152" y="112" fill="#d0d0ff" font-size="11" font-family="-apple-system, sans-serif" font-weight="bold" text-anchor="middle">vision_parse</text>
+                                <text x="152" y="128" fill="#86868b" font-size="9" text-anchor="middle">MinerU OCR解析</text>
+
+                                <path d="M205 115 L235 115" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <rect x="235" y="80" width="135" height="70" rx="10" fill="#161617" stroke="#30d158" stroke-width="1.5"/>
+                                <text x="302" y="105" fill="#30d158" font-size="11" font-family="-apple-system, sans-serif" font-weight="bold" text-anchor="middle">fast_context</text>
+                                <text x="302" y="122" fill="#86868b" font-size="9" text-anchor="middle">并发：检索 + SymPy</text>
+                                <text x="302" y="136" fill="#86868b" font-size="9" text-anchor="middle">0.35s 异步硬约束</text>
+
+                                <path d="M370 115 L430 40" stroke="#5e5ce6" stroke-width="1.5"/>
+                                <path d="M370 115 L430 85" stroke="#5e5ce6" stroke-width="1.5"/>
+                                <path d="M370 115 L430 145" stroke="#5e5ce6" stroke-width="1.5"/>
+                                <path d="M370 115 L430 200" stroke="#5e5ce6" stroke-width="1.5"/>
+
+                                <rect x="430" y="20" width="125" height="40" rx="8" fill="#1c1c1e" stroke="#bf5af2" stroke-width="1.5"/>
+                                <text x="492" y="44" fill="#f5f5f7" font-size="10" font-family="ui-monospace" text-anchor="middle">policy_fallback</text>
+
+                                <rect x="430" y="68" width="125" height="40" rx="8" fill="#1c1c1e" stroke="#2997ff" stroke-width="1.5"/>
+                                <text x="492" y="92" fill="#f5f5f7" font-size="10" font-family="ui-monospace" text-anchor="middle">proof_tutor</text>
+
+                                <rect x="430" y="125" width="125" height="40" rx="8" fill="#1c1c1e" stroke="#ff453a" stroke-width="1.5"/>
+                                <text x="492" y="149" fill="#f5f5f7" font-size="10" font-family="ui-monospace" text-anchor="middle">verifier (LLM)</text>
+
+                                <rect x="430" y="180" width="125" height="40" rx="8" fill="#1c1c1e" stroke="#ff9f0a" stroke-width="1.5"/>
+                                <text x="492" y="204" fill="#f5f5f7" font-size="10" font-family="ui-monospace" text-anchor="middle">examiner (自适应出题)</text>
+
+                                <path d="M555 40 L620 100" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <path d="M555 145 L620 115" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <path d="M370 115 L620 115" stroke="#30d158" stroke-width="2"/>
+
+                                <rect x="620" y="90" width="120" height="55" rx="10" fill="#161617" stroke="#30d158" stroke-width="2"/>
+                                <text x="680" y="115" fill="#30d158" font-size="12" font-family="-apple-system, sans-serif" font-weight="bold" text-anchor="middle">teacher (主导)</text>
+                                <text x="680" y="132" fill="#86868b" font-size="9" text-anchor="middle">苏格拉底分级启发</text>
+
+                                <path d="M740 115 L780 115" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <path d="M555 85 L780 115" stroke="#3a3a3c" stroke-width="1"/>
+                                <path d="M555 200 L780 120" stroke="#3a3a3c" stroke-width="1"/>
+                                <rect x="780" y="95" width="50" height="40" rx="20" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="1.5"/>
+                                <text x="805" y="120" fill="#f5f5f7" font-size="10" font-family="-apple-system, sans-serif" font-weight="bold" text-anchor="middle">END</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 4 Core Existing Subsystems Detailed -->
+                    <div class="grid md:grid-cols-2 gap-4 text-xs">
+                        <div class="p-5 apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-apple-textPrimary font-mono">1. LangGraph 状态机编排</span>
+                                <span class="apple-pill-blue px-2 py-0.5 rounded-full text-[10px] font-mono">apps/tutor/graph.py</span>
+                            </div>
+                            <p class="text-apple-textSecondary leading-relaxed">
+                                基于 <code class="text-apple-textPrimary font-mono">StateGraph(AgentState)</code>，全局状态字典拥有 28 个强类型键值（包含 <code>pedagogical_action</code>, <code>verification_mode</code>, <code>hint_level</code>, <code>verifier_result</code>, <code>evidence_pack</code> 等）。路由根据意图判断是否调用证明脚手架（<code>proof_tutor</code>）、诊断出题（<code>examiner</code>）或 LLM 二次验算（<code>verifier</code>）。
+                            </p>
+                        </div>
+
+                        <div class="p-5 apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-apple-textPrimary font-mono">2. 极速上下文异步并发</span>
+                                <span class="apple-pill-green px-2 py-0.5 rounded-full text-[10px] font-mono">fast_context.py</span>
+                            </div>
+                            <p class="text-apple-textSecondary leading-relaxed">
+                                设置 <strong>0.35 秒严格超时阈值</strong>，并发启动拉取会话历史、关键词粗筛、文档片段切分与 SymPy 符号代数演算等协程。若学生发送截图，由 <code>VisionParser</code> 调用 MinerU 提取 LaTeX 公式后再入流。
+                            </p>
+                        </div>
+
+                        <div class="p-5 apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-apple-textPrimary font-mono">3. 确定性符号验算沙箱</span>
+                                <span class="apple-pill-amber px-2 py-0.5 rounded-full text-[10px] font-mono">math_tools/verifier.py</span>
+                            </div>
+                            <p class="text-apple-textSecondary leading-relaxed">
+                                拒绝大模型的心算幻觉。利用 <code class="text-apple-textPrimary font-mono">step_checker.py</code> 与 <code class="text-apple-textPrimary font-mono">code_executor.py</code>，在子进程隔离环境中运行 SymPy，通过代数等价性化简判定学生中间推导是否正确，并精准提取错因类型（<code>Mistake</code>）。
+                            </p>
+                        </div>
+
+                        <div class="p-5 apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-apple-textPrimary font-mono">4. 记忆与掌握度追踪</span>
+                                <span class="apple-pill-red px-2 py-0.5 rounded-full text-[10px] font-mono">memory/mastery.py</span>
+                            </div>
+                            <p class="text-apple-textSecondary leading-relaxed">
+                                底层采用 SQLite <code>Repository</code> 记录每轮会话与题目尝试。<code>mastery.py</code> 维护基于提示等级（0-3 级）的掌握度动态增减分逻辑，并在前端实时呈现掌握度标签与能力雷达。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 1.0 Bottleneck Diagnosis -->
+                    <div class="p-5 rounded-2xl bg-apple-card-subtle border border-apple-amber/20 space-y-2 text-xs">
+                        <div class="font-mono text-apple-amber font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                            <span>🔍 现状瓶颈：现有 1.0 架构在面对高阶专业课程时的“三大硬伤”</span>
+                        </div>
+                        <ul class="text-apple-textSecondary space-y-1.5 leading-relaxed font-normal">
+                            <li>• <strong>检索层过浅</strong>：<code>apps/api/app/knowledge/search.py</code> 仅用简单的正则表达式在内存字符串中匹配关键词加分，无法感知数学充要条件，也无法做知识图谱的多跳因果溯源。</li>
+                            <li>• <strong>知识与教学脱节</strong>：现有的 <code>KnowledgeUnit</code> 只是静态文档字典，没有 <strong>TaskMode（练习/概念讲解）</strong>，更没有 <strong>TeachingCase（教学任务中间层）</strong>，大模型无法得知当前题目的启发探针与保密策略。</li>
+                            <li>• <strong>图谱沦为“花架子”</strong>：前端用 React Flow 画出了图谱，但后端状态机并没有把“课程边界（ScopeLevel）”作为图遍历剪枝规则，依然容易向学生漫无边际地胡说超纲内容。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 01. 核心公理与设计哲学 -->
+            <section id="sec-axiom" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 01</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        核心公理与设计哲学：拒绝本体污染
+                    </h2>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="apple-card p-6 border-apple-red/30 space-y-3">
+                        <div class="text-apple-red font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-1.5">
+                            <span>✕ 常见严重误区：问句即节点 (Query as Node)</span>
+                        </div>
+                        <p class="text-xs text-apple-textSecondary leading-relaxed">
+                            让学生在聊天中的每个不同问句（如“牛顿法一定收敛吗”、“为什么初值选远了会发散”）直接由大模型提炼为一个知识图谱节点。
+                        </p>
+                        <div class="p-3.5 rounded-xl bg-black border border-white/5 text-[11px] font-mono text-apple-textSecondary space-y-1.5">
+                            <div>• <strong>图谱迅速退化</strong>：本体丢失结构，沦为千奇百怪的问句垃圾桶。</div>
+                            <div>• <strong>边界完全失控</strong>：大模型擅自将课外杂音永久化写入课程知识。</div>
+                            <div>• <strong>虚假关联泛滥</strong>：LLM 猜测的错误因果边永久留存，误导后续学生。</div>
+                        </div>
+                    </div>
+
+                    <div class="apple-card p-6 border-apple-blue/40 space-y-3">
+                        <div class="text-apple-blue font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-1.5">
+                            <span>✓ 珞珈 2.0 准则：教学案例归纳 (Case as Abstraction)</span>
+                        </div>
+                        <p class="text-xs text-apple-textSecondary leading-relaxed">
+                            学生问题是交互证据；教学案例是归纳抽象层；知识节点才是正式课程知识本体。
+                        </p>
+                        <div class="p-3.5 rounded-xl bg-black border border-white/5 text-[11px] font-mono text-apple-textSecondary space-y-1.5">
+                            <div>• <strong>本体权威严密</strong>：正式课程知识必须由教师版本化发布，受大纲保护。</div>
+                            <div>• <strong>任务结构抽象</strong>：成百上千个问法归并至有限的结构化 Teaching Case。</div>
+                            <div>• <strong>演化受控安全</strong>：新提问流入候选区缓冲，累积证据经教师审批后入图。</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 02. 11部顶会文献理论基石 -->
+            <section id="sec-literature" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 02</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        11部顶会前沿文献理论基石 (Literature Grounding)
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-4">
+                    <p class="text-xs sm:text-sm text-apple-textSecondary leading-relaxed">
+                        本方案中的每一处工程模块，均在 2023-2026 年国际顶级计算语言学与教育人工智能会议（CHI, ACL, EMNLP, NeurIPS, AIED）中找到了严格的研究依据支撑：
+                    </p>
+
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs">
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">OATutor</span>
+                                <span class="text-[10px] text-apple-textTertiary">CHI 2023</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">建立集中式 Skill/KC 模型，强调内容库与平台的解耦，学生个性化通过 BKT 掌握度叠加，绝不克隆整图。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">MathTutorBench</span>
+                                <span class="text-[10px] text-apple-textTertiary">EMNLP 2025</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">证实“强解题器不等于强导师”。Teaching Case 不能是标准答案缓存，而是涵盖教学任务类型的契约。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">StatusKT</span>
+                                <span class="text-[10px] text-apple-textTertiary">Findings ACL 2026</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">坚持从“真实解题过程（Process Event）”提取学生证据，严禁把大模型猜测的心理状态直接当真值。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">LongTutor</span>
+                                <span class="text-[10px] text-apple-textTertiary">ACL 2026</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">长期辅导信息不能粗暴塞进最近100条聊天，而是严格按“证据获取 $\rightarrow$ 状态诊断 $\rightarrow$ 教学动作”链路执行。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">MalruleLib</span>
+                                <span class="text-[10px] text-apple-textTertiary">ACL 2025</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">把错因变成<strong>可执行过程（Executable Misconception）</strong>。在数值分析中细分条件错、算法错与浮点舍入Bug。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">Confirming Correct</span>
+                                <span class="text-[10px] text-apple-textTertiary">BEA 2026</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">指出 LLM Tutor 极易误拒合法非标准解法。Teaching Case 必须显式维护 allowed_alternatives 替代路径。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">StratL / EDF</span>
+                                <span class="text-[10px] text-apple-textTertiary">Findings ACL 2025</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">教学策略表达为：state/evidence $\rightarrow$ pedagogical decision $\rightarrow$ feedback，而非死板的一问一答匹配。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">SciCode-Verified</span>
+                                <span class="text-[10px] text-apple-textTertiary">NeurIPS 2024</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">科学计算中的验证脚本自身也必须被审计。Teaching Case 需绑定带版本控制的 ToleranceSpec 与 Oracle。</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-1.5">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold text-apple-textPrimary">KITE & EduGuard</span>
+                                <span class="text-[10px] text-apple-textTertiary">SOTA RAG</span>
+                            </div>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">证明普通“课程RAG+Tutor”已非核心创新，真正的壁垒是显式课程边界、跨表示证据与自主迁移评测。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 03. 四大核心对象详细建模 -->
+            <section id="sec-entities" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 03</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        四大核心对象详细建模规范 (Schema Definitions)
+                    </h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="apple-card p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono text-apple-blue font-bold uppercase tracking-wider">核心抽象：CanonicalTeachingCase (教学案例契约)</span>
+                            <span class="apple-pill-blue px-2.5 py-0.5 rounded-full text-[10px] font-mono">case_schema.py</span>
+                        </div>
+                        <p class="text-xs text-apple-textSecondary leading-relaxed">
+                            连接学生多变提问与课程知识本体的“中枢交换机”。记录了必须满足的数学充要条件约束、启发式探针、答案保护策略与数值验算沙箱配置：
+                        </p>
+                        
+                        <div class="p-4 rounded-xl bg-black border border-white/10 overflow-x-auto">
+                            <pre><code class="text-apple-textPrimary"><span class="text-apple-indigo">@dataclass</span>
+<span class="text-apple-blue">class</span> <span class="text-apple-amber">CanonicalTeachingCase</span>:
+    case_id: <span class="text-apple-green">str</span>                          <span class="text-apple-textTertiary"># e.g., "CASE_NEWTON_LOCAL_CONVERGENCE"</span>
+    course_id: <span class="text-apple-green">str</span>                        <span class="text-apple-textTertiary"># e.g., "numerical_analysis"</span>
+    course_version: <span class="text-apple-green">str</span>                   <span class="text-apple-textTertiary"># e.g., "2026.1"</span>
+    title: <span class="text-apple-green">str</span>                            <span class="text-apple-textTertiary"># "牛顿迭代法局部二阶收敛条件与初值敏感性分析"</span>
+    task_type: <span class="text-apple-green">str</span>                        <span class="text-apple-textTertiary"># "CONDITION_CHECK" | "ALGORITHM_TRACE" | "CODE_DEBUG"</span>
+    task_mode: <span class="text-apple-green">str</span>                        <span class="text-apple-textTertiary"># "independent_practice" | "concept_explanation"</span>
+
+    <span class="text-apple-textTertiary"># 锚定的稳定课程本体</span>
+    concept_ids: List[<span class="text-apple-green">str</span>]                <span class="text-apple-textTertiary"># ["NEWTON_METHOD", "TAYLOR_EXPANSION", "SIMPLE_ROOT"]</span>
+    required_conditions: List[<span class="text-apple-green">str</span>]        <span class="text-apple-textTertiary"># ["f'(x*) != 0", "f \in C^2", "x0 sufficiently close to x*"]</span>
+    related_misconceptions: List[<span class="text-apple-green">str</span>]     <span class="text-apple-textTertiary"># ["MISC_NEWTON_GLOBAL_CONV", "MISC_RESIDUAL_IS_ERROR"]</span>
+
+    <span class="text-apple-textTertiary"># 教学决策与防剧透策略 (对标 StratL & Confirming Correct)</span>
+    diagnostic_probes: List[<span class="text-apple-green">str</span>]          <span class="text-apple-textTertiary"># ["请检查在发散区间内导数 f'(x_n) 是否出现趋近于零的情况？"]</span>
+    accepted_variants: List[<span class="text-apple-green">str</span>]          <span class="text-apple-textTertiary"># 允许的公式/文字等价变体</span>
+    allowed_alternatives: List[<span class="text-apple-green">str</span>]       <span class="text-apple-textTertiary"># 允许的合法替代解法（防止一刀切拒判）</span>
+    disclosure_policy: <span class="text-apple-green">Dict</span>[<span class="text-apple-green">str</span>, Any]      <span class="text-apple-textTertiary"># {"solution_release_allowed": False, "max_hints": 3}</span>
+    oracle_spec_id: <span class="text-apple-green">str</span>                     <span class="text-apple-textTertiary"># 绑定的数值沙箱基准运行脚本，如 "ORACLE_NEWTON_ARCTAN_CYCLE"</span>
+    review_status: <span class="text-apple-green">str</span>                      <span class="text-apple-textTertiary"># "canonical" | "draft" | "deprecated"</span></code></pre>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-4 text-xs">
+                        <div class="p-5 apple-card space-y-2">
+                            <span class="apple-pill-blue px-2 py-0.5 rounded text-[10px] font-mono">Entity 2</span>
+                            <h3 class="font-bold text-apple-textPrimary font-mono">KnowledgeUnit (课程本体)</h3>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">
+                                相对稳定、由教师审核的正式知识对象。分为 12 种类型（Concept, Theorem, Condition, Algorithm 等），显式携带 <code>scope_level</code> 与来源版本号。
+                            </p>
+                        </div>
+
+                        <div class="p-5 apple-card space-y-2">
+                            <span class="apple-pill-green px-2 py-0.5 rounded text-[10px] font-mono">Entity 3</span>
+                            <h3 class="font-bold text-apple-textPrimary font-mono">QueryRecord (交互证据)</h3>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">
+                                永久保存学生原始文本、规范化表述、关联会话、命中 Case 与边界判定结果。仅作为行为证据池，<strong>绝不能随手直接创建为知识节点</strong>。
+                            </p>
+                        </div>
+
+                        <div class="p-5 apple-card space-y-2">
+                            <span class="apple-pill-amber px-2 py-0.5 rounded text-[10px] font-mono">Entity 4</span>
+                            <h3 class="font-bold text-apple-textPrimary font-mono">GraphCandidate (演化缓冲)</h3>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">
+                                未被现有图谱覆盖的新疑问或大模型抽取内容暂存于此，记录支持证据计数（support_count），等待教师后台审查（Approve/Merge/Reject）。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 04. 三级判别漏斗与排他比对 -->
+            <section id="sec-matcher" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 04</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        三级判别漏斗与排他比对 (Case Matcher)
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-6">
+                    <div class="p-5 rounded-2xl bg-black border border-white/10 space-y-3 font-mono text-xs">
+                        <div class="text-apple-amber font-bold text-xs flex items-center gap-2">
+                            <span>🔍 经典反例：为什么仅靠大模型向量相似度判定是彻底错误的？</span>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-3 text-[11px]">
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/5">
+                                <span class="text-apple-blue font-bold block mb-1">Query 1 (单根求收敛阶):</span>
+                                “牛顿迭代法什么时候满足二阶收敛阶？”<br>
+                                <span class="text-apple-textSecondary mt-1 block">数学条件：单根 $f'(x^*) \neq 0$ ──► 收敛阶 $p = 2$</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/5">
+                                <span class="text-apple-blue font-bold block mb-1">Query 2 (重根求收敛阶):</span>
+                                “重根情况下牛顿法的收敛阶是多少？”<br>
+                                <span class="text-apple-textSecondary mt-1 block">数学条件：重根 $f'(x^*) = 0$ ──► 收敛阶退化为线性 $p = 1$</span>
+                            </div>
+                        </div>
+                        <p class="text-apple-textSecondary text-xs font-sans leading-relaxed">
+                            两者的 Embedding 余弦相似度高达 <strong>0.93</strong>。若采用简单去重或纯向量检索，系统将误归入同一回答；但两者在<strong>数学必要条件</strong>上发生排他性冲突，必须属于不同 Teaching Case！
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-4 text-xs font-sans">
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <span class="text-apple-blue font-mono font-bold block text-xs">一级：候选粗筛 (Retrieval)</span>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">利用 BM25 稀疏符号匹配 + 稠密向量嵌入，从 TeachingCase 抽象库中召回 Top-3 候选。</p>
+                        </div>
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <span class="text-apple-amber font-mono font-bold block text-xs">二级：结构特征硬过滤 (Structural)</span>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">比对 required_conditions。若检测到单根 vs 重根等物理排他冲突，<strong>一票否决</strong>合并请求。</p>
+                        </div>
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <span class="text-apple-green font-mono font-bold block text-xs">三级：语义裁决 (Semantic Judge)</span>
+                            <p class="text-apple-textSecondary text-[11px] leading-relaxed">仅在模糊区调用 LLM 输出规范 JSON：<code>SAME_CASE</code>, <code>VARIANT_OF_CASE</code>, <code>RELATED_CASE</code>, <code>NEW_CASE</code>, <code>UNCERTAIN</code>。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 05. 课程知识边界与演化闭环 -->
+            <section id="sec-boundary" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 05</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        课程知识边界契约与动态演化 (Boundary & Evolution)
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-6">
+                    <div class="grid md:grid-cols-2 gap-4 text-xs font-mono">
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="apple-pill-blue px-2.5 py-0.5 rounded-full text-[10px]">core</span>
+                                <span class="text-apple-textSecondary">大纲必修</span>
+                            </div>
+                            <p class="text-apple-textPrimary font-sans text-xs">课程教学大纲内必须掌握的核心知识。如：牛顿求根法、局部收敛阶。</p>
+                        </div>
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="apple-pill-green px-2.5 py-0.5 rounded-full text-[10px]">prerequisite</span>
+                                <span class="text-apple-textSecondary">前置基础</span>
+                            </div>
+                            <p class="text-apple-textPrimary font-sans text-xs">理解核心所需的前置定理。如：连续函数介值定理、Taylor展开。用于卡点时向前溯源。</p>
+                        </div>
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="apple-pill-amber px-2.5 py-0.5 rounded-full text-[10px]">extension</span>
+                                <span class="text-apple-textSecondary">受控拓展</span>
+                            </div>
+                            <p class="text-apple-textPrimary font-sans text-xs">直接相关的高阶内容。<strong>仅在学生主动深度追问时展开</strong>。如：优化中的 Newton 法。</p>
+                        </div>
+                        <div class="p-4 rounded-xl apple-card-subtle space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="apple-pill-red px-2.5 py-0.5 rounded-full text-[10px]">external</span>
+                                <span class="text-apple-textSecondary">边界阻断</span>
+                            </div>
+                            <p class="text-apple-textPrimary font-sans text-xs">超出课程范畴（如拟牛顿法 BFGS）。触发响应护栏（Response Guard），温和告知超纲。</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <span class="text-xs font-mono text-apple-textTertiary uppercase tracking-wider block">知识动态演化合法路径 (Promotion Routes)</span>
+                        <div class="p-4 rounded-xl bg-black border border-white/10 text-xs text-apple-textPrimary font-mono space-y-1.5">
+                            <div>• <strong>Route A (教师直达)</strong>: Teacher Manual Proposal ──► Review ──► Publish Canonical Node</div>
+                            <div>• <strong>Route B (课程资料提取)</strong>: Teacher Slides/Textbook ──► LLM Extract ──► Candidate ──► Teacher Approve ──► Course Graph</div>
+                            <div>• <strong>Route C (高频疑问聚类)</strong>: Repeated Student Query Cluster ──► Candidate Case ──► Teacher Review (Approve/Merge/Reject)</div>
+                            <div class="text-apple-amber text-[11px] pt-1">★ 核心准则：Merge 优先于 New Node（优先作为别名、变体或证据追加，严控本体节点膨胀）。</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 06. 学生认知叠加态建模 -->
+            <section id="sec-overlay" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 06</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        学生认知叠加态建模 (Student Overlay)
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-4">
+                    <p class="text-xs sm:text-sm text-apple-textSecondary leading-relaxed">
+                        借鉴 <strong>OATutor</strong> 与 <strong>StatusKT</strong> 的核心设计：绝不能为每个学生克隆一张专属知识图谱。课程知识图谱全局唯一受控，学生状态以切片表（Overlay Table）叠加于课程图之上：
+                    </p>
+
+                    <div class="grid md:grid-cols-2 gap-4 text-xs">
+                        <div class="p-5 rounded-2xl apple-card-subtle space-y-2">
+                            <span class="text-apple-green font-bold font-mono block text-xs">1. 节点级掌握度 (StudentUnitState)</span>
+                            <div class="text-apple-textSecondary text-xs space-y-1 leading-relaxed">
+                                <p>• <code class="text-apple-textPrimary font-mono">mastery_estimate</code>：基于 BKT 贝叶斯知识追踪动态更新的掌握概率 [0.01, 0.99]。</p>
+                                <p>• <code class="text-apple-textPrimary font-mono">independent_evidence_count</code>：脱离任何 AI 提示独立解对的严格证据计数。</p>
+                                <p>• <code class="text-apple-textPrimary font-mono">recent_error_refs</code>：指向最近触发的特定错因历史引用。</p>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-2xl apple-card-subtle space-y-2">
+                            <span class="text-apple-amber font-bold font-mono block text-xs">2. 案例级表现 (StudentCaseState)</span>
+                            <div class="text-apple-textSecondary text-xs space-y-1 leading-relaxed">
+                                <p>• <code class="text-apple-textPrimary font-mono">exposure_count</code>：学生接触该类型教学案例的累计次数。</p>
+                                <p>• <code class="text-apple-textPrimary font-mono">max_help_used</code>：最高消耗的提示等级（0=独立完成，1=探针提示，3=完整推导）。</p>
+                                <p>• <code class="text-apple-textPrimary font-mono">independent_transfer_status</code>：面对同构变体题时的<strong>独立迁移成功状态</strong>。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 07. 数值分析试点单元全景 -->
+            <section id="sec-pilot" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 07</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        首个试点单元落地全景：《数值分析·非线性方程求根》
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-6">
+                    <div class="text-xs sm:text-sm text-apple-textSecondary leading-relaxed">
+                        第一阶段严格收敛范围，只做：<strong>二分法 (Bisection)</strong>、<strong>不动点迭代 (Fixed Point Iteration)</strong>、<strong>牛顿迭代法 (Newton Method)</strong>。涵盖数学定理、算法收敛性、Python 可执行代码与常见误区反例：
+                    </div>
+
+                    <div class="grid lg:grid-cols-3 gap-4 text-xs">
+                        <div class="p-5 rounded-2xl apple-card-subtle space-y-2">
+                            <span class="text-apple-blue font-bold font-mono block text-xs">15 个正式知识单元 (Units)</span>
+                            <div class="text-apple-textSecondary space-y-1.5 font-mono text-[11px]">
+                                <div>1. 非线性方程求根 (Root Finding)</div>
+                                <div>2. 连续函数介值定理 (IVT)</div>
+                                <div>3. 二分法 (Bisection Method)</div>
+                                <div>4. 不动点与迭代函数 (Fixed Point)</div>
+                                <div>5. 压缩映射原理 (Contraction)</div>
+                                <div>6. 牛顿求根公式 (Newton Method)</div>
+                                <div>7. Taylor 一阶/二阶展开原理</div>
+                                <div>8. 局部收敛性 (Local Convergence)</div>
+                                <div>9. 收敛阶定义与渐近常数 (Order p)</div>
+                                <div>10. 单根条件与导数非零 ($f'(x^*) \neq 0$)</div>
+                                <div>11. 重根收敛阶退化与修正 (Multiple Root)</div>
+                                <div>12. 残差 (Residual) 定义与陷阱</div>
+                                <div>13. 真实绝对误差 (True Error)</div>
+                                <div>14. 停机准则选择 ($|x_{k+1}-x_k|$)</div>
+                                <div>15. 机器浮点精度与舍入误差 (Epsilon)</div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-2xl apple-card-subtle space-y-2">
+                            <span class="text-apple-amber font-bold font-mono block text-xs">4 大标杆教学案例 (Teaching Cases)</span>
+                            <div class="text-apple-textPrimary space-y-2">
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-amber block text-xs font-mono">CASE_NEWTON_LOCAL_CONV</span>
+                                    <span class="text-apple-textSecondary text-[11px]">分析局部二阶收敛对初值充分靠近根的极端敏感性</span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-amber block text-xs font-mono">CASE_MULTIPLE_ROOT_DEGRAD</span>
+                                    <span class="text-apple-textSecondary text-[11px]">重根时 Newton 收敛阶从 p=2 降为 p=1 的证明与修正</span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-amber block text-xs font-mono">CASE_STOPPING_PITFALL</span>
+                                    <span class="text-apple-textSecondary text-[11px]">残差小并不等于真误差小的陷阱与反例辨析</span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-amber block text-xs font-mono">CASE_BISECTION_VS_NEWTON</span>
+                                    <span class="text-apple-textSecondary text-[11px]">全局可靠性与局部高速率的混合算法设计</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-2xl apple-card-subtle space-y-2">
+                            <span class="text-apple-red font-bold font-mono block text-xs">可执行误区 Oracle 沙箱</span>
+                            <div class="text-apple-textPrimary space-y-2">
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-red block text-xs font-mono">MISC_RESIDUAL_IS_ERROR</span>
+                                    <span class="text-apple-textSecondary text-[11px]">构造 $f(x)=x^{10}$，在 $x=0.5$ 处残差小但误差高达 0.5。</span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-red block text-xs font-mono">MISC_NEWTON_GLOBAL_CONV</span>
+                                    <span class="text-apple-textSecondary text-[11px]">构造 $f(x)=\arctan(x)$，取 $x_0=1.5$ 展示周期振荡发散。</span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-black border border-white/5">
+                                    <span class="font-bold text-apple-red block text-xs font-mono">MISC_MORE_ITER_MORE_ACCURATE</span>
+                                    <span class="text-apple-textSecondary text-[11px]">迭代到后期浮点舍入误差积累，展示误差曲线上升反例。</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 08. 现有代码库改造对接映射 -->
+            <section id="sec-mapping" class="space-y-6">
+                <div class="border-b border-white/10 pb-4">
+                    <span class="text-xs font-mono text-apple-blue uppercase tracking-wider">Chapter 08</span>
+                    <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                        现有代码库改造对接映射 (Codebase Integration)
+                    </h2>
+                </div>
+
+                <div class="apple-card p-6 sm:p-8 space-y-4">
+                    <p class="text-xs sm:text-sm text-apple-textSecondary leading-relaxed">
+                        无需重写整个项目！在现有 <code class="text-apple-textPrimary font-mono">Leionel/luojia-math-tutor-skill</code> 仓库中新建 <code class="text-apple-textPrimary font-mono">feature/tutor2-course-graph</code> 分支，增量演进：
+                    </p>
+
+                    <div class="bg-black p-4 rounded-xl border border-white/10 font-mono text-xs text-apple-textPrimary overflow-x-auto leading-relaxed">
+apps/api/app/
+├── knowledge/
+│   ├── schema.py              <span class="text-apple-textTertiary"># [保留现状] SourceDocument, KnowledgeUnit, KnowledgeRelation, EvidencePack</span>
+│   ├── <span class="text-apple-blue font-bold">case_schema.py</span>         <span class="text-apple-amber">[新增]</span> <span class="text-apple-textSecondary">TeachingCase, BoundaryPolicy, GraphCandidate 数据契约</span>
+│   ├── <span class="text-apple-blue font-bold">case_matcher.py</span>        <span class="text-apple-amber">[新增]</span> <span class="text-apple-textSecondary">三级判别漏斗 (BM25 + 结构条件比对 + 语义裁决)</span>
+│   ├── <span class="text-apple-blue font-bold">boundary.py</span>            <span class="text-apple-amber">[新增]</span> <span class="text-apple-textSecondary">课程知识边界判定与剪枝算法</span>
+│   ├── <span class="text-apple-blue font-bold">candidate_graph.py</span>     <span class="text-apple-amber">[新增]</span> <span class="text-apple-textSecondary">候选节点缓冲带与证据收集逻辑</span>
+│   └── <span class="text-apple-blue font-bold">graph_review.py</span>        <span class="text-apple-amber">[新增]</span> <span class="text-apple-textSecondary">教师端后台审查 API (Approve/Merge/Reject)</span>
+│
+├── tutor/
+│   ├── graph.py               <span class="text-apple-textTertiary"># [改造] 在现有 LangGraph 状态机中挂接 CaseMatcher 与边界拦截</span>
+│   └── fast_context.py        <span class="text-apple-textTertiary"># [改造] EvidencePack 挂载所需数学条件与可执行 Oracle</span>
+│
+└── courses/
+    └── numerical_analysis/    <span class="text-apple-amber">[新增课程包目录]</span>
+        ├── manifest.json      <span class="text-apple-textSecondary"># 课程版本元数据与边界配置</span>
+        ├── units/             <span class="text-apple-textSecondary"># 15个非线性求根知识单元 JSON</span>
+        ├── cases/             <span class="text-apple-textSecondary"># 4个标准 Teaching Case JSON</span>
+        ├── misconceptions/    <span class="text-apple-textSecondary"># 可执行误区及反例脚本</span>
+        └── code_tasks/        <span class="text-apple-textSecondary"># Python/SymPy 校验 Oracle</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 09. 终局：坚决不踩的九大禁令红线 (严格唯留禁令) -->
+            <section id="sec-anti-patterns" class="space-y-6">
+                <div class="apple-card p-6 sm:p-8 border border-apple-red/40 bg-apple-red/5 space-y-6">
+                    <div class="border-b border-apple-red/20 pb-4">
+                        <span class="text-xs font-mono text-apple-red uppercase tracking-wider">Chapter 09 · Final Invariants</span>
+                        <h2 class="text-2xl font-bold text-apple-textPrimary tracking-tight mt-0.5">
+                            终局守则：坚决不踩的九大禁令红线 (The 9 Invariants of What NOT to Do)
+                        </h2>
+                        <p class="text-xs text-apple-textSecondary font-mono mt-1">
+                            方案第 16 节明确裁定的工程红线，任何破坏以下准则的伪创新都将导致系统崩塌与烂尾
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono">
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">1. 绝不迁移 Neo4j</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                单门专业课仅有数百个知识单元，在内存中使用 NetworkX + JSON/SQLite 速度极快且完全可审计。盲目引入外部图数据库只会带来沉重的部署包袱与分布式事务灾难。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">2. 绝不全课程一次性建图</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                严禁脱离真实教学去把整本《数值分析》全书一次性搬上图谱。必须坚持单点突破：仅对“非线性方程求根”这一个单元打穿闭环。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">3. 绝不让每个 Query 建节点</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                永远记住“Query is Evidence”，学生聊天问题绝不是知识节点。把每个问句变成图节点会导致图谱灾难性退化为垃圾堆。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">4. 绝不多Agent自由辩论建图</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                严肃理科教学真理来自教师讲义与学术严密推导，严禁让多 Agent 之间通过自由对话去决定课程定理与因果边。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">5. 绝不搞全自动本体提取</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                大模型自动抽取出的知识点与关系，必须无条件流入 Candidate 暂存区，经由教师端审核确认后方可合入图谱本体。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">6. 绝不为学生复制全量图谱</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                坚守 $G_{student} = G_{course} + S_{student}$ 公理。课程图全局唯一，学生个性化仅为节点与案例上的轻量状态切片。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">7. 绝不大改八级提示策略</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                在验证动态图谱与 Case 层的过程中，保持现有教学流与提示策略稳定，严禁多个底层核心同时重构导致无法归因。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">8. 绝不为动态图谱引入复杂 GNN</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                知识图谱的首要目的是解决**教学组织与因果约束**，而不是作为算法炫技。严禁在没有海量图数据前引入沉重的图神经网络。
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-black border border-apple-red/30 text-apple-red space-y-1.5">
+                            <strong class="text-apple-textPrimary text-xs block">9. 绝不单靠 Embedding 去重</strong>
+                            <p class="text-apple-textSecondary text-[11px] font-sans leading-relaxed">
+                                向量余弦相似度无法识别单根与重根的本质冲突。必须保留基于必要数学条件（Required Conditions）的结构化硬过滤。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Apple-style Minimal Footer -->
+    <footer class="border-t border-white/10 py-10 text-center text-xs text-apple-textTertiary font-mono space-y-2 bg-black">
+        <p class="text-apple-textSecondary">武汉大学 · 珞珈数智助教 2.0 (Luojia Math Tutor) • 课程知识图谱与教学案例架构全景</p>
+        <p class="text-[11px]">Strictly adhering to luojia_tutor2_course_graph_plan.md & luojia_tutor2_course_graph_research_refined.md</p>
+    </footer>
+
+</body>
+</html>

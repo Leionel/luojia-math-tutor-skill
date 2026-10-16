@@ -1,0 +1,99 @@
+{
+  "version": "s5-manifest-v1",
+  "split": "runner_fixture",
+  "scope": "synthetic_report_contract_examples",
+  "cases": [
+    {
+      "id": "fixture-complete",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "input_sha256": "886c23c81ed5e94302c64548f66ced42eb8eb8a983c153d7f2044ef384c00b84",
+      "rubric_sha256": "868d4ad9506ff61b1eb92958047bc7386400b39c7182d1b102cde3338452cded",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": true,
+        "appropriate_abstention": true,
+        "inappropriate_abstention": true,
+        "checker_coverage": false,
+        "verification_overclaim": true,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture"
+    },
+    {
+      "id": "fixture-unscored",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "input_sha256": "12d4bca9678f2d3c4cc281e18e82440a096c191aeefe94a4e97d9f3dab5584b3",
+      "rubric_sha256": "ec736da6e2b548f9bd48759e1faa4b819a04383b867d8b00b6378a904aa1ba3c",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": true,
+        "appropriate_abstention": true,
+        "inappropriate_abstention": true,
+        "checker_coverage": false,
+        "verification_overclaim": true,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture"
+    },
+    {
+      "id": "fixture-violation",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "input_sha256": "baa71ebb5d1d7a621e72b27f51c8c207800ae54211c9475f2c057444afd8c444",
+      "rubric_sha256": "4b7df4d965f8c54ba1d69c72622b97b6ba086e34e74a8e2bbe01e4814ccd82ec",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": true,
+        "appropriate_abstention": true,
+        "inappropriate_abstention": true,
+        "checker_coverage": false,
+        "verification_overclaim": true,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture"
+    },
+    {
+      "id": "fixture-budget-stop",
+      "kind": "single_run",
+      "planned_runs": 1,
+      "input_sha256": "406ab289c74c457c49a9783f742cd5220a2b0d01081d3463761d6fb5e4a743d9",
+      "rubric_sha256": "a758a2358926178717f34612373f95275a0d02631be6b3c2f5bf29c9a7641eeb",
+      "applicable": {
+        "task_completed": true,
+        "mathematically_correct": true,
+        "appropriate_abstention": true,
+        "inappropriate_abstention": true,
+        "checker_coverage": false,
+        "verification_overclaim": true,
+        "first_error_localized": false,
+        "counterexample_valid": false,
+        "routing_valid": false,
+        "tool_decision_valid": false,
+        "action_valid": false,
+        "help_violation": true,
+        "false_success": true
+      },
+      "gold_status": "synthetic_fixture"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# R2.0–R2.4｜可信评价首轮（2026-10-14）
+
+当前状态只以 [`planning/README.md`](../../planning/README.md) 为入口。本目录按 [`luojia_roadmap_v4_2026-10-08.md`](../../luojia_roadmap_v4_2026-10-08.md) 的 E0/E1/E2 分层拆成五个可停止的切片；原路线图没有 R2.0–R2.4 编号，这是本轮明确的新拆分。E3 学习增益仍是后续条件项。R1-A/B 本地工程收尾、R1 数学/教学质量待验与 R0 上线 Gate 未过的口径不变。
+
+| 切片 | 要回答的问题与交付 | 当前状态 | 停止条件 |
+|---|---|---|---|
+| **R2.0 证据基线** | 冻结输入、版本、已有结果和分母；列清工程回归、公开开发材料、直连模型观察、产品路径、真人评分各自能说明什么。 | 已建立本目录；S5 8题离线报告为 **0/8 执行**，`report_complete=true` 只表示未运行状态记录齐全。 | 源码或题目变化后旧摘要不得挪用；任何缺失运行不计成功。 |
+| **R2.1 内容审核准备** | 对 A0 16例、S5 8题、B2 4卡、B3 6题、B4 4变体给出与源码绑定的未签署审核包。 | [`review-packet-v1.json`](review-packet-v1.json) 已生成，38个**内容条目**均待真人作者审核与独立二审；不是38次质量试验。 | 内容不一致或数学反例错误则版本化修订；无人签署时禁止改称 gold。 |
+| **R2.2 E0 工程复验** | 用现有离线运行器聚焦 owner/版本/帮助锁、Newton/线性/讲回、B3/B4/B5 与审核包绑定，CI 跑与本地相同的 Web 测试清单。 | 本地 [`e0-contracts-v1.json`](e0-contracts-v1.json)追加应用采集合同后 **13/13 合同、20/20实例**通过；结果在 ignored `results/r2-e0-contracts-e1-addendum.json`。此前12/19是原快照。远端CI尚未验收。 | 合同缺失、跳过、重复、失败或远端 CI 不绿则不报 E0 通过。E0 不等于数学正确率。 |
+| **R2.3 E1 同题 Agent 对照** | 在真实应用路径下固定同一题、用户原话、保存引用、模型与初态；按数学、条件、正确步骤误判、unknown、教学动作与越界分别评分。 | [`离线应用配对采集`](../../scripts/r2_application_capture.py)已跑N01/N02两对，4条固定回复；全Teacher输入只差固定题exact_check，0学习写入。**真实模型质量分0、真人gold0**。线性/讲回公平对照未建立，D2未启动。 | 本轮只验证固定题精确证据消融的工程合同，不能称裸LLM对比。真人/供应商/发送前预算缺失则停止live。 |
+| **R2.4 E2 任务可用性** | 用隔离账号实际走 Chat↔Lab/阅读/自检/代码路径，记录完成、剧透、引用、恢复、键盘/390px 和失败回退。 | [`e2-task-plan-v1.md`](e2-task-plan-v1.md) 已定义任务和记录表；本轮 **0名真人**，Agent 在隔离库完成 B3/B4 两条桌面局部路径，未调用模型。 | 仍缺 Chat 帮助锁尝试、代码讨论回链、390px/键盘和跨标签身份清理；局部路径不等于全部5项任务通过或学生学习收益。 |
+
+## 可复现命令与当前观察
+
+从根目录运行：
+
+```powershell
+python scripts/r2_review_packet.py --check
+python scripts/eval_agent_reliability.py --manifest evaluation/r2/e0-contracts-v1.json --output results/r2-e0-contracts.json
+python scripts/eval_tutor_quality.py --offline --output results/r2-s5-offline-baseline.json --markdown-output results/r2-s5-offline-baseline.md
+python scripts/r2_application_capture.py --offline --output results/r2-application-pairs.json
+```
+
+`r2_review_packet.py` 只解析源码顶层字面量和公开 JSON，B4 代码仅做语法解析，绝不执行。审核包保留每项材料摘要及源文件 SHA256；源码变化会使 `--check` 失败，旧人工意见不能无声移到新版。S5 原有 [`review-protocol.md`](../s5/review-protocol.md) 与内容绑定继续使用，不复制评分框架。`results/` 是本机生成输出，不在 Git 中当固定历史成绩；本目录所列数字只表示本轮本地快照。
+
+本轮离线 S5 报告显示 7项独立 `Fraction` 见证算术检查通过，范围只到代回、零空间和 Newton 二周期，**不**覆盖全部定理条件或开放回答。8道 dev 材料仍为 `agent_prepared_only`；`report_complete=true` 与 `executed_cases=0` 必须一起展示。任何后续 E1 报告都应分别列预定数、实际执行数、失败数、未评分数与每项适用分母，不能用一个平均数覆盖核验越界、帮助泄露或无依据成功。
+
+## 审核与运行边界
+
+1. 审核者先看未签署包，逐项写数学依据、合法替代、错误例、来源和争议；B2 还要打开当前经审 Course Graph 原文核对选段，审核包不含正式学生库内容。B4 四段代码的正反标签不写进盲看包；独立审核后再讨论预期，不能靠静态规则自己的输出当 gold。
+2. 如需修题，保留旧包和原始输出，改源内容、版本及哈希后重新生成；旧观察/评分标为失效，不追溯重评已保存学生卷。签署记录由真实审核者另存；这个脚本不会生成签名或自动把状态改为 `independently_reviewed`。
+3. E1 首轮只用公开开发题定位失败簇，不报未见题准确率。未来保留题必须由未参与调参者准备、审核和隔离；用过一次选型的题转入 dev。模型调用前须核对供应商、每次请求上界、token/计费上界、重试和后台调用；未知 usage/价格时只能限请求数，不能宣称费用硬上限。
+4. E2 先用隔离临时库和固定模型验证任务路径；学生体验与学习增益需要另有真人任务/独立迁移设计。正式数据库备份/恢复、迁移与授权正反例属于 R0，不因 R2 离线结果而放行部署。

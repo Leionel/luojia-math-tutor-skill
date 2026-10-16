@@ -5,9 +5,40 @@ from typing import Any, AsyncIterator
 
 import httpx
 
-from app.config import Settings, PROVIDER_BASE_URLS
+from app.config import Settings, PROVIDER_BASE_URLS, configured_model_catalog
+from app.llm.completion_protocol import ModelCompletionError, validate_finish_reason
+from app.llm.capabilities import tools_available
+from app.llm.model_turn import TurnAssembler
+from app.llm.call_observation import metered_stream, metered_completion, usage_received, content_received, request_dispatched, call_degraded
+from app.llm.capabilities import capability
 
 logger = logging.getLogger(__name__)
+
+MAX_RESPONSE_BYTES = 524288
+
+
+async def bounded_lines(response):
+    """Bound incoming bytes before building a possibly unterminated SSE line."""
+    pending = bytearray()
+    received = 0
+    async for chunk in response.aiter_bytes():
+        received += len(chunk)
+        if received > MAX_RESPONSE_BYTES:
+            raise ModelCompletionError("model_output_truncated")
+        pending.extend(chunk)
+        while b"\n" in pending:
+            line, _, rest = pending.partition(b"\n")
+            pending = bytearray(rest)
+            if len(line)>131072:
+                raise ModelCompletionError("model_response_invalid")
+            try:
+                yield line.rstrip(b"\r").decode("utf-8", errors="strict")
+            except UnicodeDecodeError:
+                raise ModelCompletionError("model_response_invalid") from None
+        if len(pending) > 131072:
+            raise ModelCompletionError("model_response_invalid")
+    if pending:
+        yield pending.rstrip(b"\r").decode("utf-8", errors="strict")
 
 
 class OpenAICompatibleClient:
@@ -22,91 +53,296 @@ class OpenAICompatibleClient:
     def __init__(self, settings: Settings):
         self.settings = settings
 
+    def validate_payload(self, payload, model):
+        # UTF-8 bytes are a conservative input budget, not a token measurement.
+        cap = capability(self.settings, model)
+        limit = min(131072, cap["input_token_limit"] or 131072)
+        if len(json.dumps(payload, ensure_ascii=False, allow_nan=False).encode()) > limit:
+            raise ModelCompletionError("model_response_invalid")
+
+    @staticmethod
+    def _wire_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        # Backend-authored developer slots use the established system role on
+        # the shared Chat Completions wire. Never promote student/history data.
+        return [{**message, "role": "system"} if message.get("role") == "developer"
+                else dict(message) for message in messages]
+
+    def build_request_payload(
+        self,
+        model: str | None,
+        messages: list[dict[str, Any]],
+        effort: str = "medium",
+        enable_search: bool = False,
+        stream: bool = True,
+        temperature: float = 0.3,
+    ) -> dict[str, Any]:
+        base_url, resolved_model = self.settings.resolve_request(model)
+        provider = ""
+        catalog = configured_model_catalog()
+        for m_id, spec in catalog.items():
+            if m_id == model or spec.name == model or m_id == resolved_model:
+                provider = spec.provider
+                break
+
+        if not provider:
+            low_url = (base_url or "").lower()
+            low_mod = (model or resolved_model or "").lower()
+            if "deepseek" in low_url or "deepseek" in low_mod:
+                provider = "deepseek"
+            elif "dashscope" in low_url or "qwen" in low_mod:
+                provider = "qwen"
+            elif "bigmodel" in low_url or "glm" in low_mod:
+                provider = "glm"
+            elif "moonshot" in low_url or "kimi" in low_mod:
+                provider = "moonshot"
+            elif "anthropic" in low_url:
+                provider = "anthropic"
+            else:
+                provider = "openai"
+
+        payload: dict[str, Any] = {
+            "model": resolved_model,
+            "messages": self._wire_messages(messages),
+            "stream": stream,
+            "temperature": temperature,
+        }
+        cap = capability(self.settings, model)
+        if cap["output_token_limit"] is not None:
+            payload["max_completion_tokens" if provider=="openai" else "max_tokens"] = min(cap["output_token_limit"], 4096)
+
+        # 1. Native web search mapping
+        if enable_search:
+            if provider == "qwen":
+                payload["enable_search"] = True
+            elif provider == "glm":
+                payload["tools"] = [{"type": "web_search", "web_search": {"enable": True}}]
+            elif provider in ("moonshot", "kimi"):
+                payload["tools"] = [{"type": "builtin_function", "function": {"name": "$web_search"}}]
+
+        # 2. Reasoning effort mapping
+        clean_effort = (effort or "medium").lower()
+        if clean_effort == "off":
+            if provider == "deepseek":
+                payload["thinking"] = {"type": "disabled"}
+            elif provider == "qwen":
+                payload["enable_thinking"] = False
+            elif provider == "glm":
+                payload["thinking"] = {"type": "disabled"}
+        elif provider == "deepseek":
+            if clean_effort == "low":
+                payload["reasoning_effort"] = "low"
+            elif clean_effort in ("max", "high"):
+                payload["reasoning_effort"] = "max" if clean_effort == "max" else "high"
+            else:
+                payload["reasoning_effort"] = "high"
+        elif provider == "qwen":
+            payload["enable_thinking"] = True
+            budget_map = {"low": 1024, "medium": 4096, "high": 8192, "max": 16384}
+            payload["thinking_budget"] = budget_map.get(clean_effort, 4096)
+        elif provider == "glm":
+            payload["thinking"] = {"type": "enabled"}
+            if clean_effort == "low":
+                payload["reasoning_effort"] = "low"
+            elif clean_effort in ("max", "high"):
+                payload["reasoning_effort"] = "max" if clean_effort == "max" else "high"
+            else:
+                payload["reasoning_effort"] = "high"
+        elif provider == "anthropic":
+            effort_map = {"low": "low", "medium": "medium", "high": "high", "max": "max"}
+            payload["output_config"] = {"effort": effort_map.get(clean_effort, "medium")}
+        else:
+            effort_map = {"low": "low", "medium": "medium", "high": "high", "max": "high"}
+            payload["reasoning_effort"] = effort_map.get(clean_effort, "medium")
+
+        self.validate_payload(payload, model)
+        return payload
+
+    @metered_stream
     async def stream(
         self,
         messages: list[dict[str, Any]],
         api_key: str | None = None,
         model: str | None = None,
+        effort: str = "medium",
+        enable_search: bool = False,
     ) -> AsyncIterator[str | dict[str, str]]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
-            yield {
-                "type": "content",
-                "content": (
-                    "⚠️ 当前服务未配置模型 API Key，因此没有生成数学解答。"
-                    "请由管理员设置 LLM_API_KEY 后重试。"
-                ),
-            }
-            return
+            raise ModelCompletionError("model_not_configured")
 
-        base_url = self.settings.resolve_base_url(resolved_model)
         url = f"{base_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": resolved_model,
-            "messages": messages,
-            "stream": True,
-            "temperature": 0.3,
-        }
+        payload = self.build_request_payload(
+            model=model,
+            messages=messages,
+            effort=effort,
+            enable_search=enable_search,
+            stream=True,
+            temperature=0.3,
+        )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        if capability(self.settings, model)["stream_usage"] is True:
+            payload["stream_options"] = {"include_usage": True}
+        self.validate_payload(payload, model)
         client = self.get_http_client()
+        terminal = False
+        has_content = False
+        await request_dispatched()
         async with client.stream("POST", url, json=payload, headers=headers, timeout=60.0) as response:
             response.raise_for_status()
-            async for line in response.aiter_lines():
-                if not line.startswith("data: "):
+            async for line in bounded_lines(response):
+                if not line.startswith("data:"):
                     continue
-                data = line.removeprefix("data: ").strip()
+                data = line.removeprefix("data:").strip()
                 if data == "[DONE]":
+                    terminal = True
                     break
                 try:
                     chunk = json.loads(data)
-                    delta = chunk["choices"][0].get("delta", {})
-                    content = delta.get("content")
-                    reasoning_content = delta.get("reasoning_content")
-                    if reasoning_content:
-                        yield {"type": "reasoning", "content": reasoning_content}
-                    if content:
-                        yield {"type": "content", "content": content}
-                except Exception:
+                except (ValueError, TypeError) as exc:
+                    raise ModelCompletionError("model_response_invalid") from exc
+                if not isinstance(chunk, dict):
+                    raise ModelCompletionError("model_response_invalid")
+                if chunk.get("error"):
+                    # Never copy a vendor error payload (which can contain credentials).
+                    raise ModelCompletionError("model_provider_error")
+                choices = chunk.get("choices")
+                if "usage" in chunk:
+                    usage_received(chunk["usage"])
+                if choices == [] and "usage" in chunk:
                     continue
+                if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                    raise ModelCompletionError("model_response_invalid")
+                choice = choices[0]
+                terminal = validate_finish_reason(choice.get("finish_reason")) or terminal
+                delta = choice.get("delta", {})
+                if not isinstance(delta, dict):
+                    raise ModelCompletionError("model_response_invalid")
+                content = delta.get("content")
+                reasoning_content = delta.get("reasoning_content")
+                if reasoning_content:
+                    if not isinstance(reasoning_content, str):
+                        raise ModelCompletionError("model_response_invalid")
+                    yield {"type": "reasoning", "content": reasoning_content}
+                if content:
+                    if not isinstance(content, str):
+                        raise ModelCompletionError("model_response_invalid")
+                    has_content = has_content or bool(content.strip())
+                    content_received(content)
+                    yield {"type": "content", "content": content}
+        if not terminal:
+            raise ModelCompletionError("model_stream_incomplete")
+        if not has_content:
+            raise ModelCompletionError("model_empty_output")
 
+    @metered_completion
     async def chat_completion(
         self,
         messages: list[dict[str, Any]],
         api_key: str | None = None,
         model: str | None = None,
+        effort: str = "medium",
+        enable_search: bool = False,
     ) -> str:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        base_url, resolved_model = self.settings.resolve_request(model)
         if not key:
-            raise RuntimeError(
-                "未配置模型 API Key。请在服务端设置 LLM_API_KEY。"
-            )
-        base_url = self.settings.resolve_base_url(resolved_model)
+            raise ModelCompletionError("model_not_configured")
         url = f"{base_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": resolved_model,
-            "messages": messages,
-            "stream": False,
-            "temperature": 0.1,
-        }
+        payload = self.build_request_payload(
+            model=model,
+            messages=messages,
+            effort=effort,
+            enable_search=enable_search,
+            stream=False,
+            temperature=0.1,
+        )
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()
+            await request_dispatched()
             response = await client.post(url, json=payload, headers=headers, timeout=60.0)
             response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"].strip()
+            if len(response.content) > MAX_RESPONSE_BYTES:
+                raise ModelCompletionError("model_output_truncated")
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ModelCompletionError("model_response_invalid") from exc
+            if not isinstance(data, dict):
+                raise ModelCompletionError("model_response_invalid")
+            if data.get("error"):
+                raise ModelCompletionError("model_provider_error")
+            usage_received(data.get("usage"))
+            try:
+                choice = data["choices"][0]
+                validate_finish_reason(choice.get("finish_reason"))
+                content = choice["message"]["content"]
+            except (KeyError, IndexError, TypeError, AttributeError) as exc:
+                raise ModelCompletionError("model_response_invalid") from exc
+            if not isinstance(content, str) or not content.strip():
+                raise ModelCompletionError("model_empty_output")
+            return content.strip()
         except Exception as e:
             logger.error("chat_completion failed: %s", e)
             raise
 
+    @metered_completion
+    async def tool_turn(self, messages, api_key=None, model=None, effort="medium", allow_calls=True):
+        """Native tool request is a completed model turn, never a completed answer."""
+        if not tools_available(self.settings, model):
+            raise ModelCompletionError("model_tool_call_unsupported")
+        key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
+        if not key:
+            raise ModelCompletionError("model_not_configured")
+        from app.agents.typed_tools import wire_tools
+        payload = self.build_request_payload(model, messages, effort=effort, stream=True, enable_search=False)
+        payload.update(tools=wire_tools(), tool_choice="auto" if allow_calls else "none", parallel_tool_calls=False)
+        if capability(self.settings, model)["stream_usage"] is True:
+            payload["stream_options"] = {"include_usage": True}
+        self.validate_payload(payload, model)
+        base, _ = self.settings.resolve_request(model)
+        assembler = TurnAssembler()
+        await request_dispatched()
+        async with self.get_http_client().stream("POST", f"{base.rstrip('/')}/chat/completions", json=payload,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, timeout=60) as response:
+            response.raise_for_status()
+            async for line in bounded_lines(response):
+                if not line.startswith("data:"): continue
+                data = line.removeprefix("data:").strip()
+                if data == "[DONE]": break
+                if len(data.encode()) > 131072: raise ModelCompletionError("model_response_invalid")
+                try:
+                    frame = json.loads(data)
+                except (ValueError, TypeError):
+                    raise ModelCompletionError("model_response_invalid") from None
+                if not isinstance(frame, dict): raise ModelCompletionError("model_response_invalid")
+                if frame.get("error"): raise ModelCompletionError("model_provider_error")
+                choices = frame.get("choices")
+                if "usage" in frame: usage_received(frame["usage"])
+                if choices == [] and "usage" in frame: continue
+                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
+                    raise ModelCompletionError("model_response_invalid")
+                assembler.feed(choices[0])
+                content_received(choices[0].get("delta", {}).get("content"))
+        turn = assembler.result()
+        from app.llm.call_observation import current_call_id
+        turn.model_call_id = current_call_id()
+        if turn.calls:
+            from app.llm.call_observation import native_call_received
+            native_call_received(turn.calls[0].call_id)
+        if turn.calls and not allow_calls:
+            raise ModelCompletionError("model_tool_budget")
+        return turn
+
     async def test(self, api_key: str | None = None, model: str | None = None) -> dict[str, str | bool]:
         key = api_key if self.settings.allow_user_api_key and api_key else self.settings.llm_api_key
-        resolved_model = self.settings.resolve_model(model)
+        try:
+            base_url, resolved_model = self.settings.resolve_request(model)
+        except ValueError as exc:
+            return {"ok": False, "message": str(exc)}
         if not key:
             return {"ok": False, "message": "未配置 API Key；离线假回复已禁用。"}
-        base_url = self.settings.resolve_base_url(resolved_model)
         url = f"{base_url.rstrip('/')}/chat/completions"
         payload = {
             "model": resolved_model,
@@ -125,11 +361,12 @@ class OpenAICompatibleClient:
                 "ok": True,
                 "message": "模型连接成功。",
                 "model": returned_model,
-                "provider": self.settings.resolve_base_url(resolved_model),
+                "provider": base_url,
             }
         except Exception as exc:
             return {"ok": False, "message": f"模型连接失败：{exc}"}
 
+    @metered_completion
     async def create_embedding(
         self, text: str, api_key: str | None = None, model: str | None = None
     ) -> list[float]:
@@ -190,6 +427,7 @@ class OpenAICompatibleClient:
             key = key or self.settings.llm_api_key
 
         if not key:
+            call_degraded("model_not_configured")
             return []
 
         url = f"{base_url.rstrip('/')}/embeddings"
@@ -200,11 +438,14 @@ class OpenAICompatibleClient:
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         try:
             client = self.get_http_client()
+            await request_dispatched()
             response = await client.post(url, json=payload, headers=headers, timeout=10.0)
             response.raise_for_status()
             data = response.json()
+            usage_received(data.get("usage"))
             return data["data"][0]["embedding"]
         except Exception as exc:
+            call_degraded("model_timeout" if isinstance(exc,httpx.TimeoutException) else "model_provider_error")
             logger.error(
                 "Embedding API call failed for model %s (url: %s): %s",
                 resolved_model,

@@ -59,17 +59,16 @@ def hint_level_instruction(level: HintLevel) -> str:
     """根据提示层级生成 prompt 指令片段。"""
     instructions = {
         HintLevel.INDEPENDENT: (
-            "学生掌握度较高，只给方向性引导，不给具体公式或步骤。"
+            "本轮采用方向性提示；不据此推断学生掌握度。概念定义可完整给出。"
         ),
         HintLevel.LIGHT_HINT: (
             "给出使用的方法或定理名称，但不展开具体公式。"
         ),
         HintLevel.FORMULA_HINT: (
-            "学生多次出错或掌握度较低，给出关键公式，并引导代入。"
+            "本轮给出关键公式，并解释使用条件和代入方法。"
         ),
         HintLevel.NEAR_ANSWER: (
-            "学生反复出错或主动要求完整解答，可以给出几乎完整的过程，"
-            "只留最后一个简单计算让学生完成。"
+            "本轮可给主要过程。若学生明确要求完整解答或处于direct模式，给出全部过程与结论。"
         ),
     }
     return instructions.get(level, instructions[HintLevel.INDEPENDENT])

@@ -3,6 +3,9 @@ import asyncio
 import os
 import sys
 import tempfile
+import subprocess
+import time
+from app.agents.tool_result import ToolExecutionResult
 
 _ALLOWED_IMPORT_ROOTS = {"math", "sympy"}
 _MAX_CODE_CHARS = 8_000
@@ -78,6 +81,41 @@ _DENIED_NODES = (
     ast.With,
 )
 
+# Interpreter flags for the sandboxed child process.
+#
+# ``-I`` must NOT be used here: it implies ``-s``, which drops *user*
+# site-packages. When dependencies are installed with ``pip install --user``
+# (the default on many Windows setups) ``sympy`` then becomes unimportable in
+# the child, so every ``[VERIFY]`` round fails and the symbolic verification
+# path silently degrades. Keep only the two parts of ``-I`` that provide
+# isolation:
+#   ``-E``  ignore PYTHON* environment variables (blocks PYTHONPATH injection)
+#   ``-P``  do not prepend the script's directory or cwd to sys.path
+# Import reachability is already constrained by the AST allowlist above, which
+# permits only ``math`` and ``sympy`` roots.
+_CHILD_FLAGS = ("-E", "-P", "-X", "utf8")
+
+
+def _child_command(script_path: str) -> list[str]:
+    """Build the argv used to run sandboxed code. Exposed for tests."""
+    return [sys.executable, *_CHILD_FLAGS, script_path]
+
+
+def _missing_dependency_error(err_str: str) -> str | None:
+    """Classify a child traceback caused by an unavailable allowed dependency.
+
+    Returns an explicit environment-fault message, or ``None`` when stderr does
+    not indicate a missing ``math``/``sympy`` installation.
+    """
+    for module in sorted(_ALLOWED_IMPORT_ROOTS):
+        if f"No module named '{module}'" in err_str:
+            return (
+                f"Error: sandbox environment is missing '{module}'. "
+                "Symbolic verification is unavailable; install the API "
+                "dependencies into the interpreter that runs the server."
+            )
+    return None
+
 
 def _import_root(name: str) -> str:
     return name.split(".", 1)[0]
@@ -135,54 +173,72 @@ def _validate_math_code(code: str) -> str | None:
 
     return None
 
-async def execute_python_code(code: str, timeout: int = 10) -> str:
+async def execute_python_result(code: str, timeout: int = 10) -> ToolExecutionResult:
+    """Run allowlisted math code; cancellation kills and reaps the child.
+
+    The threaded communicate works on Windows SelectorEventLoop too. The
+    process handle remains owned here, so cancelling an await cannot orphan it.
+    This is execution evidence, not a mathematical proof or a C0 acceptance.
     """
-    Executes Python code in a separate subprocess and captures stdout/stderr.
-    Useful for SymPy math verification.
-    """
+    started = time.perf_counter()
     timeout = max(1, min(int(timeout), 10))
     validation_error = _validate_math_code(code)
     if validation_error:
-        return validation_error
+        return ToolExecutionResult("rejected", stderr=validation_error, error_code="code_rejected")
 
     # Write code to a temporary file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
         f.write(code)
         temp_file_path = f.name
 
+    process = None
+    communication = None
     try:
-        import subprocess
-        # Run subprocess in a separate thread to avoid blocking the event loop,
-        # and to support WindowsSelectorEventLoopPolicy which doesn't support create_subprocess_exec.
-        def run_proc():
-            return subprocess.run(
-                [sys.executable, "-I", temp_file_path],
-                capture_output=True,
-                timeout=timeout,
-                text=True
-            )
-            
+        process = subprocess.Popen(_child_command(temp_file_path), stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
+        communication = asyncio.create_task(asyncio.to_thread(process.communicate, timeout=timeout))
         try:
-            process = await asyncio.to_thread(run_proc)
+            out_str, err_str = await asyncio.shield(communication)
         except subprocess.TimeoutExpired:
-            return f"Error: Code execution timed out after {timeout} seconds."
-            
-        out_str = process.stdout.strip()[:_MAX_OUTPUT_CHARS]
-        err_str = process.stderr.strip()[:_MAX_OUTPUT_CHARS]
-        
-        result = ""
-        if out_str:
-            result += f"Output:\n{out_str}\n"
-        if err_str:
-            result += f"Error:\n{err_str}\n"
-            
-        if not result:
-            result = "Code executed successfully with no output."
-            
-        return result
+            if process.poll() is None:
+                process.kill()
+            await asyncio.to_thread(process.communicate)
+            return ToolExecutionResult("timeout", stderr=f"Code execution timed out after {timeout} seconds.",
+                                       exit_code=process.returncode, error_code="tool_timeout",
+                                       duration_ms=round((time.perf_counter() - started) * 1000, 2))
+        out_str = out_str.strip()[:_MAX_OUTPUT_CHARS]
+        err_str = err_str.strip()[:_MAX_OUTPUT_CHARS]
 
-    except Exception as e:
-        return f"Execution Error: {str(e)}"
+        # A missing interpreter dependency is an environment fault, not a
+        # student-code fault. Surface it distinctly so the verification hard
+        # gate can report "verification unavailable" instead of blaming the
+        # submitted code for something it cannot influence.
+        dependency_error = _missing_dependency_error(err_str)
+        if dependency_error:
+            return ToolExecutionResult("unavailable", out_str, dependency_error, process.returncode,
+                                       "tool_dependency_missing", round((time.perf_counter() - started) * 1000, 2))
+        succeeded = process.returncode == 0
+        return ToolExecutionResult("succeeded" if succeeded else "failed", out_str,
+                                   err_str or ("" if succeeded else f"Code exited with status {process.returncode}."),
+                                   process.returncode, None if succeeded else "tool_execution_failed",
+                                   round((time.perf_counter() - started) * 1000, 2))
+    except asyncio.CancelledError:
+        if process is not None and process.poll() is None:
+            process.kill()
+        if communication is not None:
+            await asyncio.gather(communication, return_exceptions=True)
+        raise
+    except Exception:
+        return ToolExecutionResult("unavailable", stderr="Math execution is unavailable.",
+                                   error_code="tool_unavailable")
     finally:
+        if process is not None and process.poll() is None:
+            process.kill()
+            await asyncio.to_thread(process.wait)
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+
+
+async def execute_python_code(code: str, timeout: int = 10) -> str:
+    """Compatibility display wrapper; runtime decisions use the typed result."""
+    return (await execute_python_result(code, timeout)).to_legacy_text()

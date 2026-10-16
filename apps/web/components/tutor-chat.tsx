@@ -1,21 +1,40 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import type { Message, Subject, TutorMeta, TutorMode } from "@/lib/api";
+import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode, RootSubmission, RootDiagnosis } from "@/lib/api";
 import type { ReviewData } from "./review-card";
-import { createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, generateSimilarExercises, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
+import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { messageStatus } from "@/lib/message-status";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown, FlaskConical, BookOpen, CalendarCheck2, Code2 } from "lucide-react";
+import { useScrollPinning } from "@/lib/use-scroll-pinning";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
+import { TutorCompanion } from "./tutor-companion";
 import { ConfirmDialog } from "./confirm-dialog";
 import { LearningPanel } from "./learning-panel";
 import { MathMessage } from "./math-message";
 import { Sidebar } from "./sidebar";
+import { MobileDrawer } from "./mobile-drawer";
+import { RootAttemptForm } from "./root-attempt-form";
 import { TutorInput } from "./tutor-input";
 import { LatexRenderer } from "./latex-renderer";
 import { ZenOverlay } from "./zen-overlay";
 import { Button } from "./ui/button";
+import { GlobalSearchModal } from "./global-search-modal";
+import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
+import {learningRequest, type LabRun} from "@/lib/learning-api";
+import {needsPrivateChatHandoff,restorePrivateChatHandoff,rootContextRef,referenceChatKey,storePrivateChatHandoff,studyRequested,verifiedReferenceSession,type LearningContextRef,type LearningTaskSnapshot} from "@/lib/learning-context";
+import {migratePrivateReadingStorage,referenceBrowserStorage} from "@/lib/learning-browser-storage";
+import {getCurrentUserId} from "@/lib/demo-auth";
+import {TutorConversationController} from "@/lib/tutor-conversation-controller";
+import {ContextBanner} from "./learning/context-banner";
+import {CanvasWorkspace, type WorkspaceTab} from "./learning/canvas-workspace";
+import type {WorkspaceIntent} from "@/lib/intelligent-ui";
+import type {RootContextRef} from "@/lib/learning-context";
+import {ReferenceSelection} from "@/lib/reference-selection";
+import { clampPaneWidth, defaultPaneWidth, type ResizablePane } from "@/lib/interaction-physics";
 
 type LocalMessage = {
   id: string;
@@ -26,6 +45,19 @@ type LocalMessage = {
   thinkingElapsedMs?: number;
   learningMeta?: TutorMeta | null;
 };
+
+function appendContextQuery(query:URLSearchParams,ref:LearningContextRef,owner:string){
+  if(ref.kind==="root_lab"&&!ref.activity_claim){
+    query.set("lab",ref.record_id);
+    if(ref.selected_step!==null)query.set("step",String(ref.selected_step));
+  }else if(needsPrivateChatHandoff(ref)){
+    const id=crypto.randomUUID();
+    storePrivateChatHandoff(sessionStorage,owner,id,ref);
+    query.set("handoff",id);
+  }else{
+    query.set("ref",JSON.stringify(ref));
+  }
+}
 
 function mapServerMessages(items: Message[]): LocalMessage[] {
   return items.map((item) => ({
@@ -47,23 +79,96 @@ function latestLearningMeta(items: Message[]): TutorMeta | null {
   return null;
 }
 
-const welcome = `### 欢迎来到珞珈数智助教
-你好！我是一款专为东方美学与深层逻辑打造的数学助教。
-你可以随时与我探讨**高等数学**、**线性代数**或**概率论与数理统计**的问题。
+const welcome = `### 从你正在读的一页、正在算的一步开始
+我是小珞，珞珈数智的 AI 数学助教。我们可以一起读教材、核对推导、做数值实验，也可以讨论高等数学、线性代数和概率统计。
 
-#### ✨ 核心功能指南
-- **🎓 启发式教学**：我不会直接告诉你答案，而是以苏格拉底式的提问引导你思考。你可以点击右下角的“直接解答”切换模式。
-- **📊 实时掌握度追踪**：在右侧的学习面板，你可以看到每个知识点的精确掌握度，如同草木生长般清晰可见。
-- **📝 自动错题本**：推导中的谬误会被自动记录成册，随时从侧边栏的“全局错题本”回顾并生成针对性练习。
-- **🎨 动态可视化**：你可以随时对我说“帮我画出 $y = x^2$ 的图像”或者“画出正态分布的图像”，抽象的数学将在水墨之间展现。
+- **读懂条件**：说明公式在什么条件下适用；教材伴读会保留原文来源。
+- **检查过程**：把自己的步骤发来；求根轨迹可用数值规则核对，其他回答会注明检查依据与限制。
+- **按需帮助**：默认给适量提示；切换“直接讲解”或明确索取时可以给完整过程。练习先给题目，作答后再核对。
+- **回看记录**：学习面板的估计与错题记录供复习参考，不等于已证明掌握。
 
-准备好了吗？试试发送：
-> 我算 $\\int x^2 dx = x^3$，对吗？`;
+试试问我：
+> 牛顿法的残差很小，就一定接近根了吗？`;
+
+const PROMPT_SUGGESTIONS = [
+  {
+    category: "数值分析",
+    icon: "xₖ",
+    title: "残差与根误差",
+    desc: "残差很小，为什么还需要误差依据？",
+    prompt: "牛顿法得到的残差很小，是否一定接近根？请解释两者关系与需要的条件。",
+  },
+  {
+    category: "数值分析",
+    icon: "[a,b]",
+    title: "二分法的前提",
+    desc: "端点异号之外，还需确认什么？",
+    prompt: "对函数 1/x 在 [-1,1] 上用二分法，因为端点异号所以一定有根，对吗？",
+  },
+  {
+    category: "线性代数",
+    icon: "A·x",
+    title: "特征值与几何变换",
+    desc: "如何从几何拉伸与旋转的角度理解矩阵特征向量？",
+    prompt: "请用几何变换与空间拉伸的直观语言，帮我理解矩阵的特征值与特征向量是什么意义？",
+  },
+  {
+    category: "概率统计",
+    icon: "P(A)",
+    title: "贝叶斯逆向推断",
+    desc: "为什么先验概率与后验概率常颠覆我们的直觉？",
+    prompt: "请通过一个生动直观的经典例子（如罕见病筛查），引导我理解贝叶斯公式与逆向推断思维。",
+  },
+];
 
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 600;
 const DEFAULT_SIDEBAR_WIDTH = 260;
 const DEFAULT_LEARNING_WIDTH = 320;
+const MIN_WORKSPACE_WIDTH = 380;
+const MAX_WORKSPACE_WIDTH = 1000;
+const DEFAULT_WORKSPACE_WIDTH = 580;
+
+function ResizeHandle({
+  target,
+  className = "",
+  onStart,
+  onReset,
+  isActive = false,
+}: {
+  target: ResizablePane;
+  className?: string;
+  onStart: (target: ResizablePane) => void;
+  onReset?: (target: ResizablePane) => void;
+  isActive?: boolean;
+}) {
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      tabIndex={0}
+      title="拖拽调节宽度，双击复位默认宽度，Esc可取消"
+      className={`group relative z-20 w-1.5 shrink-0 cursor-col-resize select-none transition-colors ${
+        isActive ? "bg-olive-500/80" : "hover:bg-olive-400/50 active:bg-olive-500/70"
+      } ${className}`}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onStart(target);
+      }}
+      onDoubleClick={(event) => {
+        event.preventDefault();
+        onReset?.(target);
+      }}
+    >
+      <div className="absolute inset-y-0 -left-2 -right-2" />
+      <div
+        className={`absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-[var(--border-primary)] transition-opacity ${
+          isActive ? "opacity-100 bg-olive-600" : "opacity-0 group-hover:opacity-100"
+        }`}
+      />
+    </div>
+  );
+}
 
 export function TutorChat() {
   const [sessions, setSessions] = useState<Array<{ id: string; title: string; subject: string; user_id: string; created_at: string; updated_at: string }>>([]);
@@ -77,6 +182,52 @@ export function TutorChat() {
   const [thinkingElapsed, setThinkingElapsed] = useState(0);
   const [thinkingChains, setThinkingChains] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
+  const [rootForm, setRootForm] = useState(false);
+  const [rootDraft, setRootDraft] = useState<Partial<RootSubmission> | undefined>();
+  useEffect(() => { setRootForm(false); setRootDraft(undefined); }, [sessionId]);
+  const [rootInstruction, setRootInstruction] = useState("");
+  const [rootError, setRootError] = useState("");
+  const [learningContext, setLearningContext] = useState<LearningTaskSnapshot | null>(null);
+  const [workspaceOpen,updateWorkspaceOpen]=useState(false);
+  const workspaceOpenRef=useRef(false);
+  function setWorkspaceOpen(value:boolean){workspaceOpenRef.current=value;updateWorkspaceOpen(value);}
+  const [workspaceWidth, setWorkspaceWidth] = useState(defaultPaneWidth("workspace"));
+  const [isWorkspaceMaximized, setIsWorkspaceMaximized] = useState(false);
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>("lab");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("luojia_workspace_width");
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) {
+          setWorkspaceWidth(clampPaneWidth("workspace", parsed));
+        }
+      }
+    } catch {}
+  }, []);
+
+  function restoreWorkspace(query:URLSearchParams){
+    const ws = query.get("workspace");
+    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "code") {
+      setActiveWorkspaceTab(ws);
+      setWorkspaceOpen(true);
+    } else if (ws === "true") {
+      setActiveWorkspaceTab("lab");
+      setWorkspaceOpen(true);
+    }
+    if (ws === "lab" || ws === "reading" || ws === "study" || ws === "code" || ws === "true") {
+      const restored = new URLSearchParams(window.location.search);
+      restored.set("workspace", ws === "true" ? "lab" : ws);
+      window.history.replaceState(null, "", `/chat?${restored}`);
+    }
+  }
+  const [workspacePrediction,setWorkspacePrediction]=useState<string>();
+  const [desktopWorkspace,setDesktopWorkspace]=useState(false);
+  useEffect(()=>{const media=window.matchMedia("(min-width: 1280px)");const update=()=>setDesktopWorkspace(media.matches);update();media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [contextError, setContextError] = useState("");
+  const [visionDraft, setVisionDraft] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
   const [noteContent, setNoteContent] = useState("");
@@ -88,7 +239,36 @@ export function TutorChat() {
   const [showZenConfirm, setShowZenConfirm] = useState(false);
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
   const [newSessionBlocked, setNewSessionBlocked] = useState(false);
+  const lifetime=useRef(new TutorConversationController({create:createSession,history:listMessages,stream:streamTutor}));
+  const viewGeneration=useRef(0);
+  const contextSelection=useRef(new ReferenceSelection());
+  const alive=useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const activeRunRef = useRef<AgentRun | undefined>(undefined);
+
+  const [webSearch, setWebSearch] = useState<WebSearchMode>("auto");
+  useEffect(() => {
+    const stored = window.localStorage.getItem("luojia_web_search_mode");
+    if (stored === "auto" || stored === "on" || stored === "off") setWebSearch(stored);
+  }, []);
+  function changeWebSearch(value: WebSearchMode) {
+    setWebSearch(value);
+    window.localStorage.setItem("luojia_web_search_mode", value);
+  }
+  const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffortLevel>("medium");
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+
+  // Ctrl+K 全局搜索快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsGlobalSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
@@ -106,29 +286,37 @@ export function TutorChat() {
     localStorage.setItem("luojia_sidebar_collapsed", String(collapsed));
   };
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
-  const [isResizing, setIsResizing] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
+  const [isLearningCollapsed, setIsLearningCollapsed] = useState(false);
+  const [isResizing, setIsResizing] = useState<ResizablePane | null>(null);
+  const dragOriginWidthRef = useRef<number>(0);
 
-  useEffect(() => {
-    if (autoScroll && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isStreaming, thinkingElapsed, autoScroll]);
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
-      setAutoScroll(isAtBottom);
-    }
+  const handleResizeStart = (target: ResizablePane) => {
+    if (target === "sidebar") dragOriginWidthRef.current = sidebarWidth;
+    else if (target === "learning") dragOriginWidthRef.current = learningWidth;
+    else if (target === "workspace") dragOriginWidthRef.current = workspaceWidth;
+    setIsResizing(target);
   };
 
-  const status = useMemo(() => {
-    if (!meta) return undefined;
-    return `${meta.verified ? "已后台验算" : "未完成后台验算"} · ${mode === "direct" ? "直接讲解" : mode === "practice" ? "练习模式" : "引导模式"}`;
-  }, [meta, mode]);
+  const handleResetWidth = (target: ResizablePane) => {
+    const width = defaultPaneWidth(target);
+    if (target === "sidebar") {
+      setSidebarWidth(width);
+    } else if (target === "learning") {
+      setLearningWidth(width);
+    } else if (target === "workspace") {
+      setWorkspaceWidth(width);
+      try { localStorage.setItem("luojia_workspace_width", String(width)); } catch {}
+    }
+  };
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const {
+    containerRef: scrollContainerRef,
+    showJumpControl,
+    markUserInput,
+    handleScroll,
+    scrollToBottom,
+    maskStyle: scrollMaskStyle,
+  } = useScrollPinning([messages, isStreaming, thinkingElapsed]);
 
   const reviewData = useMemo<ReviewData | null>(() => {
     if (!meta || meta.verified === false || meta.is_correct === null) return null;
@@ -139,6 +327,11 @@ export function TutorChat() {
       mastery_score: meta.mastery_score ?? 0.5,
       mastery_label: meta.mastery_label ?? "一般",
       mastery_delta: meta.mastery_delta ?? 0,
+      verification_kind: meta.verification_kind,
+      verifier_summary: meta.verifier_summary,
+      legacy_scope: !meta.step_check,
+      mastery_estimate_notice: meta.mastery_estimate_notice,
+      learning_update_eligible: meta.step_check?.eligible_learning_evidence,
     };
   }, [meta]);
 
@@ -150,7 +343,13 @@ export function TutorChat() {
   }, [searchQuery]);
 
   useEffect(() => {
+    alive.current=true;
+    const manager=lifetime.current,generation=viewGeneration;
     void bootstrap();
+    const ownerChanged=()=>{viewGeneration.current++;lifetime.current.invalidate();setMessages([]);setLearningContext(null);setContextError("身份已变化，请刷新后继续。");setIsStreaming(false);};
+    const storage=(event:StorageEvent)=>{if(event.key?.startsWith("luojia_auth_")||event.key===null)ownerChanged();};
+    window.addEventListener("luojia-auth-change",ownerChanged);window.addEventListener("storage",storage);
+    return()=>{alive.current=false;generation.current++;manager.invalidate();window.removeEventListener("luojia-auth-change",ownerChanged);window.removeEventListener("storage",storage);};
   }, []);
 
   const isThinkingActive = messages.some(
@@ -190,11 +389,13 @@ export function TutorChat() {
       const mouseX = e.clientX - containerRect.left;
 
       if (isResizing === "sidebar") {
-        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, mouseX));
-        setSidebarWidth(newWidth);
+        setSidebarWidth(clampPaneWidth("sidebar", mouseX));
       } else if (isResizing === "learning") {
-        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, containerRect.width - mouseX));
-        setLearningWidth(newWidth);
+        setLearningWidth(clampPaneWidth("learning", containerRect.width - mouseX));
+      } else if (isResizing === "workspace") {
+        const newWidth = clampPaneWidth("workspace", containerRect.width - mouseX);
+        setWorkspaceWidth(newWidth);
+        try { localStorage.setItem("luojia_workspace_width", String(newWidth)); } catch {}
       }
     };
 
@@ -202,30 +403,84 @@ export function TutorChat() {
       setIsResizing(null);
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (isResizing === "sidebar") {
+          setSidebarWidth(dragOriginWidthRef.current);
+        } else if (isResizing === "learning") {
+          setLearningWidth(dragOriginWidthRef.current);
+        } else if (isResizing === "workspace") {
+          setWorkspaceWidth(dragOriginWidthRef.current);
+          try { localStorage.setItem("luojia_workspace_width", String(dragOriginWidthRef.current)); } catch {}
+        }
+        setIsResizing(null);
+      }
+    };
+
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("keydown", handleKeyDown);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
   }, [isResizing]);
 
   async function bootstrap() {
-    const existing = await listSessions().catch(() => []);
+    const generation=++viewGeneration.current, owner=getCurrentUserId();
+    const valid=()=>alive.current && generation===viewGeneration.current && owner===getCurrentUserId();
+    setContextLoading(true);
+    const existing=await listSessions().catch(()=>[]);
+    if(!valid())return;
     setSessions(existing);
-    if (existing[0]) {
-      await selectSession(existing[0].id);
-    } else {
-      resetToDraftSession();
+    const params=new URLSearchParams(window.location.search),labId=params.get("lab"),encodedRef=params.get("ref"),handoffId=params.get("handoff");
+    if(labId||encodedRef||handoffId){
+      try{
+        const step=params.get("step");
+        const privateRef=handoffId?restorePrivateChatHandoff(sessionStorage,owner,handoffId):null;
+        if(handoffId&&!privateRef&&params.get("session")){
+          const saved=existing.find(s=>s.id===params.get("session"));
+          if(saved){await selectSession(saved.id);return;}
+        }
+        const requested:LearningContextRef=labId?rootContextRef(await learningRequest<LabRun>(`/root-lab/runs/${encodeURIComponent(labId)}`,undefined,AbortSignal.timeout(15000)),step===null?null:Number(step)):encodedRef?JSON.parse(encodedRef):privateRef??(()=>{throw Error("题目引用已过期或不属于当前账号，请回原页面重新选择。");})();
+        if(encodedRef&&needsPrivateChatHandoff(requested)){
+          const replacement=crypto.randomUUID();
+          try{storePrivateChatHandoff(sessionStorage,owner,replacement,requested);window.history.replaceState(null,"",`/chat?handoff=${replacement}`);}
+          catch{window.history.replaceState(null,"","/chat");throw Error("浏览器无法安全恢复题目引用，请回原页面重新选择。");}
+        }
+        const snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",requested,AbortSignal.timeout(15000));
+        if(!valid())return;
+        migratePrivateReadingStorage(localStorage,sessionStorage,owner);
+        const mapped=referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref),localStorage,sessionStorage).getItem(referenceChatKey(owner,snapshot.ref));
+        const restoredSession=verifiedReferenceSession(params.get("session"),existing,owner)??verifiedReferenceSession(mapped,existing,owner);
+        if(restoredSession) await selectSession(restoredSession,snapshot);
+        else {
+          resetToDraftSession(true);
+          setLearningContext(snapshot);setContextLoading(false);
+        }
+        restoreWorkspace(params);
+      }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"来源引用不可用");setContextLoading(false);}}
+      return;
     }
+    const selected=existing.find(s=>s.id===params.get("session"))??existing[0];
+    if(selected)await selectSession(selected.id);else resetToDraftSession();
+    restoreWorkspace(params);
   }
 
-  function resetToDraftSession() {
+  function resetToDraftSession(preserveUrl = false) {
+    setWorkspaceOpen(false);setWorkspacePrediction(undefined);
+    lifetime.current.adoptSession(undefined);
+    viewGeneration.current++;lifetime.current.invalidate();setIsStreaming(false);setContextLoading(false);
+    if (!preserveUrl) window.history.replaceState(null,"","/chat");
+    setLearningContext(null); setContextError("");
+    setVisionDraft(null);
     setSessionId(null);
     let initialMessages: LocalMessage[] = [{ id: "welcome", role: "assistant", content: welcome }];
     const pendingQuiz = sessionStorage.getItem("pendingQuiz");
@@ -246,15 +501,34 @@ export function TutorChat() {
     resetToDraftSession();
   }
 
-  async function selectSession(nextSessionId: string) {
+  async function selectSession(nextSessionId: string, override?:LearningTaskSnapshot) {
+    setWorkspaceOpen(false);setWorkspacePrediction(undefined);
+    lifetime.current.adoptSession(nextSessionId);
+    const generation=++viewGeneration.current,owner=getCurrentUserId();
+    lifetime.current.invalidate();setIsStreaming(false);setContextLoading(true);
+    const valid=()=>alive.current && generation===viewGeneration.current && owner===getCurrentUserId();
+    setVisionDraft(null);
     setSessionId(nextSessionId);
     const [serverMessages, serverMistakes, savedNotes] = await Promise.all([
       listMessages(nextSessionId).catch(() => [] as Message[]),
       listMistakes(nextSessionId).catch(() => []),
       listNotes("demo-user").catch(() => []),
     ]);
-    
+
+    if(!valid())return;
     let currentMessages: LocalMessage[] = mapServerMessages(serverMessages);
+    const lastMeta = serverMessages.at(-1)?.learning_meta;
+    let snapshot=override??null, contextFailure="";
+    if(!override&&lastMeta?.learning_context){
+      try{snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",lastMeta.learning_context.ref,AbortSignal.timeout(15000));}
+      catch(e){contextFailure=e instanceof Error?e.message:"实验引用不可用";}
+    }
+    if(!valid())return;
+    setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
+    const query=new URLSearchParams({session:nextSessionId});
+    if(snapshot){try{appendContextQuery(query,snapshot.ref,owner);}catch{ /* Saved replies can restore their last context. */ }referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref),localStorage,sessionStorage).setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
+    window.history.replaceState(null,"",`/chat?${query}`);
+    if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
     if (!currentMessages.length) {
       currentMessages = [{ id: "welcome", role: "assistant", content: welcome }];
     }
@@ -264,7 +538,7 @@ export function TutorChat() {
       currentMessages.push({ id: crypto.randomUUID(), role: "assistant", content: pendingQuiz });
       sessionStorage.removeItem("pendingQuiz");
     }
-    
+
     setMessages(currentMessages);
     setMistakes(serverMistakes);
     setMeta(latestLearningMeta(serverMessages));
@@ -291,51 +565,133 @@ export function TutorChat() {
     }
   }
 
-  async function submit(value: string, forcedMode?: TutorMode, requestedHint: boolean = false) {
-    let activeSession = sessionId;
-    if (!activeSession) {
-      const created = await createSession("综合");
-      activeSession = created.session_id;
-      setSessionId(activeSession);
-      // Immediately refresh sidebar so the new session shows up even
-      // before async title generation finishes (or if it fails).
-      listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
+  type BindResult =
+    | { ok: true; snapshot: LearningTaskSnapshot | null }
+    | { ok: false; error: string };
+
+  async function validateAndBindReference(ref: LearningContextRef | null): Promise<BindResult> {
+    if (lifetime.current.busy) return {ok:false,error:"本轮回答进行中，请结束后再切换讨论来源。"};
+    const owner = getCurrentUserId(), generation = viewGeneration.current;
+    const selectionCurrent = contextSelection.current.begin(() => alive.current && owner === getCurrentUserId() && generation === viewGeneration.current);
+    if (!ref) {
+      setContextLoading(false);
+      setLearningContext(null);
+      setContextError("");
+      const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
+      const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
+      if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
+      window.history.replaceState(null, "", `/chat${query.size ? `?${query}` : ""}`);
+      return { ok: true, snapshot: null };
     }
-
-    const userMessage: LocalMessage = { id: crypto.randomUUID(), role: "user", content: value };
-    const assistantId = crypto.randomUUID();
-    setMessages((current) => [...current, userMessage, { id: assistantId, role: "assistant", content: "", status: "thinking" }]);
-    setIsStreaming(true);
-    setMeta(null);
-    setThinkingChains({});
-    setThinkingElapsed(0);
-    abortControllerRef.current = new AbortController();
-
+    setContextLoading(true); setContextError("");
     try {
+      const snapshot = await learningRequest<LearningTaskSnapshot>("/tutor/context", ref, AbortSignal.timeout(15000));
+      if (!selectionCurrent()) {
+        return { ok: false, error: "环境已切换，校验终止" };
+      }
+      setLearningContext(snapshot);
+      const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
+      const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
+      appendContextQuery(query, snapshot.ref, owner);
+      if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
+      window.history.replaceState(null, "", `/chat?${query}`);
+      if (sessionId) referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref), localStorage, sessionStorage).setItem(referenceChatKey(owner, snapshot.ref), sessionId);
+      return { ok: true, snapshot };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "来源引用不可用";
+      if (selectionCurrent()) {
+        setContextError(msg);
+      }
+      return { ok: false, error: msg };
+    } finally {
+      if (selectionCurrent()) {
+        setContextLoading(false);
+      }
+    }
+  }
+
+  async function selectWorkspaceReference(ref: RootContextRef) {
+    await validateAndBindReference(ref);
+  }
+  function openWorkspace(intent:WorkspaceIntent={}, tab: WorkspaceTab = "lab") {
+    setActiveWorkspaceTab(tab);
+    setWorkspacePrediction(intent.prediction);setWorkspaceOpen(true);setIsMobileLearningOpen(false);setIsMobileSidebarOpen(false);
+    const query=new URLSearchParams(window.location.search);query.set("workspace",tab);window.history.replaceState(null,"",`/chat?${query}`);
+    if(intent.ref?.kind==="root_lab")void selectWorkspaceReference(intent.ref);
+  }
+  function switchWorkspaceTab(tab: WorkspaceTab) {
+    setActiveWorkspaceTab(tab);
+    const query = new URLSearchParams(window.location.search);
+    query.set("workspace", tab);
+    window.history.replaceState(null, "", `/chat?${query}`);
+  }
+  function closeWorkspace(){setWorkspaceOpen(false);const query=new URLSearchParams(window.location.search);query.delete("workspace");window.history.replaceState(null,"",`/chat${query.size?`?${query}`:""}`);}
+
+  async function submit(
+    value: string,
+    forcedMode?: TutorMode,
+    requestedHint: boolean = false,
+    imageUrls?: string[],
+    rootSubmission?: RootSubmission,
+    parentRunId?: string,
+    explicitSnapshot?: LearningTaskSnapshot | null
+  ) {
+    const activeSnapshot = explicitSnapshot !== undefined ? explicitSnapshot : learningContext;
+    if (isStreaming || (explicitSnapshot === undefined && (contextLoading || contextError))) return;
+    if (activeSnapshot && (rootSubmission || imageUrls?.length)) {
+      setRootError("请先移除实验或文献引用，再发送自己的作答或图片。"); return;
+    }
+    const manager=lifetime.current,lease=manager.begin(getCurrentUserId());
+    if(!lease)return;
+    const valid=()=>alive.current && manager.current(lease,getCurrentUserId());
+    abortControllerRef.current=lease.controller;
+    setIsStreaming(true);setVisionDraft(null);
+    const assistantId=crypto.randomUUID();
+    let activeSession=sessionId;
+    try {
+      if(!activeSession){
+        const createdId=await manager.ensureSession(lease,getCurrentUserId,"综合");
+        if(!valid())return;
+        activeSession=createdId;setSessionId(activeSession);
+      }
+      if(activeSnapshot)referenceBrowserStorage(needsPrivateChatHandoff(activeSnapshot.ref),localStorage,sessionStorage).setItem(referenceChatKey(getCurrentUserId(),activeSnapshot.ref),activeSession);
+      const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
+      setMessages(current=>[...current,userMessage,{id:assistantId,role:"assistant",content:"",status:"thinking"}]);
+      setMeta(null);setThinkingChains({});setThinkingElapsed(0);activeRunRef.current=undefined;
       const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 0;
-      if (isFirstUserMessage) {
+      if (isFirstUserMessage && !studyRequested(value)) {
         generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async ({ title: autoTitle, label: autoLabel }) => {
-          await renameSession(activeSession, autoTitle, autoLabel).catch(() => {});
-          listSessions("demo-user", searchQuery).then((s) => setSessions(s)).catch(() => {});
+          if(!valid())return;
+          await renameSession(activeSession!, autoTitle, autoLabel).catch(() => {});
+          listSessions("demo-user", searchQuery).then((s) => {if(valid())setSessions(s);}).catch(() => {});
         }).catch(() => {});
       }
 
-      await streamTutor(
+      await manager.stream(lease,
         {
+          study_action: !activeSnapshot && !rootSubmission && !imageUrls?.length && studyRequested(value)?"current_tasks":undefined,
+          root_submission: rootSubmission,
+          learning_context: activeSnapshot?.ref,
+          parent_run_id:parentRunId,
           session_id: activeSession,
           message: value,
-          subject: "综合" as any,
+          subject: "auto",
           mode: forcedMode || mode,
-          user_api_key: getUserApiKey() || null,
-          model: getPreferredModel(),
+          user_api_key: !activeSnapshot && studyRequested(value)?null:getUserApiKey() || null,
+          model: !activeSnapshot && studyRequested(value)?undefined:getPreferredModel(),
           requested_hint: requestedHint,
-          image_urls: undefined,
-          abortSignal: abortControllerRef.current.signal
+          image_urls: imageUrls,
+          abortSignal: abortControllerRef.current.signal,
+          web_search_mode: activeSnapshot?"off":webSearch,
+          reasoning_effort: reasoningEffort,
         },
         (nextMeta) => {
+          if(!valid())return;
           setMeta(nextMeta);
+          setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, learningMeta: {...nextMeta,agent_run:mergeAgentRun(message.learningMeta?.agent_run,nextMeta.agent_run)} } : message));
         },
         (token) => {
+          if(!valid())return;
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantId ? {
@@ -347,9 +703,11 @@ export function TutorChat() {
           );
         },
         (chain) => {
+          if(!valid())return;
           setThinkingChains((prev) => ({ ...prev, [assistantId]: chain }));
         },
         (content) => {
+          if(!valid())return;
           // onOpening: append content but keep thinking status
           setMessages((current) =>
             current.map((message) =>
@@ -362,6 +720,7 @@ export function TutorChat() {
           );
         },
         ({ summary, elapsedMs }) => {
+          if(!valid())return;
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantId ? {
@@ -376,23 +735,52 @@ export function TutorChat() {
             delete next[assistantId];
             return next;
           });
-        }
+        },
+        (draft) => {if(valid())setVisionDraft(draft);},
+        (run) => { if(!valid())return; activeRunRef.current=run; setMessages(current=>current.map(message=>message.id===assistantId ? {
+          ...message, learningMeta:{...(message.learningMeta || {intent:"pending",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮进行中"}),agent_run:mergeAgentRun(message.learningMeta?.agent_run,run)}
+        }:message)); }
       );
       const [refreshedSessions, refreshedMistakes] = await Promise.all([
         listSessions().catch(() => sessions),
         listMistakes(activeSession).catch(() => mistakes)
       ]);
+      if(!valid())return;
       setSessions(refreshedSessions);
       setMistakes(refreshedMistakes);
+      const history = await listMessages(activeSession,lease.controller.signal);
+      if(!valid())return;
+      setMessages(mapServerMessages(history));
     } catch (error) {
+      if(!valid())return;
+      if(!activeSession)setRootError(error instanceof Error?error.message:"创建会话失败");
+      const cancelled = abortControllerRef.current?.signal.aborted || (error instanceof Error && error.name === "AbortError");
+      const failureText = cancelled ? "已停止生成，本轮没有收到完整回答。" : error instanceof Error ? error.message : "未知错误";
       setMessages((current) =>
         current.map((message) =>
           message.id === assistantId
-            ? { ...message, content: `### 当前判断\n接口调用失败：${error instanceof Error ? error.message : "未知错误"}` }
+            ? { ...message, content: `${message.content}\n\n本轮未完成：${failureText}`, learningMeta: {...message.learningMeta,intent:"generation_failed",subject:"综合",concepts:[],verified:false,is_correct:null,mistake:null,verifier_summary:"本轮未完成",error:message.learningMeta?.error || {code:cancelled ? "client_cancelled" : "stream_failed",message:failureText}} }
             : message
         )
       );
     } finally {
+      if(!valid()){manager.finish(lease);return;}
+      const run = activeRunRef.current as AgentRun | undefined;
+      if (activeSession && run?.status === "running") {
+        let saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
+        if (saved?.status === "running") {
+          // The disconnect listener may still be draining owned work. One
+          // bounded recheck keeps the UI honest without waiting indefinitely.
+          await new Promise(resolve=>setTimeout(resolve,150));
+          saved=await getAgentRun(activeSession,run.run_id).catch(()=>undefined);
+        }
+        if (saved && valid()) setMessages(current=>current.map(message=>message.id===assistantId && message.learningMeta ? {
+          ...message, learningMeta:{...message.learningMeta,agent_run:mergeAgentRun(message.learningMeta.agent_run,saved)}
+        }:message));
+      }
+      if(!valid()){manager.finish(lease);return;}
+      manager.finish(lease);
+      setThinkingChains(current => { const next = {...current}; delete next[assistantId]; return next; });
       setIsStreaming(false);
       setMessages((current) =>
         current.map((message) =>
@@ -410,17 +798,17 @@ export function TutorChat() {
     try {
       const res = await generateNote(sessionId);
       setNoteContent(res.note);
-      
+
       const currentSession = sessions.find((s) => s.id === sessionId);
       const sessionSubject = currentSession?.subject || "综合";
-      
+
       // Auto-save to notebook
       await saveNote("demo-user", {
         session_id: sessionId,
         subject: sessionSubject,
         content: res.note
       });
-      
+
       setShowNoteToast(true);
       setTimeout(() => setShowNoteToast(false), 3000);
     } catch (e) {
@@ -464,219 +852,29 @@ export function TutorChat() {
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
 
-  const ResizeHandle = ({ target, className = "" }: { target: string; className?: string }) => (
-    <div
-      className={`group relative z-10 w-1.5 cursor-col-resize transition-colors hover:bg-blue-400/50 active:bg-blue-500/70 ${className}`}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        setIsResizing(target);
-      }}
-    >
-      <div className="absolute inset-y-0 -left-2 -right-2" />
-      <div className="absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
-    </div>
-  );
-
-  return (
-    <div className="flex h-screen flex-col bg-[var(--bg-primary)] transition-colors duration-300 overflow-hidden relative">
-      <ZenOverlay isZenMode={isZenMode} />
-      {isZenMode && (
-        <Button 
-          variant="ghost" 
-          onClick={toggleZenMode}
-          className="fixed top-6 left-6 z-50 text-white/50 hover:text-white hover:bg-white/10 transition-colors rounded-full px-4"
-        >
-          <Minimize className="w-4 h-4 mr-2" />
-          退出沉浸模式
-        </Button>
-      )}
-
-      {!isZenMode && (
-        <AppHeader
-          mode={mode}
-          onModeChange={setMode}
-          onNewSession={() => {
-            // If already on an empty draft (no real session yet), nothing to do.
-            if (!sessionId && !messages.some((m) => m.role === "user")) {
-              setNewSessionBlocked(true);
-            } else {
-              setShowNewSessionConfirm(true);
-            }
-          }}
-          onToggleSidebar={() => {
-            if (window.innerWidth >= 1024) {
-              handleToggleSidebar(!isSidebarCollapsed);
-            } else {
-              setIsMobileSidebarOpen(!isMobileSidebarOpen);
-            }
-          }}
-          onToggleLearning={() => setIsMobileLearningOpen(!isMobileLearningOpen)}
-          onToggleZenMode={() => {
-            if (!isZenMode) setShowZenConfirm(true);
-            else void toggleZenMode();
-          }}
-        />
-      )}
-      
-      <div id="main-layout" className="flex min-h-0 flex-1 relative">
-        {/* Mobile Sidebar Overlay */}
-        {isMobileSidebarOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)}>
-            <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-[var(--bg-card)] shadow-xl" onClick={e => e.stopPropagation()}>
-              <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-            </div>
-          </div>
-        )}
-        
-        {/* Mobile Learning Overlay */}
-        {isMobileLearningOpen && (
-          <div className="fixed inset-0 z-40 xl:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileLearningOpen(false)}>
-            <div className="absolute right-0 top-0 bottom-0 w-[320px] bg-white dark:bg-[var(--bg-card)] shadow-xl" onClick={e => e.stopPropagation()}>
-              <LearningPanel meta={meta} mistakes={mistakes} />
-            </div>
-          </div>
-        )}
-
-        {!isZenMode && !isSidebarCollapsed && (
-          <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
-            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-            <button
-              onClick={() => handleToggleSidebar(true)}
-              className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
-              title="收起侧边栏"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-        {!isZenMode && !isSidebarCollapsed && <ResizeHandle target="sidebar" className="hidden lg:block" />}
-
-        {!isZenMode && isSidebarCollapsed && (
-          <button
-            onClick={() => handleToggleSidebar(false)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 group flex h-20 w-4 items-center justify-center rounded-r-md border border-l-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
-            title="展开侧边栏"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        )}
-        <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
-          <div 
-            className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-          >
-            <div className="mx-auto max-w-4xl px-4 py-8 pb-32">
-
-              {(() => {
-                const lastAssistantIdx = messages.reduce((acc, m, i) =>
-                  m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
-                return messages.map((message, idx) => (
-                  <MathMessage
-                    key={message.id}
-                    role={message.role}
-                    content={message.content}
-                    status={message.role === "assistant" && message.status !== "thinking" ? status : undefined}
-                    isThinking={message.status === "thinking" && isStreaming}
-                    thinkingElapsed={thinkingElapsed}
-                    thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
-                    thinkingSummary={message.thinkingSummary}
-                    thinkingElapsedMs={message.thinkingElapsedMs}
-                    reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
-                    onEdit={message.role === "user" ? async () => {
-                      if (!sessionId) return;
-                      await truncateSession(sessionId, message.id);
-                      setInputValue(message.content);
-                      const msgs = await listMessages(sessionId);
-                      setMessages(mapServerMessages(msgs));
-                      setMeta(latestLearningMeta(msgs));
-                    } : undefined}
-                    onRetry={message.role === "assistant" ? async () => {
-                      if (!sessionId) return;
-                      let prevUserMsg = null;
-                      for(let j=idx-1; j>=0; j--){
-                        if(messages[j].role === "user"){ prevUserMsg = messages[j]; break;}
-                      }
-                      if(prevUserMsg) {
-                        await truncateSession(sessionId, prevUserMsg.id);
-                        const msgs = await listMessages(sessionId);
-                        setMessages(mapServerMessages(msgs));
-                        setMeta(latestLearningMeta(msgs));
-                        void submit(prevUserMsg.content);
-                      }
-                    } : undefined}
-                    onSimilar={() => {
-                      if (meta?.concepts?.[0]) {
-                        const concept = meta.concepts[0];
-                        const masteryScore = meta.mastery_score ?? 0.5;
-                        const difficulty = masteryScore >= 0.8 ? 3 : masteryScore >= 0.5 ? 2 : 1;
-                        generateSimilarExercises(concept, difficulty, 1)
-                          .then(exercises => {
-                            if (exercises && exercises.length > 0) {
-                              const exercise = exercises[0];
-                              const msg = `请练习这道关于"${concept}"的类似题：\n\n${exercise.text}\n\n（完成解答后可告诉我你的答案或步骤）`;
-                              const assistantId = crypto.randomUUID();
-                              setMessages((current) => [...current, { id: assistantId, role: "assistant", content: msg }]);
-                              setMode("practice");
-                            } else {
-                              void submit("请给我生成一道类似的练习题。", "practice");
-                            }
-                          })
-                          .catch(() => {
-                            void submit("请给我生成一道类似的练习题。", "practice");
-                          });
-                      } else {
-                        void submit("请给我生成一道类似的练习题。", "practice");
-                      }
-                    }}
-                  />
-                ));
-              })()}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-          {isStreaming && (
-            <div className="flex justify-center mb-2">
-              <button 
-                onClick={() => abortControllerRef.current?.abort()}
-                className="flex items-center gap-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] rounded-full px-4 py-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors shadow-sm"
-              >
-                <div className="w-2 h-2 rounded-sm bg-current animate-pulse" />
-                停止生成
-              </button>
-            </div>
-          )}
-          <div className="shrink-0 p-4 relative z-10 mx-auto w-full max-w-4xl">
-            <TutorInput
-              value={inputValue}
-              onChange={setInputValue}
-              disabled={isStreaming}
-              onSubmit={(val, forcedMode) => void submit(val, forcedMode)}
-              onDirect={() => void submit("我需要完整的推导过程和最终答案。请直接告诉我怎么做，不要反问我。", "direct")}
-              onHint={() => void submit("能不能给我一点提示？", "socratic")}
-              onSimilar={() => void submit("出一道类似的题目给我练习。", "practice")}
-            />
-          </div>
-        </main>
-
-        {!isZenMode && <ResizeHandle target="learning" className="hidden xl:block" />}
-        {!isZenMode && (
-          <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
+  const rightPanelContent = <>
             <div className="flex items-center gap-2 p-2 border-b border-[var(--border-subtle)] shrink-0">
-              <button 
+              <button
                 onClick={() => setRightPanelMode("learning")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-emerald-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "learning" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
               >
                 状态复盘
               </button>
-              <button 
+              <button
                 onClick={() => setRightPanelMode("note")}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-indigo-500 border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${rightPanelMode === "note" ? "bg-[var(--bg-card)] shadow-sm text-[var(--text-accent)] border border-[var(--border-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}
               >
                 随堂笔记
               </button>
+              <button
+                onClick={() => { setIsLearningCollapsed(true); setIsMobileLearningOpen(false); }}
+                className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title="收起数理仪器面板"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
-            
+
             <div className="flex-1 overflow-hidden relative">
               {rightPanelMode === "learning" ? (
                 <LearningPanel meta={meta} mistakes={mistakes} />
@@ -684,7 +882,7 @@ export function TutorChat() {
                 <div className="absolute inset-0 flex flex-col bg-[var(--bg-card)]">
                   <div className="flex justify-between items-center p-3 border-b border-[var(--border-primary)] shrink-0">
                     <div className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] text-sm">
-                      <FileText className="w-4 h-4 text-indigo-500" />
+                      <FileText className="w-4 h-4 text-[var(--text-accent)]" />
                       随堂笔记
                       {!isGeneratingNote && noteContent && (
                         <Link href="/notebook" className="ml-1 text-[10px] font-normal text-[#617a55] bg-[#617a55]/10 hover:bg-[#617a55]/20 px-1.5 py-0.5 rounded-sm border border-[#617a55]/20 transition-colors">
@@ -703,51 +901,529 @@ export function TutorChat() {
                   <div id="note-print-area" className="flex-1 overflow-y-auto p-4 md:p-5">
                     {isGeneratingNote ? (
                       <div className="h-full flex flex-col items-center justify-center space-y-3 text-[var(--text-muted)]">
-                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-accent)]" />
                         <p className="text-xs animate-pulse">正在提炼核心考点...</p>
                       </div>
                     ) : !noteContent ? (
                       <div className="h-full flex flex-col items-center justify-center space-y-4 text-[var(--text-muted)] text-center px-4">
-                        <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                          <FileText className="w-8 h-8 text-indigo-500/50" />
+                        <div className="w-16 h-16 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
+                          <FileText className="w-8 h-8 text-[var(--accent)] opacity-60" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="font-bold text-[var(--text-primary)]">智能笔记总结</h3>
+                          <h3 className="font-bold text-[var(--text-primary)]">本次笔记</h3>
                           <p className="text-xs">复习完当前内容后，点击下方按钮，AI将为你提炼核心考点与易错陷阱。</p>
                         </div>
-                        <button 
-                          onClick={handleGenerateNote} 
+                        <button
+                          onClick={handleGenerateNote}
                           disabled={!sessionId}
-                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                          className="mt-4 flex items-center gap-2 px-6 py-2.5 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         >
-                          <Sparkles className="w-4 h-4" /> 
+                          <Sparkles className="w-4 h-4" />
                           一键生成笔记
                         </button>
                       </div>
                     ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-[13px] leading-relaxed">
-                        <LatexRenderer content={noteContent} />
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                        <LatexRenderer content={noteContent} complete={!isStreaming} />
                       </div>
                     )}
                   </div>
                 </div>
               )}
             </div>
-            
+
             {/* Sticky Generate Button for Learning Panel */}
             {rightPanelMode === "learning" && !noteContent && !isGeneratingNote && (
               <div className="p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-tertiary)] shrink-0">
-                <button 
+                <button
                   onClick={handleGenerateNote}
                   disabled={!sessionId}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl shadow-lg shadow-[var(--accent-light)] transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <FileText className="w-4 h-4" /> 
-                  生成本节课专属笔记
+                  <FileText className="w-4 h-4" />
+                  整理本次笔记
                 </button>
               </div>
             )}
+  </>;
+
+  return (
+    <div className="flex h-dvh flex-col bg-[var(--bg-primary)] transition-colors duration-300 overflow-hidden relative">
+      <ZenOverlay isZenMode={isZenMode} />
+      {isZenMode && (
+        <Button
+          variant="ghost"
+          onClick={toggleZenMode}
+          className="fixed top-6 left-6 z-50 text-white/50 hover:text-white hover:bg-white/10 transition-colors rounded-full px-4"
+        >
+          <Minimize className="w-4 h-4 mr-2" />
+          退出全屏学习
+        </Button>
+      )}
+
+      {!isZenMode && (
+        <AppHeader
+          onOpenSearch={() => setIsGlobalSearchOpen(true)}
+          onNewSession={() => {
+            // If already on an empty draft (no real session yet), nothing to do.
+            if (!sessionId && !messages.some((m) => m.role === "user")) {
+              setNewSessionBlocked(true);
+            } else {
+              setShowNewSessionConfirm(true);
+            }
+          }}
+          onToggleSidebar={() => {
+            if (window.innerWidth >= 1024) {
+              handleToggleSidebar(!isSidebarCollapsed);
+            } else {
+              setIsMobileLearningOpen(false);
+              setIsMobileSidebarOpen(!isMobileSidebarOpen);
+            }
+          }}
+          onToggleLearning={() => {
+            if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+              setIsLearningCollapsed(!isLearningCollapsed);
+            } else {
+              setIsMobileSidebarOpen(false);
+              setIsMobileLearningOpen(!isMobileLearningOpen);
+            }
+          }}
+          onToggleZenMode={() => {
+            if (!isZenMode) setShowZenConfirm(true);
+            else void toggleZenMode();
+          }}
+        />
+      )}
+
+      <div id="main-layout" className="flex min-h-0 flex-1 relative">
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <MobileDrawer title="历史会话" side="left" breakpoint={1024} onClose={() => setIsMobileSidebarOpen(false)}>
+            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          </MobileDrawer>
+        )}
+
+        {isMobileLearningOpen && (
+          <MobileDrawer title="学习面板" side="right" breakpoint={1280} onClose={() => setIsMobileLearningOpen(false)}>
+            <div className="flex h-full min-h-0 flex-col">{rightPanelContent}</div>
+          </MobileDrawer>
+        )}
+
+        {!isZenMode && !isSidebarCollapsed && (
+          <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
+            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <button
+              onClick={() => handleToggleSidebar(true)}
+              className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
+              title="收起侧边栏"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
           </div>
+        )}
+        {!isZenMode && !isSidebarCollapsed && (
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "sidebar"}
+            target="sidebar"
+            className="hidden lg:block"
+          />
+        )}
+
+        {!isZenMode && isSidebarCollapsed && (
+          <button
+            onClick={() => handleToggleSidebar(false)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 group hidden lg:flex h-20 w-4 items-center justify-center rounded-r-md border border-l-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
+            title="展开侧边栏"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200/80 dark:border-paper-800/80 bg-[var(--bg-card)]/80 backdrop-blur-md px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-olive-500/10 text-olive-700 dark:text-olive-300">
+                <Sparkles className="size-3.5" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-title text-xs font-semibold text-[var(--text-primary)]">学术伴读工坊</span>
+                <span className="text-[10px] text-olive-700 dark:text-olive-300 bg-olive-500/10 px-1.5 py-0.5 rounded-full font-mono border border-olive-500/20">
+                  {workspaceOpen ? ({lab: "实验联动中", reading: "文献对照中", study: "日课演练中", code: "代码审阅中"}[activeWorkspaceTab]) : "随时可开启分栏画布"}
+                </span>
+              </div>
+            </div>
+
+            {/* Center: Canvas Workspace Quick Switchers */}
+            <div className="hidden sm:flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "lab") openWorkspace({ ref: learningContext?.ref }, "lab");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "lab"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <FlaskConical className="size-3" />
+                <span>数值实验</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "reading") openWorkspace({ ref: learningContext?.ref }, "reading");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "reading"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <BookOpen className="size-3" />
+                <span>定理研读</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "study") openWorkspace({ ref: learningContext?.ref }, "study");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "study"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <CalendarCheck2 className="size-3" />
+                <span>今日日课</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!workspaceOpen || activeWorkspaceTab !== "code") openWorkspace({ ref: learningContext?.ref }, "code");
+                  else closeWorkspace();
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  workspaceOpen && activeWorkspaceTab === "code"
+                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
+                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
+                }`}
+              >
+                <Code2 className="size-3" />
+                <span>算法工坊</span>
+              </button>
+            </div>
+
+            {/* Right: Quick Toggle Button */}
+            <button
+              type="button"
+              onClick={() => (workspaceOpen ? closeWorkspace() : openWorkspace({ ref: learningContext?.ref }, activeWorkspaceTab))}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-olive-700 hover:bg-olive-500/10 dark:text-olive-300 border border-olive-500/20 transition-colors"
+            >
+              <Target aria-hidden="true" className="size-3.5" />
+              <span>{workspaceOpen ? "收起工坊画布" : "展开工坊画布"}</span>
+            </button>
+          </div>
+          {(learningContext || contextError || contextLoading) && <div className="mx-auto w-full max-w-4xl px-4 pt-4">
+            {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {void validateAndBindReference(null);}}/>}
+            {contextLoading && <p role="status" className="p-3">正在核对实验引用…</p>}
+            {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {void validateAndBindReference(null);}}>移除失效引用，继续普通聊天</button></div>}
+          </div>}
+          <div
+            className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            onWheel={markUserInput}
+            onTouchMove={markUserInput}
+            onKeyDown={(e) => {
+              if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) {
+                markUserInput();
+              }
+            }}
+            style={scrollMaskStyle}
+          >
+            <div className="mx-auto max-w-4xl px-4 py-8 pb-32">
+              {messages.length === 1 && messages[0].id === "welcome" && <TutorCompanion compact/>}
+
+              {(() => {
+                const lastAssistantIdx = messages.reduce((acc, m, i) =>
+                  m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
+                return messages.map((message, idx) => (
+                  <MathMessage
+                    onOpenWorkspace={openWorkspace} onLabSaved={run=>void selectWorkspaceReference(rootContextRef(run))}
+                    learningMeta={message.learningMeta} messageId={message.id} learningContext={learningContext?.ref} actionsDisabled={isStreaming || contextLoading || !!contextError}
+                    key={message.id}
+                    role={message.role}
+                    content={message.content}
+                    status={message.role === "assistant" && message.status !== "thinking" ? messageStatus(message.learningMeta) : undefined}
+                    isGenerating={isStreaming && idx === messages.length - 1 && message.role === "assistant"}
+                    isThinking={message.status === "thinking" && isStreaming}
+                    thinkingElapsed={thinkingElapsed}
+                    thinkingChain={message.role === "assistant" ? (thinkingChains[message.id] || "") : ""}
+                    webSearchReport={message.learningMeta?.web_search}
+                    answerGuard={message.learningMeta?.answer_guard}
+                    agentRun={message.learningMeta?.agent_run}
+                    isIncomplete={!!message.learningMeta?.error}
+                    rootDiagnosis={message.learningMeta?.root_diagnosis}
+                    sessionId={sessionId || ""}
+                    onRootRevision={(report: RootDiagnosis) => {setRootDraft({episode_id:report.episode_id,attempt_id:report.attempt_id,attempt:report.input});setRootInstruction(report.kind === "probe" ? "继续独立探针；首次提交后的修订不计为新的独立证据。" : "");setRootForm(true);}}
+                    onRootProbe={async (report: RootDiagnosis) => {try {const probe=await startRootProbe(sessionId || "",report.episode_id);setRootDraft({episode_id:probe.episode_id,attempt:probe.challenge});setRootInstruction(probe.instruction);setRootForm(true);setRootError("");} catch(e) {setRootError(e instanceof Error ? e.message : "无法开启独立探针。");}}}
+                    thinkingSummary={message.thinkingSummary}
+                    thinkingElapsedMs={message.thinkingElapsedMs}
+                    reviewData={idx === lastAssistantIdx && !isStreaming ? reviewData : null}
+                    onEdit={message.role === "user" && !isStreaming ? async () => {
+                      if (!sessionId || isStreaming) return;
+                      const generation=viewGeneration.current,owner=getCurrentUserId();
+                      await truncateSession(sessionId, message.id);
+                      if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
+                      setInputValue(message.content);
+                      const msgs = await listMessages(sessionId);
+                      if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
+                      setMessages(mapServerMessages(msgs));
+                      setMeta(latestLearningMeta(msgs));
+                    } : undefined}
+                    onRetry={message.role === "assistant" && !isStreaming ? async () => {
+                      if (!sessionId || isStreaming) return;
+                      const generation=viewGeneration.current,owner=getCurrentUserId();
+                      let prevUserMsg = null;
+                      for(let j=idx-1; j>=0; j--){
+                        if(messages[j].role === "user"){ prevUserMsg = messages[j]; break;}
+                      }
+                      if(prevUserMsg) {
+                        await truncateSession(sessionId, prevUserMsg.id);
+                        const msgs = await listMessages(sessionId);
+                        if(generation!==viewGeneration.current||owner!==getCurrentUserId())return;
+                        setMessages(mapServerMessages(msgs));
+                        setMeta(latestLearningMeta(msgs));
+                        void submit(prevUserMsg.content,undefined,false,undefined,undefined,message.learningMeta?.agent_run?.run_id);
+                      }
+                    } : undefined}
+                    onSimilar={() => {
+                      const concept = message.learningMeta?.concepts?.[0];
+                      void submit(`请围绕${concept ? `“${concept}”和` : ""}下面这段讲解出一道条件完整的类似练习题，先不要答案：\n\n${message.content.slice(0,2000)}`, "practice");
+                    }}
+                  />
+                ));
+              })()}
+              {messages.length === 1 && messages[0].id === "welcome" && (
+                <div className="mt-8 pt-6 border-t border-[var(--border-subtle)] animate-in fade-in slide-in-from-bottom-3 duration-500">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="w-1.5 h-4 rounded-full bg-olive-500" />
+                    <span className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+                      从这些问题开始
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(learningContext&&learningContext.ref.kind!=="root_lab"?[{category:"当前引用",icon:"↗",title:"解释当前来源",desc:"区分原文、条件与推断",prompt:"请只依据本轮引用解释必要条件与不能确定的结论。"}]:learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:[{category:"今日学习",icon:"✓",title:"查看今日任务",desc:"读取已有计划，不自动创建",prompt:"今天学什么"},...PROMPT_SUGGESTIONS]).map((item, pIdx) => (
+                      <button
+                        key={pIdx}
+                        onClick={() => void submit(item.prompt)}
+                        className="group text-left p-3.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] hover:border-olive-500/40 hover:bg-olive-500/[0.03] transition-all duration-200 shadow-xs hover:shadow-card flex flex-col justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-olive-500/10 text-olive-700 dark:text-olive-300">
+                            {item.category}
+                          </span>
+                          <span className="font-mono text-xs text-[var(--text-muted)] group-hover:text-olive-600 transition-colors">
+                            {item.icon}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-[var(--text-primary)] group-hover:text-olive-700 dark:group-hover:text-olive-300 transition-colors mb-1">
+                          {item.title}
+                        </h4>
+                        <p className="text-[11px] text-[var(--text-secondary)] line-clamp-1">
+                          {item.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+          {/* Jump to bottom shortcut: 浮出水墨风格“跳至最新”快捷微胶囊 */}
+          {showJumpControl && (
+            <div className="pointer-events-none sticky bottom-2 z-30 flex justify-center px-4 w-full mb-1">
+              <button
+                type="button"
+                onClick={() => scrollToBottom(true)}
+                className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-olive-500/30 bg-paper-50/95 dark:bg-paper-900/95 px-3.5 py-1.5 text-xs font-serif font-medium text-olive-800 dark:text-olive-200 shadow-md backdrop-blur-md hover:bg-paper-100 dark:hover:bg-paper-800 hover:border-olive-500/50 hover:shadow-lg transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
+                title="回到底部最新消息"
+              >
+                <ChevronDown className="size-3.5 text-olive-600 dark:text-olive-400 animate-bounce" />
+                <span>跳至最新消息</span>
+              </button>
+            </div>
+          )}
+          {isStreaming && (
+            <div className="flex justify-center mb-2">
+              <button
+                onClick={() => abortControllerRef.current?.abort()}
+                className="flex items-center gap-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] rounded-full px-4 py-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors shadow-sm"
+              >
+                <div className="w-2 h-2 rounded-sm bg-current animate-pulse" />
+                停止生成
+              </button>
+            </div>
+          )}
+          <div className="shrink-0 p-3 sm:p-4 pb-[max(12px,env(safe-area-inset-bottom))] relative z-10 mx-auto w-full max-w-4xl">
+            {visionDraft && !isStreaming && (
+              <div className="mb-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] p-3 text-sm">
+                <p className="mb-2">请核对上方识别出的公式与条件，再继续解题。</p>
+                <div className="flex gap-3">
+                  <button type="button" className="text-[var(--text-accent)]" onClick={() => void submit(`图片题目已核对，请继续：\n${visionDraft}`)}>确认题目，继续</button>
+                  <button type="button" onClick={() => { setInputValue(visionDraft); setVisionDraft(null); }}>编辑题目</button>
+                </div>
+              </div>
+            )}
+            <div className="mx-auto max-w-4xl px-4 flex flex-wrap gap-2 items-center">
+              <button type="button" disabled={isStreaming} className="text-xs rounded border px-3 py-2" onClick={() => {setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}}>求根过程验证</button>
+              {rootError && <span role="alert" className="text-xs text-cinnabar-600">{rootError}</span>}
+            </div>
+            {rootForm && <RootAttemptForm key={`${rootDraft?.episode_id || "new"}-${rootDraft?.attempt_id || "first"}`} initial={rootDraft} instruction={rootInstruction} disabled={isStreaming} onClose={()=>setRootForm(false)} onSubmit={submission => {setRootForm(false);void submit(`求根过程：${submission.attempt.function}\n\n\`\`\`root-attempt\n${JSON.stringify(submission, null, 2)}\n\`\`\``, mode, false, undefined, submission);}}/>}
+            <TutorInput
+              value={inputValue}
+              onChange={setInputValue}
+              disabled={isStreaming || contextLoading || !!contextError}
+              mode={mode}
+              onModeChange={setMode}
+              webSearch={webSearch}
+              onWebSearchChange={changeWebSearch}
+              reasoningEffort={reasoningEffort}
+              onReasoningEffortChange={setReasoningEffort}
+              onSubmit={(val, forcedMode, images) => void submit(val, forcedMode, false, images)}
+              onDirect={() => void submit("我需要完整的推导过程和最终答案。请直接告诉我怎么做，不要反问我。", "direct")}
+              onHint={() => void submit("能不能给我一点提示？", "socratic")}
+              onSimilar={() => void submit("出一道类似的题目给我练习。", "practice")}
+            />
+          </div>
+        </main>
+
+        {!isZenMode && workspaceOpen && desktopWorkspace && (
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "workspace"}
+            target="workspace"
+            className="hidden xl:block"
+          />
+        )}
+        {workspaceOpen && desktopWorkspace && !isZenMode && (
+          <aside
+            aria-label="学术工坊分栏画布"
+            className="hidden min-w-0 shrink-0 flex-col border-l border-paper-200 dark:border-paper-800 bg-[var(--bg-primary)] xl:flex transition-all duration-150"
+            style={{ width: isWorkspaceMaximized ? "85%" : `${workspaceWidth}px` }}
+          >
+            <CanvasWorkspace
+              activeTab={activeWorkspaceTab}
+              onTabChange={switchWorkspaceTab}
+              onClose={closeWorkspace}
+              isMaximized={isWorkspaceMaximized}
+              onToggleMaximize={() => setIsWorkspaceMaximized((prev) => !prev)}
+              initialRef={learningContext?.ref.kind === "root_lab" ? learningContext.ref : undefined}
+              draftPrediction={workspacePrediction}
+              sessionId={sessionId ?? undefined}
+              onDiscuss={(ref) => {
+                void selectWorkspaceReference(ref);
+                if (window.innerWidth < 1280) closeWorkspace();
+              }}
+              onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
+              codeRef={learningContext?.ref.kind === "code_static" ? learningContext.ref : undefined}
+              onDiscussCode={async (ref, prompt) => {
+                const res = await validateAndBindReference(ref);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
+              readingRef={learningContext?.ref.kind === "reading" ? learningContext.ref : undefined}
+              onDiscussReading={async (ref, prompt) => {
+                const res = await validateAndBindReference(ref);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
+              onDiscussStudy={async (prompt, taskRef) => {
+                const res = await validateAndBindReference(taskRef || null);
+                if (!res.ok) return;
+                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+              }}
+            />
+          </aside>
+        )}
+        {workspaceOpen && !desktopWorkspace && !isZenMode && (
+          <div className="xl:hidden">
+            <MobileDrawer
+              title={`学术工坊 · ${{lab: "数值实验台", reading: "经典研读录", study: "今日日课案", code: "算法工坊案"}[activeWorkspaceTab]}`}
+              side="right"
+              breakpoint={1280}
+              onClose={closeWorkspace}
+            >
+              <div className="h-full overflow-y-auto">
+                <CanvasWorkspace
+                  activeTab={activeWorkspaceTab}
+                  onTabChange={switchWorkspaceTab}
+                  onClose={closeWorkspace}
+                  isMaximized={false}
+                  onToggleMaximize={() => {}}
+                  initialRef={learningContext?.ref.kind === "root_lab" ? learningContext.ref : undefined}
+                  draftPrediction={workspacePrediction}
+                  sessionId={sessionId ?? undefined}
+                  onDiscuss={(ref) => {
+                    void selectWorkspaceReference(ref);
+                    closeWorkspace();
+                  }}
+                  onSaved={(run) => void selectWorkspaceReference(rootContextRef(run))}
+                  readingRef={learningContext?.ref.kind === "reading" ? learningContext.ref : undefined}
+                  onDiscussReading={async (ref, prompt) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(ref);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                  }}
+                  onDiscussStudy={async (prompt, taskRef) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(taskRef || null);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                  }}
+                  codeRef={learningContext?.ref.kind === "code_static" ? learningContext.ref : undefined}
+                  onDiscussCode={async (ref, prompt) => {
+                    closeWorkspace();
+                    const res = await validateAndBindReference(ref);
+                    if (!res.ok) return;
+                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                  }}
+                />
+              </div>
+            </MobileDrawer>
+          </div>
+        )}
+        {!workspaceOpen && !isZenMode && !isLearningCollapsed && (
+          <ResizeHandle
+            onStart={handleResizeStart}
+            onReset={handleResetWidth}
+            isActive={isResizing === "learning"}
+            target="learning"
+            className="hidden xl:block"
+          />
+        )}
+        {!workspaceOpen && !isZenMode && !isLearningCollapsed && (
+          <div className="hidden shrink-0 flex-col xl:flex bg-[var(--bg-tertiary)] border-l border-[var(--border-subtle)]" style={{ width: learningWidth }}>
+            {rightPanelContent}
+          </div>
+        )}
+
+        {!workspaceOpen && !isZenMode && isLearningCollapsed && (
+          <button
+            onClick={() => setIsLearningCollapsed(false)}
+            className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 group h-20 w-4 items-center justify-center rounded-l-md border border-r-0 border-[var(--border-primary)] bg-white/80 dark:bg-[var(--bg-card)] backdrop-blur-sm text-[var(--text-muted)] hover:text-[#617a55] hover:w-5 transition-all shadow-sm"
+            title="展开数理仪器与状态复盘"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
         )}
       </div>
 
@@ -781,31 +1457,31 @@ export function TutorChat() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setShowZenConfirm(false)}>
           <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             <div className="p-6">
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4 text-indigo-500">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent-light)] flex items-center justify-center mb-4 text-[var(--text-accent)]">
                 <Target className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入心流模式</h3>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">进入全屏学习</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
-                沉浸模式将全屏并隐藏侧边栏与学习面板，带给你无干扰的极致心流体验。
+                展开聊天区域，隐藏侧栏和学习面板。浏览器支持时会进入全屏。
                 <br/><br/>
-                ✨ 附带专注番茄钟（支持自定义时长）与白噪音（右上角）。
+                可在右上角设置计时和背景音。
                 <br/>
                 <span className="text-[var(--text-muted)] italic">提示：随时可以按 ESC 键，或点击右上角的“退出”按钮恢复原状。</span>
               </p>
               <div className="flex items-center justify-end gap-3">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={() => setShowZenConfirm(false)}
                   className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                 >
                   取消
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     setShowZenConfirm(false);
                     void toggleZenMode();
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 shadow-md transition-colors"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full px-6 shadow-md transition-colors"
                 >
                   确认进入
                 </Button>
@@ -816,12 +1492,29 @@ export function TutorChat() {
       )}
 
       {/* Toast Notification */}
-      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${showNoteToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"}`}>
+      <div aria-hidden={!showNoteToast} role="status" className={`fixed top-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${showNoteToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"}`}>
         <div className="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-500 font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
           <FileText className="w-4 h-4" />
-          笔记已在右侧边栏生成！
+          笔记已生成，可在学习面板查看。
         </div>
       </div>
+
+      {/* 全局搜索抽屉 (Ctrl+K) */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+        onSelectResult={(text) => {
+          setInputValue((prev) => (prev ? `${prev}\n${text}` : text));
+        }}
+      />
+      {/* Pointer Shield: 拖拽分栏期间挂载全屏透明事件护盾，彻底防止指针滑入SVG/公式/Canvas导致丢帧与脱轨 */}
+      {isResizing && (
+        <div
+          className="fixed inset-0 z-[9999] cursor-col-resize select-none bg-transparent"
+          style={{ pointerEvents: "auto" }}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

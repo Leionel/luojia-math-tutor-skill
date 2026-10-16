@@ -136,6 +136,7 @@ async def test_cancelling_stream_cancels_graph_task():
     await anext(stream)
     progress_event = await anext(stream)
     assert progress_event.startswith("event: thinking")
+    assert (await anext(stream)).startswith("event: run_event")
     pending_event = asyncio.create_task(anext(stream))
     await asyncio.wait_for(started.wait(), timeout=0.2)
 

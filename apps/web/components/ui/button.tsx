@@ -13,12 +13,12 @@ export function Button({
 }) {
   const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50";
   const variants: Record<string, string> = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600",
-    secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200",
-    outline: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900",
-    ghost: "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800",
-    success: "bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600",
-    danger: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600",
+    primary: "bg-olive-600 text-[#faf7f2] hover:bg-olive-700 dark:bg-olive-500 dark:hover:bg-olive-400",
+    secondary: "bg-paper-200 text-ink hover:bg-paper-300 dark:bg-paper-800 dark:hover:bg-paper-700 dark:text-paper-100",
+    outline: "border border-paper-300 bg-paper-50 text-paper-600 hover:bg-paper-100 dark:border-paper-700 dark:bg-paper-950 dark:text-paper-200 dark:hover:bg-paper-900",
+    ghost: "text-paper-500 hover:bg-paper-200 dark:text-paper-400 dark:hover:bg-paper-800",
+    success: "bg-olive-500 text-[#faf7f2] hover:bg-olive-600 dark:bg-olive-400 dark:hover:bg-olive-500",
+    danger: "bg-cinnabar-600 text-[#faf7f2] hover:bg-cinnabar-700 dark:bg-cinnabar-500 dark:hover:bg-cinnabar-400",
   };
   const sizes: Record<string, string> = {
     sm: "px-2 py-1 text-xs",

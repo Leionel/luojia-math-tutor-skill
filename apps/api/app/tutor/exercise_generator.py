@@ -5,6 +5,10 @@ import random
 
 # 内置题库 fallback（无 LLM 时使用）
 BUILTIN_EXERCISES = {
+    "牛顿法": [{"text": "对 $f(x)=x^2-2$，以 $x_0=1$ 做标准Newton迭代。写出前三次更新，并在有根区间 $[1,2]$ 上说明如何用导数下界把残差换算为根误差上界；目标根误差为 $10^{-4}$。", "answer": "$x_1=3/2,x_2=17/12,x_3=577/408$。区间内 $f'\\ge2$，故根误差不超过 $|f(x_3)|/2=1/332928<10^{-4}$。", "difficulty": 2}],
+    "二分法": [{"text": "对连续函数 $f(x)=x^2-2$，从变号区间 $[1,2]$ 开始，连续等分并保留有根子区间13次。取最终区间的中点，给出根误差上界，并判断是否达到 $10^{-4}$。", "answer": "最终区间宽度为 $2^{-13}$，中点根误差至多 $2^{-14}<10^{-4}$。", "difficulty": 1}],
+    "不动点": [{"text": "用 $g(x)=(x+2/x)/2$ 在 $[1,2]$ 上迭代，初值取1。核对区间不变性及压缩常数，再写出利用相邻迭代差的后验误差界。", "answer": "$g([1,2])=[\\sqrt2,3/2]\\subset[1,2]$，$|g'|\\le1/2$。因此 $|x_k-x^*|\\le|x_k-x_{k-1}|$；这是在区间压缩条件下的界。", "difficulty": 2}],
+    "残差": [{"text": "令 $f(x)=10^{-8}(x-1)$。取 $x=2$ 时残差与根误差各是多少？为什么小残差不能直接当成小根误差？", "answer": "残差为 $10^{-8}$，根误差为1。导数下界也缩放到 $10^{-8}$，相应误差界 $|f(x)|/10^{-8}=1$。", "difficulty": 1}],
     "\u5e42\u51fd\u6570\u79ef\u5206": [
         {"text": "\u8ba1\u7b97 $\\int x^3 dx$", "answer": "$\\frac{x^4}{4}+C$", "difficulty": 1},
         {"text": "\u8ba1\u7b97 $\\int x^5 dx$", "answer": "$\\frac{x^6}{6}+C$", "difficulty": 1},
@@ -56,16 +60,6 @@ BUILTIN_EXERCISES = {
         {"text": "\u8ba1\u7b97 $\\begin{pmatrix} 1 & 0 & 2 \\\\ 0 & 1 & 1 \\end{pmatrix} \\begin{pmatrix} 1 & 1 \\\\ 2 & 0 \\\\ 0 & 1 \\end{pmatrix}$", "answer": "$\\begin{pmatrix} 1 & 3 \\\\ 2 & 1 \\end{pmatrix}$", "difficulty": 2},
     ],
 }
-
-
-def generate_exercise_prompt(concept: str, difficulty: int, mastery_score: float) -> str:
-    """生成让 LLM 出题的 prompt。"""
-    return (
-        f"\u8bf7\u51fa\u4e00\u9053\u5173\u4e8e\u300c{concept}\u300d\u7684\u7ec3\u4e60\u9898\uff0c\u96be\u5ea6\u7b49\u7ea7 {difficulty}/3\u3002"
-        f"\u5b66\u751f\u5f53\u524d\u638c\u63e1\u5ea6 {mastery_score:.0%}\u3002"
-        f"\u8bf7\u7528 LaTeX \u683c\u5f0f\u8f93\u51fa\u9898\u76ee\u548c\u7b54\u6848\uff0c\u683c\u5f0f\u4e3a\uff1a\n"
-        f"\u9898\u76ee\uff1a...\n\u7b54\u6848\uff1a...\n\u8003\u70b9\uff1a{concept}"
-    )
 
 
 def get_fallback_exercises(concept: str, difficulty: int = 2, count: int = 2) -> list[dict]:

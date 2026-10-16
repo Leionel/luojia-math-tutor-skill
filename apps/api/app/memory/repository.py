@@ -12,7 +12,9 @@ from app.config import Settings
 from app.knowledge.concepts import extract_explicit_concepts
 from app.knowledge.schema import KnowledgeHit, KnowledgeItem
 from app.memory.migrations import apply_migrations
+from app.memory.agent_runs import AgentRunRepository
 from app.memory.models import new_id, now_iso
+from app.memory.text_index import cjk_bigram_text, cjk_query_groups
 
 
 def _sqlite_path(database_url: str) -> Path:
@@ -21,7 +23,7 @@ def _sqlite_path(database_url: str) -> Path:
     raise ValueError("MVP only supports sqlite:/// database URLs")
 
 
-class Repository:
+class Repository(AgentRunRepository):
     def __init__(self, settings: Settings):
         self.db_path = _sqlite_path(settings.database_url)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -109,13 +111,19 @@ class Repository:
                   id text primary key,
                   filename text,
                   user_id text not null,
-                  created_at text not null
+                  created_at text not null,
+                  markdown text not null default ''
                 );
 
                 create virtual table if not exists document_chunks using fts5(
                   id unindexed,
                   document_id unindexed,
                   content
+                );
+
+                create virtual table if not exists document_chunks_index using fts5(
+                  chunk_rowid unindexed,
+                  text
                 );
 
                 create table if not exists notes (
@@ -199,10 +207,17 @@ class Repository:
         thinking_summary: str | None = None,
         thinking_elapsed_ms: int | None = None,
         learning_meta: dict[str, Any] | None = None,
+        *,
+        agent_run_finish: dict | None = None,
     ) -> str:
         message_id = new_id("msg")
         ts = now_iso()
         with self.connect() as conn:
+            if agent_run_finish:
+                run_id, owner, status = (agent_run_finish[key] for key in ("run_id", "user_id", "status"))
+                row = conn.execute("select session_id from agent_runs where id=? and user_id=? and status='running'", (run_id, owner)).fetchone()
+                if row is None or row[0] != session_id:
+                    raise ValueError("execution already terminal or unavailable")
             conn.execute(
                 """
                 insert into messages(
@@ -228,7 +243,33 @@ class Repository:
                 ),
             )
             conn.execute("update sessions set updated_at = ? where id = ?", (ts, session_id))
+            if agent_run_finish and not self._finish_agent_run(conn,run_id,owner,status,message_id):
+                raise ValueError("execution terminal conflict")
         return message_id
+
+    def get_delivered_artifact(self, owner: str, session_id: str, message_id: str, artifact_id: str):
+        """Only a committed, owned, successful and visible answer can authorize UI actions."""
+        with self.connect() as conn:
+            row = conn.execute("""select m.learning_meta, r.id from messages m
+                join sessions s on s.id=m.session_id
+                join agent_runs r on r.message_id=m.id and r.session_id=m.session_id and r.user_id=s.user_id
+                where m.id=? and m.session_id=? and s.user_id=? and m.role='assistant'
+                  and r.status='succeeded' and r.hidden=0""", (message_id, session_id, owner)).fetchone()
+        if row is None:
+            return None
+        try:
+            meta = json.loads(row[0] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            return None
+        if not isinstance(meta, dict):
+            return None
+        if (meta.get("answer_guard") or {}).get("status") not in {"passed", "repaired"}:
+            return None
+        artifacts = meta.get("tutor_artifacts", [])
+        if not isinstance(artifacts, list):
+            return None
+        return next((a for a in artifacts if isinstance(a, dict) and
+                     a.get("artifact_id") == artifact_id and a.get("run_id") == row[1] and a.get("origin") == "server"), None)
 
     def list_messages(self, session_id: str) -> list[dict[str, Any]]:
         with self.connect() as conn:
@@ -351,14 +392,20 @@ class Repository:
 
     def truncate_messages_after(self, session_id: str, message_id: str) -> None:
         with self.connect() as conn:
+            # A retry must not resurrect a receipt whose answer was truncated.
+            conn.execute("""update agent_runs set hidden=1 where session_id=? and (created_at >= (
+                         select created_at from messages where id=? and session_id=?) or message_id in (
+                         select id from messages where session_id=? and created_at >= (
+                         select created_at from messages where id=? and session_id=?)))""",
+                         (session_id,message_id,session_id,session_id,message_id,session_id))
             conn.execute(
                 """
                 delete from messages
                 where session_id = ? and created_at >= (
-                  select created_at from messages where id = ?
+                  select created_at from messages where id = ? and session_id = ?
                 )
                 """,
-                (session_id, message_id),
+                (session_id, message_id, session_id),
             )
 
     def add_attempt(
@@ -394,6 +441,142 @@ class Repository:
                 ),
             )
         return attempt_id
+
+    def record_uploaded_file(self, filename: str, user_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "insert into uploaded_files(filename, user_id, created_at) values (?, ?, ?)",
+                (filename, user_id, now_iso()),
+            )
+
+    def uploaded_file_belongs_to(self, filename: str, user_id: str) -> bool:
+        with self.connect() as conn:
+            row = conn.execute(
+                "select 1 from uploaded_files where filename = ? and user_id = ?",
+                (filename, user_id),
+            ).fetchone()
+        return row is not None
+
+    def insert_document(self, filename: str, user_id: str, markdown: str = "") -> str:
+        document_id = new_id("doc")
+        with self.connect() as conn:
+            conn.execute(
+                """
+                insert into documents(id, filename, user_id, created_at, markdown)
+                values (?, ?, ?, ?, ?)
+                """,
+                (document_id, filename, user_id, now_iso(), markdown),
+            )
+        return document_id
+
+    def get_document_markdown(self, document_id: str, user_id: str) -> str | None:
+        """Return the persisted parsed source text, or None if not owned/found."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "select markdown from documents where id = ? and user_id = ?",
+                (document_id, user_id),
+            ).fetchone()
+        return str(row[0]) if row else None
+
+    def insert_document_chunks(self, document_id: str, chunks: list[str]) -> None:
+        with self.connect() as conn:
+            for chunk in chunks:
+                cursor = conn.execute(
+                    """
+                    insert into document_chunks(id, document_id, content)
+                    values (?, ?, ?)
+                    """,
+                    (new_id("chunk"), document_id, chunk),
+                )
+                conn.execute(
+                    "insert into document_chunks_index(chunk_rowid, text) values (?, ?)",
+                    (cursor.lastrowid, cjk_bigram_text(chunk)),
+                )
+
+    def list_document_chunks(self, document_id: str) -> list[str]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select content from document_chunks
+                where document_id = ?
+                order by rowid
+                """,
+                (document_id,),
+            ).fetchall()
+        return [row["content"] for row in rows]
+
+    def clear_document_chunks(self, document_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                delete from document_chunks_index
+                where chunk_rowid in (
+                  select rowid from document_chunks where document_id = ?
+                )
+                """,
+                (document_id,),
+            )
+            conn.execute("delete from document_chunks where document_id = ?", (document_id,))
+
+    def search_document_chunks(
+        self,
+        document_id: str,
+        query: str,
+        limit: int = 3,
+    ) -> list[str]:
+        groups = cjk_query_groups(query)
+        if not groups:
+            return []
+        match = " AND ".join(
+            "(" + " OR ".join(f'"{gram}"' for gram in group) + ")" for group in groups
+        )
+        with self.connect() as conn:
+            try:
+                rows = conn.execute(
+                    """
+                    select dc.content as content
+                    from document_chunks_index idx
+                    join document_chunks dc on dc.rowid = idx.chunk_rowid
+                    where dc.document_id = ? and document_chunks_index match ?
+                    order by bm25(document_chunks_index)
+                    limit ?
+                    """,
+                    (document_id, match, limit),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                like = f"%{re.sub(r'[\\s%_]+', '%', query.strip())[:80]}%"
+                rows = conn.execute(
+                    """
+                    select content from document_chunks
+                    where document_id = ? and content like ?
+                    limit ?
+                    """,
+                    (document_id, like, limit),
+                ).fetchall()
+        return [row["content"] for row in rows]
+
+    def get_document(self, document_id: str, user_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                select id, filename, user_id, created_at from documents
+                where id = ? and user_id = ?
+                """,
+                (document_id, user_id),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def list_documents(self, user_id: str) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                select id, filename, created_at from documents
+                where user_id = ?
+                order by created_at desc
+                """,
+                (user_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def save_note(self, user_id: str, session_id: str, subject: str, content: str) -> str:
         note_id = new_id("note")
@@ -634,6 +817,35 @@ class Repository:
                 (user_id,),
             ).fetchone()
         return dict(row) if row else None
+
+    def create_auth_user_with_session(self,user_id,display_name,password_hash,password_salt,sid,expires_at) -> bool:
+        try:
+            with self.connect() as conn:
+                conn.execute("insert into users(id,display_name,password_hash,password_salt,created_at) values (?,?,?,?,?)",
+                    (user_id,display_name,password_hash,password_salt,now_iso()))
+                conn.execute("insert into auth_sessions(sid,user_id,expires_at,created_at) values (?,?,?,?)",
+                    (sid,user_id,expires_at,now_iso()))
+            return True
+        except sqlite3.IntegrityError:
+            if self.get_auth_user(user_id) is not None:return False
+            raise
+
+    def create_auth_session(self,sid,user_id,expires_at) -> None:
+        with self.connect() as conn:
+            conn.execute("insert into auth_sessions(sid,user_id,expires_at,created_at) values (?,?,?,?)",
+                (sid,user_id,expires_at,now_iso()))
+
+    def auth_session_valid(self,sid,user_id,expires_at) -> bool:
+        with self.connect() as conn:
+            row=conn.execute("select expires_at,revoked_at from auth_sessions where sid=? and user_id=?",(sid,user_id)).fetchone()
+        return bool(row and row['revoked_at'] is None and row['expires_at']==expires_at and row['expires_at']>int(time.time()))
+
+    def revoke_auth_session(self,sid,user_id) -> bool:
+        with self.connect() as conn:
+            row=conn.execute("select sid from auth_sessions where sid=? and user_id=?",(sid,user_id)).fetchone()
+            if not row:return False
+            conn.execute("update auth_sessions set revoked_at=coalesce(revoked_at,?) where sid=? and user_id=?",(int(time.time()),sid,user_id))
+        return True
 
     @staticmethod
     def semantic_cache_key(subject: str, query: str) -> str:

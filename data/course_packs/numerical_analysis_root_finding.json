@@ -1,0 +1,793 @@
+{
+  "course_id": "numerical_analysis",
+  "course_title": "数值分析",
+  "unit_title": "非线性方程求根 (Root Finding for Nonlinear Equations)",
+  "version": "v1.0",
+  "units": [
+    {
+      "id": "NA_ROOT_FINDING",
+      "title": "非线性方程求根问题",
+      "type": "definition",
+      "content": "求一元连续函数 f(x) 的零点 x* 使得 f(x*)=0。数值求根方法通常从初始近似出发，通过迭代格式逐步逼近精确解。",
+      "latex": "f(x^*) = 0",
+      "difficulty": 1,
+      "teaching_role": "core",
+      "keywords": ["非线性方程", "求根", "零点", "迭代逼近"]
+    },
+    {
+      "id": "NA_BISECTION",
+      "title": "二分法 (Bisection Method)",
+      "type": "algorithm",
+      "content": "基于介值定理，若连续函数在区间两端变号 f(a)f(b)<0，取中点 c=(a+b)/2，根据变号区间将搜索范围缩小一半。",
+      "latex": "c = \\frac{a+b}{2}, \\quad f(a)f(c) < 0 \\implies b \\leftarrow c",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["二分法", "Bisection", "有根区间", "对分区间"]
+    },
+    {
+      "id": "NA_FIXED_POINT",
+      "title": "不动点迭代法 (Fixed-Point Iteration)",
+      "type": "algorithm",
+      "content": "将方程 f(x)=0 变换为等价形式 x = g(x)，构造迭代序列 x_{k+1} = g(x_k)。当 g(x) 满足压缩映射条件时迭代收敛。",
+      "latex": "x_{k+1} = g(x_k)",
+      "difficulty": 3,
+      "teaching_role": "core",
+      "keywords": ["不动点迭代", "Fixed Point", "迭代函数", "压缩映射"]
+    },
+    {
+      "id": "NA_NEWTON",
+      "title": "牛顿迭代法 (Newton-Raphson Method)",
+      "type": "algorithm",
+      "content": "利用函数的一阶泰勒展开进行局部线性化，切线与 x 轴交点作为新的近似值。对于单根具有局部二阶收敛性。",
+      "latex": "x_{k+1} = x_k - \\frac{f(x_k)}{f'(x_k)}",
+      "difficulty": 3,
+      "teaching_role": "core",
+      "keywords": ["牛顿法", "Newton", "切线法", "线性化", "二次收敛"]
+    },
+    {
+      "id": "NA_LOCAL_CONVERGENCE",
+      "title": "局部收敛性 (Local Convergence)",
+      "type": "theorem",
+      "content": "若初值 x_0 选在真根 x* 的充分小邻域内，迭代序列收敛到 x*。局部收敛性不保证任意较远的初值均能收敛。",
+      "latex": "\\lim_{k \\to \\infty} x_k = x^* \\quad \\text{for } x_0 \\in U(x^*, \\delta)",
+      "difficulty": 3,
+      "teaching_role": "core",
+      "keywords": ["局部收敛", "初值邻域", "收敛半径"]
+    },
+    {
+      "id": "NA_CONVERGENCE_ORDER",
+      "title": "收敛阶 (Order of Convergence)",
+      "type": "definition",
+      "content": "衡量迭代误差衰减速率的量。若极限 lim |e_{k+1}| / |e_k|^p = C > 0 (C<1 若 p=1)，称该迭代法具有 p 阶收敛性。",
+      "latex": "\\lim_{k \\to \\infty} \\frac{|e_{k+1}|}{|e_k|^p} = C",
+      "difficulty": 4,
+      "teaching_role": "core",
+      "keywords": ["收敛阶", "一阶收敛", "二阶收敛", "渐进误差常数"]
+    },
+    {
+      "id": "NA_STOPPING_CRITERIA",
+      "title": "停机准则 (Stopping Criteria)",
+      "type": "concept",
+      "content": "迭代终止的科学判据。通常联合考察绝对/相对步长 |x_{k+1}-x_k|、残差 |f(x_k)| 以及最大迭代次数上限以防死循环。",
+      "latex": "|x_{k+1}-x_k| < \\varepsilon_x \\quad \\text{and} \\quad |f(x_{k+1})| < \\varepsilon_f",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["停机准则", "步长判据", "残差判据", "最大迭代次数"]
+    },
+    {
+      "id": "NA_RESIDUAL",
+      "title": "残差 (Residual)",
+      "type": "definition",
+      "content": "近似值代入原方程所得的偏差量 r_k = f(x_k)。残差小并不等价于误差小，特别是在函数导数极平缓或病态的情况下。",
+      "latex": "r_k = f(x_k)",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["残差", "Residual", "函数值偏差"]
+    },
+    {
+      "id": "NA_APPROX_ERROR",
+      "title": "近似误差 (Approximation Error)",
+      "type": "definition",
+      "content": "近似值与未知真根之间的真实距离 e_k = x_k - x*。在实际计算中真根未知，需通过误差界或后验估计来控制。",
+      "latex": "e_k = x_k - x^*",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["近似误差", "真实误差", "误差界"]
+    },
+    {
+      "id": "NA_CONTRACTION_MAPPING",
+      "title": "压缩映射定理 (Contraction Mapping)",
+      "type": "theorem",
+      "content": "若映射 g(x) 在闭区间 [a,b] 上满足 |g'(x)| <= L < 1 且 g([a,b]) 包含于 [a,b]，则 g 在该区间存在唯一不动点且不动点迭代必收敛。",
+      "latex": "|g'(x)| \\le L < 1",
+      "difficulty": 4,
+      "teaching_role": "core",
+      "keywords": ["压缩映射", "利普希茨条件", "收敛充分条件"]
+    },
+    {
+      "id": "NA_NEWTON_UPDATE",
+      "title": "牛顿迭代步公式",
+      "type": "definition",
+      "content": "牛顿迭代法单步更新量为 -f(x_k)/f'(x_k)。在编程实现时须检查分母 f'(x_k) 是否接近浮点零以防数值溢出。",
+      "latex": "\\Delta x_k = -\\frac{f(x_k)}{f'(x_k)}",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["牛顿步", "更新量", "导数除法"]
+    },
+    {
+      "id": "NA_BRACKET_INVARIANT",
+      "title": "区间包围不变性 (Bracket Invariant)",
+      "type": "concept",
+      "content": "二分法每一步都维护不变式：当前区间 [a_k, b_k] 满足 f(a_k)f(b_k) <= 0 且长度折半，保证根永远被安全锁定在区间内。",
+      "latex": "f(a_k)f(b_k) \\le 0, \\quad b_k - a_k = \\frac{b_0 - a_0}{2^k}",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["区间包围", "不变式", "折半保证"]
+    },
+    {
+      "id": "NA_ITERATION_TRACE",
+      "title": "迭代轨迹与收敛表 (Iteration Trace)",
+      "type": "concept",
+      "content": "记录每次迭代的步数 k、当前解 x_k、更新步长 |x_k - x_{k-1}| 以及残差 |f(x_k)|，用以分析数值算法的收敛行为。",
+      "latex": "\\{(k, x_k, |x_k - x_{k-1}|, |f(x_k)|)\\}",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["迭代轨迹", "收敛历史", "数值记录"]
+    },
+    {
+      "id": "MATH_CONTINUITY",
+      "title": "连续性 (Continuity)",
+      "type": "concept",
+      "content": "函数在定义域内极限等于函数值。连续性是介值定理与泰勒展开适用的基石。",
+      "latex": "\\lim_{x \\to x_0} f(x) = f(x_0)",
+      "difficulty": 1,
+      "teaching_role": "auxiliary",
+      "keywords": ["连续性", "极限", "微积分基础"]
+    },
+    {
+      "id": "MATH_IVT",
+      "title": "介值定理 / 零点定理 (Intermediate Value Theorem)",
+      "type": "theorem",
+      "content": "连续函数在区间两端异号 f(a)f(b)<0 则在开区间 (a,b) 内至少存在一点 c 使得 f(c)=0。此为二分法的理论基础。",
+      "latex": "f(a)f(b) < 0 \\implies \\exists c \\in (a,b), \\; f(c)=0",
+      "difficulty": 1,
+      "teaching_role": "auxiliary",
+      "keywords": ["介值定理", "零点定理", "端点异号"]
+    },
+    {
+      "id": "MATH_DERIVATIVE",
+      "title": "导数与切线斜率 (Derivative)",
+      "type": "definition",
+      "content": "函数在某点的瞬时变化率，几何上对应切线的斜率。牛顿法即利用导数构造切线交点。",
+      "latex": "f'(x) = \\lim_{h \\to 0} \\frac{f(x+h)-f(x)}{h}",
+      "difficulty": 1,
+      "teaching_role": "auxiliary",
+      "keywords": ["导数", "切线斜率", "一阶微分"]
+    },
+    {
+      "id": "MATH_TAYLOR",
+      "title": "泰勒展开公式 (Taylor Expansion)",
+      "type": "theorem",
+      "content": "在单点展开的一阶泰勒多项式与拉格朗日余项是牛顿法构造和二阶收敛性证明的核心工具。",
+      "latex": "f(x) = f(x_0) + f'(x_0)(x-x_0) + \\frac{f''(\\xi)}{2}(x-x_0)^2",
+      "difficulty": 2,
+      "teaching_role": "auxiliary",
+      "keywords": ["泰勒公式", "线性近似", "高阶余项"]
+    },
+    {
+      "id": "MATH_SIMPLE_ROOT",
+      "title": "单根 (Simple Root)",
+      "type": "definition",
+      "content": "满足 f(x*)=0 且 f'(x*) != 0 的根。在单根处，牛顿法满足标准二阶收敛条件。",
+      "latex": "f(x^*) = 0 \\quad \\text{and} \\quad f'(x^*) \\neq 0",
+      "difficulty": 2,
+      "teaching_role": "auxiliary",
+      "keywords": ["单根", "导数非零"]
+    },
+    {
+      "id": "MATH_MULTIPLE_ROOT",
+      "title": "重根 (Multiple Root)",
+      "type": "definition",
+      "content": "满足 f(x*)=0 且 f'(x*)=0，...，f^{(m-1)}(x*)=0 但 f^{(m)}(x*)!=0 的 m 重根。重根处牛顿法收敛阶退化为一阶。",
+      "latex": "f(x^*) = f'(x^*) = \\cdots = f^{(m-1)}(x^*) = 0, \\; f^{(m)}(x^*) \\neq 0",
+      "difficulty": 3,
+      "teaching_role": "auxiliary",
+      "keywords": ["重根", "多重根", "二阶退化"]
+    },
+    {
+      "id": "NA_COUNTER_NEWTON_CYCLE",
+      "title": "反例：牛顿法 0<->1 振荡环",
+      "type": "concept",
+      "content": "存在特定函数与初值，使得切线交点在两个非零点之间周期性振荡交替（如 x=0 与 x=1 之间循环），导致牛顿法永不收敛到根。",
+      "latex": "x_{k+1} = 1 - x_k",
+      "difficulty": 3,
+      "teaching_role": "extension",
+      "keywords": ["振荡环", "周期环", "牛顿反例", "初值陷阱"]
+    },
+    {
+      "id": "NA_COUNTER_RESIDUAL_SMALL_ERROR_LARGE",
+      "title": "反例：残差极小但误差极大",
+      "type": "concept",
+      "content": "当函数图像极其平坦（导数 f'(x) 极其接近 0）时，在距离真根很远的点处残差已小于 1e-6，若仅用残差停机会导致误判收敛。",
+      "latex": "|f(x_k)| < 10^{-6} \\quad \\text{but} \\quad |x_k - x^*| > 1.0",
+      "difficulty": 3,
+      "teaching_role": "extension",
+      "keywords": ["残差反例", "平缓函数", "假收敛"]
+    },
+    {
+      "id": "NA_COUNTER_MULTIPLE_ROOT_LINEAR",
+      "title": "反例：重根导致牛顿法一阶收敛",
+      "type": "concept",
+      "content": "对于方程 f(x) = (x-1)^2 = 0，牛顿迭代步为 x_{k+1} = x_k - (x_k-1)/2 = 0.5 x_k + 0.5，其收敛因子为恒定 0.5，二阶收敛失效退化为一阶。",
+      "latex": "e_{k+1} = \\frac{1}{2} e_k",
+      "difficulty": 3,
+      "teaching_role": "extension",
+      "keywords": ["重根反例", "退化线性收敛", "收敛降阶"]
+    },
+    {
+      "id": "NA_COUNTER_DISCONTINUOUS_SIGN_CHANGE",
+      "title": "反例：跳跃间断点变号伪根",
+      "type": "concept",
+      "content": "对于函数 f(x)=1/x，在 [-1, 1] 端点异号 f(-1)=-1, f(1)=1，但由于在 x=0 存在跳跃/奇点间断，该区间内不存在任何实根。",
+      "latex": "f(-1)f(1) < 0 \\; \\not\\implies \\; \\exists x^*, \\; f(x^*)=0",
+      "difficulty": 2,
+      "teaching_role": "extension",
+      "keywords": ["间断点", "端点异号反例", "连续性必要性"]
+    },
+    {
+      "id": "MISC_RESIDUAL_EQ_ERROR",
+      "title": "易错点：误将残差等同于真实误差",
+      "type": "concept",
+      "content": "学生常误以为只要 |f(x_k)| 很小就代表 x_k 非常接近精确根 x*。忽略了函数斜率极小时残差与误差的巨大偏差。",
+      "latex": "|f(x)| < \\varepsilon \\; \\not\\implies \\; |x - x^*| < \\varepsilon",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["残差误区", "误差混淆", "假精确"]
+    },
+    {
+      "id": "MISC_NEWTON_ALWAYS_CONVERGES",
+      "title": "易错点：误以为牛顿法对任意初值必收敛",
+      "type": "concept",
+      "content": "学生常误以为牛顿法收敛速度快就一定能收敛。忽略了其本质是局部收敛算法，初值不当会导致发散、振荡或跑到其他远处的根。",
+      "latex": "x_0 \\notin U(x^*, \\delta) \\implies \\text{可能发散}",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["牛顿必收敛误区", "初值忽略", "全局收敛盲区"]
+    },
+    {
+      "id": "MISC_NEWTON_ALWAYS_QUADRATIC",
+      "title": "易错点：误以为牛顿法总是二阶收敛",
+      "type": "concept",
+      "content": "学生常忽略二阶收敛的前提条件是单根（f'(x*) != 0）。在重根处，牛顿法仅具有一阶线性收敛性。",
+      "latex": "f'(x^*) = 0 \\implies p=1 \\text{ (而非 2)}",
+      "difficulty": 3,
+      "teaching_role": "core",
+      "keywords": ["二阶必然性误区", "重根条件忽略"]
+    },
+    {
+      "id": "MISC_SIGN_WITHOUT_CONTINUITY",
+      "title": "易错点：忽略连续性直接用介值定理",
+      "type": "concept",
+      "content": "学生在判断是否有根时仅检查 f(a)f(b)<0，未检查 f 在 [a,b] 上是否连续，易在含奇点或分段函数上犯错。",
+      "latex": "f(a)f(b) < 0 \\text{ 但 } f \\text{ 不连续}",
+      "difficulty": 2,
+      "teaching_role": "core",
+      "keywords": ["连续性忽略", "介值定理前提误区"]
+    }
+  ],
+  "relations": [
+    {
+      "source_unit_id": "MATH_CONTINUITY",
+      "target_unit_id": "MATH_IVT",
+      "relation_type": "prerequisite_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MATH_IVT",
+      "target_unit_id": "NA_BISECTION",
+      "relation_type": "prerequisite_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_BRACKET_INVARIANT",
+      "target_unit_id": "NA_BISECTION",
+      "relation_type": "part_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MATH_DERIVATIVE",
+      "target_unit_id": "NA_NEWTON",
+      "relation_type": "prerequisite_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MATH_TAYLOR",
+      "target_unit_id": "NA_NEWTON",
+      "relation_type": "derives_from",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_NEWTON_UPDATE",
+      "target_unit_id": "NA_NEWTON",
+      "relation_type": "implemented_by",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MATH_SIMPLE_ROOT",
+      "target_unit_id": "NA_LOCAL_CONVERGENCE",
+      "relation_type": "requires",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_LOCAL_CONVERGENCE",
+      "target_unit_id": "NA_NEWTON",
+      "relation_type": "converges_if",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_CONVERGENCE_ORDER",
+      "target_unit_id": "NA_NEWTON",
+      "relation_type": "has_error_bound",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_CONTRACTION_MAPPING",
+      "target_unit_id": "NA_FIXED_POINT",
+      "relation_type": "converges_if",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_STOPPING_CRITERIA",
+      "target_unit_id": "NA_ROOT_FINDING",
+      "relation_type": "uses_stopping_rule",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_RESIDUAL",
+      "target_unit_id": "NA_STOPPING_CRITERIA",
+      "relation_type": "part_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_APPROX_ERROR",
+      "target_unit_id": "NA_STOPPING_CRITERIA",
+      "relation_type": "part_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_COUNTER_NEWTON_CYCLE",
+      "target_unit_id": "NA_LOCAL_CONVERGENCE",
+      "relation_type": "counterexample_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_COUNTER_RESIDUAL_SMALL_ERROR_LARGE",
+      "target_unit_id": "NA_RESIDUAL",
+      "relation_type": "counterexample_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_COUNTER_MULTIPLE_ROOT_LINEAR",
+      "target_unit_id": "NA_CONVERGENCE_ORDER",
+      "relation_type": "counterexample_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "NA_COUNTER_DISCONTINUOUS_SIGN_CHANGE",
+      "target_unit_id": "MATH_IVT",
+      "relation_type": "counterexample_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MISC_RESIDUAL_EQ_ERROR",
+      "target_unit_id": "NA_RESIDUAL",
+      "relation_type": "misconception_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MISC_NEWTON_ALWAYS_CONVERGES",
+      "target_unit_id": "NA_LOCAL_CONVERGENCE",
+      "relation_type": "misconception_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MISC_NEWTON_ALWAYS_QUADRATIC",
+      "target_unit_id": "NA_CONVERGENCE_ORDER",
+      "relation_type": "misconception_of",
+      "confidence": 1.0
+    },
+    {
+      "source_unit_id": "MISC_SIGN_WITHOUT_CONTINUITY",
+      "target_unit_id": "MATH_IVT",
+      "relation_type": "misconception_of",
+      "confidence": 1.0
+    }
+  ],
+  "boundaries": [
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_ROOT_FINDING",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_BISECTION",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_FIXED_POINT",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_NEWTON",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_LOCAL_CONVERGENCE",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_CONVERGENCE_ORDER",
+      "scope_level": "core",
+      "max_expansion_depth": 2
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_STOPPING_CRITERIA",
+      "scope_level": "core",
+      "max_expansion_depth": 1
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "MATH_CONTINUITY",
+      "scope_level": "prerequisite",
+      "max_expansion_depth": 1,
+      "teacher_note": "高等数学微积分前置内容"
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "MATH_IVT",
+      "scope_level": "prerequisite",
+      "max_expansion_depth": 1
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "MATH_DERIVATIVE",
+      "scope_level": "prerequisite",
+      "max_expansion_depth": 1
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "MATH_TAYLOR",
+      "scope_level": "prerequisite",
+      "max_expansion_depth": 1
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_COUNTER_NEWTON_CYCLE",
+      "scope_level": "extension",
+      "max_expansion_depth": 1,
+      "teacher_note": "学生追问初值或振荡时按需展开"
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_COUNTER_RESIDUAL_SMALL_ERROR_LARGE",
+      "scope_level": "extension",
+      "max_expansion_depth": 1
+    },
+    {
+      "course_id": "numerical_analysis",
+      "unit_id": "NA_COUNTER_MULTIPLE_ROOT_LINEAR",
+      "scope_level": "extension",
+      "max_expansion_depth": 1
+    }
+  ],
+  "teaching_cases": [
+    {
+      "case_id": "CASE_BISECTION_REQUIREMENTS",
+      "course_id": "numerical_analysis",
+      "title": "二分法使用条件与端点符号判断",
+      "task_type": "concept_explanation",
+      "learning_objectives": ["理解二分法成立的两个核心前提：连续性与端点函数值异号"],
+      "concept_ids": ["NA_BISECTION", "MATH_CONTINUITY", "MATH_IVT"],
+      "required_condition_ids": ["f(a)*f(b) < 0", "f in C[a,b]"],
+      "related_misconception_ids": ["MISC_SIGN_WITHOUT_CONTINUITY"],
+      "reasoning_signature": ["验证连续性", "验证端点异号", "确认存在零点"],
+      "accepted_variants": [
+        "二分法需要满足什么条件",
+        "二分法什么时候可以用",
+        "什么时候不能用二分法求根"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_BISECTION_COND",
+          "question": "如果一个函数在区间两端 f(a) 和 f(b) 异号，是否一定能在 (a,b) 内用二分法找到根？",
+          "correct_answer": "不一定，函数必须在 [a,b] 上连续（反例：f(x)=1/x 在 [-1,1]）"
+        }
+      ],
+      "possible_actions": [
+        {"action": "explain_ivt_prerequisite"},
+        {"action": "show_counterexample_discontinuous"}
+      ],
+      "disclosure_policy": "direct"
+    },
+    {
+      "case_id": "CASE_BISECTION_BRACKET_UPDATE",
+      "course_id": "numerical_analysis",
+      "title": "二分法区间端点更新与符号保持",
+      "task_type": "error_debugging",
+      "learning_objectives": ["掌握中点求值后如何正确更新左端点或右端点以保持包围不变式"],
+      "concept_ids": ["NA_BISECTION", "NA_BRACKET_INVARIANT"],
+      "required_condition_ids": ["f(a_k)*f(c) < 0 -> b=c else a=c"],
+      "reasoning_signature": ["计算中点 c", "判断 f(a)*f(c) 正负", "更新对应端点"],
+      "accepted_variants": [
+        "二分法中点函数值同号怎么更新",
+        "二分法区间怎么缩小",
+        "为什么二分法有时候越算越偏"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_BISECTION_UPDATE",
+          "question": "若 f(a)<0, f(b)>0，计算中点 c 得 f(c)>0，新的有根区间应该是 [a,c] 还是 [c,b]？",
+          "correct_answer": "[a,c]，因为 f(a) 与 f(c) 异号"
+        }
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_BISECTION_ERROR_BOUND",
+      "course_id": "numerical_analysis",
+      "title": "二分法误差上界与迭代步数估计",
+      "task_type": "derivation",
+      "learning_objectives": ["掌握二分法第 k 步的误差界公式 (b-a)/2^{k+1}，能根据容差反求所需迭代次数"],
+      "concept_ids": ["NA_BISECTION", "NA_APPROX_ERROR"],
+      "required_condition_ids": ["|e_k| <= (b-a)/2^k < tol"],
+      "reasoning_signature": ["区间长度每次减半", "误差以中点为近似不超过半区间长", "解指数不等式得 k"],
+      "accepted_variants": [
+        "二分法要做多少次才能精确到 1e-4",
+        "二分法误差公式怎么算",
+        "二分法的收敛速度怎么样"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_BISECTION_STEPS",
+          "question": "区间长度为 1，若要求误差小于 10^{-3}，二分法大约至少需要迭代多少次？",
+          "correct_answer": "约 10 次 (因为 2^{10} = 1024 > 1000)"
+        }
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_FIXED_POINT_CONTRACTION",
+      "course_id": "numerical_analysis",
+      "title": "不动点迭代收敛充分条件与压缩性判断",
+      "task_type": "convergence_analysis",
+      "learning_objectives": ["理解导数模长 |g'(x)| <= L < 1 保证压缩映射及全局收敛"],
+      "concept_ids": ["NA_FIXED_POINT", "NA_CONTRACTION_MAPPING"],
+      "required_condition_ids": ["|g'(x)| <= L < 1", "g([a,b]) subset [a,b]"],
+      "reasoning_signature": ["将 f(x)=0 化为 x=g(x)", "求导 g'(x)", "检查区间内是否恒满足 |g'(x)| < 1"],
+      "accepted_variants": [
+        "不动点迭代什么时候收敛",
+        "为什么不动点迭代有时候发散",
+        "压缩映射条件是什么"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_FP_CONTRACTION",
+          "question": "如果 |g'(x*)| = 1.2，初值取在不动点附近，不动点迭代能否收敛？",
+          "correct_answer": "不能，因为导数绝对值大于 1，不动点是排斥点（发散点）"
+        }
+      ],
+      "disclosure_policy": "direct"
+    },
+    {
+      "case_id": "CASE_FIXED_POINT_DIVERGENCE",
+      "course_id": "numerical_analysis",
+      "title": "不动点迭代格式选取与发散改造",
+      "task_type": "derivation",
+      "learning_objectives": ["同一方程有多种 x=g(x) 变形，学会选取导数平缓的格式以保证收敛"],
+      "concept_ids": ["NA_FIXED_POINT", "NA_CONTRACTION_MAPPING"],
+      "required_condition_ids": ["g'(x*) != 0", "选 |g'(x*)| < 1 的变形"],
+      "reasoning_signature": ["对比不同变形形式", "计算各形式在根处的导数值", "选择压缩映射变形"],
+      "accepted_variants": [
+        "方程有几种变形怎么看不动点收敛",
+        "不动点迭代发散了怎么改写方程"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_DERIVATION",
+      "course_id": "numerical_analysis",
+      "title": "牛顿迭代公式几何切线与泰勒展开推导",
+      "task_type": "derivation",
+      "learning_objectives": ["推导牛顿迭代公式 x_{k+1} = x_k - f(x_k)/f'(x_k) 的几何切线与一阶泰勒展开本质"],
+      "concept_ids": ["NA_NEWTON", "MATH_DERIVATIVE", "MATH_TAYLOR"],
+      "required_condition_ids": ["f'(x_k) != 0", "f in C^2"],
+      "reasoning_signature": ["设切线方程 y - f(x_k) = f'(x_k)(x - x_k)", "令 y=0", "解出切线与 x 轴交点"],
+      "accepted_variants": [
+        "牛顿法公式是怎么推出来的",
+        "牛顿切线法几何意义",
+        "泰勒展开怎么推牛顿法"
+      ],
+      "disclosure_policy": "direct"
+    },
+    {
+      "case_id": "CASE_NEWTON_LOCAL_CONVERGENCE",
+      "course_id": "numerical_analysis",
+      "title": "牛顿迭代法局部收敛性与二阶收敛定理",
+      "task_type": "convergence_analysis",
+      "learning_objectives": ["掌握牛顿法局部二阶收敛的三个核心条件：单根、二阶连续可微、初值充分靠近"],
+      "concept_ids": ["NA_NEWTON", "NA_LOCAL_CONVERGENCE", "NA_CONVERGENCE_ORDER", "MATH_SIMPLE_ROOT"],
+      "required_condition_ids": ["f(x*)=0", "f'(x*) != 0", "x_0 in U(x*, delta)"],
+      "related_misconception_ids": ["MISC_NEWTON_ALWAYS_CONVERGES", "MISC_NEWTON_ALWAYS_QUADRATIC"],
+      "reasoning_signature": ["二阶泰勒展开余项", "误差关系 e_{k+1} ~ C e_k^2", "结论为平方/二阶收敛"],
+      "accepted_variants": [
+        "牛顿法为什么是二阶收敛",
+        "牛顿法局部收敛的条件是什么",
+        "牛顿法收敛速度有多快"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_NEWTON_CONDITIONS",
+          "question": "若 f'(x*)=0（即根为重根），牛顿法是否仍然能保持二阶收敛？",
+          "correct_answer": "不能，重根时牛顿法收敛速度退化为一阶（线性收敛）"
+        }
+      ],
+      "disclosure_policy": "direct"
+    },
+    {
+      "case_id": "CASE_NEWTON_INITIAL_VALUE",
+      "course_id": "numerical_analysis",
+      "title": "牛顿法初值敏感性与发散振荡排查",
+      "task_type": "error_debugging",
+      "learning_objectives": ["理解初值选择不当导致切线交点外溢、周期振荡或发散的原因"],
+      "concept_ids": ["NA_NEWTON", "NA_LOCAL_CONVERGENCE", "NA_COUNTER_NEWTON_CYCLE"],
+      "required_condition_ids": ["x_0 close to root"],
+      "related_misconception_ids": ["MISC_NEWTON_ALWAYS_CONVERGES"],
+      "reasoning_signature": ["初值偏离根的邻域", "切线平缓产生巨大跳跃", "陷入周期环或发散到无穷"],
+      "accepted_variants": [
+        "牛顿法为什么初值选不好会发散",
+        "为什么牛顿法初值很重要",
+        "牛顿迭代死循环怎么回事"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_NEWTON_INIT",
+          "question": "牛顿法是不是初值选在哪都能找到最近的根？",
+          "correct_answer": "不是，初值不合适可能导致迭代序列发散或跳到其他非常遥远的根"
+        }
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_DERIVATIVE_ZERO",
+      "course_id": "numerical_analysis",
+      "title": "牛顿迭代中导数为零或极小导致的数值失效",
+      "task_type": "error_debugging",
+      "learning_objectives": ["理解当迭代点落在极值点附近时 f'(x_k)=0 导致切线与 x 轴平行而除以零的机理"],
+      "concept_ids": ["NA_NEWTON", "NA_NEWTON_UPDATE", "MATH_DERIVATIVE"],
+      "required_condition_ids": ["|f'(x_k)| > eps"],
+      "reasoning_signature": ["检测 f'(x_k) 接近 0", "切线水平无交点或步长剧增", "抛出零除或数值溢出异常"],
+      "accepted_variants": [
+        "牛顿法导数等于0怎么办",
+        "为什么牛顿法除以0报错",
+        "导数很小牛顿法会怎么样"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_MULTIPLE_ROOT",
+      "course_id": "numerical_analysis",
+      "title": "重根情形下牛顿法收敛性退化与改进格式",
+      "task_type": "convergence_analysis",
+      "learning_objectives": ["理解 m 重根导致牛顿法退化为线性收敛，并掌握带乘子 m 的修正牛顿法"],
+      "concept_ids": ["NA_NEWTON", "MATH_MULTIPLE_ROOT", "NA_CONVERGENCE_ORDER", "NA_COUNTER_MULTIPLE_ROOT_LINEAR"],
+      "required_condition_ids": ["f(x*)=f'(x*)=0", "m > 1"],
+      "related_misconception_ids": ["MISC_NEWTON_ALWAYS_QUADRATIC"],
+      "reasoning_signature": ["重根展开", "lim e_{k+1}/e_k = 1 - 1/m", "修改迭代为 x - m*f/f' 恢复二阶"],
+      "accepted_variants": [
+        "重根情况下牛顿法的收敛阶是多少",
+        "牛顿法算重根为什么变慢了",
+        "重根怎么修改牛顿法"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_CONVERGENCE_ORDER",
+      "course_id": "numerical_analysis",
+      "title": "收敛阶数值验证与渐进常数计算",
+      "task_type": "code_task",
+      "learning_objectives": ["根据连续三步迭代误差估算收敛阶 p 约等于 ln(|e_{k+1}|/|e_k|) / ln(|e_k|/|e_{k-1}|)"],
+      "concept_ids": ["NA_CONVERGENCE_ORDER", "NA_NEWTON", "NA_ITERATION_TRACE"],
+      "required_condition_ids": ["e_k -> 0", "p >= 1"],
+      "reasoning_signature": ["提取误差序列", "取双对数回归或差分比", "验证收敛阶 p 是否接近 2"],
+      "accepted_variants": [
+        "怎么用代码验证牛顿法的收敛阶",
+        "收敛阶数值计算公式",
+        "牛顿法收敛阶怎么算"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_RESIDUAL_VS_ERROR",
+      "course_id": "numerical_analysis",
+      "title": "残差小与真实误差大的辨析 (病态方程求根)",
+      "task_type": "concept_explanation",
+      "learning_objectives": ["明晰残差 |f(x)| 与真误差 |x-x*| 的区别，掌握导数平缓时为什么残差不能完全代表收敛"],
+      "concept_ids": ["NA_RESIDUAL", "NA_APPROX_ERROR", "NA_STOPPING_CRITERIA", "NA_COUNTER_RESIDUAL_SMALL_ERROR_LARGE"],
+      "required_condition_ids": ["f'(x*) is tiny"],
+      "related_misconception_ids": ["MISC_RESIDUAL_EQ_ERROR"],
+      "reasoning_signature": ["f(x) 接近水平线", "极小残差对应极大区间误差", "必须结合步长与导数联合判断"],
+      "accepted_variants": [
+        "残差很小是不是就说明算对了",
+        "残差和误差有什么区别",
+        "为什么不能只用 f(x)<1e-6 当停机准则"
+      ],
+      "diagnostic_probes": [
+        {
+          "probe_id": "PROBE_RESIDUAL_ERROR",
+          "question": "如果 |f(x_k)| < 10^{-7}，能不能直接断定 x_k 距离真根的误差一定小于 10^{-7}？",
+          "correct_answer": "不能！当函数斜率很平缓时，残差极小但真实误差可能很大"
+        }
+      ],
+      "disclosure_policy": "direct"
+    },
+    {
+      "case_id": "CASE_STOPPING_CRITERION",
+      "course_id": "numerical_analysis",
+      "title": "科学停机准则与死循环防护设计",
+      "task_type": "code_task",
+      "learning_objectives": ["学会构造同时检查步长、残差与最大迭代次数的健壮数值算法终止条件"],
+      "concept_ids": ["NA_STOPPING_CRITERIA", "NA_RESIDUAL", "NA_APPROX_ERROR"],
+      "required_condition_ids": ["step < tol_x", "residual < tol_f", "iter < max_iter"],
+      "related_misconception_ids": ["MISC_RESIDUAL_EQ_ERROR", "MISC_SMALL_STEP_EQ_SUCCESS"],
+      "reasoning_signature": ["步长判断", "残差判断", "最大步数安全兜底"],
+      "accepted_variants": [
+        "求根算法什么时候停止迭代",
+        "停机准则怎么写最安全",
+        "为什么迭代要加 max_iter"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_CODE_UPDATE",
+      "course_id": "numerical_analysis",
+      "title": "牛顿法 Python 代码实现与分母防零异常处理",
+      "task_type": "code_task",
+      "learning_objectives": ["编写健壮的牛顿法 Python 函数，包含导数求值与分母接近零的保护性处理"],
+      "concept_ids": ["NA_NEWTON", "NA_NEWTON_UPDATE", "NA_STOPPING_CRITERIA"],
+      "required_condition_ids": ["abs(df) > 1e-12"],
+      "reasoning_signature": ["计算 df = f_prime(x)", "检查 abs(df) < eps 则抛出异常", "更新 x = x - f(x)/df"],
+      "accepted_variants": [
+        "怎么用 Python 写牛顿迭代法",
+        "牛顿法代码怎么避免除零错误",
+        "牛顿法标准函数实现"
+      ],
+      "disclosure_policy": "scaffolded"
+    },
+    {
+      "case_id": "CASE_NEWTON_CODE_STOPPING",
+      "course_id": "numerical_analysis",
+      "title": "牛顿法算法代码停机条件与死循环防护",
+      "task_type": "code_task",
+      "learning_objectives": ["在牛顿法循环体中实现复合停机判定与未收敛预警机制"],
+      "concept_ids": ["NA_NEWTON", "NA_STOPPING_CRITERIA"],
+      "required_condition_ids": ["while loop with max_iter limit"],
+      "reasoning_signature": ["while k < max_iter", "if abs(dx) < tol: break", "raise RuntimeError if not converged"],
+      "accepted_variants": [
+        "牛顿法死循环怎么防护",
+        "牛顿法代码停机条件怎么写"
+      ],
+      "disclosure_policy": "scaffolded"
+    }
+  ]
+}

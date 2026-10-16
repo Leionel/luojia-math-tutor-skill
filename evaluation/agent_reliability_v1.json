@@ -1,0 +1,120 @@
+{
+  "version": "agent-reliability-v1",
+  "scope": "offline_protocol_fixtures",
+  "cases": [
+    {
+      "id": "model_failures",
+      "selector": "tests/test_completion_protocol.py::test_provider_failures_cannot_complete",
+      "expected_instances": 7,
+      "contract": "provider classification"
+    },
+    {
+      "id": "normal_completion",
+      "selector": "tests/test_completion_protocol.py::test_explicit_terminal_and_usage_chunks_complete",
+      "expected_instances": 3,
+      "contract": "explicit completion"
+    },
+    {
+      "id": "uncertain_intent",
+      "selector": "tests/test_agent_graph.py::test_uncertain_policy_stops_before_learning_writes_or_generation",
+      "expected_instances": 1,
+      "contract": "no unconfirmed learning writes"
+    },
+    {
+      "id": "route_change",
+      "selector": "tests/test_agent_graph.py::test_resolved_policy_recomputes_verification_before_context",
+      "expected_instances": 2,
+      "contract": "verification follows final route"
+    },
+    {
+      "id": "empty_visible",
+      "selector": "tests/test_agent_graph.py::test_protocol_only_draft_is_not_delivered_as_an_answer",
+      "expected_instances": 1,
+      "contract": "no empty delivery"
+    },
+    {
+      "id": "tool_failure_empty",
+      "selector": "tests/test_tool_execution_result.py::test_exit_code_and_empty_output_are_distinct_evidence",
+      "expected_instances": 1,
+      "contract": "exit and output distinct"
+    },
+    {
+      "id": "tool_timeout",
+      "selector": "tests/test_tool_execution_result.py::test_timeout_is_not_success_and_cleans_up_child",
+      "expected_instances": 1,
+      "contract": "controlled child cleanup"
+    },
+    {
+      "id": "tool_cancel",
+      "selector": "tests/test_tool_execution_result.py::test_cancel_kills_owned_child_finishes_communication_and_removes_script",
+      "expected_instances": 1,
+      "contract": "controlled child cleanup"
+    },
+    {
+      "id": "guard_repair",
+      "selector": "tests/test_answer_guard.py::test_guard_repairs_once_without_executing_tool_and_before_delivery",
+      "expected_instances": 1,
+      "contract": "one repair before delivery"
+    },
+    {
+      "id": "guard_withhold",
+      "selector": "tests/test_answer_guard.py::test_second_violation_withholds_without_third_call_or_candidate_delivery",
+      "expected_instances": 1,
+      "contract": "bounded repair"
+    },
+    {
+      "id": "guard_false_positive",
+      "selector": "tests/test_answer_guard.py::test_negation_quotations_and_code_examples_are_not_assertions",
+      "expected_instances": 12,
+      "contract": "fixture false positives"
+    },
+    {
+      "id": "durable_delivery",
+      "selector": "tests/test_agent_runs.py::test_success_and_guard_failure_persist_real_sqlite_receipts",
+      "expected_instances": 1,
+      "contract": "SQLite terminal consistency"
+    },
+    {
+      "id": "storage_failure",
+      "selector": "tests/test_agent_runs.py::test_storage_failure_is_error_without_done_or_completed_answer",
+      "expected_instances": 1,
+      "contract": "no false done on failed write"
+    },
+    {
+      "id": "duplicate_events",
+      "selector": "tests/test_agent_runs.py::test_steps_are_monotonic_bounded_and_whitelisted",
+      "expected_instances": 1,
+      "contract": "no duplicate steps or sensitive receipt"
+    },
+    {
+      "id": "atomic_commit",
+      "selector": "tests/test_agent_runs.py::test_answer_and_terminal_commit_together_and_failure_rolls_back",
+      "expected_instances": 1,
+      "contract": "atomic result and terminal"
+    },
+    {
+      "id": "disconnect",
+      "selector": "tests/test_agent_runs.py::test_asgi_disconnect_cancels_buffered_model_without_next_chunk",
+      "expected_instances": 2,
+      "contract": "ASGI disconnect cancels"
+    },
+    {
+      "id": "ownership",
+      "selector": "tests/test_agent_runs.py::test_owner_and_session_are_checked_at_creation_and_read",
+      "expected_instances": 1,
+      "contract": "owner isolation"
+    },
+    {
+      "id": "restart",
+      "selector": "tests/test_agent_runs.py::test_restart_only_recovers_expired_leases_and_never_replays",
+      "expected_instances": 1,
+      "contract": "expired lease interrupted"
+    },
+    {
+      "id": "compiled_graph",
+      "selector": "tests/test_agent_runs.py::test_compiled_graph_emits_phase_receipts_and_guard_repair",
+      "expected_instances": 1,
+      "contract": "compiled graph receipts"
+    }
+  ]
+}

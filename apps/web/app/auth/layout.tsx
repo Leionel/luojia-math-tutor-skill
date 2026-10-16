@@ -1,30 +1,11 @@
-import { ReactNode } from "react";
+import {ReactNode} from "react";
+import Link from "next/link";
+import {BrandLogo} from "@/components/brand-logo";
+import {ThemeToggle} from "@/components/theme-toggle";
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white selection:bg-cyan-500/30">
-      {/* GEOMETRIC SILENCE BACKGROUND */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 h-[1000px] w-[1px] -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent rotate-90" />
-        <div className="absolute top-1/2 left-1/2 h-[1000px] w-[1px] -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent" />
-        
-        <div className="absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 border-[1px] border-cyan-500/20 rounded-full mix-blend-screen" />
-        <div className="absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 border-[1px] border-cyan-500/10 rounded-full mix-blend-screen" />
-        
-        {/* Math Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_20%,transparent_100%)]" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md px-6">
-        {children}
-      </div>
-
-      <div className="absolute top-8 left-8 text-xs font-mono text-slate-600">
-        SYSTEM.AUTH
-      </div>
-      <div className="absolute top-8 right-8 text-xs font-mono text-slate-600 text-right">
-        SECURE CONNECTION
-      </div>
-    </div>
-  );
+export default function AuthLayout({children}:{children:ReactNode}) {
+  return <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-5 py-6 sm:px-8">
+    <header className="mx-auto flex max-w-5xl items-center justify-between"><Link href="/" className="inline-flex items-center gap-3 font-title text-lg"><BrandLogo className="h-10 w-10"/>珞珈数智</Link><ThemeToggle/></header>
+    <section className="mx-auto mt-10 w-full max-w-md sm:mt-16">{children}<Link href="/" className="mt-6 inline-flex min-h-11 items-center text-olive-700 dark:text-olive-300 underline">返回首页</Link></section>
+  </main>;
 }

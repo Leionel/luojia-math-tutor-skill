@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API package
+        run: pip install -e apps/api
+      - name: Run API test suite
+        working-directory: apps/api
+        run: python -m pytest -q
+        env:
+          LUOJIA_NO_DOTENV: '1'
+      - name: Offline Agent reliability contracts
+        run: python scripts/eval_agent_reliability.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-reliability
+          path: results/agent-reliability.json
+
+  knowledge-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Validate knowledge JSON
+        run: node scripts/validate-json.js
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Verify OpenUI catalog
+        run: node scripts/export_intelligent_ui_catalog.mjs --check
+      - name: Type check application
+        working-directory: apps/web
+        run: npm run typecheck
+      - name: Lint
+        working-directory: apps/web
+        run: npm run lint
+      - name: Frontend utility tests
+        run: npm run test:web:ui
+      - name: Production build
+        working-directory: apps/web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_DESMOS_API_KEY: ''

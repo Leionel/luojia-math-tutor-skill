@@ -1,0 +1,84 @@
+{
+  "version": "reference-upgrade-u01-u03-v1",
+  "scope": "offline_source_binding_and_readonly_task_contracts",
+  "cases": [
+    {
+      "id": "linear_snapshot",
+      "selector": "tests/test_reference_upgrade.py::test_linear_snapshot_is_owned_bounded_and_keeps_inputs",
+      "expected_instances": 2,
+      "contract": "linear_snapshot"
+    },
+    {
+      "id": "linear_boundary",
+      "selector": "tests/test_reference_upgrade.py::test_linear_stale_corrupt_or_oversized_records_fail_closed",
+      "expected_instances": 10,
+      "contract": "linear_boundary"
+    },
+    {
+      "id": "reading_public",
+      "selector": "tests/test_reference_upgrade.py::test_reading_public_scope_and_extra_data_are_not_authority",
+      "expected_instances": 1,
+      "contract": "reading_public"
+    },
+    {
+      "id": "reading_private",
+      "selector": "tests/test_reference_upgrade.py::test_private_reading_uses_exact_span_owner_and_full_hash",
+      "expected_instances": 1,
+      "contract": "reading_private"
+    },
+    {
+      "id": "saved_sse",
+      "selector": "tests/test_reference_upgrade.py::test_new_context_sse_saved_and_no_math_grade_or_root_actions",
+      "expected_instances": 2,
+      "contract": "saved_sse"
+    },
+    {
+      "id": "help_during_delivery",
+      "selector": "tests/test_reference_upgrade.py::test_help_lock_blocks_both_contexts_before_and_during_delivery",
+      "expected_instances": 2,
+      "contract": "help_during_delivery"
+    },
+    {
+      "id": "empty_plan",
+      "selector": "tests/test_reference_upgrade.py::test_study_read_without_plan_is_model_free_and_does_not_create",
+      "expected_instances": 1,
+      "contract": "empty_plan"
+    },
+    {
+      "id": "task_states",
+      "selector": "tests/test_reference_upgrade.py::test_study_read_bound_stale_missing_locked_no_writes",
+      "expected_instances": 1,
+      "contract": "task_states"
+    },
+    {
+      "id": "bounded_routing",
+      "selector": "tests/test_reference_upgrade.py::test_study_command_does_not_swallow_math",
+      "expected_instances": 4,
+      "contract": "bounded_routing"
+    },
+    {
+      "id": "carryover",
+      "selector": "tests/test_reference_upgrade.py::test_previous_unfinished_task_is_read_without_creating_today_plan",
+      "expected_instances": 1,
+      "contract": "carryover"
+    },
+    {
+      "id": "missing_task",
+      "selector": "tests/test_reference_upgrade.py::test_missing_task_in_today_plan_stays_visible_as_unavailable",
+      "expected_instances": 1,
+      "contract": "missing_task"
+    },
+    {
+      "id": "reading_budget",
+      "selector": "tests/test_reference_upgrade.py::test_reading_does_not_silently_truncate_oversized_quote",
+      "expected_instances": 1,
+      "contract": "reading_budget"
+    },
+    {
+      "id": "task_action_boundary",
+      "selector": "tests/test_reference_upgrade.py::test_task_action_cannot_be_mixed_with_reference_or_forged_summary",
+      "expected_instances": 1,
+      "contract": "task_action_boundary"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 "use client";
+import { verificationLabel } from "@/lib/message-status";
 
 import { useEffect, useMemo, useState } from "react";
 import type { MasteryItem, TutorMeta } from "@/lib/api";
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 
 const intentMap: Record<string, string> = {
+  study_resume: "查看学习任务",
   concept: "概念讲解",
   solve_step_by_step: "分步引导",
   check_student_step: "步骤检查",
@@ -97,18 +99,15 @@ type Mistake = {
   concept: string;
 };
 
-function verificationLabel(meta: TutorMeta | null) {
-  if (!meta) return "尚未开始";
-  if (!meta.verified) return "本轮无需验算";
-  return meta.is_correct ? "验算正确" : "发现偏差";
-}
-
 function nextStepAdvice(
   meta: TutorMeta | null,
   mastery: MasteryItem[],
 ) {
   if (!meta) {
     return "输入一道题或写下你的推导步骤，面板会随本轮学习自动更新。";
+  }
+  if (meta.verification_kind !== "root_oracle" && !meta.step_check?.eligible_learning_evidence) {
+    return "先核对本轮说明的范围，补齐你自己的步骤或候选；参考计算、模型意见和历史回答不代表独立完成。";
   }
   const concept = meta.concepts?.[0]
     || meta.learning_objective
@@ -118,7 +117,7 @@ function nextStepAdvice(
     return `先根据对话中的提示修正“${concept}”这一步，再独立重做一道同类题。`;
   }
   if (meta.verified && meta.is_correct === true) {
-    return `本轮验算已通过。建议继续完成一道稍高难度的“${concept}”题，检验能否迁移。`;
+    return `这一步在说明范围内通过。接着做一道同类的“${concept}”题，检查是否能自己完成。`;
   }
   if ((meta.hint_level ?? 0) > 0) {
     return `沿着当前提示继续写出“${concept}”的下一步，并把你的推导发回来检查。`;
@@ -142,7 +141,6 @@ export function LearningPanel({
   meta: TutorMeta | null;
   mistakes: Mistake[];
 }) {
-  const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"radar" | "graph">("radar");
   const [overallMastery, setOverallMastery] = useState<MasteryItem[]>([]);
   const [previousAverage, setPreviousAverage] = useState<number | null>(null);
@@ -215,17 +213,17 @@ export function LearningPanel({
   const advice = nextStepAdvice(meta, overallMastery);
 
   const content = (
-    <div className="flex w-full max-w-full flex-col gap-6">
+    <div className="flex w-full max-w-full flex-col gap-5">
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-          <Target className="h-3.5 w-3.5 text-[var(--accent)]" />
-          当前考点
+        <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
+          <Target className="h-3.5 w-3.5 text-olive-600 dark:text-olive-400" />
+          <span>当前重点考点 Focus</span>
         </h2>
         <div className="flex flex-wrap gap-2">
           {concepts.slice(0, 5).map((concept) => (
             <span
               key={concept}
-              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] shadow-sm"
+              className="rounded-full border border-olive-500/20 bg-olive-500/5 px-3 py-1 text-[12px] font-medium text-olive-800 dark:text-olive-200 shadow-xs hover:border-olive-500/40 transition-colors"
             >
               {concept}
             </span>
@@ -234,61 +232,71 @@ export function LearningPanel({
       </section>
 
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-          <Brain className="h-3.5 w-3.5 text-emerald-500" />
-          状态与复盘
+        <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
+          <Brain className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>诊断与复盘 Diagnostic</span>
         </h2>
         <div
           className={cn(
-            "space-y-3 rounded-lg border bg-[var(--bg-card)] p-4 shadow-sm",
+            "space-y-3 rounded-2xl border p-4 shadow-sm transition-all bg-[var(--bg-card)]",
             meta?.verified && meta.is_correct
-              ? "border-emerald-500/30"
-              : "border-[var(--border-primary)]",
+              ? "border-emerald-500/30 bg-emerald-500/[0.02]"
+              : meta?.verified && meta.is_correct === false
+                ? "border-rose-500/30 bg-rose-500/[0.02]"
+                : "border-[var(--border-subtle)]",
           )}
         >
           <div className="flex items-center justify-between gap-3 text-[13px]">
             <span className="text-[var(--text-muted)]">教学方式</span>
-            <span className="text-right font-semibold text-[var(--text-primary)]">
-              {meta ? intentMap[meta.intent] || meta.intent : "尚未开始"}
+            <span className="text-right font-semibold text-[var(--text-primary)] px-2 py-0.5 rounded-md bg-[var(--bg-tertiary)]/70 text-xs">
+              {meta ? intentMap[meta.intent] || meta.intent : "待激活"}
             </span>
           </div>
           <div className="flex items-center justify-between gap-3 text-[13px]">
-            <span className="text-[var(--text-muted)]">后台验算</span>
+            <span className="text-[var(--text-muted)]">本步检查</span>
             <span
               className={cn(
-                "flex items-center gap-1 font-semibold",
+                "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold",
                 meta?.verified && meta.is_correct
-                  ? "text-emerald-500"
-                  : meta?.verified
-                    ? "text-rose-500"
-                    : "text-[var(--text-secondary)]",
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+                  : meta?.verified && meta.is_correct === false
+                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
+                    : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)]",
               )}
             >
               {meta?.verified && meta.is_correct ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : meta?.verified ? (
-                <XCircle className="h-4 w-4" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              ) : meta?.verified && meta.is_correct === false ? (
+                <XCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
               ) : null}
               {verificationLabel(meta)}
             </span>
           </div>
 
+          {meta?.step_check && meta.step_check.execution_status !== "not_requested" && (
+            <div className="rounded-xl border border-olive-500/20 bg-olive-500/5 p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
+              <p>{meta.verifier_summary || "本次检查仅覆盖已声明的范围。"}</p>
+              {meta.step_check.assumptions.map((condition, index) => <p key={index} className="mt-1">{condition}</p>)}
+              {!meta.step_check.eligible_learning_evidence && <p className="mt-2 text-[var(--text-muted)]">本次结果不作为学生候选的学习更新。</p>}
+            </div>
+          )}
+
           {meta?.mistake && (
-            <div className="flex items-start gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-500">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300 leading-relaxed shadow-xs">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
               <span className="font-medium">{meta.mistake}</span>
             </div>
           )}
 
-          {meta?.mastery_score !== undefined && (
+          {meta?.verified && !!meta.concepts?.length && meta.mastery_score !== undefined && (!meta.step_check || meta.step_check.eligible_learning_evidence) && (
             <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                  当前考点掌握度
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
+                  <span title={meta.mastery_estimate_notice || "历史聚合估计：缺少逐条核验来源，不等于独立检验成绩。"}>考点掌握度估计 · 含历史记录</span>
                 </div>
-                <div className="text-sm font-bold text-[var(--text-primary)]">
+                <div className="text-base font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(meta.mastery_score * 100)}%
-                  <span className="ml-1 text-[11px] font-medium opacity-60">
+                  <span className="ml-1.5 text-[11px] font-medium font-sans px-1.5 py-0.2 rounded bg-olive-500/10 text-olive-700 dark:text-olive-300">
                     {meta.mastery_label || "待评估"}
                   </span>
                 </div>
@@ -296,10 +304,10 @@ export function LearningPanel({
               {!!meta.mastery_delta && (
                 <div
                   className={cn(
-                    "flex items-center gap-0.5 rounded-md border px-2 py-1 text-xs font-bold",
+                    "flex items-center gap-0.5 rounded-full border px-2.5 py-1 text-xs font-bold font-mono shadow-xs",
                     meta.mastery_delta > 0
-                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
-                      : "border-rose-500/20 bg-rose-500/10 text-rose-500",
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                      : "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
                   )}
                 >
                   {meta.mastery_delta > 0 ? (
@@ -314,8 +322,8 @@ export function LearningPanel({
           )}
 
           {!!meta?.hint_level && (
-            <div className="flex w-fit items-center gap-1.5 rounded-md border border-amber-500/20 px-2.5 py-1.5 text-[11px] font-medium text-amber-500">
-              <Lightbulb className="h-3.5 w-3.5" />
+            <div className="flex w-fit items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+              <Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               已使用第 {meta.hint_level} 级提示
             </div>
           )}
@@ -323,21 +331,21 @@ export function LearningPanel({
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-            <BarChart2 className="h-3.5 w-3.5 text-[var(--accent)]" />
-            能力雷达与图谱
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] font-mono">
+            <BarChart2 className="h-3.5 w-3.5 text-olive-600 dark:text-olive-400" />
+            <span>认知雷达与图谱 Radar</span>
           </h2>
-          <div className="flex bg-[var(--bg-tertiary)] p-0.5 rounded-lg border border-[var(--border-subtle)]">
-             <button onClick={() => setActiveTab("radar")} className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", activeTab === "radar" ? "bg-white dark:bg-slate-800 shadow-sm text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+          <div className="flex bg-[var(--bg-tertiary)] p-0.5 rounded-full border border-[var(--border-subtle)]">
+             <button onClick={() => setActiveTab("radar")} className={cn("px-3 py-1 text-[11px] font-bold rounded-full transition-all", activeTab === "radar" ? "bg-white dark:bg-[#20211d] shadow-xs text-olive-700 dark:text-olive-300" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
                 雷达
              </button>
-             <button onClick={() => setActiveTab("graph")} className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", activeTab === "graph" ? "bg-white dark:bg-slate-800 shadow-sm text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+             <button onClick={() => setActiveTab("graph")} className={cn("px-3 py-1 text-[11px] font-bold rounded-full transition-all", activeTab === "graph" ? "bg-white dark:bg-[#20211d] shadow-xs text-olive-700 dark:text-olive-300" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
                 图谱
              </button>
           </div>
         </div>
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 relative overflow-hidden">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 relative overflow-hidden shadow-sm">
           
           {activeTab === "radar" ? (
              <div className="flex flex-col items-center gap-4 w-full">
@@ -425,28 +433,8 @@ export function LearningPanel({
   );
 
   return (
-    <>
-      <button
-        className="fixed bottom-24 right-4 z-40 flex items-center justify-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-lg transition-colors xl:hidden"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Brain className="h-4 w-4 text-brand" />
-        学习面板
-      </button>
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm xl:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside
-        className={cn(
-          "fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-l border-[var(--border-primary)] bg-gray-50 p-6 transition-transform duration-300 dark:bg-[var(--bg-sidebar)] xl:static xl:h-full xl:w-full xl:translate-x-0",
-          open ? "translate-x-0 shadow-2xl" : "translate-x-full",
-        )}
-      >
-        {content}
-      </aside>
-    </>
+    <aside className="h-full w-full min-h-0 overflow-y-auto border-l border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-6">
+      {content}
+    </aside>
   );
 }

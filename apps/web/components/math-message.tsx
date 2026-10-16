@@ -1,11 +1,25 @@
 "use client";
 
+import type { WebSearchReport, RootDiagnosis } from "@/lib/api";
 import { useState, useEffect } from "react";
+import { RootDiagnosticCard } from "./root-diagnostic-card";
 import { LatexRenderer } from "./latex-renderer";
 import { ReviewCard, type ReviewData } from "./review-card";
 import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, ChevronRight, CheckCircle2, CircleDashed, Copy, Edit2, RefreshCcw, Volume2, VolumeX, Search, Terminal, Cpu, ListChecks, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme-context";
+import { AgentRunReceipt } from "./agent-run-receipt";
+import { deliveryGuardLabel, type DeliveryGuard } from "@/lib/delivery-guard";
+import {RootActionCards} from "./learning/root-action-card";
+import {referenceDescription,referenceHref,type LearningContextRef} from "@/lib/learning-context";
+import type {LabRun} from "@/lib/learning-api";
+import type {TutorMeta} from "@/lib/api";
+import Link from "next/link";
+import {StudyResumeCard} from "./learning/study-resume-card";
+import {IntelligentUI,TeachingDecisionReceipt} from "./learning/intelligent-ui";
+import {resolveIntelligentUI,type WorkspaceIntent} from "@/lib/intelligent-ui";
+import { computeThinkingAccordionState, formatThoughtAsQuote } from "@/lib/interaction-physics";
 
 function cleanMathForSpeech(text: string) {
   return text
@@ -79,10 +93,10 @@ function parseThinkingChain(text: string): ThinkingStep[] {
 
 function displayThinkingTitle(title: string) {
   const labels: Record<string, string> = {
-    PLAN: "解题策略分析",
-    "隐式 RAG": "知识点关联",
-    VERIFY: "步骤检查",
-    OUTPUT: "组织回答",
+    PLAN: "读取问题",
+    "隐式 RAG": "查找资料",
+    VERIFY: "检查这一步",
+    OUTPUT: "生成回答",
   };
   return labels[title] || title;
 }
@@ -110,117 +124,198 @@ function getStepIcon(type: ThinkingStep['type']) {
   }
 }
 
-function ThinkingIndicator({ elapsed }: { elapsed: number }) {
+function ThinkingProgressBanner({
+  elapsed,
+  chain,
+  isExpanded,
+  onToggle,
+}: {
+  elapsed: number;
+  chain?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const steps = chain ? parseThinkingChain(chain) : [];
   const dots = ".".repeat((elapsed % 3) + 1);
+
+  // 核心互斥物理：流式生成中强制展开呈现，避免折叠带来的视口剧烈跳跃
+  const { isOpen, canToggle } = computeThinkingAccordionState({
+    isThinkingLive: true,
+    userExpanded: isExpanded,
+  });
+
   return (
-    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] font-medium">
-      <BrainCircuit className="w-4 h-4 text-emerald-500 animate-pulse" />
-      <span>思考中（已耗时 {elapsed} 秒）{dots}</span>
+    <div className="mb-3">
+      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-olive-500/10 dark:bg-olive-400/15 border border-olive-500/25 text-xs text-olive-800 dark:text-olive-300 font-serif shadow-xs select-none">
+        {/* 水墨微呼吸跳动点 */}
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-olive-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-olive-600 dark:bg-olive-400" />
+        </span>
+        <span className="font-semibold tracking-wide">
+          小珞正在理智推演（{elapsed}s）{dots}
+        </span>
+        {steps.length > 0 && (
+          <button
+            type="button"
+            disabled={!canToggle}
+            onClick={canToggle ? onToggle : undefined}
+            className={cn(
+              "inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-mono text-olive-900 dark:text-olive-200 transition-colors",
+              canToggle
+                ? "hover:bg-black/10 dark:hover:bg-white/15 cursor-pointer"
+                : "cursor-default opacity-80"
+            )}
+            title={canToggle ? (isOpen ? "收起规划" : "展开规划") : "推演进行中，已锁定理智呈现"}
+          >
+            <span>{isOpen ? "实时推演中" : `查看 ${steps.length} 步演练`}</span>
+            <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", isOpen && "rotate-90")} />
+          </button>
+        )}
+      </div>
+
+      {/* 纯 CSS Grid 弹性伸缩容器（零 JS 高度测量与抖动） */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-250 ease-out",
+          isOpen && steps.length > 0 ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+            <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
+              {steps.map((step, idx) => (
+                <div key={idx} className="relative">
+                  <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
+                    {getStepIcon(step.type)}
+                  </div>
+                  <div className="flex items-center gap-2 select-none mb-0.5">
+                    <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
+                      {displayThinkingTitle(step.title)}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
+                      阶段 {idx + 1}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
+                    <LatexRenderer content={step.content} complete={false} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function ThinkingChain({ content, isExpanded, onToggle }: { content: string; isExpanded: boolean; onToggle: () => void }) {
-  if (!content) return null;
-  const steps = parseThinkingChain(content);
+function ThinkingSummaryView({
+  summary,
+  elapsedMs,
+  isExpanded,
+  onToggle,
+}: {
+  summary: string;
+  elapsedMs?: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const steps = parseThinkingChain(summary);
+  const [didCopy, setDidCopy] = useState(false);
+
+  // 状态机：已完成思考，交还展开控制权
+  const { isOpen } = computeThinkingAccordionState({
+    isThinkingLive: false,
+    userExpanded: isExpanded,
+  });
+
+  const handleCopyQuote = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const quote = formatThoughtAsQuote(summary);
+    if (quote && typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(quote);
+      setDidCopy(true);
+      setTimeout(() => setDidCopy(false), 2000);
+    }
+  };
 
   return (
-    <div className="mt-3 border-t border-[var(--border-subtle)] pt-2">
-      <button
-        className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-        onClick={onToggle}
+    <div className="mt-2.5 mb-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)]/70 hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] transition-all shadow-sm group cursor-pointer"
+          onClick={onToggle}
+        >
+          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200 text-olive-600 dark:text-olive-400", isOpen && "rotate-90")} />
+          <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">推演步骤</span>
+          {elapsedMs ? (
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+              {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
+            </span>
+          ) : null}
+          {steps.length > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-olive-500/15 text-olive-700 dark:text-olive-300 font-mono">
+              {steps.length} 阶段
+            </span>
+          )}
+        </button>
+
+        {/* 一键复制为引用探讨格式 */}
+        <button
+          type="button"
+          onClick={handleCopyQuote}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-olive-700 dark:hover:text-olive-300 hover:bg-olive-500/10 transition-colors cursor-pointer border border-transparent hover:border-olive-500/20"
+          title="将推演过程复制为引用格式，方便在输入框中探讨"
+        >
+          {didCopy ? (
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">✓ 已复制引用</span>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span>复制为引用</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 纯 CSS Grid 弹性伸缩容器 */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-250 ease-out",
+          isOpen ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"
+        )}
       >
-        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
-        <span className="font-medium">查看思考过程 ({steps.length} 步)</span>
-      </button>
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden mt-2"
-          >
-            <div className="rounded-md bg-[var(--bg-tertiary)] backdrop-blur-sm p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] flex flex-col gap-4">
-              <div className="relative pl-6 border-l border-slate-200 dark:border-slate-800 ml-2.5 flex flex-col gap-5 py-1">
-                {steps.map((step, idx) => (
+        <div className="overflow-hidden">
+          <div className="rounded-xl bg-[#f8f5ee]/90 dark:bg-[#1c1e19]/90 border border-[#dfd7c2] dark:border-[#383a32] p-3.5 shadow-xs">
+            <div className="relative pl-5 border-l-2 border-olive-600/30 dark:border-olive-400/25 ml-2.5 flex flex-col gap-3 py-0.5">
+              {steps.length > 0 ? (
+                steps.map((step, idx) => (
                   <div key={idx} className="relative">
-                    <div className="absolute -left-[31px] top-0.5 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm z-10">
+                    <div className="absolute -left-[27px] top-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#20211d] border border-olive-600/40 flex items-center justify-center shadow-2xs z-10">
                       {getStepIcon(step.type)}
                     </div>
-                    <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                      <span>{displayThinkingTitle(step.title)}</span>
-                      <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
-                        步骤 {idx + 1}
+                    <div className="flex items-center gap-2 select-none mb-0.5">
+                      <span className="text-xs font-serif font-bold text-olive-900 dark:text-olive-200">
+                        {displayThinkingTitle(step.title)}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
+                        阶段 {idx + 1}
                       </span>
                     </div>
-                    <div className="prose-xs text-[var(--text-secondary)] bg-white/40 dark:bg-black/10 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800/50 mt-1 select-text">
-                      <LatexRenderer content={step.content} />
+                    <div className="text-xs text-[var(--text-secondary)] leading-relaxed pl-0.5">
+                      <LatexRenderer content={step.content} complete={true} />
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-[var(--text-muted)] italic text-xs whitespace-pre-wrap">{summary}</div>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function ThinkingSummaryView({ summary, elapsedMs, isExpanded, onToggle }: { summary: string; elapsedMs?: number; isExpanded: boolean; onToggle: () => void }) {
-  const steps = parseThinkingChain(summary);
-
-  return (
-    <div className="mt-3 border-t border-[var(--border-subtle)] pt-2">
-      <button
-        className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-        onClick={onToggle}
-      >
-        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
-        <span className="font-medium">
-          查看思考过程
-          {elapsedMs ? `（本轮思考约 ${elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)} 秒` : `${elapsedMs} 毫秒`}）` : ''}
-          {steps.length > 0 && ` · ${steps.length} 步`}
-        </span>
-      </button>
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden mt-2"
-          >
-            <div className="rounded-md bg-[var(--bg-tertiary)] backdrop-blur-sm p-4 text-xs leading-relaxed text-[var(--text-secondary)] border border-[var(--border-primary)] flex flex-col gap-4">
-              <div className="relative pl-6 border-l border-slate-200 dark:border-slate-800 ml-2.5 flex flex-col gap-5 py-1">
-                {steps.length > 0 ? (
-                  steps.map((step, idx) => (
-                    <div key={idx} className="relative">
-                      <div className="absolute -left-[31px] top-0.5 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm z-10">
-                        {getStepIcon(step.type)}
-                      </div>
-                      <div className="font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2 select-none">
-                        <span>{displayThinkingTitle(step.title)}</span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-normal uppercase tracking-wider">
-                          步骤 {idx + 1}
-                        </span>
-                      </div>
-                      <div className="prose-xs text-[var(--text-secondary)] bg-white/40 dark:bg-black/10 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800/50 mt-1 select-text">
-                        <LatexRenderer content={step.content} />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[var(--text-muted)] italic">{summary}</div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -230,10 +325,17 @@ export function MathMessage({
   content,
   status,
   isThinking = false,
+  isGenerating = false,
+  isIncomplete = false,
+  rootDiagnosis, sessionId = "", onRootRevision, onRootProbe,
   thinkingElapsed = 0,
   thinkingChain = "",
   thinkingSummary,
   thinkingElapsedMs,
+  webSearchReport,
+  answerGuard,
+  agentRun,
+  learningMeta, messageId, learningContext, actionsDisabled, onLabSaved,onOpenWorkspace,
   reviewData,
   onSimilar,
   onEdit,
@@ -243,24 +345,47 @@ export function MathMessage({
   content: string;
   status?: string;
   isThinking?: boolean;
+  isGenerating?: boolean;
+  isIncomplete?: boolean;
+  rootDiagnosis?: RootDiagnosis;
+  sessionId?: string;
+  onRootRevision?: (report: RootDiagnosis) => void;
+  onRootProbe?: (report: RootDiagnosis) => void;
   thinkingElapsed?: number;
   thinkingChain?: string;
   thinkingSummary?: string;
   thinkingElapsedMs?: number;
+  webSearchReport?: WebSearchReport;
+  answerGuard?: DeliveryGuard;
+  agentRun?: unknown;
+  learningMeta?: TutorMeta | null;
+  messageId?: string;
+  learningContext?: LearningContextRef;
+  actionsDisabled?: boolean;
+  onLabSaved?: (run: LabRun) => void;
+  onOpenWorkspace?: (intent:WorkspaceIntent)=>void;
   reviewData?: ReviewData | null;
   onSimilar?: () => void;
   onEdit?: () => void;
   onRetry?: () => void;
 }) {
   const isUser = role === "user";
+  const { reading } = useTheme();
   const [isChainExpanded, setIsChainExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
     };
   }, []);
+
+  const copyText = () => {
+    navigator.clipboard.writeText(content);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const playSpeech = () => {
     if (isPlaying) {
@@ -281,124 +406,180 @@ export function MathMessage({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15, scale: 0.98 }}
+      initial={{ opacity: 0, y: 12, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="flex w-full gap-4 sm:gap-6 mb-8 group"
+      transition={{ type: "spring", stiffness: 350, damping: 28 }}
+      className="flex w-full mb-6 group justify-start"
     >
-      <div className="shrink-0 mt-1 flex-col items-center hidden sm:flex">
-        {isUser ? (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shadow-sm">
-            <User className="h-4 w-4" />
-          </div>
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#617a55] text-white shadow-sm ring-2 ring-white dark:ring-[#1a1a18]">
-            <span className="font-title font-bold text-sm leading-none">珞</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0 flex flex-col items-start max-w-full">
-         <div className="flex items-center gap-2 mb-2 sm:hidden">
+      <div className="flex flex-col w-full min-w-0">
+        {/* 角色标识与阶段指示 (学子立论 vs 珞珈师说) */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             {isUser ? (
-                <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)]"><User className="h-3 w-3" /></div>
-                   <span className="text-xs font-medium">我</span>
-                </div>
-             ) : (
-                <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#617a55] text-white"><span className="font-title font-bold text-[10px]">珞</span></div>
-                   <span className="text-xs font-medium font-title tracking-widest text-[#617a55]">珞珈数智助教</span>
-                </div>
-             )}
-         </div>
+              <>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#3e3f36] text-[#faf7f2] dark:bg-[#2b2c26] shadow-xs">
+                  你的问题与步骤
+                </span>
+                <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                  {learningContext?"围绕引用来源的提问":"你的提问与过程"}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold tracking-wider bg-[#4e6344] text-[#faf7f2] dark:bg-[#3f5137] shadow-xs">
+                  「小珞」
+                </span>
+                <span className="text-xs font-serif font-semibold tracking-wide text-olive-800 dark:text-olive-200">
+                  AI 数学助教
+                </span>
+              </>
+            )}
+          </div>
 
-        <div className="w-full text-[var(--text-primary)] transition-all duration-300">
-          {isThinking && (
-            <ThinkingIndicator elapsed={thinkingElapsed} />
-          )}
-          
-          {thinkingChain && (
-            <div className={cn(isThinking ? "mt-2 mb-2" : "mb-2")}>
-              <ThinkingChain
-                content={thinkingChain}
-                isExpanded={isThinking ? true : isChainExpanded}
-                onToggle={() => setIsChainExpanded(!isChainExpanded)}
-              />
+          {/* 状态徽标 (如后台验算通过) */}
+          {status && !isUser && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-olive-800 dark:text-olive-300 bg-olive-500/10 border border-olive-500/20">
+              {!status.includes("已完成") ? (
+                <CircleDashed className="w-3 h-3 text-amber-500" />
+              ) : (
+                <CheckCircle2 className="w-3 h-3 text-olive-600 dark:text-olive-400" />
+              )}
+              <span>{status}</span>
             </div>
+          )}
+        </div>
+
+        {/* 手稿推导承载主体 (消除笨重的双重气泡卡片，保证长公式视窗宽裕) */}
+        <div
+          className={cn(
+            "w-full transition-all duration-200",
+            isUser
+              ? "border-l-[3.5px] border-[#c4ba9d] dark:border-[#525447] bg-[#f5f1e6]/45 dark:bg-[#252621]/45 rounded-r-xl p-4 sm:p-5 shadow-xs"
+              : "border border-[#e2dcc8]/80 dark:border-[#383a32]/80 bg-white/70 dark:bg-[#20211d]/70 rounded-xl p-4 sm:p-6 shadow-xs"
+          )}
+        >
+          {isThinking && (
+            <ThinkingProgressBanner
+              elapsed={thinkingElapsed}
+              chain={thinkingChain}
+              isExpanded={isChainExpanded}
+              onToggle={() => setIsChainExpanded(!isChainExpanded)}
+            />
           )}
 
           {!isThinking && thinkingSummary && (
-            <div className="mb-2">
-              <ThinkingSummaryView
-                summary={thinkingSummary}
-                elapsedMs={thinkingElapsedMs}
-                isExpanded={isChainExpanded}
-                onToggle={() => setIsChainExpanded(!isChainExpanded)}
-              />
-            </div>
+            <ThinkingSummaryView
+              summary={thinkingSummary}
+              elapsedMs={thinkingElapsedMs}
+              isExpanded={isChainExpanded}
+              onToggle={() => setIsChainExpanded(!isChainExpanded)}
+            />
+          )}
+
+          {!isUser && <AgentRunReceipt value={agentRun} disconnected={isIncomplete} />}
+          {!isUser && learningMeta?.learning_context && <p className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-olive-500/15 pb-3 text-xs leading-6 text-[var(--text-secondary)]">
+            <span>本轮引用 · {referenceDescription(learningMeta.learning_context)}</span>
+            <Link href={referenceHref(learningMeta.learning_context)} className="underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600">回看原始来源</Link>
+          </p>}
+
+          {!isUser && learningMeta?.study_summary && <StudyResumeCard summary={learningMeta.study_summary}/>}
+
+          {!isUser && deliveryGuardLabel(answerGuard) && (
+            <p className="mb-3 text-base sm:text-xs leading-relaxed text-[var(--text-secondary)]" role="status">
+              {deliveryGuardLabel(answerGuard)}
+            </p>
           )}
 
           {content && (
-            <div className={cn("prose-sm sm:prose max-w-none prose-neutral dark:prose-invert prose-p:leading-relaxed prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-primary)]", !isUser && "tracking-[0.02em] leading-[1.8]")}>
-              <LatexRenderer content={content} />
+            <div
+              className={cn(
+                "prose-sm sm:prose max-w-none text-[15px] sm:text-[15.5px] leading-relaxed select-text overflow-x-auto",
+                isUser
+                  ? "text-[var(--text-primary)] font-serif prose-p:my-1"
+                  : "prose-neutral dark:prose-invert text-[var(--text-primary)] prose-p:leading-[1.8]",
+                reading === "sans" ? "font-ui-sans" : "font-serif",
+                !isUser && "tracking-[0.01em]"
+              )}
+            >
+              {webSearchReport && webSearchReport.status !== "disabled" && (
+                <div className="mb-3 rounded-lg border border-[var(--border-subtle)] p-3 text-xs text-[var(--text-secondary)]" role="status">
+                  <p>{webSearchReport.status === "success"
+                    ? `联网检索返回 ${webSearchReport.result_count} 条摘要，尚未核验全文与发布日期。`
+                    : webSearchReport.status === "timeout" ? "联网检索超时，本轮未完成事实核实。"
+                    : webSearchReport.status === "empty" ? "联网检索未返回可用结果，本轮未完成事实核实。"
+                    : "联网检索服务暂不可用，本轮未完成事实核实。"}</p>
+                  {webSearchReport.sources?.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {webSearchReport.sources.filter((source) => /^https?:\/\//i.test(source.url)).map((source) => (
+                        <li key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer" className="text-olive-700 dark:text-olive-300 underline underline-offset-2 break-words">[{source.id}] {source.title}</a></li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {rootDiagnosis && <RootDiagnosticCard report={rootDiagnosis} sessionId={sessionId} complete={!isGenerating && !isThinking && !isIncomplete} onRevision={onRootRevision} onProbe={onRootProbe}/> }
+              <LatexRenderer content={content} complete={!isGenerating && !isThinking && !isIncomplete} />
+              {!isUser && !isGenerating && !isThinking && !isIncomplete && <><TeachingDecisionReceipt value={learningMeta?.teaching_decision}/><IntelligentUI meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onWorkspace={onOpenWorkspace} onSaved={onLabSaved}/>{!resolveIntelligentUI(learningMeta,messageId)?.artifact.selections.some(item=>item.component==="ParameterCompare")&&<RootActionCards meta={learningMeta} sessionId={sessionId} messageId={messageId} context={learningContext} disabled={actionsDisabled} onSaved={onLabSaved}/>}</>}
+              {isThinking && (
+                <span className="inline-flex items-center gap-1.5 ml-1.5 text-xs text-olive-700/80 dark:text-olive-400/80 font-serif italic select-none">
+                  <span className="inline-block w-1.5 h-4 bg-olive-700 dark:bg-olive-400 rounded-xs animate-pulse align-middle" />
+                  <span>正在生成回答…</span>
+                </span>
+              )}
             </div>
           )}
-            
-          {status && !isUser ? (
-            <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border-subtle)] pt-3 text-[11px] font-medium text-[var(--text-muted)]">
-              {status.includes("未完成") ? <CircleDashed className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
-              {status}
-            </div>
-          ) : null}
 
-          {reviewData && !isUser ? (
+          {/* 步骤复盘卡 (融入 C 方案双栏对照学案) */}
+          {reviewData && !isUser && (
             <div className="mt-3 pt-2">
               <ReviewCard data={reviewData} onSimilar={onSimilar} />
             </div>
-          ) : null}
+          )}
 
-          {/* Action Bar */}
-          <div className="flex items-center gap-2 mt-4 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* 轻量操作工具栏 */}
+          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-subtle)]/70 text-[var(--text-muted)] text-[11px]">
             <button
-              onClick={() => navigator.clipboard.writeText(content)}
-              className="flex items-center gap-1 text-[10px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              title="复制"
+              onClick={copyText}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+              title="复制内容"
             >
-              <Copy className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">复制</span>
+              {isCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-olive-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{isCopied ? "已复制" : "复制"}</span>
             </button>
+
             {isUser && onEdit && (
               <button
                 onClick={onEdit}
-                className="flex items-center gap-1 text-[10px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                title="编辑"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                title="编辑这条消息"
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">编辑</span>
+                <span>编辑</span>
               </button>
             )}
+
             {!isUser && (
               <button
                 onClick={playSpeech}
                 className={cn(
-                  "flex items-center gap-1 text-[10px] font-medium transition-colors",
-                  isPlaying ? "text-emerald-500" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  "inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors",
+                  isPlaying && "text-olive-600 font-bold"
                 )}
-                title={isPlaying ? "停止播放" : "朗读"}
+                title={isPlaying ? "停止播放" : "朗读数学解答"}
               >
                 {isPlaying ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{isPlaying ? "停止" : "朗读"}</span>
+                <span>{isPlaying ? "停止" : "朗读"}</span>
               </button>
             )}
+
             {!isUser && onRetry && (
               <button
                 onClick={onRetry}
-                className="flex items-center gap-1 text-[10px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                title="重新生成"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                title="重新生成回答"
               >
                 <RefreshCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">重试</span>
+                <span>重试</span>
               </button>
             )}
           </div>

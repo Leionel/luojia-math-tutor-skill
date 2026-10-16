@@ -2,16 +2,25 @@ import asyncio
 import json
 import logging
 import time
+import httpx
 from collections.abc import AsyncIterator
 
 from app.config import Settings
+from app.search.policy import decide_search
+from app.search.web_search import search_status_text
 from app.llm.openai_compatible import OpenAICompatibleClient
+from app.llm.completion_protocol import ModelCompletionError
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.verifier import VerifyResult
 from app.memory.repository import Repository
 from app.observability import current_request_id
 from app.tutor.fast_path import generate_opening, route_fast_path
 from app.tutor.graph import TutorWorkflow
+from app.tutor.prompt_policy import load_teaching_prompt
+from app.tutor.answer_guard import AnswerDeliveryError
+from app.tutor.run_trace import durable_call
+from app.tutor.learning_context import LearningContextRef, ReferenceContext, resolve_learning_context
+from app.tutor.intent_router import Intent
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +37,26 @@ class TutorOrchestrator:
         self.settings = settings
         self.repository = repository
         self.llm = OpenAICompatibleClient(settings)
-        self.skill_text = settings.skill_file.read_text(encoding="utf-8")
+        self.skill_text = load_teaching_prompt(settings.skill_file)
         self.workflow_owner = TutorWorkflow(settings, repository)
         self.workflow = self.workflow_owner.workflow
 
     @staticmethod
     def _build_plan_progress(state: dict) -> str:
+        if state.get("requires_policy_fallback"):
+            return "[PLAN]\n正在结合会话历史确认任务；确认前不评估掌握度。"
         learning_objective = state.get("learning_objective") or ""
         pedagogical_action = state.get("pedagogical_action") or ""
         action_descriptions = {
-            "explain": "苏格拉底式引导讲解",
+            "confirm_local": "确认有依据的局部步骤",
+            "correct_claim": "区分正确步骤与不成立的推广",
+            "ask_missing_condition": "先补齐判断所需的条件",
+            "offer_experiment": "建议通过对照实验观察",
+            "offer_probe": "提供一个针对性的自检问题",
+            "explain": "讲解概念或解题过程",
+            "hint": "提供当前步骤的提示",
+            "ask_question": "核对步骤并提出针对性问题",
+            "review_concept": "复习相关概念",
             "tutor": "苏格拉底式引导讲解",
             "check_step": "检查解题步骤",
             "generate_exercise": "生成练习题进行训练",
@@ -59,6 +78,9 @@ class TutorOrchestrator:
         Only uses deterministic fields — no LLM calls.
         Output format uses stage tags for the frontend to parse.
         """
+        if state.get("root_diagnosis"):
+            report = state["root_diagnosis"]
+            return f"[PLAN]\n核对所提交的求根轨迹与目标。\n\n[VERIFY]\n{report['summary']}\n\n[OUTPUT]\n已输出受控数值反馈；显示回执后记录过程证据。"
         parts = []
 
         # ── PLAN ──
@@ -78,10 +100,12 @@ class TutorOrchestrator:
             rag_items.append(
                 f"涉及概念：{'、'.join(concepts[:3])}{'等' if len(concepts) > 3 else ''}"
             )
-        rag_items.append("已载入会话历史与当前掌握度评估")
+        rag_items.append("已参考会话历史；掌握度估计可能包含初始默认值")
         if document_chunks:
-            rag_items.append(f"已参考用户绑定文档（{len(document_chunks)} 个片段）")
+            rag_items.append(f"已参考文档与外部资料（{len(document_chunks)} 个片段）")
 
+        if state.get("web_search_report"):
+            rag_items.append(search_status_text(state["web_search_report"]))
         parts.append(f"[隐式 RAG]\n{'；'.join(rag_items)}。")
 
         # ── VERIFY ──
@@ -92,7 +116,7 @@ class TutorOrchestrator:
         if isinstance(verifier_result, VerifyResult):
             if verifier_result.verified:
                 if verifier_result.is_correct is True:
-                    verify_items.append("SymPy 符号验证已通过")
+                    verify_items.append(verifier_result.summary or "已核对指定候选与范围")
                 elif verifier_result.is_correct is False:
                     verify_items.append(
                         verifier_result.summary
@@ -112,9 +136,14 @@ class TutorOrchestrator:
 
         if verification_result:
             if verification_result.get("verified"):
-                verify_items.append("Verifier LLM 验证通过")
+                verdict = verification_result.get("is_correct")
+                verify_items.append(
+                    "推理审查认为本步正确（非确定性证明）" if verdict is True else
+                    "推理审查发现需要修正之处" if verdict is False else
+                    "推理审查完成，正误尚不能确定"
+                )
             else:
-                verify_items.append("Verifier LLM 未能确认当前推导")
+                verify_items.append("推理审查未能确认当前推导")
 
         if not verify_items:
             verify_items.append("本轮未触发符号校验")
@@ -125,9 +154,9 @@ class TutorOrchestrator:
         output_items = []
         route = state.get("metrics", {}).get("route", "")
         if pedagogical_action == "generate_exercise" or route == "examiner":
-            output_items.append("已进入 Examiner 出题/测验阶段")
+            output_items.append("正在生成练习题")
         elif route and "teacher" in str(route):
-            output_items.append("已进入 Teacher 启发式讲解阶段")
+            output_items.append("正在组织讲解")
         else:
             output_items.append("已开始组织回答")
 
@@ -177,6 +206,7 @@ class TutorOrchestrator:
                 and verified
                 and is_correct is not None
                 and intent == "check_student_step"
+                and getattr(verifier_result, "eligible_learning_evidence", False)
             )
             item.setdefault("path", [])
             item.setdefault("description", "")
@@ -186,15 +216,20 @@ class TutorOrchestrator:
             concept_items.append(item)
         return {
             "intent": intent,
+            "teaching_mode": state.get("mode", "socratic"),
+            "web_search": state.get("web_search_report"),
             "subject": state.get("detected_subject")
             or state.get("subject")
             or "auto",
             "concepts": concepts,
             "concept_items": concept_items,
             "verified": verified,
+            "verification_kind": "llm_review" if verification_result else "symbolic" if getattr(verifier_result, "verified", False) else "none",
             "is_correct": is_correct,
             "mistake": getattr(mistake, "label", mistake),
             "verifier_summary": verifier_summary or "",
+            "step_check": verifier_result.public() if isinstance(verifier_result, VerifyResult) else None,
+            "mastery_estimate_notice": "掌握度是聚合估计，历史更新缺少逐条核验来源，不等于独立检验成绩。",
             "hint_level": state.get("hint_level", 0),
             "mastery_score": state.get("mastery_score", 0.5),
             "mastery_label": state.get("mastery_label_str", "一般"),
@@ -202,9 +237,63 @@ class TutorOrchestrator:
             "pedagogical_action": state.get("pedagogical_action", ""),
             "learning_objective": state.get("learning_objective", ""),
             "route": state.get("metrics", {}).get("route", ""),
+            "answer_guard": state.get("answer_guard"),
+            "teaching_decision": state.get("teaching_decision"),
         }
 
-    async def stream_reply(
+    async def stream_reply(self, session_id: str, user_id: str, message: str,
+                           subject: str = "auto", mode: str = "socratic",
+                           user_api_key: str | None = None, model: str | None = None,
+                           requested_hint: bool = False, image_urls: list[str] | None = None,
+                           web_search: bool = False, web_search_mode: str = "auto",
+                           reasoning_effort: str = "medium", root_submission: dict | None = None,
+                           parent_run_id: str | None = None, learning_context: ReferenceContext | None = None,
+                           learning_workspace=None) -> AsyncIterator[str]:
+        from app.tutor.run_trace import RunTrace
+        trace = RunTrace(self.repository, session_id, user_id,parent_run_id,
+                         model or getattr(getattr(self,"settings",None),"llm_model",None))
+        inner = self._stream_reply(session_id,user_id,message,subject,mode,user_api_key,model,
+                                   requested_hint,image_urls,web_search,web_search_mode,reasoning_effort,root_submission,trace,
+                                   learning_context,learning_workspace)
+        heartbeat = None
+        interrupted = False
+        try:
+            # Preserve immediate opening and do not start work if it is never consumed.
+            yield await anext(inner)
+            await trace.start()
+            await trace.step("routing","succeeded")
+            heartbeat = asyncio.create_task(trace.heartbeat())
+            yield await anext(inner)
+            yield sse("run_event", trace.snapshot())
+            async for event in inner:
+                if heartbeat.done():
+                    await heartbeat  # observability storage failure must not fake success
+                yield event
+        except (asyncio.CancelledError, GeneratorExit):
+            interrupted = True
+            raise
+        except Exception:
+            logger.exception("Could not complete execution receipt")
+            await inner.aclose()
+            if trace.started:
+                try:
+                    await trace.finish("failed")
+                except Exception:
+                    logger.exception("Could not persist failed execution terminal")
+            yield sse("error", {"code":"execution_record_failed", "message":"本轮执行记录未能完成，请稍后重试。", "recoverable":True})
+        finally:
+            # Close the graph and its owned child processes before recording cancellation.
+            await inner.aclose()
+            if heartbeat:
+                heartbeat.cancel()
+                await asyncio.gather(heartbeat,return_exceptions=True)
+            if trace.started and trace.status == "running":
+                try:
+                    await trace.finish("cancelled" if interrupted else "failed")
+                except Exception:
+                    logger.exception("Execution terminal persistence unavailable")
+
+    async def _stream_reply(
         self,
         session_id: str,
         user_id: str,
@@ -215,6 +304,13 @@ class TutorOrchestrator:
         model: str | None = None,
         requested_hint: bool = False,
         image_urls: list[str] | None = None,
+        web_search: bool = False,
+        web_search_mode: str = "auto",
+        reasoning_effort: str = "medium",
+        root_submission: dict | None = None,
+        trace=None,
+        learning_context: ReferenceContext | None = None,
+        learning_workspace=None,
     ) -> AsyncIterator[str]:
         request_started = time.perf_counter()
         request_id = current_request_id()
@@ -224,7 +320,8 @@ class TutorOrchestrator:
             0.5,
         )
         route = route_fast_path(message, mode, subject)
-        opening = generate_opening(route)
+        search = decide_search(message, "off" if learning_context else web_search_mode, False if learning_context else web_search)
+        opening = "我先核对本轮引用的来源，再讨论你的问题。" if learning_context else "我先用受控数值规则核对你提交的求根过程。" if root_submission else "我先识别图片中的题目，核对后再继续。" if image_urls else generate_opening(route)
         opening_ms = round(
             (time.perf_counter() - request_started) * 1000,
             2,
@@ -238,7 +335,15 @@ class TutorOrchestrator:
             },
         )
 
+        snapshot = None
+        async def validate_reference():
+            if learning_context:
+                return await asyncio.to_thread(resolve_learning_context, learning_workspace, user_id, learning_context)
+        if learning_context:
+            snapshot = await validate_reference()
+
         initial_state = {
+            "root_submission": root_submission,
             "message": message,
             "original_message": message,
             "session_id": session_id,
@@ -249,6 +354,10 @@ class TutorOrchestrator:
             "model": model,
             "requested_hint": requested_hint,
             "image_urls": image_urls,
+            "web_search": search.enabled,
+            "web_search_reason": search.reason,
+            "external_fact_question": search.factual,
+            "reasoning_effort": reasoning_effort,
             "vision_result": {},
             "intent": route.intent,
             "detected_subject": route.subject,
@@ -284,7 +393,7 @@ class TutorOrchestrator:
                 "symbolic_verify_ms": 0.0,
                 "policy_fallback_ms": 0.0,
                 "verifier_ms": 0.0,
-                "teacher_first_token_ms": 0.0,
+                "generation_buffer_ms": 0.0,
                 "vision_parse_ms": 0.0,
                 "sandbox_tool_calls": 0,
                 "total_ms": 0.0,
@@ -292,6 +401,16 @@ class TutorOrchestrator:
                 "route": "",
             },
         }
+        if snapshot:
+            # Reference trajectories cannot be graded as the student's own work.
+            claim_selected = bool(snapshot.get("student_claim"))
+            initial_state.update(learning_context=snapshot,
+                                 intent=Intent.CHECK_STUDENT_STEP if claim_selected else Intent.CONCEPT,
+                                 detected_subject="数值分析",
+                                 pedagogical_action="ask_question" if claim_selected else "explain",
+                                 learning_objective=("审阅已保存的学生解释，并区分确定性证据与待核验条件"
+                                                     if claim_selected else f"讨论当前引用：{snapshot['title']}"),
+                                 verification_mode="none", requires_policy_fallback=False, confidence=1.0)
 
         queue: asyncio.Queue[str] = asyncio.Queue()
         first_token_time: float | None = None
@@ -299,6 +418,10 @@ class TutorOrchestrator:
 
         async def on_token(event_str: str) -> None:
             nonlocal first_token_time
+            await validate_reference()
+            if not root_submission:
+                from app.tutor.help_boundary import assert_reference_help_allowed
+                await asyncio.to_thread(assert_reference_help_allowed, user_id)
             if first_token_time is None:
                 first_token_time = time.perf_counter()
             await queue.put(event_str)
@@ -313,22 +436,29 @@ class TutorOrchestrator:
                     sse("thinking", {"content": f"{normalized}\n\n"})
                 )
 
+        async def on_run_event(phase, status, **fields):
+            await trace.step(phase,status,**fields)
+            await queue.put(sse("run_event",trace.snapshot()))
+
         config = {
             "configurable": {
                 "thread_id": session_id,
+                "run_id": trace.run_id,
+                "on_run_event": on_run_event,
                 "on_token": on_token,
                 "on_thinking": on_thinking,
                 "on_progress": on_progress,
             }
         }
-        task = asyncio.create_task(
-            self.workflow.ainvoke(initial_state, config=config)
-        )
+        async def invoke_observed():
+            from app.llm.call_observation import observation
+            with observation(on_run_event, trace.run_id):
+                return await self.workflow.ainvoke(initial_state, config=config)
+        task = asyncio.create_task(invoke_observed())
         queue_get: asyncio.Task[str] | None = None
 
-        yield sse("thinking", {"content": f"{plan_progress}\n\n"})
-
         try:
+            yield sse("thinking", {"content": f"{plan_progress}\n\n"})
             while True:
                 if not queue.empty():
                     yield queue.get_nowait()
@@ -363,13 +493,38 @@ class TutorOrchestrator:
                 exc,
                 exc_info=True,
             )
-            yield sse(
-                "error",
-                {
-                    "message": "本轮生成暂时失败，请稍后重试。",
-                    "recoverable": True,
-                },
-            )
+            code, message, recoverable = "generation_failed", "本轮生成暂时失败，请稍后重试。", True
+            if isinstance(exc, ModelCompletionError):
+                code, message = exc.code, str(exc)
+                recoverable = code != "model_not_configured"
+            elif isinstance(exc, AnswerDeliveryError):
+                code, message = exc.code, str(exc)
+            elif isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (401, 403):
+                code, message, recoverable = "model_auth_failed", "模型服务鉴权失败，请核对所选模型、接口地址与 API Key。", False
+            elif isinstance(exc, (httpx.TimeoutException, asyncio.TimeoutError)):
+                code, message = "model_timeout", "模型响应超时，本轮未生成完整回答；可降低运思强度后重试。"
+            elif isinstance(exc, httpx.ConnectError):
+                code, message = "model_unreachable", "无法连接模型服务，请检查网络与接口地址。"
+            elif isinstance(exc, (ValueError, KeyError)) and root_submission:
+                code, message = "root_attempt_invalid", "求根 episode 或修订输入无效；请核对任务条件，或开始新的练习。"
+            elif isinstance(exc, (ValueError, KeyError)) and learning_context:
+                code, message = "learning_context_unavailable", "当前实验引用已失效，或自检/独立检验正在进行；请返回实验台核对。"
+            # Safe error metadata survives refresh; it never asserts a completed answer.
+            failure_meta = {"error": {"code": code, "message": message}, "verified": False, "is_correct": None, "intent": "generation_failed", "verification_kind": "none", "subject": subject, "concepts": [], "mistake": None, "verifier_summary": "本轮未完成"}
+            if isinstance(exc, AnswerDeliveryError):
+                failure_meta["answer_guard"] = exc.report
+            await trace.step("delivery","started",error_code=code)
+            failure_meta["agent_run"] = trace.terminal_snapshot("failed")
+            failure_id = None
+            try:
+                failure_id = await durable_call(self.repository.add_message, session_id, "assistant", f"{opening}\n\n本轮未完成：{message}", "generation_failed", "本轮生成失败，尚未完成验证。", None, failure_meta, agent_run_finish=trace.finish_args("failed"))
+                trace.committed("failed")
+            except Exception:
+                logger.exception("Could not persist failed response metadata")
+            if trace.status == "running":
+                await trace.finish("failed")
+            yield sse("run_event",trace.snapshot(message_id=failure_id))
+            yield sse("error", {"message": message, "code": code, "recoverable": recoverable, "message_id": failure_id, "learning_meta": failure_meta})
             return
         finally:
             if queue_get and not queue_get.done():
@@ -380,7 +535,13 @@ class TutorOrchestrator:
                 await asyncio.gather(task, return_exceptions=True)
 
         # Build thinking summary and calculate elapsed_ms
-        thinking_summary = self._build_thinking_summary(final_state)
+        awaiting_vision = final_state.get("awaiting_vision_confirmation", False)
+        awaiting_intent = final_state.get("awaiting_intent_clarification", False)
+        awaiting_input = awaiting_vision or awaiting_intent
+        thinking_summary = "任务待澄清，本轮未开始解题或评估掌握度。" if awaiting_intent else "图片核对阶段，本轮未开始解题或评估掌握度。" if awaiting_vision else self._build_thinking_summary(final_state)
+        if awaiting_input:
+            await asyncio.to_thread(self.repository.ensure_user, user_id)
+            await asyncio.to_thread(self.repository.add_message, session_id, "user", message)
         if first_token_time is not None:
             thinking_elapsed_ms = round((first_token_time - request_started) * 1000)
         else:
@@ -401,14 +562,58 @@ class TutorOrchestrator:
         explicit_concepts = extract_explicit_concepts(
             f"{message}\n{visible_output}"
         )
-        if explicit_concepts:
+        if explicit_concepts and not awaiting_input:
             final_state = {
                 **final_state,
                 "concepts": explicit_concepts,
             }
         learning_meta = self._build_learning_meta(final_state)
+        if snapshot and not awaiting_input:
+            await validate_reference()
+            learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,
+                                 verification_kind="none", mastery_delta=0,
+                                 verifier_summary="参考实验讨论，不作为学生作答或掌握证据")
+            decision = learning_meta.get("teaching_decision") or {}
+            offer_exp = decision.get("status") == "accepted" and decision.get("action") == "offer_experiment"
+            exp_prop = decision.get("experiment_proposal") if offer_exp else None
+            if snapshot["ref"]["kind"]=="root_lab" and (not snapshot.get("student_claim") or offer_exp) and (learning_meta.get("answer_guard") or {}).get("status") in {"passed", "repaired"}:
+                from app.tutor.learning_actions import root_proposal
+                learning_meta["tutor_artifacts"] = [root_proposal(snapshot, trace.run_id, exp_prop)]
+        if final_state.get("root_diagnosis"):
+            report = final_state["root_diagnosis"]
+            learning_meta.update(root_diagnosis=report, verification_kind="root_oracle",
+                                 verified=report["status"] in ("supported", "contradicted"),
+                                 is_correct=True if report["complete"] else False if report["status"] == "contradicted" else None,
+                                 verifier_summary=report["summary"], mastery_delta=0, hint_level=report["help_level"])
+        if awaiting_vision:
+            parsed = final_state.get("vision_result", {})
+            draft = "\n\n".join(part for part in (
+                str(parsed.get("problem_text") or ""),
+                "\n".join(f"$${item}$$" for item in parsed.get("latex", [])),
+            ) if part)
+            learning_meta = {"intent": "vision_confirmation", "subject": subject,
+                             "verified": False, "is_correct": None, "concepts": [],
+                             "concept_items": [], "awaiting_confirmation": True,
+                             "vision_draft": draft, "verification_kind": "none",
+                             "mistake": None, "verifier_summary": "图片核对阶段，尚未开始解题"}
+        if awaiting_intent:
+            learning_meta = {"intent": "intent_clarification", "subject": subject,
+                             "verified": False, "is_correct": None, "concepts": [],
+                             "concept_items": [], "awaiting_intent_clarification": True,
+                             "verification_kind": "none", "mastery_delta": 0,
+                             "mistake": None, "verifier_summary": "任务待澄清，尚未开始解题",
+                             "route": "intent_clarification"}
         intent = learning_meta["intent"]
-        message_id = await asyncio.to_thread(
+        if final_state.get("intelligent_ui") and not awaiting_input:
+            from app.tutor.teaching_decision import bind_ui
+            learning_meta["intelligent_ui"] = bind_ui(final_state["intelligent_ui"], trace.run_id, visible_output)
+        if not root_submission:
+            from app.tutor.help_boundary import assert_reference_help_allowed
+            await asyncio.to_thread(assert_reference_help_allowed, user_id)
+        await trace.step("delivery","started")
+        terminal_status = "clarification" if awaiting_input else "succeeded"
+        learning_meta["agent_run"] = trace.terminal_snapshot(terminal_status)
+        message_id = await durable_call(
             self.repository.add_message,
             session_id,
             "assistant",
@@ -417,15 +622,22 @@ class TutorOrchestrator:
             thinking_summary,
             thinking_elapsed_ms,
             learning_meta,
+            agent_run_finish=trace.finish_args(terminal_status),
         )
+        trace.committed(terminal_status)
+        learning_meta["agent_run"] = trace.snapshot(message_id=message_id)
+        yield sse("run_event",learning_meta["agent_run"])
         yield sse("meta_update", learning_meta)
+        if learning_meta.get("intelligent_ui"):
+            yield sse("intelligent_ui", {"message_id": message_id, "artifact": learning_meta["intelligent_ui"]})
         metrics = dict(final_state.get("metrics", {}))
+        metrics["model_request_usage"] = trace.snapshot()["usage"]
         metrics["total_ms"] = round(
             (time.perf_counter() - request_started) * 1000,
             2,
         )
         workflow_owner = getattr(self, "workflow_owner", None)
-        if workflow_owner is not None:
+        if workflow_owner is not None and not awaiting_input and not search.factual and not root_submission and not learning_context:
             workflow_owner.schedule_semantic_enrichment(
                 message,
                 route.subject,

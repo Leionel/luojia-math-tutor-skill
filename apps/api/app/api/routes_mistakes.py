@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from app.auth import Principal, get_principal, resolve_user_id
 from app.config import Settings
-from app.main_deps import get_app_settings, get_repository
+from app.main_deps import get_app_settings, get_repository, ensure_reference_help_allowed
 from app.memory.repository import Repository
 from app.tutor.exercise_generator import get_fallback_exercises
 
@@ -71,6 +71,8 @@ def generate_quiz(
     mistake = repo.get_mistake(mistake_id)
     if not mistake or mistake.get("user_id") != user_id:
         raise HTTPException(status_code=404, detail="未找到该错因记录")
+
+    ensure_reference_help_allowed(user_id)
 
     concept = mistake.get("concept", "未知考点")
     mistake_code = mistake.get("mistake_code", "")

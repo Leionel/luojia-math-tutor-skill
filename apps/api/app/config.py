@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 
@@ -10,7 +11,27 @@ PROVIDER_BASE_URLS: dict[str, str] = {
     "deepseek": "https://api.deepseek.com/v1",
     "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "moonshot": "https://api.moonshot.cn/v1",
-    "glm": "https://open.bigmodel.cn/api/paas/v4"
+    "kimi": "https://api.moonshot.cn/v1",  # UI alias for moonshot
+    "glm": "https://open.bigmodel.cn/api/paas/v4",
+    "openai": "https://api.openai.com/v1",
+    "anthropic": "https://api.anthropic.com/v1",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "grok": "https://api.x.ai/v1",
+    "custom": "",  # user-supplied base URL
+}
+
+# UI-facing provider list shown in the settings drawer. kimi is an alias for
+# the moonshot endpoint; "custom" requires a user-provided https base URL.
+MODEL_PROVIDERS: dict[str, str] = {
+    "deepseek": "DeepSeek",
+    "kimi": "Kimi (Moonshot)",
+    "qwen": "通义千问 (Qwen)",
+    "glm": "智谱 (GLM)",
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "gemini": "Gemini",
+    "grok": "Grok (xAI)",
+    "custom": "自定义",
 }
 LOCAL_AUTH_SECRET = "local-development-only-change-before-production"
 
@@ -55,7 +76,43 @@ def configured_model_catalog() -> dict[str, ModelSpec]:
 ALLOWED_MODELS = frozenset(configured_model_catalog())
 
 
+# ``Settings`` below binds every default with ``os.getenv`` at *class
+# definition* time, and ``services/mineru_client.py`` reads ``MINERU_API_KEY``
+# the same way. Nothing in the app loaded ``apps/api/.env`` — only
+# ``scripts/evaluate_benchmark.py`` did — so ``npm run dev:api`` used to start
+# with empty LLM and MinerU credentials even when ``.env`` was filled in
+# correctly. Load it here, before the class body runs, without overriding real
+# environment variables.
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+# Set by tests/conftest.py. Without this gate the suite would inherit the
+# developer's real credentials from .env and start issuing live LLM calls,
+# which makes it slow, network-dependent and flaky.
+NO_DOTENV_ENV_VAR = "LUOJIA_NO_DOTENV"
+
+
+def load_env_file(path: Path = ENV_FILE) -> Path | None:
+    """Load a dotenv file into ``os.environ``; return the path, or ``None``."""
+    if not path.is_file():
+        return None
+    load_dotenv(path, override=False)
+    return path
+
+
+def autoload_env_file(path: Path = ENV_FILE, disabled: bool | None = None) -> Path | None:
+    """Import-time ``.env`` load, skipped when explicitly disabled."""
+    if disabled is None:
+        disabled = bool(os.getenv(NO_DOTENV_ENV_VAR))
+    if disabled:
+        return None
+    return load_env_file(path)
+
+
+autoload_env_file()
+
+
 class Settings(BaseModel):
+    teaching_decision_enabled: bool = os.getenv("TEACHING_DECISION_ENABLED", "true").lower() == "true"
     app_env: str = os.getenv("APP_ENV", "local")
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./luojia_tutor.db")
     llm_provider: str = os.getenv("LLM_PROVIDER", "deepseek")
@@ -72,6 +129,8 @@ class Settings(BaseModel):
     auth_token_secret: str = os.getenv("AUTH_TOKEN_SECRET", LOCAL_AUTH_SECRET)
     auth_token_ttl_seconds: int = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "86400"))
     demo_user_id: str = os.getenv("DEMO_USER_ID", "demo-user")
+    teacher_user_ids: str = os.getenv("TEACHER_USER_IDS", "teacher,prof_luojia")
+    course_store_path: str = os.getenv("COURSE_STORE_PATH", "")
     initial_mastery: float = float(os.getenv("INITIAL_MASTERY", "0.5"))
     default_difficulty: int = int(os.getenv("DEFAULT_DIFFICULTY", "3"))
     remediation_error_threshold: int = int(
@@ -99,23 +158,73 @@ class Settings(BaseModel):
         os.getenv("SEMANTIC_WORKER_POLL_SECONDS", "1.0")
     )
     tool_timeout_seconds: int = int(os.getenv("TOOL_TIMEOUT_SECONDS", "8"))
+    step_verification_timeout_seconds: float = float(os.getenv("STEP_VERIFICATION_TIMEOUT_SECONDS", "5"))
     tool_max_rounds: int = int(os.getenv("TOOL_MAX_ROUNDS", "2"))
+    typed_math_tools_enabled: bool = os.getenv("TYPED_MATH_TOOLS_ENABLED", "false").lower() == "true"
+    llm_capabilities_json: str = os.getenv("LLM_CAPABILITIES_JSON", "{}")
+    llm_prices_json: str = os.getenv("LLM_PRICES_JSON", "{}")
+    answer_guard_enabled: bool = os.getenv("ANSWER_GUARD_ENABLED", "true").lower() == "true"
 
-    def resolve_model(self, request_model: str | None) -> str:
-        model = request_model or self.llm_model
+    def resolve_request(self, request_model: str | None) -> tuple[str, str]:
+        """Resolve a request model id to (base_url, model_name).
+
+        Free-form ids: "<provider>:<model>" for a known provider, or
+        "custom:<https base-url>|<model>" for a user-hosted endpoint. Bare
+        ids fall back to the curated catalog (kept as server-side defaults).
+        """
+        model = (request_model or self.llm_model).strip()
+        if model.startswith("custom:"):
+            base, _, name = model[len("custom:"):].partition("|")
+            base = base.strip().rstrip("/")
+            name = name.strip()
+            if not base or not name:
+                raise ValueError(
+                    "自定义模型需要同时提供接口地址与模型名称，格式：custom:https://.../v1|模型名"
+                )
+            if not base.startswith("https://") or self._is_local_host(base):
+                raise ValueError("自定义接口地址必须是公网 https:// 地址。")
+            return base, name
+        if ":" in model:
+            provider, _, name = model.partition(":")
+            provider = provider.strip().lower()
+            name = name.strip()
+            base = PROVIDER_BASE_URLS.get(provider)
+            if provider != "custom" and base and name:
+                return base, name
+            raise ValueError(
+                f"Unsupported model {model!r}. 请按 供应商:模型名 填写，例如 openai:gpt-4o-mini。"
+            )
         if model not in configured_model_catalog():
             raise ValueError(
                 f"Unsupported model {model!r}. Choose a model returned by /api/models."
             )
-        return model
+        spec = configured_model_catalog()[model]
+        if model == self.llm_model and self.llm_base_url:
+            return self.llm_base_url, model
+        return PROVIDER_BASE_URLS[spec.provider], model
+
+    @staticmethod
+    def _is_local_host(base_url: str) -> bool:
+        host = base_url.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
+        if host in ("localhost", "0.0.0.0") or host.endswith(".local"):
+            return True
+        if host == "127.0.0.1" or host.startswith("127."):
+            return True
+        if host.startswith("10.") or host.startswith("192.168."):
+            return True
+        if host.startswith("172.") and host.split(".")[1].isdigit() and 16 <= int(host.split(".")[1]) <= 31:
+            return True
+        return False
+
+    @property
+    def teacher_ids(self) -> frozenset[str]:
+        return frozenset(part.strip() for part in self.teacher_user_ids.split(",") if part.strip())
+
+    def resolve_model(self, request_model: str | None) -> str:
+        return self.resolve_request(request_model)[1]
 
     def resolve_base_url(self, resolved_model: str) -> str:
-        spec = configured_model_catalog().get(resolved_model)
-        if not spec:
-            raise ValueError(f"Unsupported model {resolved_model!r}")
-        if resolved_model == self.llm_model and self.llm_base_url:
-            return self.llm_base_url
-        return PROVIDER_BASE_URLS[spec.provider]
+        return self.resolve_request(resolved_model)[0]
 
     @property
     def cors_origins(self) -> list[str]:
@@ -125,6 +234,8 @@ class Settings(BaseModel):
         return origins
 
     def validate_runtime(self) -> None:
+        if not 0.01 <= self.step_verification_timeout_seconds <= 5:
+            raise ValueError("STEP_VERIFICATION_TIMEOUT_SECONDS must be between 0.01 and 5")
         self.resolve_model(None)
         self.resolve_model(self.vision_model)
         if self.auth_required and len(self.auth_token_secret) < 32:

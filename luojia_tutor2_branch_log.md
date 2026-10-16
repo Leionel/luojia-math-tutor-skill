@@ -1,0 +1,830 @@
+# 分支工作日志：`feature/course-graph-2.0` 相对 `main` 做了什么
+
+### 2026-10-15 提交与PR更新验证
+
+用户授权commit、push与更新现有PR。R3实现提交为 `6825c9d`，另补OpenUI生成提示文件的LF检出规则。干净提交副本的 `npm test`：API994 passed / 1 skipped（没有本机 `.env`）、Web107 passed；JSON与UI目录通过。此前工作区API1013含未提交R2本地测试，不作为远端提交计数。生产构建/TypeScript通过，lint零错误/10既有警告。PR保持Draft，R3.4真实策略评测和R3.5学生可见恢复入口继续按复核记录推进。
+
+## 2026-10-15 R3 交付复核与缺口修复
+
+本条修正此前“R3.3/R3.4/R3.5全面闭环、UI全量100%”的表述，以[复核回执](planning/r3-implementation-review-2026-10-15.md)及[当前规划](planning/r3-agent-capabilities-2026-10-14.md)为准。
+
+- 修复Python实验提案字段与前端严格schema不一致（包括普通决策null被拒绝）、桌面Code回传与code URL恢复、Code抽取丢失的轨迹/停止原因/历史版本操作、异步覆盖和保存代码行定位。
+- 定向检索接入真实课程仓库和Teacher：一次本地检索、200ms降级、至多3条已审核/边界内片段，含正文哈希与课程修订；保留同一次模型生成预算。
+- 目的实验要求真实学生预测，服务端只改初值；被Guard降级的决策不能凭action为活动原话授权实验卡。
+- 接续复用来源/owner/帮助校验与已交付操作卡；事务指纹幂等、一次预览、20次操作/256KiB上限；补充仍待核验，更正使旧推断失效，清空移除摘要内容。
+- R3.4仍为离线比较工具，缺数学评审/固定资源回执不能判胜；真实P0/P1采集与评定未完成。R3.5服务/API已有回归，学生可见摘要入口与跨会话页面路径未完成。没有付费模型调用或新增质量评分。
+- 最终npm test：API1013/Web107通过；生产构建/TypeScript通过，lint零错误/10既有警告；桌面与390px断言通过，真实Chrome验收页已打开。详细记录见复核回执；复核阶段未提交；本次按用户后续授权提交R3相关改动、push并更新现有Draft PR。保留其它Agent和用户的无关改动。3000位于Windows保留端口范围，页面检查用3100。
+
+
+## 2026-10-14 3A Canvas 分栏多工作空间与 Intelligent UI 东方学者风重塑交付
+
+结合用户“结合网络优秀 UI 经验”指令与方案 a+c（现代 Canvas 左右分栏工作区 + 多工作空间支持）：
+1. **Intelligent UI 智能卡片重塑 (Batch 4 - `89a68c9`)**：
+   - 依据《东方水墨宣纸质感设计规范（Scholarly Atelier Design System）》，全量重构 `apps/web/components/learning/intelligent-ui.tsx` 中的核心组件：
+     - `SourceExcerpt`：典籍文献微卡、一键复制原文、边注式引用信息。
+     - `ConditionChecklist`：公理化定理成立条件判定阵列、绿/琥珀双态徽章。
+     - `PredictionForm`：先验假设推演卡、直觉速选启思 Pills（二次收敛、线性退化、震荡发散）。
+     - `RunTraceChart`：精美现代 SVG 折线/区域渐变图，带点状网格与交互提示点，下方支持折叠展开详细数值迭代矩阵。
+     - `TeachingDecisionReceipt`：学术导师决策票据，支持教学意图印章与动作审计。
+2. **现代 Canvas 左右分栏多工作区交付 (Batch 5 - `8edd92e`)**：
+   - **可拖拽分栏手柄**：在 `/chat` 中引入 `ResizeHandle`（支持 380px ~ 1000px 宽度连续拖拽），通过 `localStorage: luojia_workspace_width` 进行状态持久化。
+   - **学术工坊条 (Atelier Canvas Ribbon)**：重构对话顶部通栏，左侧显示伴读联动微光徽章，中间呈现多工作区选项卡 Pills，右侧提供一键展开/收起。
+   - **多工作空间体系 (`CanvasWorkspace`)**：
+     - `🧪 数值实验台 (Lab)`：无缝嵌入已重构的动态蓝图画布与启发引导。
+     - `📖 经典研读录 (Reading)`：嵌入《数值分析》收敛定理与前提条件对照录，带一键提问探针。
+     - `📐 今日日课案 (Study)`：嵌入递进式日课任务卡，支持一键在当前对话开启推演。
+     - 具备窗口最大化切换（`isWorkspaceMaximized`）、独立页面新标签打开、移动端抽屉适配。
+3. **验证结果**：
+   - TypeScript `tsc --noEmit` 0 错误通过。
+   - 前端 88 项测试套件全部通过（0 fail）。
+   - ESLint 0 error 通过。服务持续在端口 3000 / 8000 运行。
+
+## 2026-10-14 R3.1 与 3A UI-a 首版交付
+
+用户要求开做并随后要求先交付。完成 Chat＋Lab 共享领域视图、同会话预测/观察/解释/修订、OpenUI 1.0.0 自有组件目录、单调用教学决策与来源绑定。决策为模型意见，不提升数学 verified 或掌握度；输入预算不足/无效协议/交付修复回退。固定动作仍由服务器预览与保存接口执行。UI-b/c、R3.2目的实验、真实模型增益接续，未倒填质量成绩。
+
+根 JSON/API971/Web86 全套通过；最终 Web88、API定向29、TypeScript、生产构建通过，lint 0错误/10既有警告。Playwright 验证桌面双栏、连续两次刷新、390px抽屉/键盘、开关工作区保持生成、同会话双请求和主动停止；浏览器轨迹真实，模型回复为离线fixture，实际供应商调用0。详见 [本轮交付](planning/r3-ui-a-and-r3-1-delivery-2026-10-14.md)。没有 commit/push/deploy；原 dirty 与其它聊天新增规划保留。原8000进程需重启加载新后端；隔离验收服务收尾，正式库/.env未修改。
+
+## 2026-10-14 学习工作区视觉重塑与统一规范补充规划
+
+按用户“先不直接改代码，系统性规划，形成统一而美观的补充文档”要求，新增专项规划文档 `planning/r3-workspace-ui-design-and-unification-2026-10-14.md`，并在 `planning/README.md` 与 `planning/r3-agent-capabilities-2026-10-14.md` §3A 建立索引。方案针对 Study、Reading、Lab、Assessment、Teach-back、Code Workshop 六大工作区，统一定义“三栏黄金推演舞台（Atelier Layout）”、东方水墨宣纸质感（Farm-Ink）、印章徽标与高质感数学控件，明确 UI-a/b/c 分阶段无损接入原则。本轮仅规划沉淀，不改动业务代码，无新增模型调用。
+
+## 2026-10-14 Intelligent UI与统一学习工作区规划
+
+用户要求加入规划。R3新增UI-a/b/c界面主线：共享Chat＋Lab/OpenUI组件目录与教学决策/主动实验一起实现，Reading/Study接续，Code保存版本讨论复用同一控制与来源。独立路由保留，共享领域View、会话/动作桥及历史版本；不重新做Tutor后端、不放开学生代码或模型HTML脚本。细节在planning/r3-agent-capabilities-2026-10-14.md §3A，v4/状态入口/R4目标及交接均同步。
+
+范围增加已重估：UI新增7–11日、Newton核心9–14日、能力四片＋UI三片17–27集中开发日，未测产能。本轮只改规划，SDK未安装/功能未实施，无模型消费、提交或推送，原dirty保留。
+
+## 2026-10-14 Agent能力近期规划修订
+
+按用户“加入这些、方案不要过于保守”更新v4与planning/README.md，新增R3执行细化，同步R2接续/R4演进版目标。近期核心：证据驱动教学动作→Agent提出单参数实验→学生预测/确认/观察/修订；目标检索与失败反馈优化随后深化，任务记忆/恢复按实际需求。R2基线与R3隔离开发交错，正式质量/费用/上线仍分别验收；原“必须先有经审失败簇才允许任何R3开发”不再作为当前规则。粗估核心6–9、四片10–16集中开发日，未测实际产能。
+
+本轮仅规划/交接记录，未实现功能或扩大模型消费；前轮评测/文档dirty、原删除/原型及运行环境保留，未提交/推送/部署。主计划仍v4，状态仍只看planning/README.md；planning/r3-agent-capabilities-2026-10-14.md为执行细化，不另建状态看板。
+
+## 2026-10-14 用户审核反馈登记
+
+记录用户对N01/N02与页面流程/口径清单的整体“通过”，绑定当前判据和页面源码摘要；未展开成逐项分数或完整E2，正式二审/模型质量/R3仍待证据。见 `evaluation/r2/user-review-2026-10-14.md` 与 `planning/README.md`。本轮仅文档，原dirty及运行服务保留。
+
+## 2026-10-14 独立评测归档
+
+新建独立只读任务在23aace8复跑R2两对固定应用采集、材料check与数学代入，保留原dirty，无代码更改。报告 `planning/r2-independent-evaluation-2026-10-14.md`：R2工程准备可信、数学教学质量待验，R3暂不启动；先少量真人判据与R4真实UI段，live需补阶段/回答/计量；演示须区分精确卡与Agent贡献，零学习写入限mastery/mistake/独立成绩。独立AI意见不升gold。主任务仅归档/索引，现状只看 `planning/README.md`。
+
+## 2026-10-14 E1应用采集与R4材料接续
+
+两道公开Newton题的D0/D1离线应用采集复用真实ASGI/SSE、编译图与保存，harness只移除D0 exact_check；新临时双库每臂重置，全prompt仅该字段不同。四条固定回复不是模型质量，外连拒绝、无学习写入，rubric待真人。R4真实闭环120秒脚本与三条源码讲解已写，录像/真实模型段未做。根JSON/API933/Web80、定向5/5、E0追加13/13合同20/20实例通过；不改业务代码，不重复Web构建。见R2回执和 `planning/r4-demo-and-source-guide-2026-10-14.md`；唯一入口 `planning/README.md`。原dirty保留，无付费/正式库/push。
+
+## 2026-10-14 R2 评价首轮
+
+接续在隔离双库与无模型密钥的本地页面补B3保存/刷新/交卷/分层反馈/教材回链、B4合法与错误更新变体保存/行号/旧版比较，两条局部桌面检查不算真人E2。服务/标签页结束。下一步按原v4的数学教学对照、任务体验、失败驱动R3和可并行R4展示推进；详见本轮回执。`69cea78`推送两次网络失败，本地提交与远端CI分开报告。
+
+按用户确认从 v4 的 R2/E0–E2 拆 R2.0–R2.4。新增源码绑定、未签署的38条 A0/S5/B2/B3/B4 内容审核包，公开 B4 正反变体及核对笔记；现有离线运行器聚焦 R1 关键路径，12/12合同、19/19实例通过，根目录知识 JSON/API930/Web80、Web typecheck/build、lint0错10既有警告通过。CI Web 测试与根脚本共用同一清单，修正此前漏跑 `learning-browser-storage.test.ts`。E1 同题真实应用模型质量、E2真人任务均未运行，真人数学二审缺失；局部网页补验见上段。完整回执 `planning/r2-evaluation-delivery-2026-10-14.md`，唯一状态入口 `planning/README.md`；没有业务代码、正式库、付费模型或部署改动，原无关 dirty 保留。
+
+## 2026-10-13 R1-A/B 工程收尾与浏览器草稿口径
+
+按独立复核补齐 B2 私题本地留存：未发送题目/引用/内嵌讨论草稿改同标签页暂存，旧私题迁移或删除；确认退出/账号变化时清理本地学习草稿、请求指纹和用户自填模型 Key，保留非密钥界面偏好和服务端已保存记录。`planning/r1-a-b-closeout-2026-10-13.md` 分列 A/B 工程收尾、真人内容/真实模型质量缺口及 R0 上线 Gate；唯一状态入口仍是 `planning/README.md`。根目录离线知识 JSON/API928/Web80、Web typecheck/build、lint 0 错/10 既有警告。本轮无付费模型/正式库/部署，原无关 dirty 保留。
+
+## 2026-10-12 R1-B B5 隔离浏览器补验
+
+合成账号和独立库下重演今日任务、教材选段与自由 Newton 实验的 Chat 续接；修复教材题目原话进入 URL、草稿刷新丢来源。题目改由同标签页短期 `sessionStorage` 临时 ID 转交，服务端仍重读并核对引用。API928/Web78、生产构建通过；不把路径检查当数学/教学质量。完整范围和限制见 `planning/r1-b5-browser-followup-2026-10-12.md`，现状只看 `planning/README.md`。
+
+## 2026-10-12 R1 审阅后修正
+
+首页主卡消费 B1 服务端推荐；到期 review 加单元来源/条件/内容版本合同，旧来源先读当前材料再做新练习；A5 内置通用 Lab 同题后续轨迹记参考帮助曝光；B3 错项只给核对线索，B4 对固定正根题说明残差阈值充分条件，Teach-back 缺输入时保持 unknown。无新 Agent/Graph 抽象或学生代码执行，原 dirty 保留。验证、限制和 Gate 见 `planning/r1-quality-fixes-2026-10-12.md` 与唯一入口 `planning/README.md`。
+
+## 2026-10-12 R1 工程后独立质量审阅
+
+在 B5 提交后由独立子 agent 只读审阅 A/B 数据流、数学种子、工作区与质量回执；另经用户授权做 9 条公开合成题的 `deepseek-flash` 直连观察，预写判据与脱敏结果见 `evaluation/r1/live-probe-development-2026-10-12.json`。报告 `planning/r1-independent-quality-review-2026-10-12.md` 分列 6 项有源码证据的问题与保留项；没有改业务代码、正式库或原有 dirty。真实模型观察没有覆盖路由、工具、浏览器或真人评审，正式质量 Gate 仍 pending。
+
+## 2026-10-12 R1-B B5 总回归
+
+新增同一 Chat 会话的离线跨工作区回归：只读任务→教材引用→Newton/线性实验→代码静态线索→自检帮助锁与交卷→复习单元教材引用。保存对象由服务端重读，跨 owner 与过期 hash 拒绝，未写掌握度；Web 合同核对返回原线性/代码对象，代码原文不入 URL。自检单题答案尚无可信 Chat 引用，B5 仅验证经教材复习路径的续接。工程、内容审核、真实模型质量分列见 `planning/r1-b5-delivery.md`；正式 R1 质量、R0 正式库 Gate 仍 pending。原无关工作区修改保留。
+
+## 2026-10-12 R1-B B3/B4 本地切片
+
+B3 在六道既有开发题的交卷后加入条件、方法、完整参考解析三层，保留首次作答与历史计分；题目/rubric hash 与反馈版本固定，旧卷不追溯重评。B4 将限定 Newton AST 规则升 v2，仅增加直接残差阈值退出的根误差依据追问；新提示区分结构事实/算法线索并绑定保存代码版本与行号，不执行代码、不判算法正确性。隔离库网页与离线合同已核对，最终工程证据见 `planning/r1-b3-b4-delivery.md`。B3 内容独立审核、B4 误导案例评估、A 质量 Gate、R0 正式库 Gate 仍 pending；B5 未做，原无关工作区修改保留。
+
+## 2026-10-10 R1-A A4/A5 与 R1-B B1/B2 本地切片
+
+A4 讲回选中条件可信引用与回链；A5 Newton 服务端逐步揭示、已揭示转移切线、防剧透、Chat↔Lab 原对象续接。三域共用现有上下文/回执边界，未建新 Agent。A5 本地工程 Gate 通过，独立数学/教学质量未验收。B1 按保存状态给只读、可解释任务入口；B2 用开发条件卡与学生提供的题目/自报前提对照追问，保留 unknown 和来源版本，不证明定理适用。独立内容审核、真实模型和学生收益待验，B3/B4 未做。测试与浏览器范围见 `planning/r1-a4-a5-delivery.md`、`planning/r1-b1-b2-delivery.md`；唯一当前状态入口 `planning/README.md`。R0 正式库与授权链仍 pending，原无关工作区修改保留。
+
+## 2026-10-08 R1-A A0–A2 本地工程切片
+
+用户明确授权在 R0 Gate 未完成时先做 A0–A2 本地开发。16 个公开案例仅 agent 准备；Newton 已保存解释/修订经服务器重读和版本/owner/帮助锁绑定进入 Chat，普通轨迹问答不带原话。D1 复用固定题精确代入暂行，D2 与真实数学质量待验证。知识 JSON/API907/Web72、typecheck、lint0错10既有警告；开发服务器监听3000，未 build/付费模型/正式库/commit/push/deploy。`planning/README.md` 为唯一状态入口，细节见 `planning/r1-a0-a2-delivery.md`。
+
+## 2026-10-08 R1 实施基线冻结（仅规划）
+
+R1-A/A5 的 Newton 已揭示步骤切线、防剧透和 Chat↔Lab 续接改为工程必验；A2 无可靠真人审核或真实模型证据时用 D1 暂行，D2 待验证。A5 工程 Gate 过后只放行无待审核内容依赖的 R1-B 切片，A 的质量 Gate 独立记录。计划入口 `planning/README.md`，细节 `planning/r1-math-tutor-core-2026-10-08.md`；R0 未完成，R1 未实施，未改业务代码。
+
+## 2026-10-08 M1 Prompt B：Newton 参与式活动
+
+在现有求根实验台加入固定单题四步流程，预测/解释/修订分别保存，参考轨迹沿用 Root Runner；活动和旧自由实验分开回看，防止刷新时提前展开轨迹。数值实验中栏、吸顶导航和中栏滚动显现同步调整。隔离库实测主流程；完整离线测试 API903/Web71，类型检查、lint 0 错误、Web 生产构建通过。帮助和代数结论范围见 `planning/m1-newton-delivery.md`；390px 页面交互及真实模型教学质量未验收。
+
+## 2026-10-08 M1 Prompt A
+
+上传文件的匿名与跨用户读取已封闭，Chat 合法图片通过受控 Bearer fetch 显示；`uv.lock`、README 事实和历史快照同步整理。API901/Web71及构建通过；migration 8 的正式库验收、旧文件归属和教材授权仍待核实。回执：`planning/m1-g0-delivery.md`。本轮停止于 A，不自动实施 Newton。
+
+## 最终引用会话恢复校验
+
+发现本地来源缓存可能指向已经不存在的讨论会话，ReferenceTutor 现在并行核对来源与已有 owner 会话名单；失效缓存明确提示，草稿/来源保留，用户再次提问才懒创建新会话。跨owner和失效id的前端回归新增1项，Web最终71/71、最终构建通过、lint0错误10既有警告。后端未改，最近完整API899/根命令Web70为上一检查，未虚称再次跑API。最终日志 results/reference-session-final-*；保护的原runtime/07/原型仍未更改。
+
+## U08 可撤销登录会话（临时库）
+
+注册签发预检、用户/session原子写入、Bearer v2 sid/撤销/当前角色、幂等服务端退出、跨标签页/首页身份保护已实现。知识JSON/API899/Web70、增量11合同19实例、构建通过，lint0错误10既有警告；实际合成账号登录/双标签退出，临时库1登录1撤销账号保留。migration7增表，在临时库backup/恢复/integrity与失败回滚验证。正式库未读未升级；下一次Repository初始化会应用7，正式启动前必须实际备份/恢复验收。v1不得HTTP授权，重新登录；不是JWT/OIDC。细节 planning/complete-upgrade-2026-10/delivery-u08.md。用户授权额度内继续，本轮已额外交付U16/U08，剩余条件阶段仍pending。
+
+## U16 静态降级
+
+用户授权 U06 完成后有额度继续，已完成 U16。模型 HTML 的脚本默认禁止且无运行入口，旧消息原源码/静态图保留；删除30秒计时器与脚本重启，教学 prompt teaching-v2.8 与 UI一致。Web65、prompt1、构建通过，lint0错误10既有警告。实际临时库网页确认 srcdoc 无script/on事件/外链、sandbox空、关闭草稿保留、390px无溢出；危险死循环未执行。回执 planning/complete-upgrade-2026-10/delivery-u16.md。下一先 U08 临时库会话，正式库备份/恢复另验。
+
+## U04–U06 接续交付
+
+用户授权接续与分步提交。积分同页固定引用、代码静态规则/行号来源讨论、讲回原句跨度/逐条件未核验意见/前后版本已实现。知识JSON/API880/Web65、增量14合同33实例和受影响85项回归通过，构建/类型检查通过、lint 0错误10既有警告；真实网页用临时库和固定模型，讲回为自我映射，模型结构化路径离线验证。没有真实模型消费、经审gold、学习收益或代码执行。细节 planning/complete-upgrade-2026-10/delivery-u04-u06.md。下一优先U16静态降级；用户授权有五小时额度时继续，不自动满足外部gate。
+
+## U01–U03 首版交付与接续
+
+用户授权实施并 commit。线性实验同页固定引用、课程/私有Markdown选段Chat、只读已有任务续接已实现；保持旧Newton动作与独立帮助边界。API847/Web最终64、原E0 38/92、新增13/28、生产构建通过；桌面/390px及选段/任务刷新用隔离临时库和固定模型验收，无真实模型消费或学习效果结论。具体边界和日志见 planning/complete-upgrade-2026-10/delivery-u01-u03.md。原runtime dirty、原型/egg-info、07审阅保护不动。用户随后授权接续U04–U06，逐片验证并提交。
+
+## 2026-10-07 完整补充升级计划（只规划）
+
+用户澄清为planning/README.md“还需要补什么”的升级，选择先完整计划、逐功能可验收切片/保留全部目标。本轮未做原先猜测的linear业务实现。新增planning/complete-upgrade-2026-10/README.md、18个独立切片草案、register与implementation-notes；重整总索引并链接旧目录。先U01真实linear引用，再U02选段/U03任务续接，U16图示安全降级尽早，其余接续/条件启动。F1–F8、Agent、六个月研究与原扩展目标保留，不许全并行或虚构六个月交付保证。
+
+基线d9b9c849bf160a29f7d45efd330601b1083493b7。规划核实root context只Newton、numerical记录source_hash/schema但无统一graph revision、现有共享会话、阅读scope、代码静态无独立rule version、注册先写用户再签发、HMAC两段token v1非JWT、动态图30秒timer非CPU强杀。docker/wsl CLI存在不代表daemon/C0。真人gold、供应商/费用、PDF/字幕/真实授权、剩余开发产能待验证；条件阶段Feasibility4/5，未假签全5/5。
+
+344个业务/测试/工具/评测文件hash本轮前后不变；只检查文档链接/覆盖/保护文件，不重跑业务测试，不消费模型，不派发外部任务。原runtime dirty/egg-info/public原型保留，07原文不改。后续用户选择切片才实施，不把此计划当功能完成回执。
+
+## 2026-10-07 分步提交与S5.3离线预算
+
+用户授权继续下一步并分步提交。已有4批：988e65c核验、f90cc2e界面、085b9e6评测、dd95458规划。原回执“未commit”是实施当时快照，不改旧HEAD证明。新S5.3离线预算预留组件/SQLite账本只允许MockTransport，固定纯文字endpoint/model/output，并发/费用/取消/失败/重启/重定向/变更profile/ledger损坏均受控，actual_cost未知，无真实供应商消费。仅synthetic价格合同，未验证真实token/额外费用，不称live硬预算已启用。生产client/协议probe/live继续pending。
+
+根知识JSON/API819/Web56通过，新增预算39项；S5.3 E0 16合同39实例。源码/测试/manifest hash在results/s5-3-budget-proof.json；全日志s5-3-*。新预算切片另批提交，最终Git hash见log与本轮回执。细节planning/agent-v3-2026-10/13-delivery-s5-3-offline-and-commits.md。原runtime dirty、egg-info/public原型保留，07原文不改；无push/deploy/正式库更改，不重复UI构建。下一候选linear只读可信Chat；S5.2真人复核仍pending。
+
+## 2026-10-07 S5.2材料与工程流程首版
+
+用户授权开始5.2。新增8道公开dev独立解答/逐题rubric（agent_prepared_only，真人审核/二审pending）、严格内容/输入/rubric/版本绑定、未签署review worksheet、仅caller-supplied-unverified的录制回答导入与输出覆盖保护。新增2条固定模型实际ASGI/SSE完整流程，独立临时库与合成Principal：Newton引用/预览/显式save/重试/新引用/保护；普通数值Chat候选修订/输入保存/metadata恢复/两sink不写。共3run18阶段通过，不等于真实JWT、模型数学内容或真人学习效果。矩阵分支没有请求自动单步核验，输入绑定来自真实用户消息；不伪造step_hash。
+
+根知识JSON/API780/Web56通过；S5.2新增31回归、targeted80，E0 v2 38/92与S5.2 11/31通过。无生产代码/表/接口/依赖/UI改动，不重复前端构建。详见planning/agent-v3-2026-10/12-delivery-s5-2.md、evaluation/s5/README.md和review-protocol.md；results/s5-2-*为ignored生成证据。16保护文件不变，HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850；未commit/push/deploy/live消费。
+
+下一步真实审核/二审与评分仍pending，4个确认register仅空名额无假hash，不称封存题；S5.3需独立供应商/预算/授权。linear可信引用、C0/C1及真人研究未由本轮升级。S5.2材料与工程首版交付不等于全质量验收。
+
+## 2026-10-07 三份规划统一入口（仅文档）
+
+用户询问learning-experience与agent-engineering后续。新增planning/README.md，保留产品六个月F1–F8、工程A/S历史与v3当前S5三种视角；同步旧入口/implementation-notes。不重复排已完成首版。下一S5.2内容/流程证据，产品候选linear只读Chat，S5.3 live/预算有条件；F6/F7/C0/C1/A8保留启动门槛。读源码确认可信LearningContext仍限定Newton，原回执用于交付范围、本轮不重做全功能验收。保留07和runtime原dirty，无业务改动/提交/推送。
+
+## 2026-10-07 S5.1首版与弹出菜单实色修复
+
+用户启动S5.1并要求深入审视其内容。已实现offline/dry-run/replay、4类固定模型真实compiled graph/worker采集、独立临时SQLite与写入/保存恢复观察、固定分母/hash/人工来源合同、Markdown解释报告。来源为fixture，不计入真实模型数学质量；8道公开dev输入/rubric仍pending，真人二审/4道封存/2流程/live预算未完成。核心目标及case取舍见planning/agent-v3-2026-10/11-s5-1-evaluation-rationale.md，交付回执10，接口evaluation/s5/README.md。
+
+教学模式/工具和同根因思考弹出菜单改实色主题背景，去透明变量后缀与模糊，说明文字加深。HTTP/构建CSS验证实底；浏览器UI访问被工具URL策略拒绝，无新截图验收。3000端口保留生产预览。根测试知识JSON/API749/Web56通过（新增S5.1 49）；E0 v2 38/92、S5.0 10/45通过；Web类型/lint/build通过，lint10既有警告。16保护文件hash不变。
+
+HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850，保存原dirty；未commit/push/deploy/真实模型消费。下一步S5.2先作者解答/rubric审核，补实际观察adapter和完整流程；无已复核真实失败时不凭空扩Reasoner。不得把fixture合同通过写成模型准确率或教学增益。
+
+## 2026-10-07 S5.0 与首页/文案交付（工作区）
+
+用户授权开始S5.0，追加页面去AI味文案与fancy首页。已完成有界AST学生检查、固定私有worker/独立最多5秒预算、输入与候选重绑定、来源/范围/unknown、mistake/mastery双sink资格、帮助锁执行期监视与子进程回收、legacy历史prompt/展示；teaching-v2.6，无新表或模型权限扩张。首页加入深橄榄曲线区、光晕/脉冲、暂停/离屏/减少动态支持，操作提示改具体文字。实际手机焦点引起overflow内部滚动问题改为clip。
+
+根npm test知识JSON/API700/Web56通过，E0 v2 38合同92实例，独立S5.0 addendum10合同45实例；Web typecheck/lint/build通过（lint10已有警告）。真实compiled graph/临时SQLite/SSE与真实worker回收均有测试；浏览器fixture为固定模型、隔离库、外部HTTP禁用，不是live质量/教学评测。16保护文件哈希一致。完整行为、降级范围和证据见planning/agent-v3-2026-10/09-delivery-s5-0.md；results/s5-0-*和s5-0-ui保存本机证据。
+
+HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850，保留此前dirty，未commit/push/deploy、正式库迁移或真实模型消费。下一批S5.1/S5.2聚焦runner/gold仍pending；linear只读引用与独立Evidence尚未实施。旧审计“G1/G2未修复”是历史快照，不能作为当前运行真相，也不能把公开E0通过当质量准确率。
+
+> 面向后续接手本分支的人（人或 AI）。读完这份再动 `app/knowledge/**`、`app/tutor/graph.py`、`app/api/routes_notes.py` 或 `results/**`。
+> 文中所有数字都由 `git log` / `pytest` / 真实教材实跑得出，不是从提交信息里抄的。
+> 本轮追加：2026-10-03；下方 §0 保留 2026-09-29 的历史坐标，最新进展见文末。
+
+## 0. 分支坐标
+
+| 项 | 值 |
+| --- | --- |
+| 分叉点 | `251c680`（`git merge-base origin/main HEAD`） |
+| 分支提交数 | 33 |
+| 变更规模 | 80 files, **+15126 / −607** |
+| HEAD | `73ea8ae`，与 `origin/feature/course-graph-2.0` 一致 |
+| 时间跨度 | 2026-09-17 14:39 → 2026-09-29 22:53 |
+| 测试现状 | `apps/api`：`pytest -q` → **256 passed, 0 failed**（离线，约 8s） |
+
+一句话概括：把「数值分析课程知识图谱」从一份 2000 行调研文档落成可运行系统，然后**用一本真实的 150 页教材把整条链路跑穿**，把跑穿过程中暴露的缺陷逐个修掉。
+
+## 1. 五个阶段
+
+### 阶段 1 · 09-17 下午：Course Graph 2.0 落地（`baa95e1`→`eab71b1`，5 commits，≈ +10100 行）
+
+把调研结论实现成代码：`case_schema`/`case_matcher`（Teaching Case 层）、`boundary`（判界）、`candidate_graph`（候选演化）、`student_overlay`（学生叠加层）、`course_store`/`graph_repository`/`graph_review`/`evidence_builder`；首套课程数据集 `data/course_packs/numerical_analysis_root_finding.json`（793 行）；前端 `/graph` + KaTeX（`math-view.tsx`）+ 暗色对比修正；`/admin/knowledge` 审核台。
+
+**这一阶段产物量大但状态是"能跑"，不是"可信"**——后面四个阶段全是它的账单。
+
+### 阶段 2 · 09-18 14:55：第一轮可靠性收口（`3990686`，24 files，+898/−296）
+
+双真源 → 单一 SQLite `CourseStore`；删掉 `student_overlay` 里的第二套 mastery；`boundary` 改 fail-closed 并引入 `UNCLASSIFIED`；`auth` 加 `role` claim；`/api/courses` 改 typed 事件 + 幂等；审核写 `graph_revisions`；删伪 seed；前端统一走后端。
+
+### 阶段 3 · 09-18 15:00–15:33：评测证据链 + verifier 硬关卡（`80171fc`、`f94c8b9`、`830b65a`、`4a2103d`）
+
+- `evaluate_benchmark.py` 原来 `open(..., "a")` 追加写，导致 `results/v8_eval_results.jsonl` 120 行 = 同一批 20 个 id 叠了 6 次；且异常被 `print` 吞掉后仍把**空响应**送进评分器写成 `passed:false`。改为覆盖写、失败样本带 `error` 且**不进分母**、归档旧文件。
+  - 注意：README 的 `90% (18/20)` **一直是对的**。任何人打开那个 jsonl 数一遍会得到 18/120 = 15%，从而误判成造假——这个坑踩过一次，别再踩。现在 `python apps/api/scripts/summarize_eval.py` 一条命令自证：20 行、90.0%、5.0%。
+- README 三处零证据 claim 处理：G01–G04 表整表删除；两行 baseline 改「未评测 + 🚧 规划中」（`v7_baseline.jsonl` 是 0 字节）；举一反三文案改为如实描述静态题库并删掉零调用者的 `generate_exercise_prompt`；`report.md`（V5 代中途快照）改名 `report_v5_archive.md` 并加 superseded-by 头。
+- 符号验证从软标注改硬关卡：`verify_lhopital_conditions` 原来三个分支全部 `verified=True`、`is_correct` 由文本含不含 `"0/0"` 子串决定；现在真用 SymPy 求分子/分母极限判型，解析不出则 `verified=False, is_correct=None`。`[VERIFY]` 原靠模型自愿输出（不打标 = 整轮零验证），现在缺标记触发**强制验算轮**。失败不再静默：输出加 `⚠️ 本轮未能完成符号验算` / `❗ 验证服务暂不可用` 前缀。
+  - 图拓扑仍是 `add_edge("verifier", "teacher")`——关卡做在**输出变异 + 强制二轮**上，不在路由分支上。别误以为漏改。
+
+### 阶段 4 · 09-19 上午：教材链路（`cacf765`、`5969486`、`9357acd`、`a19b392`、`0e732a0`）
+
+MinerU v4 token 流程；模型配置改**供应商制**（`provider:model` / `custom:base|model` 前缀编码，8 个调用点零改动）；修掉 `repo.insert_document` **根本不存在**导致所有 PDF 上传静默失败、RAG 一直是空的；上传上限 10MB→200MB、超 200 页返回 413；笔记本与错题本各加「教材整理」入口；教材 → 图谱候选三段式流水线（`candidate_pipeline.py`）。
+
+### 阶段 5 · 09-29：用真教材跑穿全链路并修掉暴露的缺陷（17 commits）
+
+测试载体：吕锡亮《数值分析》讲义 PDF，**150 页 / 7.2 MB**，MinerU 解析得 **320,900 字符** markdown，121 秒。
+
+**5.1 环境与可复现性**（`6d47ddc`、`29c0ede`、`4cced5a`、`ea93e8d`）
+
+- 沙箱用 `subprocess [python, "-I", tmp]`，而 `-I` 隐含 `-s`，**排除 user site-packages**。依赖装在用户目录时 `import sympy` 必失败，所有 `[VERIFY]` 验算 100% 挂掉。改为 `-E -P`（保留隔离、去掉 `-s`）；缺失依赖改判为**环境故障**而非"学生代码错了"。
+- **`apps/api/.env` 从来没被服务加载过**：`Settings` 的默认值在类定义时就用 `os.getenv` 绑定，`mineru_client` 同样裸读环境变量，而全 app 没有任何 `load_dotenv`（只有 `scripts/evaluate_benchmark.py` 自己调），`npm run dev:api` 也没有 `--env-file`。实测 `MINERU_API_KEY set? False`——阶段 4 填进去的 key 服务根本看不见，教材上传必然失败。改为在 `class Settings` 之前加载，`override=False`；`python-dotenv` 补进 pyproject（此前被 import 却从未声明）。
+- 上一条的副作用：测试开始继承开发者真实 key 并**打真网络**，套件从 7s 变 84s 且并发下变红。用 `LUOJIA_NO_DOTENV` 门控，`tests/conftest.py` 里设置并清空两个 key，另有测试断言测试进程内它们必为空。
+- `COURSE_STORE_PATH` 默认为空 = **纯内存**，重启即丢候选与审核记录，且此前无文档。已写进 `.env.example` 并在本机 `.env` 配上。
+
+**5.2 教材链路从"完全不可用"到可用**（`17290ee`、`69de7a8`、`9feebfa`）
+
+- **MinerU 端点拼错**：`file-urls/bear` 应为 `file-urls/batch`。MinerU 对未知路径返回纯文本 `404 page not found`（19 字节），`Response.json()` 把开头的 `404` 当数字解析完再报 `Extra data: line 1 column 5 (char 4)`——一个拼写错误伪装成了响应格式 bug，**整条教材上传链路自诞生起就没通过**。新增 `_parse_json`：HTTP 状态 + content-type + 正文片段，401/403 明确指向 90 天 token 过期。
+- **候选抽取在用重叠分块重建原文**：`routes_courses` 用 `"\n".join(chunks)`，而 `chunk_markdown` 是 500 字窗口 + 50 字重叠。真实教材上重建文本比原文长 **11.3%**（357,263 vs 320,900），导致 70 个提案只有 66 个唯一 id；`add_candidate` 遇同 id 会 `support_count += 1`，于是**只上传一本书**就有 4 个单元的支持度显示为 2。改为 `documents` 持久化 markdown（migration 004）并从中读取；无原文时 **409 fail-closed**，不再退回有损重建。
+- 同批修掉两个邻近缺陷：候选 id 只哈希 `(document_id, title)`，同名标题（两个「证明」块）会塌成一个候选并丢弃第二段内容 → 改为把正文也纳入哈希；MinerU 失败被写成 `extracted_md = "⚠️ [MinerU 网络解析失败: …]"` 当内容返回 → 文档类上传改 **502 且不入库**，图片上传保持 200 + 空 markdown + `parse_error` 字段（`tutor-input.tsx:151` 的 `data.markdown ? … : ""` 用法不受影响）。
+- **定长窗口分块换成结构感知分块**（`document_chunking.py`）：复用 `segment_document`，一块绝不跨两个教学单元；长小节按段落边界切，单段超限退到 `text_preview.safe_cut` 的 LaTeX 安全边界。每块前缀 `[章 › 节 › 小节] 标题`。实测 714 → **430 块**，正文重拼**无丢失无重复**，**158/158 标题完整且仅出现一次**，429/430 带上下文头。块被明确定义为**有损派生物**，原文重建只走 `documents.markdown`。
+
+**5.3 切分粒度与检索接线（调研文档 §24 的 A–D）**（`f83c52e`、`5b563cc`、`41d0a62`、`97f3674`、`1e7d9fb`）
+
+- **A 切细教学原子 + 产出关系**：`证明`/`例`/`推论`/`注` 不再附着进上一单元，各自成节点；类型词表补 `引理`/`推论`/`注`/`例`/`证明`；产出 `NEW_RELATION` 候选（`supports_proof`/`example_of`/`derives_from`/`part_of`）。`graph_review.py:115-124` 早已能审 `new_relation`、`TASK_TYPE_RELATIONS` 也早含这些类型——缺的只是流水线去产出。
+- **去掉写入期 600 字截断**：`_MAX_CONTENT_CHARS` 是给 UI 卡片设的预算，却被用来截断知识本体。实测丢弃全书 **75%** 正文、截断 46 个定理中的 44 个，且切在 LaTeX 中间（`定理 2.4` 存成 `… + \frac { f ( x ^ { * } ) -`，未闭合），被丢掉的正是结论 `|x_{k+1} - x*| ≤ (L/d)|x* - x_k|²`。截断下移到展示层 `app/text_preview.truncate_text`（会避开未闭合的 `$`/`$$`/花括号/尾部命令）。保留率 25% → **99.9%**。
+- **MinerU 把标记渲染成标题**：`## 定义 1.1` 既是标题又是标记，而 `if heading` 分支排在 `elif unit_type` 前面，标题分支先赢 → 类型全丢。改顺序后类型从 `{definition 2, theorem 2}` 变成 `{definition 19, theorem 46}`。
+- **B 融合两套检索**：原来 `_collect_local_hits` 是**互斥二选一**——课程图谱命中就完全绕过 BM25+向量+RRF 的混合检索，未命中才兜底调用；且图命中恒为 `score=85`、`direct_hits` 恒为 `[]`、`fast_context:103` 纯拼接不重排，`_hits_text` 取 `hits[:3] × 240 字` ≈ 720 字。**课程图谱命中时等价于没有检索**：注入的是子图前 3 个节点，与学生提问无关。改为并发 + **RRF 排名融合**（按排名而非原始分数，因为两者量纲差三个数量级），混合检索带 **200ms 子预算**（否则慢速 embedding 调用会连课程图谱结果一起被 350ms 窗口取消）；图命中改「锚点 1.0 / 一跳 0.6」× case 置信度并预排序；注入改 **2400 字按排名填充**，省略显式报告。
+- **C 章节路径与溯源**：**MinerU 把 158 个标题全部输出成 `##`**，markdown 层级完全不携带层次信息 → 改从章节编号推深度（`第 N 章`→1，`N.M`→2，`N.M.K`→3），深度分布从「239/240 都是 1」变成 `{1:10, 2:135, 3:94}`。另外 `graph_review` 批准候选时未映射 `chapter_path`/`source_document_id`/`page_start`/`page_end`，入图后的规范单元答不出"我来自哪一节" → 已补。`KnowledgeItem` 本就有 `chapter`/`section` 字段，现由 `chapter_path` 填充并在 prompt 里渲染成 `来源 · 章 › 节`。
+
+**5.4 抽取质量与审核可用性**（`4680c6a`、`7012cf2`、`9bc21ff`、`8bcd446`、`73ea8ae`）
+
+- **前置/后置内容不再成为知识单元**：用结构性规则（不在编号大纲内）而非词表，`引言`/`前言`/`目录`/扉页/`参考文献` 全部落网，而「第 1 章 基础知识」这类章引言保留。两个陷阱：`参考文献` 在第 6 章之后会**继承章路径**，所以后置标题要重置大纲栈；`K第 1 章 练习 k` 是 OCR 装饰的合法练习节，所以章号匹配用 `search` 而非 `^` 锚定，否则会被误杀。
+- **标题收敛**：`例题 1.1 (1) 多项式计算通常较为简单，我们可以设计一个算法：` → `例题 1.1`。规则「标记 + 编号 +（短名称）」，编号后残余若短且不含句读则保留为名称（`算法 2.1 二分法` 不丢"二分法"），纯数字括注是枚举不是名称。长句标题 72 → 3 条。
+- **`命题` 此前根本不是标记**：全书 7 个（`命题 3.1`–`5.1`）被当成普通标题、类型 `concept`，**还会重置 anchor**，导致其后的证明连不到任何东西。现归入 theorem 类（标题保留"命题"字样），theorem 46 → 53。
+- **关系端点改按 section order 索引而非 title**：标题收敛后全书有 56 个都叫「证明」，用 title 做键会让所有 `supports_proof` 指向同一个错误单元。
+- **`support_count` 原来数的是"跑了几次"而不是"几个来源支持"**：同 id 命中就无条件 `+1`，同一文档重跑即虚增。改为仅在 `evidence_ref` 新出现时递增。同时 pending 候选的 payload 原本**永远刷不动**（同 id 直接丢弃新 payload），导致 C 阶段新增的 `chapter_path` 无法回填 → 改为「仅 pending 状态下刷新」，教师一旦 approve/merge/reject/defer 就永不被覆盖。
+- **新增 `SUPERSEDED` 状态**：候选 id 哈希了 title 和 text，管道一改进 id 就变，旧候选**永远不会被取代，只会堆积**。实测抽取改进后 DB 里有 778 条 pending = 495 条当前 + **283 条孤儿**（含已不再抽取的前置内容、长句标题、无端点标题的旧关系）。`from-document` 现在会撤走「同一文档、仍 pending、本轮未产出」的候选；只动 pending，教师决定过的记录原样不动；撤下的行保留不删，早期管道提议过什么仍可审计。
+- **审核台此前无法审关系**：260 条关系候选只有一个笼统的「拓扑关系」徽章，DOM 里搜不到任何具体类型，卡片正文还落到「无补充描述」（关系本来没有 content）。现在徽章点名具体类型（支撑证明 / 例题佐证 / 推论来源 / 从属小节），卡片渲染 `source —关系→ target`，详情面板附两端 unit id、原始 `relation_type` 与置信度，单元卡片与详情显示章节出处。
+- **笔记生成两处缺陷**：端点同样在用 `"\n".join(chunks)` 重建原文（已改读 `documents.markdown`，无原文 409）；`_sample_chunks` 是 `chunk[:keep]` **按比例切每块前缀**，24k 预算摊到 32 万字 = **每块只留 56 字**，其中 53% 还是上下文头部行，正文与 LaTeX 被切在词中间（`…重要作`、`!['`、`[Numerical Anal`）；`_MAX_HEADINGS = 80` 而全书 158 个标题，截断点正好在第 3 章之后，**第 4/5/6 章标题模型根本看不见**。改为整块等距抽样（含首尾端点）+ 标题上限 400 + 正文预算 48k。
+
+## 2. 本分支确立的硬约定（新增代码必须遵守）
+
+1. **不确定就 fail-closed，不给乐观默认值。** 解析不出、判不了、没数据 → 显式 `UNCLASSIFIED` / `verified=False` / 「未评估」/ 409，绝不默认 `core`、默认 `True`、默认 0.5。
+2. **失败必须显式到达用户，不得伪装成内容。** `insert_document` 缺失、空 `ai_response`、MinerU 报错写成 `⚠️ …` 塞进正文、抽样把正文切成碎片——这四个 bug 是同一个病。生成失败要报错并排除出统计分母。
+3. **README 里每个百分数都要能指到一个文件和一个分母**，且 `summarize_eval.py` 能重算出来。
+4. **只有单一真源。** 图状态归 `CourseStore`(SQLite)，掌握度归 `memory/mastery.py` 的 BKT，**文档正文归 `documents.markdown`**。FTS 分块是派生检索产物，永不用于重建原文。
+5. **流水线只投喂，不直接写正式图。** 自动抽取一律进 `CandidateManager` 的 pending 态，approve 权在教师，approve 必须产生 `graph_revisions`。
+6. **候选 id 用内容哈希（含正文）**，同一文档重传走去重而不是刷屏。
+7. **provenance 必须可追到 `document + 章节 + 页码`，并且要活过审核入图**——只在候选上带 `evidence_ref` 不够，`KnowledgeUnit` 也得有。
+8. **一次评测/抽取只留一次运行的证据。** 覆盖写或归档，失败样本带 `error` 且不进分母。
+9. **重新抽取必须取代同一来源的旧 pending 候选**（`SUPERSEDED`），且绝不动教师已审的记录。
+10. **抽样与截断只能整块进行，不能按比例切前缀**；截断只能发生在展示/prompt 层，且必须避开未闭合的 `$`/`$$`/花括号/尾部 LaTeX 命令。
+11. **位置推断出来的关系 `confidence < 1.0`**，因为它来自文档顺序而不是文本语义。
+12. **测试必须离线。** 任何需要开发者 `.env` 或外网的测试都会在别人机器上变红或变慢 10 倍。
+
+## 3. 怎么验证当前状态
+
+```powershell
+# 唯一聚合入口：校验知识 JSON + 后端 pytest + 前端 12 个 Node 测试
+npm test
+
+# 后端（预期 256 passed，离线约 8s）
+npm run test:api
+cd apps/api; python -m pytest -q
+
+# 评测指标自证（预期 20 行、90.0%、5.0%）
+python apps/api/scripts/summarize_eval.py
+
+# 课程图数据与契约
+python apps/api/scripts/verify_course_graph.py
+node scripts/validate-json.js
+
+# 前端：必须先停掉 next dev，否则 build 会共写并损坏 .next
+# 只想类型检查而不动 .next，用 npx tsc --noEmit
+cd apps/web; npm run build
+```
+
+本地跑服务：`npm run dev:api`（uvicorn :8000）+ `npm run dev:web`（next :3000）。改了后端代码必须**重启 uvicorn**——`dev:api` 没带 `--reload`，改文件不生效，这个坑踩过。
+
+## 4. 与另一仓库的分工
+
+同一课程组还有 `jmdonbaba/numerical-analysis-ai-tutor`（纯前端 Demo + 多人 AI 协作治理）。两者**只有"知识图谱"这个词重合**：那边做「提问归一化成标准节点 → 图生长 → 教师看热力」，服务课程运营；本分支做「不泄露答案 → 逐步符号验证 → BKT → 错题复练」，服务单个学生的一次解题会话。不要为了对齐两边而把本分支的教学法改成内容生产流水线。
+
+那边值得抄的：CI + 机器校验 claim 一致性、Playwright + pixelmatch 视觉回归、以及「不通过拓扑排序生成强制学习顺序、不因环删真实关系」这条产品判断（见 §6）。
+
+## 5. 安全说明
+
+`MINERU_API_KEY` 与 `LLM_API_KEY` 只存在于 `apps/api/.env`（`.gitignore:10` 覆盖，`git ls-files` 确认未跟踪，`git status` 无泄漏），**未进入任何提交**；`git grep` 全树无 `sk-` 命中。MinerU token 有 **90 天有效期**，上传报 401/403 即为过期，`_parse_json` 会直接提示去 `mineru.net/apiManage` 重新生成。
+
+## 6. 尚未处理的问题
+
+> **2026-09-30 接手复核补充（研究文档 §26）：** 新的最高优先级是正式图跨重启恢复：临时SQLite验证 approve 后有单元，重建CourseService后候选保持approved但单元丢失。另需补生产教材单元召回；eval里的加权图检索并非EvidenceBuilder路径，不能把pending dry-run的13/15 hierarchy@1当成生产验收。实际种子包27 units / 21 relations / 15 Cases。Overlay为过程证据计数，不是已验收的掌握度/遗忘模型；聊天工作流尚未自动写入课程events。
+
+> 本轮只核查并更新记录：`npm test`知识JSON通过、API256通过（5 warnings）、前端12通过；旧Case benchmark16/16域内、20/20决策、4/4域外，未跑build/浏览器验收/在线模型评测。用户随后授权AGY Staff（Gemini 3.8 Flash High）更新约200题离线v2 benchmark，保留原20题与生产matcher。文档§26记录推荐四轮顺序；未修改真实教材库或审核决定。
+
+> AGY实施最终未交付：直连Google端点超时；为AGY进程沿用本地HTTP代理后仍出现`stream reading error: unexpected EOF`（job `implement-muo1j7ha-6625291f`，error）。没有benchmark变更。扩充200题为已授权但未完成事项，已请用户选择Codex接手或AGY网络恢复后继续；系统代理配置保持原样。
+
+> 用户随后指定Luna：已启动GPT-6 Luna子代理实施相同范围，主代理复核；交付前不登记200题为完成。
+
+> **本轮最终交付：** Luna新增228题独立v2（原20题保留）、13条静态代码片段、15条任务上下文、11条域外、7条域内新Case、2条不可确定路由。主代理发现并要求修复`[None]`域外计分和宽松决策口径，随后按研究§4.5纠正两条未改变Case前提的标签；gold不是从matcher预测生成。最终Case11/208、严格决策34/222、可接受集合34/228、域外10/11、新Case7/7；204题至少一项不匹配、异常0。题集hash `0c263dfc9c8646bcd43f0a77987439f8e97776e45d5efa94edf3e0903ab9e6a0`；原题集/种子包/matcher hash保持。生成器逐字节复现，npm test知识JSON通过、API265通过（含9项评分回归）、前端12通过。协议在 `evaluation/CASE_BENCHMARK_V2.md`，结果在gitignored的`results/case_benchmark_v2.json`。尚无教师标注审核/LLM对照/学生学习效果证据；生产代码、正式教材库与审核状态未改，未commit/push。
+
+1. **baseline 两行仍无数据。** GPT-4o / DeepSeek 裸模型同批 20 条、同 rubric 的结果不存在，所以 README 的 `90.0% (18/20)` **没有参照系**。约两小时 + API 费用，是含金量最高的一块。
+2. **交付面为零。** 无 `.github/`、无 CI、无 Dockerfile / docker-compose。服务能起（`app/main.py`，`/health`），但没有任何东西把它推出去，§2 那 12 条约定也没有任何机制强制。
+3. ~~`MathMarkdown` 与 `LatexRenderer` 定界符不一致。~~ **已修（2026-09-30）**：`MathMarkdown` 改为 `LatexRenderer` 的薄封装，审核台/对话页与笔记本共用一条解析路径，四种定界符全支持。
+4. **浏览器「上传」按钮点击未实测。** 上传→解析→落库→笔记→渲染→候选→审核台整条链已验证，但上传那一步是用 curl 直传 API 走的，UI 的文件提交动作没点过。
+5. **495 条候选待审，审核量是真成本。** 需要按小节批量审 + `proof`/`example` 这类逐字来自教材、非模型生成的原子走低风险快速通道，人工只审 `definition`/`theorem`/`lemma` 与跨节关系。
+6. **`prerequisite` 拓扑排序的语义未决。** `KnowledgeRelation` 带类型化前置边，对其做拓扑排序就会生成强制学习路径，与本分支反对的「越俎代庖」相冲。对照仓库的明确判断是「不通过拓扑排序生成强制顺序、不因环删真实关系」。
+7. ~~21/150 个单元的 LaTeX 括号本身不配平~~ **渲染层已修（2026-09-30）**：新增 `lib/latex-balance.ts` 的 `balancedLatex`（丢弃多余 `}`、补齐缺失 `}`、配平 `\left/\right`），`LatexRenderer` 与 `MathView` 渲染前统一修复；抽取层数据保持原样，待审核流程标记。
+8. **前端测试面薄**：`apps/web` 只有 12 个 Node 测试，无 e2e、无视觉回归。
+9. ~~`apps/api/test_mineru.py` 是孤儿脚本~~ **已删除（2026-09-30）**。
+10. **`opening < 150ms` 只是测试断言**，运行时没有任何 deadline（对比 `fast_context` 的 350ms 是真的，`fast_context.py:51` 硬编码 `asyncio.wait` + 取消）。
+
+## 7. 阶段 5 的实测终态（同一本 150 页教材）
+
+| 项 | 起点 | 终态 |
+| --- | --- | --- |
+| 教材上传 | 端点拼错，**100% 失败** | 200，121s，320,900 字符 markdown |
+| 原文落库 | 不存在该列 | 逐字节一致，`documents.markdown` |
+| 分块 | 714 块，重拼 **+11.3% 注水**，标题被切断 | **430 块，无丢失无重复，158/158 标题完整**，429/430 带上下文头 |
+| 正文保留率 | **25%**（600 字上限） | **99.8%** |
+| 候选 | 150 单元 / **0 关系** | **235 单元 / 260 关系**（495 pending，283 superseded） |
+| 单元类型 | concept 146, definition 2, theorem 2 | concept 66, proof 55, theorem 53, definition 19, example 16, corollary 11, lemma 8, algorithm 4, remark 3 |
+| 关系类型 | — | part_of 169, supports_proof 67, example_of 13, derives_from 11；**悬空端点 0** |
+| 单元长度中位数 | 1,437（且被截到 600） | **774，全文不截断** |
+| 章节路径深度 | 239/240 只有 1 级 | `{1:10, 2:135, 3:94}` |
+| `support_count` | 单次上传即虚增到 2 | **全部 1** |
+| 检索 | 二选一、图命中恒 `score=85`、注入 ~720 字 | 并发 + RRF 融合、位置相关度、**2400 字按排名注入** |
+| 学习笔记 | 12,183 字，**120 处「原文未覆盖」**，4-6 章靠猜 | **18,595 字，3 处未覆盖**，六章章名全对，115 个 `\[…\]` + 110 个 `\(…\)` |
+| 笔记渲染 | — | 页面 **225 个 KaTeX 节点，裸定界符 0** |
+| 审核台 | 关系候选不可审 | 类型 + 两端标题 + 端点 id + 置信度全部可见 |
+| 测试 | 167 passed / **1 failed** | **256 passed / 0 failed**，离线 |
+
+## 附：检索评测基线（2026-09-30）
+
+- 评测集 244 条（`scripts/build_retrieval_eval.py` 从教材图谱确定性生成），gold 244/244 解析成功。
+- 顺带修了三个真缺陷：`search_document_chunks` 方法缺失（chunk 检索运行时从未生效）、SQLite 默认分词器切不动中文（新增 CJK bigram 索引，migration 005）、问句脚手架毒化 AND 查询（`cjk_query_groups` 剥离问句框架）。
+- BM25（生产同路径）Recall@3 **0.752** / Recall@5 **0.798** / MRR@10 **0.708**；vector/hybrid 两行待 embedding key（DeepSeek 无 embedding 端点）。详见研究文档 §25。
+
+## 8. 界面与交互体验演进（2026-09-30）
+
+- **九章草堂混合体上线**：落地方案 A「宣纸手稿演算台」作为主脊柱，融合方案 C「双栏对照错因复盘卡」与方案 B「按需调阅数理仪器」，彻底区分学子立论与珞珈师说身份印章。
+- **模型设置鉴权与容错**：在 `apps/api/.env` 启用 `ALLOW_USER_API_KEY=true`，前端 `ModelSettings` 补充 `try...catch` 与状态透传，杜绝红屏崩溃。
+- **推导等待体验重构**：消除原本强行全屏铺开的 4 个空旷大白方框，重塑为极简收拢的手稿墨绿徽标（高度仅 28px，可按需展开细腻时间轴），并在开场白后加入墨润呼吸光标，极大改善等待节奏。
+
+## 9. 联网检索与多厂商运思强度切换（2026-09-30）
+
+- **多厂商运思强度映射适配**：
+  - 在 `apps/api/app/llm/openai_compatible.py` 实现 `build_request_payload`，支持 4 档推演深度（`off` 直答 / `low` 轻敏 / `medium` 深思 / `max` 格物）。
+  - 精准映射主流模型：DeepSeek 官方 API（`reasoning_effort: low/high/max` 及 `thinking.type: enabled/disabled`）、OpenAI（`reasoning_effort`）、Anthropic（`output_config.effort` 与 `thinking_budget`）、Qwen 通义千问（`enable_thinking`, `thinking_budget`）、智谱 GLM（`reasoning_effort`）。
+- **双轨全域网络检索系统**：
+  - 针对原生支持联网的模型（Qwen `enable_search: true`、GLM `web_search`、Kimi `$web_search`）开启 Native 参数；
+  - 针对纯推理模型（DeepSeek 等）研发高可用外部检索适配器 `apps/api/app/search/web_search.py`（Tavily + DuckDuckGo 双引擎，1.8s 严格超时与降级容错），在 Agent Fast Context 层自动化注入 `[WEB-N]` 不可信提示摘要防模型幻觉。
+- **藏书阁全局站内检索（Ctrl+K）**：
+  - 新增后端接口 `GET /api/search/global`，跨教材定理（知识图谱 200+ 单元）、学子错题本与随堂笔记三维并行检索。
+  - 前端开发 `GlobalSearchModal` 弹窗（支持 KaTeX 实时公式预览与「带入草堂研讨」一键装载），并在落笔台底部提供 `[🌐 联网探微]` 微光按钮与 `[🧠 运思强度]` 浮动切换器。
+- **质量与回归**：新增 `test_web_search.py`、`test_reasoning_effort.py`、`test_tutor_search_integration.py`、`test_global_search.py` 全部 9 个离线用例绿灯通过；前端 `npm run lint` 0 错误。
+
+
+
+## 2026-09-30 Prompt全面重塑（teaching-v2.1）
+
+用户授权将prompt审查所列问题全部实施。主规范与三份参考指南已统一并真正加载，新增prompt_policy唯一策略入口，明确完整答案/direct优先。后台策略与不可信资料分开，Case条件/推理要点/匹配决策/来源进入prompt，探针不注入答案键。证明先审查，Verifier严格schema；工具执行成功与数学命题成立分开，失败降级。图片识别后真暂停，前端确认/编辑，草稿通过learning_meta持久化恢复。公开文案区分LLM意见与本步检查，错题卡不再使用硬编码的错误原因或正解。
+
+详见 PROMPT_ARCHITECTURE_V2.md（按文件整改与证据范围）。最终离线npm test：API294、前端12、知识JSON通过；tsc通过；lint退出0、保留现有告警。测试进程使用SYMPY_GROUND_TYPES=python、MPMATH_NOGMPY=1绕开本机gmpy2本地扩展错误，conftest离线门控未变。新增20项prompt/流程回归。没有真实模型A/B、教师验收、真实浏览器上传或学习效果实验；v2题集/课程包/matcher哈希未变。已有服务需重启加载新prompt。未commit/push/deploy。
+
+
+## 2026-10-01 — 响应式聊天 UI 与公式渲染修复
+
+- 修复窄屏左右空白抽屉：Sidebar/LearningPanel 只渲染内容，由 MobileDrawer 统一控制显示、遮罩、关闭、焦点循环及跨断点恢复；桌面断点为 1024/1280px。
+- 学习抽屉复用桌面状态/笔记内容，补齐移动端随堂笔记入口。顶部品牌/新会话避免换行，次要导航收进“更多”；输入区移动端取消常驻算子滚动条，简化工具文案，保持 16px 输入字体与底部安全区。中文 IME 确认不提交，粗指针设备 Enter 保留换行。
+- 提取 message-parser.ts，修复同一行 $$…$$ 和 \[ … \] 的闭合处理，未闭合公式不吞后续空行/标题，保留代码与转义美元符号；加入 Markdown 表格渲染。原“膜振动方程”会话现已正常显示全部公式与后续标题，DOM 中 KaTeX 错误为 0。
+- 学习面板取消未检查/无知识点时的默认 50% 展示，区分模型复核与本步检查；掌握度明确为估计。
+- 验证：npm test（API 294、前端 17、知识 JSON 均通过）；tsc --noEmit 通过；lint 0 errors，原有 10 warnings。浏览器检查 320/390/768/1100/1440px、390x480 短视口，无整页横向溢出；Esc/关闭按钮/遮罩、Tab 焦点循环、跨断点关闭、移动端笔记切换与“更多”菜单通过。截图：results/ui-2026-10-01/mobile.jpg。
+- 边界：未进行真实手机软键盘验证；开发服务器继续运行，因此未运行 next build；未提交/推送。框架仍为 Next.js 14.2.35。官方支持政策已将 14.x 列为不支持，建议后续独立迁移到 16.x 稳定补丁版，核对 React/API/lint 后再构建，不在本轮混入升级。
+
+## 2026-10-01 Next.js 16 升级
+
+Next.js 14.2.35 → 16.3.8，React/React DOM 与类型依赖同步19.3.0，`eslint-config-next` 同步16.3.8；`next lint` 改为 ESLint flat config，使用 ESLint9.39.5，保留既有 effect/ref 用法兼容规则。Next自动更新 `jsx=react-jsx` 与 `.next/dev/types`；固定Turbopack根目录，关闭自动生成AGENTS/CLAUDE。新增typecheck先生成路由类型；CI独立lint并加入message-parser测试，README/AGENTS同步。
+
+停Web dev后生产构建通过；完整离线npm test（API294、前端17、知识JSON）通过；typecheck通过，lint 0 errors/10已有warnings。定向更新browserslist/baseline-browser-mapping/postcss-selector-parser；含开发依赖的npm audit与生产依赖audit均0漏洞，最终安装树无peer invalid。开发服务恢复于127.0.0.1:3000；API8000健康、chat/graph页面均200。浏览器原会话48处公式、0 KaTeX错误；390×844无横向溢出，左右抽屉可用；图谱27节点/21关系，控制台0 error。截图：results/ui-2026-10-01/next16-react19-mobile.png。未真实手机软键盘/线上模型验收，未远端CI/commit/push/deploy。
+
+## 2026-10-01 — 六个月详细计划与一年展望
+
+按用户要求仅规划后续业务，写入研究文档§27，保留“可验证诊断闭环”的原判断全文。2026/10–2027/03按G0–G8推进：正式图持久化/审核原子性 → 生产Case召回 → Newton错误定位/提示/修订再验/最小事件 → 完整求根家族/Overlay → 教师gold/独立集 → 小规模试用 → 协议冻结 → 有对照的无AI跨表示迁移与延迟保持 → 复现/扩展决策；2027/04–09只作条件性滚动展望。每周约3开发日为估算，教师合作、招募与研究流程未确认。
+
+本日离线复跑228题，Case Recall@1仍11/208，严格单标签34/222，可接受决策34/228，域外10/11，新Case7/7，matcher异常0；输出results/case_benchmark_2026-10-01_plan.json，三项冻结哈希不变。执行成功不等于检索能力通过。下一轮从M0开始，先用临时库验证重启恢复和故障原子性；本轮未修改正式图数据/审核状态、matcher或Gold。
+
+## 2026-10-01：M0 / M1 实施与分批提交
+
+详细实现、哈希、恢复命令与边界见 `COURSE_GRAPH_M0_M1.md`，研究时间线更新 §27.8，交接文档新增最新状态优先段。
+
+- M0：完整 canonical_graphs 快照、种子首次初始化、正式数据优先、SQLite原子审核与完整revision、CAS、幂等回执、恢复工具。修改前两个库各自 backup/integrity=ok，真实API库pending495/superseded283；无历史approved/merged，无自动重审。测试仅临时库，浏览器启动时初始化正式快照，未批量审核。
+- M1：生产与离线同一Case/单元召回，双语BM25+任务重排、仅verified与允许范围、缺信息追问，EvidencePack保留not_checked条件及retrieval_trace。图谱页不将排序分数展示成正确率，不展示探针答案，补充未知/信息不足反馈与异步旧响应保护。
+- 冻结228题开发集：R@1=162/208（77.9%），R@3=200/208（96.2%）；单gold决策200/222，可接受决策200/228，域外11/11，新Case7/7。61题至少一项失败（Case46/决策28，有交集），0工具异常；原20题strict通过（Case16/16/集合20/20/域外4/4）。题集/种子哈希保持，不修改gold。教师审核与独立泛化尚未验证。
+- 验收：npm test API329 / Web17 / 知识JSON通过；Next16.3.8构建、typecheck通过；lint0错误/10已有警告。真实浏览器核验匹配与追问，截图results/m0-m1/graph-match.png。日志results/m0-m1-full-test.log、m0-m1-web-check.log。开发服务3000/8000恢复，未远端CI或部署。
+- 提交：e23da77 M0；1db7739 M1+前轮Prompt/搜索；27dd51a 228题基准；923ab3a 移动/公式与匹配UI；dee8c24 Next/React工具链；最终文档与格式收尾另批。未push；密钥、DB、results、egg-info与public原型不提交。
+- 尚未完成：教师抽查61失败与歧义gold、材料少量审核、M2受控诊断Oracle/修订重验、事件链。图谱种子二分法公式已有孤立right定界符；本轮保持种子哈希，不能称全部图谱公式已修复。公开Case接口答案字段权限需M2前梳理，UI隐藏不等于接口隔离。
+
+### 同轮追加：Obsidian 风格课程关系图
+
+用户对原长带图谱与随后卡片网格均不满意，最终改为圆点/细线、确定性有界力导向布局、关联数量映射大小、悬停/选中突出邻域；不改课程数据与语义，不伪装学习路径或掌握度。去掉网格背景/缩略图/编辑连线，将内容与公式收进侧栏，问题定位默认折叠。修复高亮/选中重载图与拖动回位，取消旧范围请求，尺寸变化自动适配。官方参考 https://obsidian.md/help/plugins/graph；执行UI Design技能的Build模式。
+
+最新npm test API329/Web20/知识JSON通过；新增3项验证节点有限且分离、顺序稳定、环路/缺失端点容错。构建/typecheck通过，lint0错误/10已有警告。桌面/390px移动端与节点详情/问题定位浏览器验收见results/m0-m1/graph-obsidian-*.png，测试日志results/graph-ui-*.log。此UI另批提交，未push；公开Case答案接口隔离、教师gold与M2仍待推进。
+
+## 联网检索修复（2026-10-01）
+
+用户实测“OpenAI证明Navier–Stokes的思路”没有联网资料，且新闻提问错误进入证明审查。旧实现默认手动关闭，DDG非200/解析空/超时统一丢成空列表，1.8秒HTTP预算与2秒上下文窗口不足，逐轮无搜索状态。
+
+本轮加入auto/on/off（显式关闭优先，设置本机保存）、时效/明确搜索/机构证明声称及猜想状态路由、常见Navier拼写归一化；新闻解释不进证明审查或无关课程检索/异步embedding。应用统一负责检索，不依赖未实现工具执行循环的模型原生搜索。Tavily可选优先，DDG失败或空结果转Bing RSS；公共通道仅尽力而为。总预算10秒，本地0.35秒窗口独立；取消请求清理全部检索任务。
+
+success/empty/error/timeout/disabled、提供方尝试、来源与耗时沿提示词→SSE→learning_meta.web_search持久化。成功仅表示拿到摘要，不核验全文、日期、证明或用户前提；失败不得转成“已查证不存在”。来源文本视为不可信资料，过滤非http(s)/带凭据链接。回答框显示状态与来源链接，旧历史不补造搜索记录，无数据库schema变化。
+
+验证：npm test API345/Web20/知识JSON通过；build/typecheck通过；lint0错误/10原有警告。离线回归覆盖DDG202转RSS、Tavily空转备用、超时/取消、链接过滤、失败敏感信息隔离、显式off、普通证明保留审查、新闻不进审查、提示词/SSE/数据库状态一致。独立联网烟测同主题返回3条摘要（含OpenAI链接）；这不等于已核验网页内容或证明。未调用真实模型做本轮答复验收。浏览器验证三档、刷新保存、390px无横向溢出/控件48px；截图results/search-repair-{desktop,mobile}.png；日志results/search-repair-*.log。前端服务http://127.0.0.1:3000/chat，API8000已恢复。分批本地提交，未push/部署。
+
+界面使用ui-design Build模式，读取SKILL、aesthetic-direction、design-guidelines、colors、form-controls、surfaces、responsive-design。下一任务：只读审查代码生成图标/HTML/图表嵌入回答框的触发、隔离、移动端及失败状态；M2受控数值诊断计划不变。
+
+## 回答框图标、图表与HTML审查（2026-10-01）
+
+联网修复已分三批本地提交：c566913后端/回归、8bfffa0前端模式/来源、64188a4交接。随后按用户要求只读审查嵌入链路，详细逐文件9项见ANSWER_EMBED_AUDIT.md。P1是默认HTML脚本执行无网络/资源策略、未闭合流式预览、1/x跨间断点连成假零点、模型缺前端可视化能力协议；P2是SVG被清空、块边界吞内容、固定400px函数图、iframe高度/主题/失败反馈、图片API写死localhost。现有表达式Parser/HTML白名单/iframe非同源隔离必须保留，不夸大成已证明的主站XSS。辅助函数复现证据results/answer-embed-audit-repro.json，MDN支持sandbox/CSP边界。审查没有修改渲染代码或执行攻击样例；下一轮若实施，先静态安全与完成态渲染、再artifact协议/提示词/移动端/分段曲线。
+
+## 回答图示安全与展示修复（2026-10-01）
+
+用户授权修复 ANSWER_EMBED_AUDIT.md 的9项并分批 commit/push。新增 visual-v1：静态 HTML/SVG 主动预览、闭合与生成完成双门控、空 iframe sandbox、CSP 禁脚本/外联、惰性 template 白名单（60KB/1500节点）；不扩大原宿主 sanitizer。SVG viewBox 自适应高度，HTML 手动有界高度、深浅主题、失败/源码回退；XML仅源码。图片复用统一 API 基址，协议/凭据过滤、来源/失败提示，外部图片点击后才加载。裸 HTML 根边界及 plot/bilibili 段落边界修复。
+
+函数图保存 segments 并探测采样间隔，奇异点不跨段连线；响应式 SVG，范围内才画零轴，异常数值范围拒绝。间断检测仍为启发式，图示不能作为连续性/根存在性/证明证据。teaching-v2.2 加载 references/visual-artifacts.md，前端声明图形与后端 math/SymPy 验证能力分清。
+
+离线 npm test：API346/Web26/知识JSON通过；build/typecheck通过；lint0错误/10已有警告。日志 results/embed-repair-*.log；浏览器临时独立预览验证静态清洗、无脚本沙箱、生成中0 iframe、XML源码、主题、390px无横向溢出，截图 results/embed-repair-{desktop,mobile}.png。临时路由已删除，未改真实会话、未调用真实模型、未做正式渗透验收。完整关闭项与限制见 ANSWER_EMBED_AUDIT.md 实施回执。
+
+服务已恢复 Web3000/API8000。M2求根过程诊断闭环、独立教师gold与学习事件评估仍为后续主线，任意生成JavaScript不作为诊断Oracle。提交分为静态渲染安全、函数图语义/响应式、提示词协议、实施回执四批；推送结果以当前回合最终输出为准。
+
+本轮实现提交：dfd8792 静态预览与生成门控；25ca8fb 分段函数图与响应式；e646c16 visual-v1 提示词协议。文档回执另批提交，用户已明确要求 push 当前分支。
+
+## 2026-10-02 — 竞品启发的详细功能规划（仅文档）
+
+用户要求将竞品建议形成详细规划，选择融入现有六个月数值分析主线，并强调AI可加速、不提前删去后续功能。交付[总规划](planning/learning-experience-2026-10/README.md)及六份配套文档：B0现有实现核对；F1今日任务与间隔复习；F2教材伴读与条件卡；F3交互求根实验；F4–F8章节小测/讲回/视频伴学/教师简报/代码作业；实施记录模板。保留原§27诊断闭环与无AI跨表示/延迟保持主线，研究文档新增§28作为功能扩展入口。
+
+功能均拆为本地待办和真实阻塞，未创建外部issue或派发聊天/代理。每项包含体验、状态、拟定数据/API、复用/新增位置、验收、恢复和停止条件。预算58–85开发日加约10日余量，按现有每周约3日估算滚动校准，不把AI产能或外部合作写成已确认。文字讲回与自动实验均不直接增加独立数值成绩；课程库与会话/文档库的跨库写入不冒充原子事务。
+
+源码核对发现求根Oracle/episode/ack/probe/replay和前端输入/反馈已在工作区出现，旧文档“M2尚未实施”需由B0运行回执统一，而非本轮直接改成已完成。CI前端工具测试清单与根命令有差异，作为B0核对项。材料授权/来源、教师gold、招募、字幕与代码隔离仍是条件性依赖。
+
+本轮仅规划与文档检查；没有应用回归/构建/真实模型或学生试用，没有主动修改业务代码、真实库、gold或seed，没有commit/push/deploy。下一项是B0基线核对与一条求根错误→修订→独立题验收；已授权教材fixture的伴读可独立推进。
+
+
+## 2026-10-02 — M2/M3 工程闭环与动态 HTML 恢复
+
+用户授权继续 M2/M3、恢复动态 HTML，并沿用分批commit/push。实现详见 COURSE_GRAPH_M2_M3.md。受控 RootAttempt 表单/JSON进入生产 LangGraph 独立路径，不调用LLM、不执行学生代码；Newton/二分/不动点12家族，状态 supported/contradicted/inconclusive/tool_error，输出步骤与数值证据，Case仍经过生产matcher。修改轨迹重验；缺条件和工具异常保持未知。
+
+SQLite新增root_episodes，事件/状态同事务，先验证后写入；显示ACK后计帮助/结果，未交付未知，重试及重启幂等。预算3、首试服务器探针有固定初值/参数与至少两步，发题即预留且避开该学生已发函数；私有探针证据与正确答案不经学生API披露。受助修订计assisted，普通正确计observed，首次独立probe仅probe_observed。学生不能自报成功；Overlay/episode/session跨用户隔离，候选/修订读取教师权限。demo兼容不称生产权限。课程库/会话库非跨库原子事务。
+
+visual-v2/teaching-v2.3恢复闭合完成态html内联JS，主动运行的无同源iframe，CSP禁外联/eval/嵌套，60KB/1500节点，错误/停止/重启/30秒定时卸载。同步JS死循环没有硬CPU隔离，图示绝不记数值验证成功。SSE新增鉴权/超时/连接错误、终端done与EOF检查；失败部分回答保持预览禁用，保留错误状态，凭证未改。
+
+验收npm test/API415/Web30/知识JSON、build/typecheck通过；lint0错误/10原有警告；12家族13/13开发三元组；10生产SSE固定episode含3合法替代，另工具异常/取消/并发/重启/回滚/回执/权限回归。截图results/m2-m3-{dynamic-desktop,dynamic-mobile,chat-mobile}.png，日志m2-m3-*；临时验收路由删除，未写真实会话、未调用真实模型。教师逐题gold和独立测试未验收，G3教师项/M4不能标完成。新增规划文档的并行修改不纳入本轮提交。
+
+
+## 2026-10-02 — F1–F4首版实施与本地验收
+
+用户授权“先开干f1-f4”，并补充自检通过后可升级。实现今日任务/间隔复习、课程摘录/私有教材选段伴读、三种受控求根参考实验、六题章节诊断；自检后开放参考计分、薄弱知识点和复习入口。页面 /study /reading /lab /assessment，共用LearningWorkspace与CourseStore.learning_records，复用RootEpisodeService/Oracle；数学状态、显示ACK、owner和重复请求均由服务器决定。每日study session限制复习升级；实验曝光从probe池排除，进行中的首次独立probe不允许新参考实验或伴读解释；未知不计成功。
+
+原规划及回执：`planning/learning-experience-2026-10/f1-f4-delivery.md`。runtime课程库优先COURSE_STORE_PATH，文件SQLite缺配置则派生 `.course.db` 持久库；测试临时库/离线门控保留并在结束时关闭连接。原文从markdown按实际字符范围读取，哈希变化拒绝旧请求；模型输出仍未数学验证。F4是章节练习参考计分，不是研究gold/独立测验。
+
+最终本地npm test：知识JSON/API445/Web34；typecheck/build通过；lint0错误/10既有警告。隔离演示库浏览器完成练习→确认→probe→复习、伴读/笔记刷新、原文引用/无模型降级、参考轨迹对照、六题83分/复习入口、弃测与390px/1440px布局。证据results/f1-f4-*；没有真实模型、真人学习收益、教师gold或远端CI证据，未修改冻结seed/gold，未commit/push/deploy。
+
+首版取舍：四张开发条件卡、固定Newton练习及开发probe池；旧版本已开始任务不自动替换；未完成完整PDF标注、研究测验隔离/监考、人工评分和F5–F8。保持原六个月求根诊断/迁移/延迟保持主线，不用工程验收替代学习效果。
+
+## 2026-10-02 — 首页升级、F1–F4加强及F5/F8首版
+
+用户授权继续推进、更新首页字体/排版/效果，启动F5/F8并加强F1–F4；随后提供透明PNG Logo并要求接入。首页改为只读owner学习概览、真实进度/待续任务/参考自检与六入口，中文衬线标题、纸色留白和Newton切线示意。Logo原文件按SHA256一致复制到public/brand，首页、学习工作区、对话页共用BrandLogo，兼顾深浅主题，浏览器图标同步接入。
+
+F1列出计划外和跨日未完成任务并恢复待确认/独立检验；F2私有原文章节笔记隔离；F3方法/参数/预测草稿恢复、预设标记与实验链接；F4当前测评/参考结果链接恢复。F5文字讲回以来源哈希、学生原句对应条件和不可变补充版本保存，模型意见未核验；无模型仍可自我对照。F8只做限定Newton代码AST静态提示、手动轨迹诊断和版本比较，不执行学生代码。C0隔离未验收，原code_executor未放宽。讲回/代码审阅不增加独立成功，未完成独立probe继续阻止参考帮助。
+
+本地离线npm test：API458/Web35/知识JSON通过；生产build和类型检查通过；lint0错误/10原有警告。浏览器隔离演示库验证保存/补充/草稿/版本、首页独立任务优先续接、独立probe帮助保护与确认、实验参数恢复、指定参考结果刷新、390px与1440px布局。合成轨迹/文字只是工程验收数据。真实模型质量、教师核对、学生试用、C0/C1和远端CI尚未验证。详见planning/learning-experience-2026-10/home-f5-f8-delivery.md，日志与截图results/home-*、teach-back-*、code-workshop-*。未commit/push/deploy；既有工作区成果和无关原型保留。
+
+
+## 2026-10-03 小珞、教学流程审查与 F1–F4/F8 加强
+
+用户授权加入数学学姐形象“小珞”、检查明显不符的流程/设定/提示并直接修复，随后授权在五小时额度耗尽前继续加强薄弱处。本轮原样接入小珞 PNG 到首页/聊天欢迎区，明确 AI 身份；统一独立 probe 的新帮助保护（普通聊天/笔记/相似题/求根提交），保存每条回答自身教学模式和检查状态，修正模式与任务意图冲突、相似题未持久保存、抽样教材笔记全书措辞及提示数据边界，新增根主题开发参考题。teaching-v2.4；计算执行与数学语义验证明确分开。
+
+F1 反馈待确认时锁定输入和新提交，保留幂等重试；F2 原文段落追加笔记草稿且刷新恢复；F3 逐步/播放/暂停/同条件轨迹对照/历史回看与按实验保存的本地复盘；F4 未确认选项按 owner/测评恢复、题号导航与确认进度；F8 已保存行号定位、未提交修改提示、两版原文对照、tol/max_iter 使用与 solve 本体作用域静态检查。学生代码仍不执行，提示/手动轨迹不提升独立成功。无新增表/依赖。
+
+本地最终 npm test：知识JSON/API469/Web39；生产build及TypeScript通过；lint0错误/10原有警告；diff check通过。浏览器在隔离演示库验证五类增强、首页与聊天形象，以及390px实验布局；未调用真实模型。日志 results/f1-f4-f8-strengthened-*.log。完整审查、修复与剩余弱项见 planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md。真实模型/教师gold/真人学习收益/C0/C1/远端CI未验证。数学语义Answer Guard及动态HTML同步JS的CPU强制隔离仍未闭合；历史内容/外部帮助无法由当前应用保护排除；完整PDF标注、跨设备本地草稿与静态规则版本回执后续再做。未commit/push/deploy，保留原工作区成果与无关原型。额度读数91%时结束新功能扩展并收尾。
+
+## 2026-10-03 登录体验补查
+
+用户指出登录系统未同步更新。当前Git历史显示真实Web鉴权接入于2026-09-08，后端后来有课程权限维护；本次没有重写鉴权协议。已修复聊天退出只跳转不清凭证：清除token/owner/演示键，完整跳转以卸载owner相关页面状态，保留学习草稿；桌面/手机均可退出。注册移除不保存的院校/专业，称呼/账号区分，账号格式与服务端一致，补齐label/自动填充。登录/注册成功进入今日学习。鉴权布局加入Logo/主题/首页返回，删除无依据的SECURE CONNECTION标语。
+
+本轮前端40项通过（新增退出清理回归）、生产build/类型检查通过，lint0错误/10既有警告；后端未改，本轮未重复API suite，上一轮API469是之前的证据。截图results/auth-login-updated.jpg。没有实际注册/登录真实账号、密码重置或远端验证；当前isolated demo API没有配置token secret，不能以演示界面验证真实签发。剩余：密码找回、邮箱验证、服务端token撤销/刷新、过期引导与跨标签页状态；注册在签发配置缺失时先创建用户的非原子流程也需后续修复。未commit/push/deploy，五小时额度约94%时只做收尾。
+
+## 2026-10-03 分批提交准备
+
+用户明确授权分批提交并推送，按四个边界：后端学习与教学规则、学习工作区与品牌形象、登录体验、规划及交接记录。提交前重跑npm test：知识JSON/API469/Web40全部通过；最新auth-followup生产build与类型检查通过，lint0错误/10既有警告，diff check通过。git grep sk-检查仅发现说明文字/普通标识符/既有二进制匹配，新增源码/规划未检出匹配的凭证格式。既有egg-info、demo-jiuzhang-hybrid.html、style-explorer.html、ui-proposals、ignored results/数据库/env不纳入。
+
+首版后端包含learning_records表、课程持久库派生路径和tzdata依赖；COURSE_STORE_PATH显式优先，离线测试门控保留。当前分支feature/course-graph-2.0。远端fetch首次因GitHub443连接失败，当前remote-tracking ref不是实时远端证据；推送将在提交后单独尝试并报告，本文不提前宣称已推送。
+
+
+## 2026-10-03 README 更新与海报提示词交接
+
+用户要求更新 README 与海报提示词，后要求直接生图，再明确表示海报由自己生成。README 改为当前六入口 F1–F5/F8、快速开始、Newton 循环/收敛体验例与能力边界；历史 V8 样本结果不冒充当前求根效果。`.env.example` 只更正课程库派生持久路径的旧注释，没有修改配置值、业务源码或冻结数据。完整/精简生图请求保存于 planning/learning-experience-2026-10，入口 poster-update-prompt.md。
+
+本轮 npm test：知识JSON/API469/Web40通过；本地文档链接无缺失、Newton 示例离线核对与diff check通过。日志 results/readme-update-tests.log。未从干净环境重装依赖，未重复build/真实模型/教师gold/真人评测。内置imagegen两次网络错误，第三次请求按用户指示停止；没有新图，旧海报/原Logo/原小珞保留。交付PNG与视觉核验由后续生成结果决定，不承诺提示词分辨率、可编辑文字层或效果。
+
+此前四批047f134/f875b3e/381c0d6/65ece36已推送，fetch核对本轮开始时本地与远端feature/course-graph-2.0一致。当前文档及提示词按明确清单提交，提交/推送回执在最终交付分别报告；无关原型/egg-info、ignored results、数据库/env不纳入。研究主线、教师/独立与延迟测验门槛不变；没有远端CI或部署证据。
+
+
+## 2026-10-03 用户新版海报接入与 v1 归档
+
+用户自行提供新版 PNG，并明确要求原海报改名为 v1poster。新附件原样接入根目录 LJ_Tutor_Poster.png；原图归档为 v1poster.png。两图实际1055×1491，SHA256分别为3803c9ed3683cc6dc3c03b0aa85c2c5371ef910531c55095c57e8ee1ceb3a8e4、5935f08d8171c0c8f1042dd0e1c481506ff2db955d42b8bdbabf8edc711e115b，均与各自原文件一致。README 展示新版、折叠保留第一版，poster-update-prompt.md 更新实际交付记录；未重新生图或修改 Logo/小珞素材。
+
+已核对六项功能、代码未执行标注、Newton 四个近似值与先越过再趋近的示意。海报为静态展示，不是生产运行或学习效果验收。文件哈希、文档链接和 diff check 通过；业务源码/配置/冻结数据未改。本轮离线 npm test：知识JSON/API469/Web40全部通过，日志 results/poster-asset-update-tests.log；提交/推送回执单独报告；只提交本轮图片及相关文档，保留既有无关原型/egg-info，未部署或重跑真实模型/教师/真人评测。上一节“未替换海报”是当时历史状态。
+
+
+## 2026-10-03 Agent 可靠性修复与实习方向规划
+
+用户要求参考成熟 Agent 项目提升工程能力，目标岗位为 AI 应用 / Agent 工程；随后要求修完后先交规划，已确认可靠性与评测优先。本轮只实施 A0：模型 finish_reason / EOF / 空正文 / 缺配置等 typed failure，不发送假 done；不确定意图在 context 学习写入前确认，仍未确定先澄清；最终 intent 重新选择核验模式；数学工具用类型化结果和退出码判断成功，取消 / 超时 kill、通信回收并清理脚本；缓冲时间改名 generation_buffer_ms。未增加依赖、数据库表或放宽 AST / F8 学生代码执行边界。
+
+最终完整 npm.cmd test 退出 0：知识JSON/API501/Web40全部通过（API较上轮新增32项）；5条既有弃用/绘图警告。首轮两个旧API用例依赖缺配置文案当正常回复，已换显式离线成功fixture并补缺配置/无上下文澄清回归，生产未加fake。日志 results/agent-reliability-tests.log。diff check、规划链接及新增源码凭证格式扫描通过；前端源码未改，未重复build/lint。
+
+规划入口 planning/agent-engineering-2026-10/plan.md，配套 audit.md / implementation-notes.md：A1有界交付Guard → A2本地持久执行回执 → A3离线失败评测为首个里程碑；A4任务快照与可纠正记忆、A5真实模型评测及求职展示随后。参考 LangGraph、OpenAI Agents SDK、Dify、Letta 官方文档，不迁移框架。后续A1–A5尚未实施，先供用户评审；完整数学语义Guard、学生代码C0、教师gold/真人学习收益、远端CI/部署未验证，已有回归通过不代替独立benchmark或真实模型质量。
+
+限定聊天/服务端数学工具两surface的AX审查记录18检查、16唯一规则；12pass/1warn/1fail/4unknown，观测型缺真实交互保持unknown，未夸大整体发布验收。剩余缺口是正文/实际执行证据关联和记忆来源/纠正。六个月求根主线、独立probe帮助保护及原始事件/成绩权限不变。
+
+实现025ec54已推送feature/course-graph-2.0并核对远端SHA；规划与交接另批，最终推送以本轮回执为准。之前12255a5是新版海报/v1归档已推送状态。仅提交清单内内容，保留无关egg-info、三个Web原型目录/文件以及ignored结果、数据库和env。
+
+### 2026-10-03 A1 交付守卫
+
+A0 45 项针对回归再次通过。A1 默认交付检查、一次文字修复、未通过候选拦截和 UI 证据边界已实现；全量 API537/Web41/知识 JSON、typecheck 通过，lint 无错误。检查通过不表示数学正确，规则首版是显式高精度模式，语义覆盖待 A5。用户已授权继续 A2 持久执行回执；构建/界面及推送将在集成验收后完成。
+
+### 2026-10-03 A0–A2 Agent 工程实施结束
+
+用户授权顺序实施；A0 已完成并复验，A1 5197ddf 交付检查 / 一次文字修复后继续 A2。A2 新 schema6 / run-v1 持久回执、原子消息终态、64事件上限、owner与seq条件更新、取消 / 重启过期、重试关联、折叠过程与刷新历史。ASGI断连有主动监听，取消会等待图 / 子进程和数据库写入清理；租约30s续租/120s过期，启动或读历史恢复过期记录，不自动重放。回滚保留新表，正式库启动前SQLite backup；本轮仅临时/隔离演示库迁移。
+
+离线API559/Web43/知识JSON、typecheck、lint0错误10现存警告、生产构建通过；浏览器桌面/390px、修复/拦截/取消/刷新/键盘检查通过。所有run仅执行范围，交付守卫不证明数学正确；F8仍不执行学生代码，usage和未审定自定义模型别名为null。A3独立失败评测CLI未做，A4记忆/A5真实模型待实施。完整回执：planning/agent-engineering-2026-10/delivery-a0-a2.md。远端CI/部署/教师与真人学习效果未验收。
+
+本轮代码提交：A1 `5197ddf`；A2 `f7c865a`。文档回执另批提交；远端分支以最终推送核对为准。
+
+### 2026-10-03 A3 与多领域扩展
+
+用户授权 A3 → 线性方程组 → 数值积分。A3 已新增版本化 manifest 和独立离线 CLI，19 个合同 / 40 个实例通过首跑；缺失、跳过、失败、重复实例不能绿色。CI 增加该命令及报告 artifact。复用实际图 / SQLite / 工具 fixture，结果限定为离线协议。多领域模块待实现，A4/A5 未实现。
+
+A3 全量复验：知识 JSON、API 563 / Web 43 均通过（results/a3-full-tests.log）；报告解析器另覆盖缺失 / 重复 / 跳过 / 失败。无模型调用或部署。
+
+### 2026-10-03 多领域数值实验首版
+
+A3 已实现，终止门控 / Guard 两次临时破坏均被 CLI 检出，源码已恢复。线性方程组（Jacobi / Gauss–Seidel）及积分（梯形 / Simpson / 自适应 Simpson）共用 numerical-lab-v1 请求 / 结果与既有 owner 学习记录，入口 /numerical-lab。支持预测、步进 / 播放、方法对照、历史 / 参数复用、数值核对；source hash 与幂等请求 ID，自检 / probe 未完成时阻止参考读取、运行及核对。无新依赖 / 迁移 / 学生代码执行 / 独立成绩更新。积分估计不是严格界，sin(16*pi*x)^2 提供采样遗漏反例。聊天入口仍是复制用户上下文，A4 可信任务快照与 A5 真实模型评测未完成。交付细节见 planning/agent-engineering-2026-10/delivery-a3-numerical.md。
+
+最终全量：知识 JSON、API 583 / Web 45；生产 build / typecheck 通过，lint 0 错误 / 10 既有警告。新实验计入首页实验记录总数，保留 owner 隔离；无数学掌握度写入。隔离浏览器完成迭代 / 积分 / 参数复用 / 刷新 / 390px 与反例分段对照；截图 results/numerical-lab-desktop.jpg 不提交，演示 DB 与服务均保持隔离。
+
+### 2026-10-03 Runtime 意见审阅与排期（仅文档）
+
+用户要求完成此前开发后审阅外部 Runtime 意见并加入日程。以当前 150553b 核对，来稿 ee373ae 早于多领域实验：A3 已交付；类型化实验尚未成为 Agent 工具/可信聊天快照。采纳工具 Runtime、上下文预算/来源、真实 usage/span 与分层评测；持久恢复不当作普通问答的无条件 P0，checkpoint 不能替代 owner/幂等或保证恰好一次写入。
+
+推荐 A6 类型化工具/受限符号操作/旧模型 Python 路径退役 → A4 实验快照 → A7 调用计量/必要能力 → A5 E1/E2 与可选真实 E3。A8 单路径暂停恢复 PoC 条件启动，C0/MCP/dashboard 另行评估。剩余11–17个集中开发日含回归余量，每周约3日为4–6周，人工复核另计，A8 PoC后重估集成。日程、验收、预算、停止/回滚见 planning/agent-engineering-2026-10/runtime-review-schedule.md；首批可执行切片见 a6-tool-runtime.md，主规划与 Deviations 同步。
+
+README 旧“A3 尚未完成”已修正；本轮只改文档，A4–A8 未实施，无模型调用/数据库迁移/生产部署。提交前完整npm.cmd test：知识JSON/API583/Web45通过（results/runtime-planning-tests.log）；65个本地文档链接/锚点、UTF-8、范围和diff check通过。前端源码未改，未重复build/lint；提交/推送以本轮最终回执为准，保留既有无关原型/egg-info/ignored results/env/数据库。
+
+### 2026-10-03 聊天/工作区衔接意见与帮助保护修复
+
+用户要求核对新产品意见。成立：缺可信当前任务/实验上下文、业务动作卡片和工作区内嵌聊天；过度描述：现有聊天已有求根提交/诊断/probe/run，NotebookChat也已嵌入笔记。来稿Newton从-2出发第一步应-1.8。审阅基线0340c49。
+
+局部修复612e3a4：共享helper增加进行中章节自检；root-lab新运行/缓存重试/历史读取及伴读选区共用帮助检查。新增检查修复前6失败1通过；修复后针对72项，完整JSON/API589/Web45通过，日志results/chat-integration-review-tests.log。owner隔离、结束/交卷解锁与正常probe提交保留；无迁移/依赖/前端修改/分数与掌握度变化，旧材料与在途/外部帮助不宣称完全锁住。
+
+推荐日程变为A4.1当前Newton实验→A6.1/A4.2最小业务动作/卡片/内嵌聊天→A6.2计算工具/旧Python退役→A7→A5。剩余12–19个集中开发日含回归余量，单人每周约3日约4–7周、人工复核另计；全F1/F2/F5/F8和A8/C0另估。复用现有service/session/episode，不建第二Registry；预览暴露帮助也记事件并用于probe选题。chat-workspace-review.md、主规划、A6/Runtime和README同步，新交互A4–A8尚未实现；A3离线契约19/19、实例40/40通过，报告SHA=612e3a4且文档修改期间tracked_worktree_dirty=true。75个本地链接/锚点与UTF-8检查通过；最终提交/推送以本轮回执为准，未验证远端CI/部署。
+
+## 2026-10-03 S1/S2 实验聊天闭环
+
+用户授权S1/S2并要求更精致的界面。已实现Newton保存记录的LearningContextRef与服务端快照，owner/input_hash/runner_version/graph_revision/selected_step重验；最多11行/8KiB，参考讨论不写学生作答、mastery/BKT或独立成绩。桌面小珞侧栏、手机抽屉、指定步骤、刷新/会话映射恢复，以及参数编辑→预览→显式保存→同页更新已落地。卡片关联成功且可见的Guard通过消息/run，24小时过期，每卡3次预览，最多100次迭代；重验帮助边界、版本/哈希与最新预览，幂等保存。未保存的预览也记录help事件并从未见probe候选中排除。
+
+卡片由服务器固定映射组装，默认参数沿用原实验；未实现模型自主工具选择。本引用路径关闭生成Python执行和联网，其他旧Python路径待S3/A6.2退役。笔记/实验共享完整会话控制，主聊天共享ChatLifetime与MathMessage；锁在创建前取得，切换/卸载/退出拒绝旧回调，取消/失败/EOF不能留下可执行卡片，草稿按owner保留。没有新表/迁移/依赖，不改学生成绩规则。新字段用现有JSON，缺少历史预算显式标为legacy_default。
+
+完整离线JSON/API600/Web48、针对46项、A3契约19/19与实例40/40通过；TypeScript/build通过，lint0错误/10既有警告。隔离真实HTTP/编排/Guard/SQLite与固定模型响应验证桌面预览/脏参数锁定/保存回流/刷新/完整聊天步骤恢复、390px抽屉/草稿/取消/Escape与焦点恢复；真实模型与真人学习收益、远端CI/部署另验。截图与日志在ignored results/s1-s2-*。交付细节见planning/agent-engineering-2026-10/delivery-s1-s2.md。下一步S3/A6.2→S4/A7→S5/A5，余8–12个集中开发日含回归余量，人工gold另计；完整A4/F1/F2/F5/F8、跨领域可信引用、A8/C0另估。
+
+
+## 2026-10-03 S3/S4 固定数学工具与调用计量
+
+用户授权S3/S4。普通聊天固定math_differentiate/numerical_run通过原生tool_calls接入编译图/Guard/run，最多两轮、参数白名单、真实固定worker取消/超时/输出回收；模型Python执行调用点退役，关闭typed也不恢复。成功工具计参考帮助，不自动保存或计掌握；Newton可信引用与业务卡片沿用S1/S2。默认typed关闭，精确模型/端点能力绑定后启用；teaching-v2.5/delivery-v2。
+
+S4在实际客户端调用边界记录span/call/parent、起止/状态/耗时、正文首delta与provider usage。工具span关联提出请求的模型span；缺失usage不补零，cache/reasoning计价未支持时费用未知，可选价格带币种/日期版本。现有run-v1 JSON兼容，无新表/依赖/迁移。检索超时重复取消造成落盘/内存序号失配已修复，持锁等待SQLite写入并同步后传播取消；过期重启闭合span，不重放。
+
+本地最终知识JSON/API655/Web51、v2合同38/38实例92/92、TypeScript/lint0error10既有warning/build通过。v1历史19/40保留。隔离真实HTTP/编译图/worker/Guard/SQLite网页验证3请求2报告、一次求导和一次修复、刷新一致、390px无横向溢出；费用仅合成测试数据。现有两库SQLite backup integrity_check=ok后恢复API8000/Web3000，私密env未改。详见planning/agent-engineering-2026-10/delivery-s3-s4.md；不是模型准确率、真实供应商验证、账单或教学收益，远端CI/部署未验收。
+
+下一步S5/A5任务冻结、旧基线对照与人工gold，再按明确配置/预算运行E3真实模型烟测；S5及回归预计4–6集中开发日，人工gold另计。全功能引用、A8/C0另估；工程成果可如实写固定工具Runtime/调用回执/离线失败注入，不补造模型质量指标。提交/推送证据以本轮最终回执为准；保留无关runtime文档修改、原型、egg-info与ignored results。
+
+## 2026-10-04 预约 Agent v3 审计与规划
+
+完整读取旧目录指定的 `docs/planning/Audit_on reasoning_20261003.md`，以本目录最新 HEAD `52373b632013e0808f8939b1fd8876edbc5e2850` 与工作区为审计基线，保留原有 runtime 文档修改、原型与 egg-info。本轮只审计、验证与规划，没有生产代码修改、迁移、模型调用、提交、推送或部署；运行中的服务和私密配置未操作。
+
+本轮重新运行 `npm test`：知识 JSON、API 655 项、Web 51 项通过；离线 E0 v2 38/38 契约、92/92 实例通过，日志/报告在 ignored `results/agent-v3-audit-*`。固定安全探针另确认旧 `parse_expr` 路径接受 Python 内置调用、定义域消去与洛必达条件过度判定、互斥/独立文字规则误判；这些问题尚未修复。typed worker 的 AST 白名单与取消合同不能覆盖旧学生单步核验，E0 绿色不能推出数学准确率或教学效果。
+
+新增 `planning/agent-v3-2026-10/` 七份主文档及 documentation-drift / implementation-notes，同步当前 README、旧规划入口和 CODEX_HANDOFF。下一步修订为 S5.0 旧核验安全/语义回归修复 → S5.1 离线真实图/Guard/SQLite runner → 人工复核 gold 与预算许可后的供应商烟测 → 失败归因。S5 首版目标 E1 32 任务、E2 36 题、E3 8 episode；这些是计划规模，尚无 gold/真实模型质量成绩。完整 S5 估计 6–9 个集中开发日，人工复核 10–14 小时另计；每周约三日的两周仅覆盖最小切片，不承诺全部完成。
+
+优先候选为 VerificationEvidence，把 claim、前提、范围、来源与 unknown 绑定；ProofState / Reasoning Graph、A8、全面 Lean 需评测或恢复需求触发。四至六周主线是 S5 → 一个 Evidence/反例或 linear 可信上下文切片 → 同题复评与可复核演示，避免同时展开全部工作区。修复与实测收益仍待后续实施，本次规划完成不代表可以发布。一次性自动化 `agent` 已由 app 工具设为 `PAUSED`，确认停用。
+
+## 2026-10-07 按独立审阅修订Agent v3规划
+
+用户授权修改方案，本轮仅文档：新增08核验/学习资格执行合同，重写02/04，同步00/01/03/05/06、README、旧索引与CODEX_HANDOFF。07独立审阅及用户runtime/原型/egg-info保持原样；修改前17份文档在ignored results/agent-v3-plan-revision-20261007-before留快照，源码HEAD仍52373b632013e0808f8939b1fd8876edbc5e2850。
+
+两周只承诺S5.0诚实核验：正常一元等价/导数候选与有限表示、独立核验deadline、输入/域/候选绑定、代算/heuristic/unknown/reference_help不冒充学习证据、mistake/mastery双sink、旧消息legacy/来源提示及UI状态。正常子集全unknown不能验收。初始核验最多5秒需校准；4–7开发日预算含跨层回归，不是实测或保证。历史聚合学习记录不精确重算。
+
+gold/offline准备可并行；首版8 dev共用E1/E2池、4独立确认候选、2 dev流程，原32/36/8与历史adapter移backlog。固定分母、完成/正确/恰当弃权/coverage、干预状态重置及新封存确认一起报告。协议probe不等全题库，但需隔离预算/profile及另行live授权；51只适用3 probe＋8单run×6，费用上界未知则硬预算live不运行。
+
+默认下一产品片linear只读可信Chat，保留原编辑/运行/保存，新参数卡后排。scope/origin/候选资格先复用现有字段，多结果误指及多消费者需求证实后才抽Evidence；ProofState/IR/Lean/A8继续条件延期。完整原S5情景10–17日包含S5.0，人工出题/二审/盲评/供应商等待另计，首片与首4题后校准。没有生产代码、测试、配置/数据迁移或新模型质量成果；10月4日655/51、38/92为历史回执，本轮只做文档与保护范围检查，不commit/push/deploy。
+
+### 2026-10-08 R1 Math Tutor Core v1 细化规划
+
+用户要求结合 v4 与新的 Math Tutor Core 建议，先调研、规划而不实施。基线 `feature/course-graph-2.0` / `da67dd54abd910bca7219b9ed398807c3764cbf5`，ahead 7；已有 dirty、未跟踪文件及 v4 原文保留。新增 `planning/r1-math-tutor-core-2026-10-08.md`，更新 `planning/README.md` 的 Now/Next/Blocked 入口和 `CODEX_HANDOFF.md`。M1 Newton 预测/解释/修订已保存，真正缺口是保存的学生主张未随活动来源进入 Chat；现有引用讨论强制概念解释且不作核验。R1 建议同一 TutorWorkflow 中建立有界主张—来源—动作链，Newton 首片、线性第二场景，Graph/Memory/新 Agent 框架只按消融证据再决定。R0 并行 Gate、人工 gold、真实模型质量与正式库验收均未在本轮完成；未改生产代码、未跑新测试、未付费、未提交/推送/部署。
+
+### 2026-10-08 R1-A / R1-B 范围修订
+
+仅规划。`planning/r1-math-tutor-core-2026-10-08.md` 已把 R1-A（Newton、Jacobi/GS、Teach-back 的可信主张/来源/教学动作）与 R1-B（F1 推荐、F2 条件推理、F4 分层反馈、F8 限定静态数学诊断）分开，A 阶段验收前 B 不启动。结构化 claim review 从默认实现降为与直接生成、现有工具增强同题对照的候选；格式有效不能证明数学判断正确，若误判/成本/延迟无净增益则不加节点。现有 U01–U06、M1 和 S5 工程合同继续复用，内容审核、真实模型质量、正式库与 R0 Gate 各自保持待验。没有业务代码、测试、付费模型、提交/推送/部署变更；旧 dirty 保留。
+
+### 2026-10-08 R1-A A3 Jacobi/GS 本地切片
+
+A0–A2/冻结规划 `ebdc909` 推送到 `feature/course-graph-2.0`，CI run 37771507944 尚需远端结论。用户授权 A3；现有线性引用现按保存参数复算轨迹与条件，输出选中步有限证据和 unknown，Chat 原话仍取当前消息，不把参考帮助记作掌握。无需复制 Agent。定向 API33、全量知识 JSON/API912/Web72、typecheck 通过；无付费模型/正式库/部署。A3 回执 `planning/r1-a3-delivery.md`，A4/A5 与真人质量评审未完成。原有无关未提交/删除文件保留。
+
+上述 CI 实际 failure：Web/知识成功，API 8 个 S5 哈希测试因 CRLF/LF 不一致失败；已在本轮追加 S5 JSON 固定 LF、内容/fixture 哈希重绑，本地相关 80 项通过。修复版远端 CI 待新提交确认。
+
+`8e58e6e`（S5 哈希修复）与 `6367ce1`（A3）已推送；目标 SHA 的 CI #26（37772411831）API/Web/知识数据均成功。正式库、授权链、A5 工程/质量验收仍 pending。
+### 2026-10-14 R2 回答采集v2
+
+评测脚本补保存正文、上游固定回复、SSE阶段/失败、调用回执与外连阻断记录；两题四条离线应用采集工程通过，定向采集/模拟预算43项通过。真人gold与真实模型评分仍0，未实现真实供应商transport，不称费用硬上限。下一步按准入清单补小规模签核和真实适配器的Mock预发送验证；R3暂不启动。见planning/r2-capture-and-live-admission-2026-10-14.md。未改业务/环境/正式库，原dirty保留。
+### 2026-10-14 两项推进与在线诊断
+
+签核材料按N01/N02/T04原话与SHA整理，真人逐题/二审未代填。R2实际适配器预算Mock验证支持OpenAI/DeepSeek非thinking原payload、跨阶段预留/重试/取消；不放开S5真实transport。用户明确授权临时key在线三题诊断：3条完整返回、714token，另有4token ping（usage35）及模型列表GET，总5HTTP；无重试、搜索、后台、费用上界声明。T04有待真人复核的补造指标/收敛概念风险，非完整应用失败簇。详见planning/r2-two-tracks-and-live-smoke-2026-10-14.md；未改业务/正式库/配置或push，原dirty保留。
+### 2026-10-14 三题材料认可记录
+
+用户回复“通过”，独立记录绑定冻结材料SHA，范围为N01/N02/T04判据整体用户认可，不替代逐项签署、二审或模型评分。见evaluation/r2/math-review-user-acceptance-2026-10-14.md；本轮仅文档同步，未消费模型或修改业务。
+### 2026-10-14 T04应用复核
+
+真实ASGI/编译工作流临时库诊断：首次harness压缩转交失败保留，修正后routing/Teacher/Guard/保存完成，先澄清指标与迭代条件、不给掌握度。Guard无repair不能归因数学核验；总provider3次，usage部分未知，未改业务/正式库/配置或push。回执planning/r2-t04-application-recheck-2026-10-14.md，暂不启动R3。
+
+### 2026-10-14 研学六大工作区视觉升级与先进UI经验重构
+
+落实补充规划 `planning/r3-workspace-ui-design-and-unification-2026-10-14.md`，深度重构提升 `study` / `reading` / `lab` / `assessment` / `teach-back` / `code-workshop` 六大研学工作区：
+1. **统一设计语言 (Atelier & Craft UI)**：
+   - 全局引入数学工程草纸微网格背景（28px radial dot pattern）与顶部玻璃化流光顶栏（backdrop-blur-md）。
+   - 顶部快捷工作区导航胶囊支持单键快捷键映射（`1`–`6`），带活动指示条。
+   - `AtelierFolioCard` 引入顶部微光发丝线（hairline highlight）与悬浮微升效果；按钮与输入框引入渐变质感与内阴影。
+2. **六大工作区专项美化与交互升级**：
+   - **`study` (今日日课)**：引入高质感方程展示卡片、快捷序列填入试算预设、全新 `NumericalTraceVisualizer` 收敛阶微雷达可视化、任务列表左侧重点色边饰条与未选中时的三阶研学推进微卡。
+   - **`reading` (典籍伴读)**：大纲章节按钮升级为左侧重点色饰条卡片，LaTeX 公式块升级为带一键复制的典籍卡片。
+   - **`lab` (数值实验)**：增加参与式探究与自由实验台的一级标签切换导航，解决未嵌入时两块视图重叠排布的问题。
+   - **`assessment` (试金石自检)**：顶部增加平滑答题进度条，多选题选项改为现代圆形字母徽标（`[A]`, `[B]`, `[C]`, `[D]`）与触感选中光圈，彻底移除原生裸露 radio。
+   - **`teach-back` (费曼讲学台)**：升级为“费曼讲坛模式”，新增三维论述支架（几何直观、定理前提、极端反例）；左侧下拉框重构成典籍卡片列表；论据映射增加锚定计数与状态微标。
+   - **`code-workshop` (算法工坊)**：编辑器增加未保存脏标记（amber pulse dot）、重置模板快捷键、底部状态栏（行列数/Spaces/字符数/UTF-8）、静态规则结构化微卡与本地轨迹收敛阶微雷达。
+3. **验证与交付**：
+   - `apps/web` 下 `npm run typecheck` 0 错误通过，`npm run lint` 0 错误通过。
+   - 根目录 `npm test` 971 项 Python 测试 + 88 项 Web 测试全部通过（全离线）。
+   - 按分批要求提交：`b497bb2`、`67537af`。
+   - 本地服务已启动（API :8000, Web :3000），6条工作区路径 curl 实测全部返回 HTTP 200。
+
+### 2026-10-14 学术字体系统重塑、自由数值实验工坊升级与 R3 §3A 深度完善
+
+针对用户提出的“标题字体不美观、自由实验卡片简陋以及继续完善 R3 规划中 3A 节”要求，完成以下升阶改造：
+1. **字体与题头重塑 (Scholarly Typography Overhaul)**：
+   - 彻底剔除结构纤细怪异的站酷小薇体（`ZCOOL XiaoWei`），全局改用经典学术宋体 **`Noto Serif SC`（思源宋体）** 作为大标题与典籍题头标准；
+   - 采纳方案 A 精炼学术型标题：`/study`（今日研学 · 循序推演）、`/reading`（定理研读 · 前提与边界）、`/lab`（数值实验 · 动态探究）、`/assessment`（认知自检 · 概念试金石）、`/teach-back`（费曼讲坛 · 概念内化）、`/code-workshop`（算法工坊 · 静态代码审阅）。
+2. **自由实验工作区重塑 (Open Lab Atelier Elevation)**：
+   - **左侧参数配置台**：替换为 `AtelierFolioCard`，提供快捷案题起点 Pills（⚡ 逼近 √2、🔄 拐点震荡、✂️ 二分收缩、🎯 不动点迭代），配备现代算法分段器（Segmented Control）、闭区间约束盒与科学假说先验框（含快捷灵感芯片）；
+   - **右侧动态算式蓝图与向导 (Live Blueprint Canvas)**：空态彻底告别简陋白框，构建出动态方程式大屏（实时根据输入渲染 $f(x)=0$ 与对应迭代格式）、参数快照 Pills、苏格拉底探究三步法向导以及 3 个一键起跑案题探针；
+   - **结果态推演卡片**：使用 `AtelierFolioCard` 统一收纳本次观测、预测复盘、切线播放器、历史单变量对照台与精致等宽斑马纹迭代数据表。
+3. **完善规划规范 §3A (R3 Intelligent UI & Workspace Architecture)**：
+   - 在 `planning/r3-agent-capabilities-2026-10-14.md` §3A 深度补充设计系统落地标准、六大工作区认知动作映射矩阵（Input ➔ Policy ➔ Component ➔ Artifact）、OpenUI 运行时真实性安全准则、以及端到端闭环动作桥验收标准。
+4. **验证与分批提交**：
+   - 前端 `npm run typecheck` 0 错误通过，`npm run lint` 0 错误通过。
+   - 遵循分批提交要求：
+     - `6c45680` style(web): adopt Noto Serif SC typography and refine academic workspace titles
+     - `e57406c` feat(web): elevate open lab parameters and canvas state cards
+     - 本轮提交文档规范修订。
+
+
+
+## 2026-10-14 R3.1 提交收尾与统一实现复核
+
+用户要求先提交并复核另一个 agent 的统一实现。复核当前 HEAD 48ef116 与画布提交 8edd92e：Lab 复用真实领域视图；Reading/Study 仍为静态示例，原文来源、今日任务和跨工作区引用尚未统一，Code 未整合。修复异步引用检查把 Reading/Study URL 强制改为 Lab 的问题。详细问题与证据边界见 planning/r3-unification-review-2026-10-14.md。本轮仅本地提交 R3.1 相关改动，无 push/deploy；无关 R2、原删除和探索产物保留。
+
+## 2026-10-15 Reading与Study真实领域视图闭环与统一引用绑定落地
+
+落实用户提出的“真实数据接入、来源规范、原子校验与闭包防范”指导意见，全面消除静态假数据并完成端到端闭环：
+1. **共享领域视图与真实数据接入**：
+   - 抽象 `ReadingDomainView` (`mode: "full" | "canvas"`) 与 `StudyDomainView` (`mode: "full" | "canvas"`)，使独立页面（`/reading`、`/study`）与画布分栏无缝共用一套组件与草稿状态。
+   - 彻底移除假原文与 mock 假任务，真实接入 `/reading/units`、`/reading/documents` 与 `/study/today` 接口。
+   - 严禁将 SHA-256 内容指纹统一标注为“教材已核验”：严格区分出处来源与真实审核状态：
+     - 课程整理包（`source_kind === "unit"`）：标为“🏛 课程大纲整理包 · 已排定教学单元材料”，出处为武汉大学教学大纲，状态为“SHA-256 一致”；
+     - 用户上传材料（`source_kind === "document"`）：标为“📄 用户上传材料 · 辅助文献”，出处为真实文档ID与章节，明确提示“未经权威数学金标核验”。
+   - 严格区分今日计划状态：区分“今日已排定计划”、“无计划（推荐基础演练）”、“加载失败”与“计划已过期（stale）”，推荐内容显式标注，绝不显示为用户今日排定任务。
+2. **原子校验与引用传递闭环**：
+   - `ReadingContextRef` 构造严格遵守规范契约：大纲单元时 `section_id` 必须为 `null`；文档章节时为 `section.id`（绝非 `source_document_id`）；选段起止严格采用 Unicode 码点真实长度。
+   - 消除伪造的 `kind: "study"` 引用：无实体日课任务讨论统一显式以无引用普通探讨模式发送，并在 Prompt 中附带任务说明。
+   - 重构 `validateAndBindReference`：异步校验返回显式 `{ ok: true, snapshot } | { ok: false, error }`，失败或环境切换立即阻断，不吞错误。
+   - 重构 `submit`：增加 `explicitSnapshot` 参数，将校验成功的快照原子穿透传递给 `submit` 和 `streamTutor`，切断 React 异步 `setState` 闭包捕获旧 Lab 引用的可能性。
+3. **多工作区保活与三者一致性**：
+   - 画布多工作区采用保活挂载模式，切换 Tab 仅切换视图显示，不触碰当前引用、不中断正在生成的 SSE 提问流。
+   - 各工作区独立草稿与选中项持久保留。
+   - 严格达成“界面展示对象、实际请求引用、保存后的历史来源三者完全一致”。
+4. **分批提交记录**：
+   - `d7ba8ac` feat(web): shared domain views and real api integration for reading and study
+   - `654d8ce` feat(web): atomic reference validation and explicit snapshot passing in chat
+   - `4f05644` feat(web): tab draft preservation and precise source provenance in context banner
+   - `881ae36` test(web): add regression coverage for reading field contracts, hash drift rejection, and trace draft logout cleanup
+
+
+## 2026-10-15 Reading / Study 统一后修复与教师入口
+
+复核基线93aa00d：修普通Reading带condition_hash导致409、Study抽取丢失提交/确认/独立检验及错误计划接口、清除引用与异步绑定竞争、显式快照被旧loading挡住、工作区刷新参数丢失；教师审核入口补到Chat顶栏/侧栏和六页导航。保留新UI。真实隔离浏览器闭环、Web94/94、TS通过、lint0错10既有警告；API全量969过2失败，直接诊断为固定核验worker超时，预算未放宽。细节与剩余门禁见 planning/r3-domain-unification-fixes-2026-10-15.md。原dirty/正式服务保留，无供应商消费，本轮未commit/push。
+
+
+## 2026-10-15 Open Claude UI (CDS) 交互物理学与东方水墨宣纸美学融合落地
+
+以 `https://github.com/Caho1/open-claude-ui`（CDS 逆向交互物理学与视觉哲学）为蓝本，与珞珈数智助教的“水墨宣纸·学术工坊（Scholarly Atelier）”设计语言完成全量深度融合。分四阶段全套 TDD 推进，测试无破坏，前后端全套 100% 绿灯。
+
+1. **Phase 1: 分栏防吞护盾、双击基线归位与 CJK 拼音回车互锁守卫** (`85c8ec0`)
+   - 提取 `clampPaneWidth`, `defaultPaneWidth`, `shouldInterceptCompositionEnter`（60ms 选词冷却窗口、`keyCode === 229`、粗指针拦截）；
+   - 在 `tutor-chat.tsx` 中挂载全屏透明防吞护盾（Pointer Shield），彻底杜绝拖拽分栏时被公式/SVG 坐标系吞噬事件，支持双击黄金比例复位与 Escape 取消回滚；
+   - 在 `tutor-input.tsx` 建立拼音输入法互锁守卫，彻底消灭中文选词误发送。
+2. **Phase 2: 视口防抢夺图钉与 7 档非线性水墨边缘羽化遮罩** (`dcf1f7a`)
+   - 封装 `useScrollPinning` 自定义 Hook（40px 底部吸附容差、150ms 用户主动滚动冷却保护、瞬时 `auto` 对齐防抖、>120px 浮出东方水墨微徽章“跳至最新”快捷胶囊）；
+   - 在聊天消息容器挂载 7 档非线性 Alpha 水墨羽化遮罩（`mask-image`，触顶触底动态感应消除白边）。
+3. **Phase 3: 思维链生成互斥锁、纯 CSS Grid 弹性伸缩与引用探讨** (`5b7f2c8`)
+   - `ThinkingProgressBanner` 与 `ThinkingSummaryView` 接入 `computeThinkingAccordionState`，流式思考中保持锁定理智呈现，防视口剧烈跳跃；
+   - 纯 CSS Grid `grid-rows-[0fr] -> grid-rows-[1fr]` 替代 JS 高度测量与重排；
+   - 加入水墨微呼吸脉冲指示点与一键“作为引用探讨（Copy as Quote）”。
+4. **Phase 4: 视网膜高分屏物理发丝细边补偿与工坊微阶梯** (`4e71579`)
+   - 在 `globals.css` 注入 Retina 媒体查询发丝细边补偿（`--hairline: 0.5px`）、工坊表面微阶梯变量（`--atelier-surface-0/1/2`）及 `.atelier-hairline`、`.atelier-composer-shell`、`.atelier-card-shell` 实用类；
+   - 提取 `resolveHairlineWidth` 与 `getAtelierSurfaceVar` 并在 `interaction-physics.test.ts` 覆盖单测；
+   - 全面升级 `AtelierFolioCard`、`ContextBanner`、`CanvasWorkspace` 边缘细腻度与背景阶梯。
+5. **验证结果**：
+   - Next.js Typecheck 0 error；
+   - 前端单测由 90 项扩充至 105 项全绿通过；
+   - 后端 982 项 pytest 全量离线通过。
+
+
+## 2026-10-15 R3.1 / R3.2 教学决策与 Newton 探究闭环落地（选项一）
+
+落实 planning/r3-agent-capabilities-2026-10-14.md 中的 R3.1、R3.2 规范与选项一（Newton 探究式学习“预测→反例→解释→修订”闭环）：
+
+1. **R3.1 基于证据选择教学动作与权限控制 (`teaching_decision.py`)**：
+   - 定义 `TeachingDecision` 强类型 Pydantic Schema（`claim_ref`, `evidence_refs`, `known_conditions`, `missing_conditions`, `claim_status`, `action`, `disclosure`, `reason`, `assessments`, `experiment_proposal`）；
+   - 在 `resolve_decision` 实现严格确定性校验与降级防线：
+     - `evidence_refs` 与子评估必须真实来自于 `source_bundle` 中的可用证据；
+     - `action` 与 `claim_status` 严格互锁（如 `confirm_local` 必须基于 `supported`/`partially_supported`；`ask_missing_condition` 必须提供 `missing_conditions`；非 unknown 必须有除学生原话外的证据引用支撑）；
+     - `disclosure` 权限严格与提示策略同步。
+
+2. **R3.2 受控单变量对照实验提案契约 (`teaching_decision.py` / `learning_actions.py`)**：
+   - 定义 `ExperimentProposal` 强类型模型（`question_to_test` 实验目的, `changed_parameter` 单一变量, `suggested_value` 推荐数值, `candidate_values` 候选数值, `observable` 预期观察指标）；
+   - 规则互锁：`action == "offer_experiment"` 时必须携带合法 proposal 且建议数值不能与当前初值完全相同（避免假对照）；非 `offer_experiment` 动作禁止附带该提案；
+   - 在 `learning_actions.py:root_proposal` 接入 `experiment_proposal`，自动生成 `suggested_parameters` 供给学生端交互；
+   - 允许被解释绑定的 `root_lab`（`activity_claim`）在收到 `offer_experiment` 教学动作时，安全受控解锁参数提案卡片。
+
+3. **选项一：Newton 探究式闭环深度完善与直达回链 (`root-action-card.tsx`)**：
+   - 升级 `RootActionCard`：水墨发丝边质感呈现“🎯 助教建议对照实验（单变量对照）”、实验目的、预期观察与建议初值；
+   - 提供【一键填入建议初值】按钮，学生无需手工复制即可将模型建议填入参数台，点击预览后由后端 Newton 真实数值引擎运算；
+   - 在实验保存后，若当前卡片属于 Newton 活动（`activity_claim` 存在），卡片提供【回到 Newton 探究活动提交修订 →】直达链接，打通“反例振荡观察 ➔ 提出解释 ➔ 助教提案 ➔ 填入初值并计算 ➔ 观察收敛实根 ➔ 回到活动提交修订 ➔ 助教确认”的完整闭环。
+
+4. **端到端测试与质量防线**：
+   - 后端新增 `test_newton_inquiry_full_cycle_experiment_and_revision` 端到端集成测试，覆盖从预测、振荡反例、解释、实验提案、初值 -2.0 运算验证收敛至 -1.769292 负实根、保存后修订、到 `confirm_local` 确认全流程；
+   - 前端 `chat-lifetime.test.ts` 覆盖 `ExperimentProposal` 解析契约与非法参数过滤；
+   - Next.js Typecheck 0 error；全套测试（知识库、UI Catalog、后端全量 pytest 及前端 105 项单测）100% 绿灯。
+
+
+## 2026-10-15 UI-c 算法工坊闭环、R3.3 定向检索与 R3.4 失败策略版本对照落地
+
+全面落实 planning/r3-agent-capabilities-2026-10-14.md 中的 UI-c、R3.3 与 R3.4 规划要求，全站前端设计与离线测试保持最高工程水准：
+
+1. **UI-a / UI-b / UI-c 状态盘点与 UI-c（算法工坊）闭环**：
+   - **UI-a**（数值实验台）与 **UI-b**（定理研读与今日日课）：此前已通过 `LabWorkspace`、`ReadingDomainView` 与 `StudyDomainView` 在 `canvas-workspace.tsx` 达成 100% 共享与闭环。
+   - **UI-c**（算法工坊）：本轮彻底完成！
+     - 抽取出全屏/画布共享的 [`CodeDomainView`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/learning/code-domain-view.tsx)，实现 Python 代码编辑、Tab 智能缩进、行号槽与聚焦墨晕、静态规则 AST 诊断（黛蓝/赭石印章）、与助教一键探讨行号上下文、以及双版本代码并排 Diff 折叠；
+     - 升级 [`canvas-workspace.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/learning/canvas-workspace.tsx)：加入第四个 Tab `code`，保活挂载 `CodeDomainView`，切换 Tab 草稿不丢失；
+     - 重构 [`app/code-workshop/page.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/app/code-workshop/page.tsx)：精炼为纯净单真源容器；
+     - 升级 [`tutor-chat.tsx`](file:///D:/Projects/na-tutor/luojia-math-tutor-skill/apps/web/components/tutor-chat.tsx)：Ribbon 顶栏挂载“算法工坊”快捷入口，支持行级上下文无缝回 Chat 研讨。
+   - 至此，**UI-a、UI-b、UI-c 全部结项闭环**。
+
+2. **前端全站设计与美学审查 (/frontend-design)**：
+   - 贯彻【现代书院水墨研学工坊（Scholarly Atelier）】设计哲学（语义色 `paper`/`olive`/`dai`/`cinnabar`/`ochre`、发丝细边 `--hairline` 与表面微阶梯）；
+   - 审查全站主要路由（`/`, `/chat`, `/lab`, `/reading`, `/study`, `/code-workshop`），全站组件均已统合至 `LearningShell` 或工坊画布，状态持久化完备；
+   - 前端 106 项单测通过，Next.js route types & TypeScript 保持 0 error。
+
+3. **R3.3 围绕教学缺口定向检索（`targeted_retrieval.py`）**：
+   - 实现 4 类受约束检索目标：`theorem_conditions`（定理前提）、`counterexample`（反例）、`prerequisite`（先修概念）、`worked_step`（推导演示）；
+   - 实现 `infer_target_goal`：从教学决策动作、缺失条件与主张状态自动推导目标类型；
+   - 实现 `TargetedCourseRetriever`：在同库同预算下对特定目标针对性加权排重，单轮硬上限 3 条证据片段，严格标记来源 `course_unit:...` 与 `scope: reference_provenance_only`；
+   - 接入 `teaching_decision.py:source_bundle`，生成 `targeted:0`、`targeted:1` 等合法引用；
+   - 确立防伪原则：检索出“导数非零”仅作教材出处参考，严禁模型在未验证时擅自将主张评为 `supported`；新增 `test_targeted_retrieval.py` 覆盖 5 项针对性回归。
+
+4. **R3.4 从失败反馈改进策略版本（`policy_comparison.py`）**：
+   - 实现 `PolicyFailureRecord`：严格按“原回答位置 → 违反的判据 → 有效替代 → 影响的决策阶段”四元链结构化沉淀；
+   - 实现 `PolicyExecutionMetrics`：追踪数学结论正确性、步骤误判、缺条件追问、错误归因、披露越界、实验目的、调用/token/时长指标；
+   - 实现 `audit_decision_against_rubric`：针对 N01/N02 等判据自动化审计模型决策是否违规；
+   - 实现 `compare_policies`：单因素公平差分评估（保持模型、工具、来源与权限一致），严格落地主链保留准则（有改进且严防产生任何严重退化，如步骤误判或泄露答案）；
+   - 新增 `test_policy_comparison.py` 覆盖 6 项单元测试。
+
+5. **R3.5 学习接续与恢复只做一条真实路径（`learning_resumption.py`）**：
+   - 实现 `TaskResumptionSummary`，严格分离**客观可验证事实（Verifiable Facts）**与**模型推断（Model Inferences）**：
+     - 事实层包含 `claim_ref`、学生原话 `student_claim_text`、已完成步骤列表 `completed_steps`、实验参数 `experiment_parameters` 与解释偏好 `explanation_preference`；
+     - 模型推断层包含待补条件 `pending_conditions`、推断状态 `inferred_claim_status` 与教师原因 `tutor_reason`；
+     - 提供查看（`get_summary`）、更正（`update_corrections`）与清空（`clear_summary`）接口；
+   - 跨会话恢复严格重验所有权（owner 越界抛出 403/KeyError）、来源哈希（`input_hash`/`runner_version`/`graph_revision` 变更时拒绝恢复）以及自检帮助锁状态；
+   - 落地单条真实恢复路径（“待补条件 ➔ 学生补充 ➔ 受控单次预览”）：
+     - 依据学生补充输入驱动 Newton 初值对照单次受控预览（`run_reference`）；
+     - 严格请求级幂等（`request_id`），避免重复扣费或重放工具调用；
+     - 坚守防伪铁律：`mastery_certified` 恒为 `False`，绝不因阅读解释或接续恢复断言掌握度；
+   - 在 `routes_learning.py` 挂载 5 个标准化 RESTful 接口；
+   - 新增 `test_learning_resumption.py` 覆盖 7 项核心回归。
+
+6. **验证结果**：
+   - 全套离线回归 100% 绿灯（后端 pytest 61 项核心回归全绿，前端 106 项单测全绿，Next.js Typecheck 0 error）。
