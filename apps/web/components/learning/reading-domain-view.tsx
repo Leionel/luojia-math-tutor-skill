@@ -32,7 +32,8 @@ import {
   type ReadingDocument, 
   type ReadingNote 
 } from "@/lib/learning-api";
-import { getCurrentUserId } from "@/lib/demo-auth";
+import {DocumentUpload} from "@/components/document-upload";
+import { getCurrentUserId, isAuthStorageKey } from "@/lib/demo-auth";
 import { notesForSource } from "@/lib/learning-input";
 import { ReadingExplanation } from "./reading-explanation";
 import { ReadingDiscussion } from "./reading-discussion";
@@ -45,7 +46,13 @@ export interface ReadingDomainViewProps {
   onDiscuss?: (ref: ReadingContextRef, prompt: string) => void;
 }
 
-export function ReadingDomainView({
+export function ReadingDomainView(props:ReadingDomainViewProps){
+  const [identity,setIdentity]=useState(0);
+  useEffect(()=>{const changed=()=>setIdentity(n=>n+1);const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};},[]);
+  return <ReadingDomainContent key={identity} {...props}/>;
+}
+
+function ReadingDomainContent({
   mode,
   initialUnitId,
   initialReference,
@@ -63,6 +70,7 @@ export function ReadingDomainView({
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [importing,setImporting]=useState(false);
   const [loading, setLoading] = useState(true);
 
   // 初始化加载真实数据
@@ -88,6 +96,7 @@ export function ReadingDomainView({
         if (savedDocId) {
           const loadedDoc = await learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(savedDocId)}`);
           if (!active) return;
+          if(params?.get("source_hash")&&params.get("source_hash")!==loadedDoc.source_hash)throw Error("此笔记关联的原文版本已变化，不能静默替换；请在我的资料中核对来源。");
           setDoc(loadedDoc);
           setDocumentId(savedDocId);
           const savedSection = mode === "canvas" ? initialReference?.section_id : params?.get("section");
@@ -239,7 +248,7 @@ export function ReadingDomainView({
               </span>
               <span className="flex items-center gap-1">
                 <Hash className="w-3 h-3" />
-                <span>SHA-256指纹: {sourceHash.slice(0, 16)}</span>
+                <details><summary className="cursor-pointer">来源版本详情</summary><span className="break-all">SHA-256: {sourceHash}</span></details>
               </span>
             </div>
           }
@@ -417,9 +426,11 @@ export function ReadingDomainView({
           >
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               <FileText className="w-3.5 h-3.5" />
-              <span>我的自上传教材 (MinerU)</span>
+              <span>我的上传资料</span>
             </div>
-            <p className="text-xs text-[var(--text-secondary)]">按原文章节精准阅读原版 PDF 提取成果：</p>
+            <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={busy} onClick={()=>setImporting(x=>!x)} className={learningButtonSecondary}>+ 导入资料</button><Link href="/materials" className="min-h-11 py-3 text-xs underline">管理我的资料</Link></div>
+            {!documents.length&&<p className="text-xs leading-6 text-[var(--text-secondary)]">还没有上传资料，点击“+ 导入资料”，解析完成后会自动打开原文。</p>}
+            {importing&&<DocumentUpload disabled={busy} onUploaded={id=>{void act(async()=>{const value=await learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(id)}`);setDocuments(items=>[{id:value.id,filename:value.filename},...items.filter(x=>x.id!==id)]);setDocumentId(id);setDoc(value);setSectionId(value.sections[0]?.id??"0");setFeedback("");window.history.replaceState(null,"",`/reading?document=${encodeURIComponent(id)}`);});}}/>}
             <select
               id="documentId"
               name="documentId"
@@ -428,7 +439,7 @@ export function ReadingDomainView({
               value={documentId}
               onChange={(e) => setDocumentId(e.target.value)}
             >
-              <option value="">选择已解析的教材原书</option>
+              <option value="">选择已保存解析原文的资料</option>
               {documents.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.filename}
@@ -492,7 +503,7 @@ export function ReadingDomainView({
                   <span>{doc && section ? `原文字符跨度 ${section.start}–${section.end}` : "知识图谱版本校验"}</span>
                   <span className="flex items-center gap-1">
                     <Hash className="w-3 h-3" />
-                    <span>SHA-256: {sourceHash.slice(0, 16)}</span>
+                    <details><summary className="cursor-pointer">来源版本详情</summary><span className="break-all">SHA-256: {sourceHash}</span></details>
                   </span>
                 </div>
               }

@@ -409,11 +409,14 @@ export type UploadResult = {
   parse_error?: string | null;
 };
 
-export async function uploadTextbook(file: File): Promise<UploadResult> {
+export async function uploadTextbook(file: File, signal?: AbortSignal): Promise<UploadResult> {
+  const body = new FormData();
+  body.append("file", file);
   const res = await fetch(`${API_BASE}/api/uploads`, {
     method: "POST",
     headers: headers(),
-    body: file,
+    body,
+    signal,
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
@@ -425,13 +428,14 @@ export async function uploadTextbook(file: File): Promise<UploadResult> {
 export async function generateDocumentNote(
   userId: string,
   documentId: string,
-  withMistakes: boolean = false
+  withMistakes: boolean = false,
+  sourceHash?: string
 ): Promise<{ status: string; note_id: string; note: string }> {
   userId = activeUserId(userId);
   const res = await fetch(`${API_BASE}/api/users/${userId}/notes/from-document`, {
     method: "POST",
     headers: headers(true),
-    body: JSON.stringify({ document_id: documentId, with_mistakes: withMistakes }),
+    body: JSON.stringify({ document_id: documentId, with_mistakes: withMistakes, source_hash: sourceHash }),
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
@@ -441,6 +445,7 @@ export async function generateDocumentNote(
 }
 
 export type DocumentEntry = {
+  parse_status?: "ready" | "source_missing";
   id: string;
   filename: string;
   created_at: string;

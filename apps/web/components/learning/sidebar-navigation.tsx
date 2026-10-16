@@ -15,7 +15,8 @@ export function SidebarNavigation({onOpenSearch,onNavigate}: {onOpenSearch:()=>v
     <LearningNavigation/>
     <div role="separator" className="my-4 border-t border-[var(--border-primary)]"/>
     <nav aria-label="学习工具" className="grid gap-0.5">
-      <button type="button" onClick={onOpenSearch} className={row}><Search className="size-4"/>藏书阁检索<kbd className="ml-auto text-[10px] text-[var(--text-muted)]">Ctrl K</kbd></button>
+      <button type="button" onClick={onOpenSearch} aria-label="搜索对话与知识" className={row}><Search className="size-4"/>搜索对话与知识<kbd className="ml-auto text-[10px] text-[var(--text-muted)]">Ctrl K</kbd></button>
+      <Link href="/materials" aria-current={pathname==="/materials"?"page":undefined} className={`${row} ${pathname==="/materials"?"bg-olive-600/10 text-olive-800 dark:text-olive-200":""}`}><BookOpen className="size-4"/>我的资料</Link>
       <details className="group" open={items.slice(0,-1).some(item=>item.href===pathname)||undefined}>
         <summary className={`${row} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}><BookOpen className="size-4"/>学习工具与资料<ChevronDown className="ml-auto size-3.5 transition-transform group-open:rotate-180"/></summary>
         <div className="ml-3 border-l border-[var(--border-primary)] pl-2">{items.slice(0,-1).map(({href,label,icon:Icon})=><Link key={href} href={href} aria-current={pathname===href?"page":undefined} className={`${row} ${pathname===href?"bg-olive-600/10 text-olive-800 dark:text-olive-200":""}`}><Icon className="size-4"/>{label}</Link>)}</div>

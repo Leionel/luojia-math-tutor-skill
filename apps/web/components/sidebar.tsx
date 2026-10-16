@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {SidebarNavigation,SidebarAccount} from "./learning/sidebar-navigation";
 import type { Session } from "@/lib/api";
-import { Edit2, Trash2, Check, X, Search } from "lucide-react";
+import { Edit2, Trash2, Check, X } from "lucide-react";
 import { deleteSession, renameSession } from "@/lib/api";
 import {
   nextVisibleSessionCount,
@@ -18,7 +18,6 @@ export function Sidebar({
   onRefresh,
   onDeleted,
   searchQuery,
-  onSearchChange,
   onOpenSearch,
   onNavigate,
 }: {
@@ -28,7 +27,6 @@ export function Sidebar({
   onRefresh?: () => void;
   onDeleted?: (deletedId: string) => void;
   searchQuery?: string;
-  onSearchChange?: (val: string) => void;
   onOpenSearch: () => void;
   onNavigate?: () => void;
 }) {
@@ -96,21 +94,7 @@ export function Sidebar({
         <div className="h-px bg-[var(--border-subtle)] flex-1"></div>
       </div>
       
-      {onSearchChange && (
-        <div className="mb-4 space-y-3">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-[var(--text-muted)] group-focus-within:text-[#617a55] transition-colors" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-9 pr-4 py-2 border border-[var(--border-subtle)] rounded-full text-[13px] bg-white/50 dark:bg-black/10 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[#617a55]/20 focus:border-[#617a55] transition-all shadow-sm font-body"
-              placeholder="搜索历史对话内容..."
-              value={searchQuery || ""}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
-          </div>
-          
+      <div className="mb-4">
           {uniqueTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               <button
@@ -138,8 +122,7 @@ export function Sidebar({
               ))}
             </div>
           )}
-        </div>
-      )}
+      </div>
 
       <div className="space-y-2 font-body">
         {visibleSessions.map((session) => (

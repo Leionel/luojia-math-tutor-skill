@@ -11,10 +11,10 @@ import {getCurrentUserId,getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth"
 export function SiteFrame({children}: {children:ReactNode}) {
   const router=useRouter();
   const [collapsed,setCollapsed]=useState(false),[mobile,setMobile]=useState(false),[searchOpen,setSearchOpen]=useState(false);
-  const [sessions,setSessions]=useState<Session[]>([]),[query,setQuery]=useState(""),[refresh,setRefresh]=useState(0),[error,setError]=useState("");
+  const [sessions,setSessions]=useState<Session[]>([]),[query]=useState(""),[refresh,setRefresh]=useState(0),[error,setError]=useState("");
   const [searchDraft,setSearchDraft]=useState("");
   useEffect(()=>{
-    const changed=()=>{setSessions([]);setQuery("");setSearchDraft("");setRefresh(n=>n+1);};
+    const changed=()=>{setSessions([]);setSearchDraft("");setRefresh(n=>n+1);};
     const storage=(event:StorageEvent)=>{if(isAuthStorageKey(event.key))changed();};
     window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);
     return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};
@@ -30,7 +30,7 @@ export function SiteFrame({children}: {children:ReactNode}) {
     const key=(event:KeyboardEvent)=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){event.preventDefault();setMobile(false);setSearchOpen(true);}};
     window.addEventListener("keydown",key);return()=>window.removeEventListener("keydown",key);
   },[]);
-  const sidebar=<div className="flex h-full min-h-0 flex-col">{error&&<button type="button" onClick={()=>setRefresh(n=>n+1)} className="shrink-0 p-3 text-xs text-cinnabar-700">{error}</button>}<div className="min-h-0 flex-1"><Sidebar sessions={sessions} activeSessionId={null} onSelect={id=>{setMobile(false);router.push(`/chat?session=${encodeURIComponent(id)}`);}} onRefresh={()=>setRefresh(n=>n+1)} searchQuery={query} onSearchChange={setQuery} onOpenSearch={()=>{setMobile(false);setSearchOpen(true);}} onNavigate={()=>setMobile(false)}/></div></div>;
+  const sidebar=<div className="flex h-full min-h-0 flex-col">{error&&<button type="button" onClick={()=>setRefresh(n=>n+1)} className="shrink-0 p-3 text-xs text-cinnabar-700">{error}</button>}<div className="min-h-0 flex-1"><Sidebar sessions={sessions} activeSessionId={null} onSelect={id=>{setMobile(false);router.push(`/chat?session=${encodeURIComponent(id)}`);}} onRefresh={()=>setRefresh(n=>n+1)} searchQuery={query} onOpenSearch={()=>{setMobile(false);setSearchOpen(true);}} onNavigate={()=>setMobile(false)}/></div></div>;
   return <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
     <AppHeader onNewSession={()=>router.push("/chat?new=1")} onToggleSidebar={()=>{if(window.innerWidth>=1024)setCollapsed(value=>!value);else setMobile(value=>!value);}}/>
     <div className="flex min-h-0 flex-1">{!collapsed&&<aside aria-label="导航与会话" className="hidden w-60 shrink-0 lg:block">{sidebar}</aside>}<div className="min-w-0 flex-1 overflow-y-auto">{children}</div></div>

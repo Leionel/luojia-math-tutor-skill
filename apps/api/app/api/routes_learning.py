@@ -8,6 +8,7 @@ from app.config import Settings
 from app.knowledge.course_service import get_course_service
 from app.math_tools.root_finding import RootAttempt
 from app.math_tools.root_runner import LabRequest
+from app.tutor.help_boundary import assert_reference_help_allowed
 from app.tutor.learning_workspace import LearningWorkspace
 from app.tutor.newton_activity import NewtonActivity
 from app.tutor.reading_explanation import source_excerpt, explain
@@ -285,7 +286,14 @@ def condition(unit_id: str, body: ConditionRequest, principal: Principal = Depen
 
 @router.get("/reading/documents/{document_id}")
 def document(document_id: str, principal: Principal = Depends(get_principal)):
-    return invoke(lambda: workspace().document(principal.user_id, document_id))
+    service = workspace()
+    def read_source():
+        assert_reference_help_allowed(principal.user_id, service.course)
+        value = service.document(principal.user_id, document_id)
+        if not value["sections"]:
+            raise ValueError("该资料缺少已保存的解析原文，请重新导入。")
+        return value
+    return invoke(read_source)
 
 
 @router.get("/reading/documents")
@@ -307,6 +315,7 @@ def text_material(body: TextMaterialRequest, principal: Principal = Depends(get_
     if not title or not body.text.strip() or "\x00" in body.text or "\x00" in title:
         raise HTTPException(422, "材料名称和正文不能为空，也不能包含空字符。")
     service = workspace()
+    invoke(lambda: assert_reference_help_allowed(principal.user_id, service.course))
     service.repository.ensure_user(principal.user_id)
     # Each save is a new immutable source, so earlier message references stay valid.
     document_id = service.repository.insert_document(title, principal.user_id, body.text)

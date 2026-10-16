@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -125,7 +126,7 @@ def search_global(
             for n in notes:
                 n_dict = dict(n) if not isinstance(n, dict) else n
                 sub = n_dict.get("subject") or "复习笔记"
-                content = n_dict.get("content") or ""
+                content = re.sub(r"^<!-- luojia-document-source [^\n]{1,2048} -->\n", "", n_dict.get("content") or "")
                 searchable = f"{sub} {content}"
 
                 if _matches_query(terms, searchable):
@@ -135,7 +136,7 @@ def search_global(
                             category="notes",
                             category_label=CATEGORY_LABELS["notes"],
                             title=f"笔记 · {sub}",
-                            subtitle=f"会话笔记 {n_dict.get('session_id', '')[:8]}",
+                            subtitle="已保存学习笔记",
                             content=content[:240] + ("..." if len(content) > 240 else ""),
                             formula=None,
                             metadata={"score": 2, "raw_id": str(n_dict.get("id", ""))},

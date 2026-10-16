@@ -1,94 +1,23 @@
 "use client";
+import {useEffect,useRef,useState} from "react";
+import Link from "next/link";
+import {generateDocumentNote,listUploadedDocuments,type DocumentEntry} from "@/lib/api";
+import {learningRequest,type ReadingDocument} from "@/lib/learning-api";
+import {getCurrentUserId,getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
+import {DocumentUpload} from "./document-upload";
 
-import { useRef, useState } from "react";
-import { BookOpen, FileUp, Loader2 } from "lucide-react";
-import { generateDocumentNote, uploadTextbook } from "@/lib/api";
-
-type Phase = "idle" | "uploading" | "organizing" | "done";
-
-export function DocumentNoteUpload({
-  withMistakes = false,
-  description,
-  onGenerated,
-}: {
-  withMistakes?: boolean;
-  description: string;
-  onGenerated: () => void;
-}) {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  async function handleFile(file: File) {
-    setError(null);
-    setMessage(null);
-    setPhase("uploading");
-    try {
-      const result = await uploadTextbook(file);
-      if (!result.document_id) {
-        throw new Error("请上传 PDF / Word / PPT 教材文件，图片无法用于整理笔记。");
-      }
-      setPhase("organizing");
-      await generateDocumentNote("demo-user", result.document_id, withMistakes);
-      setPhase("done");
-      setMessage("笔记已生成，可在列表中查看。");
-      onGenerated();
-    } catch (err) {
-      setPhase("idle");
-      setError(err instanceof Error ? err.message : "上传或整理失败");
-      return;
-    }
-    // Allow the success message to linger before resetting the button.
-    setTimeout(() => setPhase("idle"), 4000);
-  }
-
-  const busy = phase === "uploading" || phase === "organizing";
-
-  return (
-    <div className="rounded-xl border border-[#617a55]/20 bg-gradient-to-br from-[#617a55]/10 to-transparent p-4">
-      <div className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#617a55]">
-        <BookOpen className="w-4 h-4" />
-        教材整理
-      </div>
-      <p className="mb-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
-        {description}
-      </p>
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".pdf,.docx,.pptx,.doc"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void handleFile(file);
-        }}
-      />
-      <button
-        disabled={busy}
-        onClick={() => fileRef.current?.click()}
-        className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold bg-[#617a55] text-white transition-colors hover:bg-[#4e6344] disabled:opacity-60"
-      >
-        {phase === "uploading" ? (
-          <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> MinerU 解析中（可能需要 1–2 分钟）…
-          </>
-        ) : phase === "organizing" ? (
-          <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> AI 整理笔记中…
-          </>
-        ) : (
-          <>
-            <FileUp className="w-3.5 h-3.5" /> 选择教材文件
-          </>
-        )}
-      </button>
-      {error ? (
-        <div className="mt-2 text-[11px] text-rose-600 dark:text-rose-400">{error}</div>
-      ) : message ? (
-        <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400">{message}</div>
-      ) : null}
-    </div>
-  );
+export function DocumentNoteUpload({withMistakes=false,description,onGenerated}: {withMistakes?:boolean;description:string;onGenerated:()=>void}) {
+  const [documents,setDocuments]=useState<DocumentEntry[]>([]),[id,setId]=useState(""),[reload,setReload]=useState(0);
+  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[message,setMessage]=useState("");
+  const [importing,setImporting]=useState(false);const alive=useRef(true),epoch=useRef(0),initialApplied=useRef(false);
+  useEffect(()=>{alive.current=true;const changed=()=>{epoch.current++;initialApplied.current=false;setDocuments([]);setId("");setBusy(false);setError("");setMessage("");setReload(n=>n+1);};const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);return()=>{alive.current=false;window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};},[]);
+  useEffect(()=>{let active=true;const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;setLoading(true);listUploadedDocuments().then(value=>{if(active&&owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization){setDocuments(value);const requested=new URLSearchParams(window.location.search).get("document");if(!initialApplied.current){initialApplied.current=true;if(requested&&value.some(x=>x.id===requested))setId(requested);}}}).catch(e=>{if(active)setError(e instanceof Error?e.message:"资料读取失败。");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[reload]);
+  async function generate(){if(!id||busy)return;const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization,token=++epoch.current;const valid=()=>alive.current&&token===epoch.current&&owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization;setBusy(true);setError("");setMessage("");try{const source=await learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(id)}`);if(!valid())return;await generateDocumentNote(owner,id,withMistakes,source.source_hash);if(valid()){setMessage("笔记已生成，来源与抽样范围已保存。");onGenerated();}}catch(e){if(valid())setError(`${e instanceof Error?e.message:"笔记生成失败。"} 已保存资料仍可继续阅读或引用。`);}finally{if(valid())setBusy(false);}}
+  return <section aria-label="从已有资料生成笔记" className="space-y-3 rounded-xl border border-olive-600/20 p-4">
+    <h2 className="text-sm font-semibold">{withMistakes?"基于已有资料辅助复习":"从已有资料生成笔记"}</h2><p className="text-xs leading-6 text-[var(--text-secondary)]">{description}</p>
+    {loading?<p role="status" className="text-xs">正在读取资料…</p>:<><label className="block text-xs">选择资料<select aria-label="笔记来源资料" value={id} disabled={busy} onChange={e=>{setId(e.target.value);setMessage("");}} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-input)] p-2 text-sm"><option value="">{documents.length?"选择已保存的资料":"还没有资料，请先导入"}</option>{documents.map(d=><option key={d.id} value={d.id} disabled={d.parse_status==="source_missing"}>{d.filename}{d.parse_status==="source_missing"?"（缺少原文）":""}</option>)}</select></label><button type="button" disabled={!id||busy} onClick={()=>void generate()} className="min-h-11 rounded-lg bg-olive-700 px-3 text-sm text-paper-50 disabled:opacity-50">{busy?"正在生成笔记…":"生成抽样学习笔记"}</button></>}
+    <div className="flex flex-wrap gap-3 text-xs"><button type="button" disabled={busy} className="min-h-11 underline" onClick={()=>setImporting(x=>!x)}>+ 导入新资料</button><Link className="min-h-11 py-3 underline" href="/materials">管理我的资料</Link><button type="button" className="min-h-11 underline" onClick={()=>setReload(n=>n+1)}>刷新资料</button></div>
+    {importing&&<DocumentUpload disabled={busy} onUploaded={newId=>{setId(newId);setReload(n=>n+1);setMessage("资料已保存；点击生成笔记后才会请求 AI。");}}/>}
+    {error&&<p role="alert" className="text-xs leading-6 text-cinnabar-700 dark:text-cinnabar-300">{error}</p>}{message&&<p role="status" className="text-xs leading-6 text-olive-700 dark:text-olive-300">{message}</p>}
+  </section>;
 }

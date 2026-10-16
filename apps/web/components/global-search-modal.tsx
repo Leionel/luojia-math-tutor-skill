@@ -1,104 +1,49 @@
 "use client";
-
-import { useState, useEffect, useRef } from "react";
-import { Search, X, BookOpen, AlertCircle, FileText, ArrowRight, Loader2 } from "lucide-react";
-import { searchGlobal, type GlobalSearchResultItem } from "@/lib/api";
-import { MathMarkdown } from "./math-view";
-
-interface GlobalSearchModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelectResult?: (textToInsert: string) => void;
-}
-
-const CATEGORIES = [
-  { key: "all", label: "全部" },
-  { key: "curriculum", label: "教材定理" },
-  { key: "mistakes", label: "错题复盘" },
-  { key: "notes", label: "随堂笔记" },
-] as const;
-
-export function GlobalSearchModal({ isOpen, onClose, onSelectResult }: GlobalSearchModalProps) {
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [results, setResults] = useState<GlobalSearchResultItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery("");
-      setResults([]);
-      setSearched(false);
-    }
-  }, [isOpen]);
-
-  // ESC 键监听
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // 防抖搜索
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setSearched(false);
-      setLoading(false);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const data = await searchGlobal(query.trim(), activeCategory);
-        setResults(data.items || []);
-        setSearched(true);
-      } catch (err) {
-        console.error("Search failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    }, 280);
-
-    return () => clearTimeout(timer);
-  }, [query, activeCategory]);
-
-  if (!isOpen) return null;
-
-  const getCategoryBadge = (cat: string) => {
-    switch (cat) {
-      case "curriculum":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-            <BookOpen className="w-3 h-3" /> 教材定理
-          </span>
-        );
-      case "mistakes":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-            <AlertCircle className="w-3 h-3" /> 错题复盘
-          </span>
-        );
-      case "notes":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
-            <FileText className="w-3 h-3" /> 随堂笔记
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
+import {useState,useEffect,useRef} from "react";
+import {useRouter} from "next/navigation";
+import {Search,X,MessageCircle,ArrowRight,Loader2} from "lucide-react";
+import {searchGlobal,listSessions,type GlobalSearchResultItem,type Session} from "@/lib/api";
+import {getCurrentUserId,getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
+import {MathMarkdown} from "./math-view";
+const CATEGORIES=[{key:"all",label:"全部"},{key:"conversations",label:"历史对话"},{key:"curriculum",label:"教材定理"},{key:"notes",label:"随堂笔记"},{key:"mistakes",label:"错题复盘"}];
+interface GlobalSearchModalProps {isOpen:boolean;onClose:()=>void;onSelectResult?:(text:string)=>void;onSelectSession?:(id:string)=>void;}
+export function GlobalSearchModal({isOpen,onClose,onSelectResult,onSelectSession}:GlobalSearchModalProps){
+ const router=useRouter();const [query,setQuery]=useState(""),[activeCategory,setActiveCategory]=useState("all");
+ const [results,setResults]=useState<GlobalSearchResultItem[]>([]),[conversations,setConversations]=useState<Session[]>([]);
+ const [loading,setLoading]=useState(false),[searched,setSearched]=useState(false),[errors,setErrors]=useState<string[]>([]);
+ const inputRef=useRef<HTMLInputElement>(null),dialog=useRef<HTMLDivElement>(null),close=useRef(onClose);close.current=onClose;
+ useEffect(()=>{
+   if(!isOpen){setQuery("");setResults([]);setConversations([]);setErrors([]);setSearched(false);return;}
+   const previous=document.activeElement as HTMLElement|null,overflow=document.body.style.overflow;
+   document.body.style.overflow="hidden";inputRef.current?.focus();
+   const changed=()=>{setResults([]);setConversations([]);setQuery("");close.current();};
+   const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};
+   const key=(e:KeyboardEvent)=>{
+     if(e.key==="Escape"&&!e.isComposing){e.preventDefault();close.current();}
+     if(e.key!=="Tab")return;
+     const items=Array.from(dialog.current?.querySelectorAll<HTMLElement>('input,button:not(:disabled),a[href]')??[]).filter(x=>x.getClientRects().length);
+     const first=items[0],last=items[items.length-1];
+     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+   };
+   document.addEventListener("keydown",key,true);window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);
+   return()=>{document.body.style.overflow=overflow;document.removeEventListener("keydown",key,true);window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);if(previous?.isConnected)previous.focus();};
+ },[isOpen]);
+ useEffect(()=>{
+   let active=true;setResults([]);setConversations([]);setErrors([]);setSearched(false);
+   if(!isOpen||!query.trim()){setLoading(false);return;}
+   const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;
+   const valid=()=>active&&owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization;
+   setLoading(true);
+   const timer=setTimeout(async()=>{
+     const jobs:Promise<unknown>[]=[];const names:string[]=[];
+     if(activeCategory==="all"||activeCategory==="conversations"){jobs.push(listSessions(owner,query.trim()));names.push("历史对话");}
+     if(activeCategory!=="conversations"){jobs.push(searchGlobal(query.trim(),activeCategory));names.push("教材、笔记与错题");}
+     const values=await Promise.allSettled(jobs);if(!valid())return;
+     values.forEach((value,index)=>{if(value.status==="fulfilled"){if(names[index]==="历史对话")setConversations(value.value as Session[]);else setResults((value.value as {items:GlobalSearchResultItem[]}).items||[]);}});
+     setErrors(values.flatMap((value,index)=>value.status==="rejected"?[`${names[index]}暂时无法读取，请重试。`]:[]));setSearched(true);setLoading(false);
+   },280);
+   return()=>{active=false;clearTimeout(timer);};
+ },[isOpen,query,activeCategory]);
   const handleInsert = (item: GlobalSearchResultItem) => {
     let insertText = "";
     if (item.category === "curriculum") {
@@ -117,139 +62,19 @@ export function GlobalSearchModal({ isOpen, onClose, onSelectResult }: GlobalSea
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-20 px-4 bg-stone-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="w-full max-w-2xl bg-[var(--bg-card,#fff)] text-[var(--text-primary,#262626)] border border-[var(--border-subtle,#e5e5e5)] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 顶部搜索条 */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-subtle,#e5e5e5)] bg-[var(--bg-card)]">
-          <Search className="w-5 h-5 text-[var(--text-secondary)] shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索教材定理、知识图谱、错题复盘与随堂笔记... (如: 泰勒、特征值、极限)"
-            className="flex-1 bg-transparent text-sm sm:text-base outline-none placeholder:text-[var(--text-tertiary)]"
-          />
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-[var(--text-secondary)] shrink-0" />}
-          {query && !loading && (
-            <button
-              onClick={() => setQuery("")}
-              className="p-1 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="text-xs px-2 py-1 rounded bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            ESC
-          </button>
-        </div>
-
-        {/* 分类切换栏 */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-subtle,#e5e5e5)] bg-[var(--bg-card)]/60 text-xs">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => setActiveCategory(cat.key)}
-              className={`px-3 py-1 rounded-full font-medium transition-all ${
-                activeCategory === cat.key
-                  ? "bg-olive-600 text-white shadow-xs dark:bg-olive-500"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-          <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
-            共找到 {results.length} 项
-          </span>
-        </div>
-
-        {/* 结果列表 */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
-          {loading && !results.length && (
-            <div className="py-12 flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-olive-600 dark:text-olive-400" />
-              <p className="text-xs">正在翻阅九章草堂藏书阁...</p>
-            </div>
-          )}
-
-          {!loading && searched && results.length === 0 && (
-            <div className="py-12 text-center text-[var(--text-secondary)]">
-              <p className="text-sm font-medium">未检索到与 &quot;{query}&quot; 匹配的内容</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                试试教材中的关键词，也可以在下方开启联网搜索。
-              </p>
-            </div>
-          )}
-
-          {!searched && !loading && (
-            <div className="py-8 text-center text-[var(--text-secondary)]">
-              <p className="text-xs text-[var(--text-tertiary)]">
-                输入定理名称、数学术语或题目关键字，即可快速带入草堂研讨
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-3">
-                {["泰勒公式", "拉格朗日中值定理", "矩阵的秩", "逆矩阵", "特征值与特征向量", "贝叶斯公式"].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setQuery(tag)}
-                    className="px-2.5 py-1 rounded-full text-xs bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-olive-700 dark:hover:text-olive-300 transition-colors"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {results.map((item) => (
-            <div
-              key={item.id}
-              className="group p-3 sm:p-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-olive-500/50 hover:shadow-md transition-all flex flex-col gap-2"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {getCategoryBadge(item.category)}
-                  <h4 className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-olive-700 dark:group-hover:text-olive-400 transition-colors">
-                    {item.title}
-                  </h4>
-                </div>
-                <span className="text-[11px] text-[var(--text-tertiary)] truncate max-w-[180px]">
-                  {item.subtitle}
-                </span>
-              </div>
-
-              {/* 摘要与公式 */}
-              <div className="text-xs text-[var(--text-secondary)] line-clamp-3 leading-relaxed">
-                <MathMarkdown content={item.content} />
-              </div>
-
-              {item.formula && (
-                <div className="p-2 rounded-lg bg-[var(--bg-hover)]/70 text-xs overflow-x-auto text-center border border-[var(--border-subtle)]/50">
-                  <MathMarkdown content={`$$${item.formula}$$`} />
-                </div>
-              )}
-
-              {/* 操作栏 */}
-              <div className="flex items-center justify-end pt-1">
-                <button
-                  onClick={() => handleInsert(item)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-olive-600/10 text-olive-700 dark:text-olive-300 hover:bg-olive-600 hover:text-white transition-all"
-                >
-                  <span>带入草堂研讨</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+ if(!isOpen)return null;
+ return <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/40 px-3 pt-[8dvh] backdrop-blur-sm" onClick={onClose}>
+   <div ref={dialog} role="dialog" aria-modal="true" aria-label="搜索对话与知识" className="flex max-h-[84dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xl" onClick={e=>e.stopPropagation()}>
+     <div className="flex items-center gap-3 border-b border-[var(--border-primary)] p-3 sm:p-4"><Search className="size-5 shrink-0 text-olive-600"/><input ref={inputRef} aria-label="搜索对话、教材、笔记和错题" maxLength={200} value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索对话、教材、笔记和错题…" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none"/>{loading&&<Loader2 className="size-4 shrink-0 animate-spin"/>}<button type="button" aria-label="关闭搜索" onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-lg hover:bg-[var(--bg-hover)]"><X className="size-4"/></button></div>
+     <div aria-label="搜索范围" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--border-primary)] p-2">{CATEGORIES.map(cat=><button type="button" key={cat.key} aria-pressed={activeCategory===cat.key} onClick={()=>setActiveCategory(cat.key)} className={`min-h-11 shrink-0 rounded-lg px-3 text-xs ${activeCategory===cat.key?"bg-olive-600/10 text-olive-800 dark:text-olive-200":"text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}>{cat.label}</button>)}</div>
+     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+       {!!errors.length&&<div role="status" className="rounded-lg border border-ochre-600/30 p-3 text-xs leading-6">{errors.map(error=><p key={error}>{error}</p>)}</div>}
+       {loading&&<p role="status" className="py-8 text-center text-sm">正在检索…</p>}
+       {!searched&&!loading&&<p className="py-8 text-center text-sm leading-7 text-[var(--text-secondary)]">输入关键词，可检索历史消息内容，或查找教材、笔记与错题。</p>}
+       {searched&&!loading&&!conversations.length&&!results.length&&!errors.length&&<p className="py-8 text-center text-sm">未找到匹配内容。</p>}
+       {conversations.length>0&&<section aria-label="历史对话搜索结果" className="space-y-2"><h2 className="text-xs text-[var(--text-muted)]">历史对话 · {conversations.length}</h2>{conversations.map(session=><button type="button" key={session.id} onClick={()=>{onClose();if(onSelectSession)onSelectSession(session.id);else router.push(`/chat?session=${encodeURIComponent(session.id)}`);}} className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-[var(--border-primary)] p-3 text-left hover:bg-[var(--bg-hover)]"><MessageCircle className="size-4 shrink-0 text-olive-600"/><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{session.title}</span><span className="mt-1 block text-xs text-[var(--text-muted)]">{new Date(session.updated_at||session.created_at).toLocaleDateString("zh-CN")} · 继续这段对话</span></span><ArrowRight className="size-4 shrink-0"/></button>)}</section>}
+       {results.length>0&&<section aria-label="知识搜索结果" className="space-y-3"><h2 className="text-xs text-[var(--text-muted)]">教材、笔记与错题 · {results.length}</h2>{results.map(item=><article key={item.id} className="space-y-2 rounded-xl border border-[var(--border-primary)] p-4"><span className="text-xs text-olive-700 dark:text-olive-300">{item.category_label}</span><h3 className="break-words text-sm font-semibold">{item.title}</h3><div className="line-clamp-3 text-xs leading-6 text-[var(--text-secondary)]"><MathMarkdown content={item.content}/></div>{item.formula&&<div className="overflow-x-auto text-sm"><MathMarkdown content={`$$${item.formula}$$`}/></div>}<button type="button" onClick={()=>handleInsert(item)} className="min-h-11 text-xs text-olive-700 dark:text-olive-300 underline">带入对话草稿 →</button></article>)}</section>}
+     </div>
+   </div>
+ </div>;
 }

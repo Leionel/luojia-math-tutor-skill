@@ -469,6 +469,22 @@ class Repository(AgentRunRepository):
             )
         return document_id
 
+    def save_parsed_upload(self, filename: str, user_id: str, markdown: str,
+                           chunks: list[str], uploaded_filename: str) -> str:
+        """Commit original source, derived index and upload owner atomically."""
+        document_id = new_id("doc")
+        with self.connect() as conn:
+            conn.execute("insert into documents(id, filename, user_id, created_at, markdown) values (?, ?, ?, ?, ?)",
+                         (document_id, filename, user_id, now_iso(), markdown))
+            for chunk in chunks:
+                cursor = conn.execute("insert into document_chunks(id, document_id, content) values (?, ?, ?)",
+                                      (new_id("chunk"), document_id, chunk))
+                conn.execute("insert into document_chunks_index(chunk_rowid, text) values (?, ?)",
+                             (cursor.lastrowid, cjk_bigram_text(chunk)))
+            conn.execute("insert into uploaded_files(filename, user_id, created_at) values (?, ?, ?)",
+                         (uploaded_filename, user_id, now_iso()))
+        return document_id
+
     def get_document_markdown(self, document_id: str, user_id: str) -> str | None:
         """Return the persisted parsed source text, or None if not owned/found."""
         with self.connect() as conn:
@@ -570,7 +586,10 @@ class Repository(AgentRunRepository):
         with self.connect() as conn:
             rows = conn.execute(
                 """
-                select id, filename, created_at from documents
+                select id, filename, created_at,
+                       case when trim(coalesce(markdown, '')) = '' then 'source_missing'
+                            else 'ready' end as parse_status
+                from documents
                 where user_id = ?
                 order by created_at desc
                 """,

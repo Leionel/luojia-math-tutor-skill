@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Paperclip, X, Loader2, PenTool, Eraser, Check, AlertCircle, Undo2, Redo2, Keyboard, LineChart, Globe, BrainCircuit, Plus, Sparkles, BookOpen, Target } from "lucide-react";
 import { DesmosModal } from "./desmos-modal";
-import { getAuthHeaders } from "@/lib/demo-auth";
+import {DocumentUpload} from "./document-upload";
+import {uploadTextbook} from "@/lib/api";
+import { getAuthHeaders, getCurrentUserId } from "@/lib/demo-auth";
 import { useTheme } from "@/lib/theme-context";
 import { ModeSwitcher } from "./mode-switcher";
 import { shouldInterceptCompositionEnter } from "@/lib/interaction-physics";
 import type { TutorMode } from "@/lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const EFFORT_OPTIONS = [
   { value: "off", label: "快速回答", desc: "关闭额外思考，是否支持取决于模型" },
@@ -28,6 +29,9 @@ export function TutorInput({
   onChange,
   disabled,
   onSubmit,
+  hasReference=false,
+  onChooseMaterial,
+  onDocumentUploaded,
   onDirect,
   onHint,
   onSimilar,
@@ -43,6 +47,9 @@ export function TutorInput({
   onChange: (val: string) => void;
   disabled: boolean;
   onSubmit: (value: string, forcedMode?: "socratic" | "practice" | "direct", imageUrls?: string[]) => void;
+  hasReference?:boolean;
+  onChooseMaterial?: () => void;
+  onDocumentUploaded?: (id:string) => void;
   onDirect?: () => void;
   onHint?: () => void;
   onSimilar?: () => void;
@@ -61,6 +68,11 @@ export function TutorInput({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError,setUploadError]=useState("");
+  const [showDocumentUpload,setShowDocumentUpload]=useState(false);
+  const alive=useRef(true),uploadController=useRef<AbortController|null>(null),disabledRef=useRef(disabled);
+  disabledRef.current=disabled;
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;uploadController.current?.abort();};},[]);
   const [isDrawing, setIsDrawing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -143,6 +155,8 @@ export function TutorInput({
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)){setUploadError("题目图片支持 PNG、JPEG、WebP、GIF；文档请使用资料引用入口。");return;}
+      setUploadError("");
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -173,29 +187,26 @@ export function TutorInput({
     let finalMessage = trimmed;
     let imageUrls: string[] | undefined;
 
+    const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;
+    if(selectedFile&&hasReference){setUploadError("图片识别与资料引用需要分开发送，请先移除当前资料引用。");return;}
     if (selectedFile) {
-      setIsUploading(true);
+      const controller=new AbortController();uploadController.current=controller;
+      setIsUploading(true);setUploadError("");
       try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        const res = await fetch(`${API_BASE}/api/uploads`, {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: formData,
-        });
-        if (!res.ok) throw new Error("Upload failed");
-        const data = await res.json();
-        if (selectedFile.type.startsWith("image/") && typeof data.url === "string") imageUrls = [data.url];
-        const md = data.markdown ? `\n\n> **文档识别解析**：\n${data.markdown}\n` : "";
-        finalMessage = `![上传的文件](${data.url})${md}\n${trimmed}`;
-      } catch (e) {
-        console.error(e);
-        finalMessage = `![文件上传失败]\n\n${trimmed}`;
-      } finally {
-        setIsUploading(false);
+        const data=await uploadTextbook(selectedFile,controller.signal);
+        if(!alive.current||disabledRef.current||owner!==getCurrentUserId()||credential!==getAuthHeaders().Authorization)return;
+        if(!data.url||data.document_id)throw Error("图片上传未返回可用图像；文档请从资料入口引用。");
+        imageUrls=[data.url];
+        finalMessage = `![题目图片](${data.url})\n${trimmed||"请先识别图片中的题目与条件，供我核对。"}`;
         removeFile();
+      } catch (e) {
+        if(alive.current)setUploadError(e instanceof Error?e.message:"图片上传失败，请重试。");
+        return;
+      } finally {
+        if(alive.current)setIsUploading(false);
       }
     }
+    if(disabledRef.current||owner!==getCurrentUserId()||credential!==getAuthHeaders().Authorization)return;
 
     onSubmit(finalMessage, undefined, imageUrls);
     onChange("");
@@ -203,6 +214,8 @@ export function TutorInput({
 
   return (
     <div className="bg-transparent p-2 sm:p-4 pb-2 transition-colors duration-300">
+      {uploadError&&<p role="alert" className="mb-3 text-sm leading-6 text-cinnabar-700 dark:text-cinnabar-300">{uploadError} 输入与附件保留，未发送消息。</p>}
+      {showDocumentUpload&&<div className="mb-3"><DocumentUpload disabled={disabled||isUploading} onUploaded={id=>{onDocumentUploaded?.(id);setShowDocumentUpload(false);}}/><button type="button" className="min-h-11 text-xs underline" onClick={()=>setShowDocumentUpload(false)}>收起导入</button></div>}
       <div className="mx-auto max-w-4xl rounded-xl atelier-composer-shell bg-[#fbf9f4]/95 dark:bg-[#1f201c]/95 backdrop-blur-xl transition-all duration-300 relative group focus-within:border-olive-600/70 focus-within:ring-2 focus-within:ring-olive-600/15">
         {previewUrl && (
           <div className="relative p-4 pb-0 bg-transparent">
@@ -494,7 +507,7 @@ export function TutorInput({
         <div className="flex items-center justify-between gap-2 sm:gap-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/50 p-2 sm:p-2.5 px-3 sm:px-4 relative z-10 rounded-b-2xl">
           {/* 左侧：+号扩展工具、联网探微、运思推演 */}
           <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap text-xs">
-            <input type="file" accept="image/*,application/pdf,.doc,.docx" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" aria-label="上传题目图片" ref={fileInputRef} onChange={handleFileSelect} />
 
             {/* + 号扩展工具箱 */}
             <div className="relative">
@@ -544,10 +557,13 @@ export function TutorInput({
                     >
                       <Paperclip className="w-4 h-4 text-indigo-500 shrink-0" />
                       <div className="flex flex-col">
-                        <span className="font-semibold text-xs">文件解析</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">文档与草稿图片 OCR</span>
+                        <span className="font-semibold text-xs">上传题目图片</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">图片识别与草稿核对</span>
                       </div>
                     </button>
+
+                    {onChooseMaterial&&<button type="button" disabled={disabled||isUploading} onClick={()=>{setShowToolsMenu(false);onChooseMaterial();}} className="flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-left text-xs text-dai-700 dark:text-dai-300 disabled:opacity-50"><BookOpen className="size-4"/>从我的资料中引用文档</button>}
+                    {onDocumentUploaded&&<button type="button" disabled={disabled||isUploading} onClick={()=>{setShowToolsMenu(false);setShowDocumentUpload(true);}} className="flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-left text-xs text-dai-700 dark:text-dai-300 disabled:opacity-50"><Paperclip className="size-4"/>上传新文档并引用</button>}
 
                     <button
                       type="button"

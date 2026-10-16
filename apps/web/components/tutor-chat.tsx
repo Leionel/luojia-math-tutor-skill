@@ -17,6 +17,8 @@ import { MathMessage } from "./math-message";
 import { Sidebar } from "./sidebar";
 import { MobileDrawer } from "./mobile-drawer";
 import { RootAttemptForm } from "./root-attempt-form";
+import {readingSourceRef} from "@/lib/learning-context";
+import {getAuthHeaders} from "@/lib/demo-auth";
 import { TutorInput } from "./tutor-input";
 import { LatexRenderer } from "./latex-renderer";
 import { ZenOverlay } from "./zen-overlay";
@@ -24,7 +26,7 @@ import { Button } from "./ui/button";
 import { GlobalSearchModal } from "./global-search-modal";
 import type { ReasoningEffortLevel } from "./tutor-input";
 import Link from "next/link";
-import {learningRequest, type LabRun} from "@/lib/learning-api";
+import {learningRequest, type LabRun, type ReadingDocument} from "@/lib/learning-api";
 import {needsPrivateChatHandoff,restorePrivateChatHandoff,rootContextRef,referenceChatKey,storePrivateChatHandoff,studyRequested,verifiedReferenceSession,type LearningContextRef,type LearningTaskSnapshot} from "@/lib/learning-context";
 import {migratePrivateReadingStorage,referenceBrowserStorage} from "@/lib/learning-browser-storage";
 import {getCurrentUserId} from "@/lib/demo-auth";
@@ -224,7 +226,7 @@ export function TutorChat() {
   const [contextLoading, setContextLoading] = useState(false);
   const [contextError, setContextError] = useState("");
   const [visionDraft, setVisionDraft] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = "";
   const [rightPanelMode, setRightPanelMode] = useState<"learning" | "note">("learning");
   const [noteContent, setNoteContent] = useState("");
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
@@ -1007,7 +1009,7 @@ export function TutorChat() {
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
           <MobileDrawer title="导航与历史会话" side="left" breakpoint={1024} onClose={() => setIsMobileSidebarOpen(false)}>
-            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} />
           </MobileDrawer>
         )}
 
@@ -1019,7 +1021,7 @@ export function TutorChat() {
 
         {!isZenMode && !isSidebarCollapsed && (
           <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
-            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} />
             <button
               onClick={() => handleToggleSidebar(true)}
               className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
@@ -1051,7 +1053,6 @@ export function TutorChat() {
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
           {!isZenMode&&<>
           <div className="shrink-0 px-4">
-            {learningContext && <ContextBanner compact snapshot={learningContext} disabled={isStreaming} onRemove={() => {void validateAndBindReference(null);}}/>}
             {contextLoading && <p role="status" className="p-3">正在核对当前来源…</p>}
             {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {void validateAndBindReference(null);}}>移除失效引用，继续普通聊天</button></div>}
           </div></>}
@@ -1210,7 +1211,12 @@ export function TutorChat() {
             {rootForm && <RootAttemptForm key={`${rootDraft?.episode_id || "new"}-${rootDraft?.attempt_id || "first"}`} initial={rootDraft} instruction={rootInstruction} disabled={isStreaming} onClose={()=>setRootForm(false)} onSubmit={submission => {setRootForm(false);void submit(`求根过程：${submission.attempt.function}\n\n\`\`\`root-attempt\n${JSON.stringify(submission, null, 2)}\n\`\`\``, mode, false, undefined, submission);}}/>}
             {!isZenMode&&<ChatWorkspaceBar open={workspaceOpen} tab={activeWorkspaceTab} hasReference={!!learningContext} disabled={isStreaming||contextLoading}
             onRootCheck={()=>{setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}} onOpen={tab=>openWorkspace({},tab)} onClose={closeWorkspace} onPlain={()=>{void validateAndBindReference(null).then(result=>{if(result.ok){closeWorkspace();setIsLearningCollapsed(true);}});}}/>}
+            {learningContext&&<ContextBanner compact snapshot={learningContext} disabled={isStreaming} onRemove={()=>{void validateAndBindReference(null);}}/>}
             <TutorInput
+              key={getCurrentUserId()}
+              hasReference={!!learningContext}
+              onChooseMaterial={()=>openWorkspace({},"reading")}
+              onDocumentUploaded={id=>{const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;setContextLoading(true);void learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(id)}`).then(async doc=>{if(owner!==getCurrentUserId()||credential!==getAuthHeaders().Authorization)return;const section=doc.sections[0];if(!section)throw Error("此资料没有可用原文章节，已保存资料可在“我的资料”中检查。");const ref=readingSourceRef(doc,section.quote,section.id);await validateAndBindReference(ref);}).catch(e=>{if(owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization)setContextError(e instanceof Error?e.message:"引用核验失败，资料仍保留。");}).finally(()=>{if(owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization)setContextLoading(false);});}}
               placeholder={learningContext?"围绕当前引用提问，也可以先移除引用再自由讨论。":"说说你的问题、想法，或贴一段推导…"}
               value={inputValue}
               onChange={setInputValue}
@@ -1430,6 +1436,7 @@ export function TutorChat() {
 
       {/* 全局搜索抽屉 (Ctrl+K) */}
       <GlobalSearchModal
+        onSelectSession={id=>{void selectSession(id);}}
         isOpen={isGlobalSearchOpen}
         onClose={() => setIsGlobalSearchOpen(false)}
         onSelectResult={(text) => {

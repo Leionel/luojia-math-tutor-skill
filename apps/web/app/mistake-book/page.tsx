@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {getCurrentUserId,isAuthStorageKey} from "@/lib/demo-auth";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, AlertCircle, Plus, X, Flame, Printer } from "lucide-react";
 import { listUserMistakes, addMistake, generateQuiz, createSession } from "@/lib/api";
@@ -9,6 +10,11 @@ import { KnowledgeGraph } from "@/components/knowledge-graph";
 import { DocumentNoteUpload } from "@/components/document-note-upload";
 
 export default function MistakeBookPage() {
+  const [identity,setIdentity]=useState(0);
+  useEffect(()=>{const changed=()=>setIdentity(n=>n+1);const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};},[]);
+  return <MistakeBookContent key={identity}/>;
+}
+function MistakeBookContent() {
   const router = useRouter();
   const [mistakes, setMistakes] = useState<Array<{ id?: string, mistake_code: string; concept: string; subject: string; created_at: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +25,7 @@ export default function MistakeBookPage() {
 
   const refresh = () => {
     setLoading(true);
-    listUserMistakes("demo-user")
+    listUserMistakes(getCurrentUserId())
       .then(setMistakes)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -30,7 +36,7 @@ export default function MistakeBookPage() {
     try {
       setGeneratingFor(mistake.id);
       // 1. Generate quiz content
-      const { quiz_content } = await generateQuiz("demo-user", mistake.id);
+      const { quiz_content } = await generateQuiz(getCurrentUserId(), mistake.id);
       // 2. Create new session
       const { session_id } = await createSession(mistake.subject as any);
       // 3. (Optional) pre-fill the quiz by fetching stream (or just we send the quiz to the LLM backend directly in a message)
@@ -110,13 +116,13 @@ export default function MistakeBookPage() {
         </div>
 
         {activeTab === "list" && (
-          <div className="mb-8 max-w-xl mx-auto">
+          <details className="mb-8 max-w-xl mx-auto"><summary className="min-h-11 cursor-pointer py-3 text-sm">基于已有资料辅助复习</summary>
             <DocumentNoteUpload
               withMistakes={true}
-              description="上传教材（<200MB 且 <200 页），AI 会结合你最近的错题薄弱概念，从书中整理出一份针对性的复习笔记，保存在笔记本中。"
+              description="选择已有资料，结合已记录的错因生成复习笔记。此操作不会新增错题，也不认定资料中的题目是你做错的题。"
               onGenerated={() => {}}
             />
-          </div>
+          </details>
         )}
 
         {activeTab === "tree" ? (
@@ -231,7 +237,7 @@ export default function MistakeBookPage() {
               <button 
                 onClick={() => {
                   if (!formData.mistake_code) return;
-                  addMistake("demo-user", formData).then(() => {
+                  addMistake(getCurrentUserId(), formData).then(() => {
                     setIsAdding(false);
                     setFormData({ subject: "foundations", mistake_code: "", concept: "" });
                     refresh();

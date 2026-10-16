@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.services.mineru_client import extract_markdown_agent_api
 from app.config import get_settings
 from app.knowledge.document_chunking import chunk_document
-from app.main_deps import get_repository
+from app.main_deps import get_repository, ensure_reference_help_allowed
 from app.memory.repository import Repository
 from app.auth import Principal, get_principal
 
@@ -85,14 +85,21 @@ async def upload_image(
 ):
     if not principal.authenticated:
         raise HTTPException(status_code=401, detail="Sign in to upload files.")
+    ensure_reference_help_allowed(principal.user_id)
     filename_attr = getattr(file, "filename", "") or ""
     ext = _safe_extension(filename_attr)
     data = await _read_limited_upload(file)
+    if not data:
+        raise HTTPException(422, "文件为空，请重新选择。")
     file_id = str(uuid.uuid4())
     filename = f"{file_id}.{ext}"
     filepath = _upload_dir() / filename
     
-    filepath.write_bytes(data)
+    try:
+        filepath.write_bytes(data)
+    except OSError as exc:
+        filepath.unlink(missing_ok=True)
+        raise HTTPException(507, "上传未保存：本地存储不可用，请稍后重试。") from exc
 
     if ext.lower() == "pdf" and _pdf_page_count(data) > MAX_PDF_PAGES:
         filepath.unlink(missing_ok=True)
@@ -121,18 +128,25 @@ async def upload_image(
                 detail=f"文档解析失败，未入库，请重试或改用图片上传：{e}",
             ) from e
 
-    if is_document and not parse_error:
-        document_id = repo.insert_document(filename_attr, principal.user_id, extracted_md)
-        # Chunks are a derived retrieval artifact. `documents.markdown` is the
-        # source of truth for anything needing the whole text, so it must never
-        # be reconstructed by re-joining overlapping chunks.
-        repo.insert_document_chunks(document_id, chunk_document(extracted_md))
-
+    if is_document and (not isinstance(extracted_md, str) or not extracted_md.strip()):
+        filepath.unlink(missing_ok=True)
+        raise HTTPException(502, "解析未得到可读原文，资料未入库，请检查文件后重试。")
     try:
-        repo.record_uploaded_file(filename, principal.user_id)
-    except Exception:
+        # Re-check after the long external request: an assessment may have begun.
+        ensure_reference_help_allowed(principal.user_id)
+        if is_document:
+            document_id = repo.save_parsed_upload(
+                Path(filename_attr.replace("\\", "/")).name, principal.user_id, extracted_md,
+                chunk_document(extracted_md), filename)
+        else:
+            repo.record_uploaded_file(filename, principal.user_id)
+    except HTTPException:
         filepath.unlink(missing_ok=True)
         raise
+    except Exception as exc:
+        filepath.unlink(missing_ok=True)
+        logger.exception("Parsed upload persistence failed")
+        raise HTTPException(503, "解析结果未能保存，未建立资料，请稍后重新上传。") from exc
 
     return {
         "url": f"/api/uploads/{filename}",
@@ -146,6 +160,8 @@ def list_documents(
     principal: Principal = Depends(get_principal),
     repo: Repository = Depends(get_repository),
 ):
+    if not principal.authenticated:
+        raise HTTPException(401, "请先登录查看自己的资料。")
     return {"documents": repo.list_documents(principal.user_id)}
 
 

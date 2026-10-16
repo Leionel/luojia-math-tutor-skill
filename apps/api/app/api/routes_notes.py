@@ -2,7 +2,8 @@ import re
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from app.tutor.learning_workspace import digest
 
 from app.auth import (
     Principal,
@@ -28,6 +29,7 @@ class DocumentNoteRequest(BaseModel):
     # When set, the note weaves in the student's most recent mistake concepts
     # so the textbook material is organized around their weak spots.
     with_mistakes: bool = False
+    source_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
 # Budget for a single-pass LLM note: the heading outline keeps the global
@@ -211,6 +213,10 @@ async def generate_document_note(
             detail="该文档没有已保存的解析原文（解析未完成，或上传于原文持久化之前），请重新上传。",
         )
 
+    source_hash = digest(markdown)
+    if body.source_hash is not None and body.source_hash != source_hash:
+        raise HTTPException(409, "资料版本不匹配，请重新选择后生成笔记。")
+
     # Sampling only; the outline and any full-text need come from the source.
     chunks = chunk_document(markdown)
     headings = [
@@ -247,13 +253,23 @@ async def generate_document_note(
     except Exception as exc:
         raise HTTPException(status_code=502, detail="笔记生成未完成，请保留教材后重试。") from exc
 
+    if not isinstance(note, str) or not note.strip():
+        raise HTTPException(502, "未生成有效笔记，原资料仍保留，可以重试。")
+    ensure_reference_help_allowed(user_id)
+    if repo.get_document_markdown(body.document_id, user_id) != markdown:
+        raise HTTPException(409, "生成期间来源已改变或删除，未保存笔记，请重新选择。")
+    provenance = {"document_id": body.document_id, "source_hash": source_hash,
+                  "coverage": "heading_outline_and_sampled_body", "sample_chars": len(sample),
+                  "source_chars": len(markdown), "headings_included": len(headings)}
+    note = ("<!-- luojia-document-source " + json.dumps(provenance, ensure_ascii=False) + " -->\n"
+            + "来源范围：章节大纲与抽样正文；不是全文精读，也不是学生掌握证明。\n\n" + note)
     note_id = repo.save_note(
         user_id,
         f"document:{body.document_id}",
         doc["filename"],
         note,
     )
-    return {"status": "ok", "note_id": note_id, "note": note}
+    return {"status": "ok", "note_id": note_id, "note": note, "source": provenance}
 
 
 @router.post("/users/{user_id}/notes")
