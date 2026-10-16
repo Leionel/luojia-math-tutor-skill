@@ -18,7 +18,16 @@ venv/
 .DS_Store
 
 *.tsbuildinfo
-docs/
+# Public docs are tracked; local design drafts and development history are not.
+docs/plans/
+docs/screenshots/
+docs/ui-proposals/
+docs/superpowers/
+.local/
+planning/
+luojia_roadmap_v4_2026-10-08.md
+luojia_codex_M1_prompts.md
+luojia_codex_execution_prompt_v2.md
 deeptutor/
 outputs/
 output/

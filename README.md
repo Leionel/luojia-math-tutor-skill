@@ -1,252 +1,101 @@
 # 珞珈数智助教 · Luojia Math Tutor
 
-当前实现与历史验证见[交付与规划快照](planning/delivery-history-2026-10.md)；后续范围见[完整升级计划](planning/complete-upgrade-2026-10/README.md)和[总规划入口](planning/README.md)。正式数据库备份、恢复与迁移尚未验收。
+围绕数学推理过程开展教学的 Agent：理解学生主张，结合受控计算与课程证据选择反馈，让学生通过实验、修订和独立任务检查理解。
 
-<img src="apps/web/public/brand/luojia-logo.png" width="64" alt="珞珈数智 Logo" align="left" />
+当前以数值分析为主要学习场景，提供 Chat、教材伴读、学习任务、数值实验、讲回、自检与代码工坊。项目已实现这些路径之间的引用和状态续接；开放数学推理质量与学习收益仍待独立评价。
 
-**把条件讲清，把过程算明。**
+[快速启动](#快速启动) · [架构](docs/architecture.md) · [学习设计](docs/learning-design.md) · [评测](docs/evaluation.md) · [已知限制](docs/limitations.md)
 
-陪你读教材、做数值实验的 AI 数学助教。学习工作区以**非线性求根**作为首个完整练习模块，并新增**线性方程组与数值积分实验首版**；对话同时保留高等数学、线性代数与概率统计的辅导入口。
+## 可以怎样学
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Next.js%2016-40513b)](apps/web/package.json)
+| 学习活动 | 当前实现 |
+| --- | --- |
+| 讨论一道题或一个步骤 | 有限语法内进行确定性步骤检查；其余推理交给模型审查，并标明核验来源、范围与 unknown |
+| 先预测，再做实验 | Newton、线性迭代和数值积分实验；讨论保存的运行，预览受限修改后再保存 |
+| 对照教材中的条件 | 读取课程图谱中的来源选段，绑定教材版本和内容摘要；核对条件后回到同一对话 |
+| 修改后独立检验 | 分层自检、讲回与限定代码任务；参考运行、获得帮助和独立作答分别记录 |
 
-[功能与学习路径](#功能与学习路径) · [快速开始](#快速开始) · [验证与评测](#验证与评测) · [当前边界](#当前边界) · [规划与交接](#规划与交接)
+例如，在实验台保存 Newton 运行后进入讨论，说明你对收敛的预测。助教可以引用这次运行解释轨迹、提出更换初值的对照实验；学生仍需在独立任务中展示掌握。
 
-## 快速开始
+## 技术实现
 
-以下命令适用于 **Windows / PowerShell**，从仓库根目录执行。CI 使用 Node.js 24、Python 3.12；前端声明 Node.js ≥20.9，后端声明 Python ≥3.10。建议使用项目虚拟环境安装 Python 依赖。
+- **教学编排**：FastAPI + LangGraph，先收集题目、历史与课程证据，再生成教学决策、回复和交付校验。
+- **受控计算**：固定子进程执行有限 SymPy 语法与数值算法；学生候选、系统参考计算和模型意见分别标记。
+- **课程证据**：本地检索与 Course Graph 提供知识关系、教材条件、版本和审核发布状态。
+- **共享学习工作区**：Next.js + React，以 owner、引用类型、版本、内容摘要和帮助状态校验跨页面引用及操作。
+- **可追溯评测**：离线协议合同、固定回复应用流程和待审核数学材料分开统计，不以测试数量代替教学成绩。
 
-### 1. 安装依赖
+数据流、源码入口和信任边界见[架构说明](docs/architecture.md)。
+
+## 快速启动
+
+以下适用于 Windows PowerShell。CI 使用 Python 3.12、Node.js 24；其他系统的命令及配置见[运行说明](docs/setup.md)。
 
 ```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ./apps/api
 npm.cmd ci
 npm.cmd --prefix apps/web ci
-python -m pip install -e ./apps/api
+if (!(Test-Path apps/api/.env)) { Copy-Item apps/api/.env.example apps/api/.env }
 ```
 
-### 2. 配置本地环境
+在 `apps/api/.env` 配置模型服务的 `LLM_PROVIDER`、`LLM_BASE_URL`、`LLM_MODEL` 和 `LLM_API_KEY`。没有模型密钥时可使用本地数值实验和静态任务；聊天生成需要有效模型配置。
 
-仅在文件不存在时复制示例，保留你已有的配置：
-
-```powershell
-if (!(Test-Path apps/api/.env)) {
-    Copy-Item apps/api/.env.example apps/api/.env
-}
-if (!(Test-Path apps/web/.env.local)) {
-    Set-Content apps/web/.env.local 'NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000'
-}
-```
-
-编辑 `apps/api/.env`，让 `LLM_PROVIDER`、`LLM_BASE_URL`、`LLM_MODEL` 和 `LLM_API_KEY` 对应你的模型服务。完整设置见 [.env.example](apps/api/.env.example)。密钥与数据库均不应提交。
-
-没有模型密钥时，受控求根实验、过程诊断、章节参考自检和静态代码审阅仍可使用；模型聊天、模型伴读解释等能力需要有效配置，不能把无模型的来源对照当作模型生成。
-
-### 3. 分别启动两个终端
-
-终端 A：
+在两个终端分别启动：
 
 ```powershell
+# 终端一，仓库根目录
 npm.cmd run dev:api
 ```
 
-终端 B：
-
 ```powershell
+# 终端二，仓库根目录
 npm.cmd run dev:web
 ```
 
-打开 [本地首页](http://localhost:3000)，API 文档位于 [本地 Swagger](http://127.0.0.1:8000/docs)。根目录的 `dev:*` 与 `npm test` 脚本使用 `npm.cmd`；其他系统请在 `apps/api` 手动启动 uvicorn，在 `apps/web` 使用 npm 启动前端。
+打开 [本地 Web](http://127.0.0.1:3000)；API 位于 [本地接口文档](http://127.0.0.1:8000/docs)。默认接口地址和 CORS 对应这两个端口，修改端口时需同步配置。
 
-### 4. 选择账号或本地演示
-
-本地示例为 `APP_ENV=local`、`AUTH_REQUIRED=false`，未登录请求使用演示身份。注册账号为 3–64 位字母、数字或 `_.@-`，首字符为字母或数字；密码至少 10 个字符。登录或注册成功后进入今日学习。
-
-账号凭证保存在当前浏览器。账号退出会撤销当前服务端会话，再清除本地凭证并卸载当前页面；本地演示退出只清理浏览器状态。学习草稿保留。密码找回、邮箱验证和令牌刷新尚未提供。服务端会话撤销仅在隔离临时库验收，正式库备份、恢复及迁移仍是上线前提。
-
-## 功能与学习路径
-
-<img src="apps/web/public/brand/xiaoluo.png" width="160" alt="小珞：手持教材与笔的 AI 数学学姐形象" align="right" />
-
-**小珞**是珞珈数智的 AI 助教形象：数学学姐的交流风格，陪你辨清公式条件、观察迭代过程、解释自己的理解。首页使用全身立绘，聊天欢迎区使用缩小布局。
-
-从一项任务开始：**读材料 → 做实验 → 提交自己的过程 → 确认反馈 → 换题检验 → 到期复习**。系统生成的实验轨迹是参考帮助；你自己的提交和独立检验分别记录。
-
-| 功能 | 页面 | 当前可以做什么 |
-| --- | --- | --- |
-| F1 今日学习 | `/study` | 安排 15/30 分钟任务，继续跨日未完成记录，提交求根轨迹、确认反馈、换题检验与间隔复习。反馈待确认时防止覆盖提交。 |
-| F2 教材伴读 | `/reading` | 阅读课程摘录或自己的已上传材料，核对适用条件、选择原文段落提问，把摘录和问题保存为带来源的笔记。 |
-| F3 数值实验 | `/lab`、`/numerical-lab` | 求根三类算法；新增 Jacobi / Gauss–Seidel、梯形 / Simpson / 自适应 Simpson 实验，预测、回放、对照与数值核对；新模块不计独立成绩。 |
-| F4 章节自检 | `/assessment` | 六道开发参考题；草稿恢复、题号导航、首次作答确认，交卷后查看参考解析和复习入口。 |
-| F5 讲给助教听 | `/teach-back` | 用自己的话解释条件，将原句对应到条件，保存补充版本；模型可用时提供明确标注的审阅意见。 |
-| F8 数值代码作业 | `/code-workshop` | 限定 Newton 作业的 Python AST 静态审阅、代码行定位、保存版本对照；手动轨迹单独诊断。**学生代码不执行。** |
-
-F6 视频伴学与 F7 教师简报仍在规划，见[扩展功能与启动条件](planning/learning-experience-2026-10/04-extensions.md)。
-
-已有的对话助教 `/chat`、错题本 `/mistake-book`、随堂笔记 `/notebook` 和课程图谱 `/graph` 继续保留。默认给予适量提示；直接讲解或明确请求完整解答时可给完整过程。练习出题与答案披露分别处理。
-
-## 一个可复现的体验例子
-
-1. 打开求根实验，选择“牛顿法：0 → 1 → 0 循环”。写下对 `f(x)=x³−2x+2`、`x₀=0` 的预测，再运行参考实验。
-2. 用滑块、前后步按钮或播放观察循环。把初值改为 `−2`，写下新预测，保持函数、目标和阈值一致后运行，再对照两次记录。
-3. 在教材伴读选择牛顿法，核对“初值足够接近根”等条件，将所选原文加入笔记。也可以到讲回页面解释这些条件。
-4. 在今日学习提交**自己计算**的指定轨迹和停止依据，读完反馈后确认结果。练习成功可以换题检验；独立检验期间，已接入保护的聊天、伴读解释、参考实验等入口阻止新的帮助请求。
-5. 用章节自检复习条件与误差判断，或进入代码作业修订模板。章节参考分、静态提示和手动轨迹都不等于已证明掌握。
-
-小残差、相邻差小与根误差小是不同判断；一次数值实验也不能证明一般收敛。
-
-## 实现与证据边界
-
-```mermaid
-flowchart LR
-    Student[学生] --> Chat[对话请求]
-    Student --> Workspace[学习工作区]
-    Chat --> Policy[意图与答案披露策略]
-    Policy --> Context[课程检索与历史上下文]
-    Context --> Check[按需符号检查或模型审阅]
-    Check --> Answer[流式回答与逐消息检查状态]
-    Workspace --> Root[受控求根轨迹与规则诊断]
-    Workspace --> Source[原文范围与来源哈希]
-    Workspace --> Code[代码静态解析与版本记录]
-    Root --> Feedback[反馈确认与练习结果]
-    Feedback --> Probe[新题独立检验与复习安排]
-    Answer --> Store[持久记录]
-    Source --> Store
-    Code --> Store
-    Probe --> Store
-```
-
-- **对话**：LangGraph 按请求调用教学策略、课程检索、受限 math/SymPy 工具或模型审阅。工具执行成功只说明计算代码运行成功；模型审阅仍是意见，不能把整段解释标成数学证明。
-- **求根过程**：受控表达式解析、轨迹诊断与 RootEpisodeService 分开处理更新、停止依据和反馈确认。系统参考实验不计为独立完成；未知结果不计成功。
-- **材料**：课程知识包与个人上传原文分别呈现。选段保留字符范围与来源哈希；抽样生成的教材笔记明确标注覆盖限制。
-- **学习记录**：SQLite 保存会话、课程与学习任务。BKT 后验是基于观测和参数的估计，复习阶段是调度规则；二者都不替代无 AI 的迁移测验或延迟保持证据。
-- **帮助保护**：未完成的独立检验阻止应用中新请求的讲解、参考实验等帮助；历史内容和外部工具不能据此排除。
-
-### 存储与配置
-
-| 配置 | 作用 |
-| --- | --- |
-| `DATABASE_URL` | 主应用数据库，默认使用 SQLite。 |
-| `COURSE_STORE_PATH` | 显式指定课程与学习工作区持久库；路径相对 API 工作目录。文件 SQLite 未指定时派生 `<数据库路径>.course.db`；内存库不保证重启恢复。 |
-| `AUTH_REQUIRED` / `AUTH_TOKEN_SECRET` | 控制鉴权及令牌签名。生产环境要求鉴权与独立配置的签名密钥。 |
-| `LLM_PROVIDER` / `LLM_BASE_URL` / `LLM_MODEL` / `LLM_API_KEY` | 服务端模型配置。 |
-| `ALLOW_USER_API_KEY` | 是否接受当前请求转发的用户模型密钥，示例默认关闭。 |
-| `MINERU_API_KEY` | PDF/Word 上传解析配置；课程摘录与已有 Markdown 伴读不要求重新上传。 |
-| `NEXT_PUBLIC_API_BASE_URL` | 前端访问后端的地址，构建时注入。 |
-
-任务、答案和保存版本由服务端控制；未确认选项、实验复盘及部分编辑草稿保存在当前浏览器，不能承诺跨设备同步。生产部署需要同时配置 `APP_ENV=production`、`AUTH_REQUIRED=true`、独立随机签名密钥和明确的 `CORS_ORIGINS`；本地演示配置不能直接作为线上配置。
-
-### 搜索与图示
-
-聊天联网检索支持自动、开启和关闭。搜索摘要是来源线索，不等于全文核实或证明验证。逐轮检索状态与来源保存在消息元数据中；旧回答不补造检索记录。
-
-公式与静态图示用于辅助理解。模型生成的 HTML 默认只显示过滤后的静态图示和源码；脚本、事件属性与外链不运行。受控实验仍可交互。旧动态消息保留静态部分与源码，不提供脚本重启入口；图示不进入数学验证或学习计分。
-
-## Agent 工程可靠性
-
-聊天请求先确认任务，候选回答通过交付检查后再发送。可疑表述最多进行一次纯文字修复；仍不通过、模型截断或流异常时给出安全失败回执，不能标成完整答案。交付 Guard 检查显式协议 / 执行声明和练习答案标签；**检查通过不代表数学正确**，间接语义仍待评测。
-
-每轮生成 UUID 执行记录，保存有限公共步骤和终态，回答与终态在同一 SQLite 事务中提交。聊天旁可折叠回看过程；浏览器停止生成会触发服务端图任务与工具清理，刷新可恢复取消 / 中断记录。过期运行只标记 interrupted，不自动重放。缺少 provider usage 时保存 null，不推算成本。
-
-新增 schema migration 6，已有部署启用前应使用 SQLite backup API 备份实际数据库；代码回滚保留新表。A0–A3、S1–S4工程交付见 [A0–A2 回执](planning/agent-engineering-2026-10/delivery-a0-a2.md)和[S3/S4 回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)。离线评测 CLI 默认 v2，冻结 **38 个协议合同 / 92 个参数化实例**；v1 的19/40保留为历史版本。真实模型行为/数学质量对照（S5/A5）尚未完成，协议通过率不代表模型正确率。受控工具链已接普通Chat，但默认关闭，需精确模型/端点能力声明；缺usage不补零。旧学生表达式核验的解析与范围缺口尚待S5.0修复，不能把新typed路径的安全边界泛化到所有入口。
-
-## 验证与评测
-
-截至 **2026-10-04**，本轮重新跑通知识 JSON、**API 655 项、前端工具测试 51 项**，E0 v2为 **38/38协议合同、92/92实例**。生产构建、类型检查、lint **0错误/10条既有warning**及隔离桌面/手机页面验收是此前[S3/S4交付回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)中的验证，本次文档审计未重复执行。完整口径见[当前基线](planning/agent-v3-2026-10/00-current-baseline.md)；历史多领域实验回执和[学习体验审查](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)保留当时结果。这些是工程验证，不是教师gold、真实供应商验收或真人学习效果评测。
-
-Windows 根目录：
+## 如何理解验证结果
 
 ```powershell
 npm.cmd test
-npm.cmd run test:knowledge
-npm.cmd run test:api
-npm.cmd run test:web:ui
 npm.cmd --prefix apps/web run typecheck
 npm.cmd --prefix apps/web run lint
 npm.cmd run build:web
+python scripts/check_docs.py
+python scripts/eval_agent_reliability.py
+python scripts/r2_review_packet.py --check
 ```
 
-构建前先停止正在服务的 Web 开发/预览进程，避免 `.next` 被同时写入。`pytest` 必须从 `apps/api` 运行；离线测试门控会禁用 dotenv 和真实模型密钥，不应移除。
+运行构建前停止使用同一构建目录的开发服务。测试与默认评测保持离线，不需要付费模型。
 
-仓库保留[LuojiaMathBench V8 样本](data/LuojiaMathBench_v8.jsonl)及[旧评测归档](evaluation/report_v5_archive.md)。旧 README 报告过 20 条 V8 样本的教学合规率 90% 和直接答案泄露率 5%；这些是**历史运行结果**，本轮未重新运行模型评测，不能作为当前求根工作区的效果或泛化结论。逐样本结果生成在忽略的 `results/`，干净克隆不包含这些运行文件。
+| 证据 | 能回答的问题 | 当前边界 |
+| --- | --- | --- |
+| E0 工程合同 | 引用、状态、核验范围及失败处理是否满足已定义约束 | 固定用例通过不代表真实模型数学正确率 |
+| E1 数学与教学质量 | 推理、条件、正确步骤误判、unknown 与反馈是否恰当 | 已有开发材料和采集工具，缺完整独立审核与受控真实模型数据 |
+| E2 任务可用性 | 学生能否完成跨工作区任务并恢复状态 | 已有任务方案和局部工程观察，缺系统真人验收 |
+| E3 学习收益 | 学生能否在独立迁移任务中掌握方法 | 尚无足够学生实验数据 |
 
-## 当前边界
+可复现命令、材料来源与失败分析见[评测说明](docs/evaluation.md)。
 
-- 交付 Answer Guard 已覆盖显式规则及一次修复，数学语义尚未形成覆盖全部回答的闭环；不能承诺“绝对正确”或“零幻觉”。
-- F8 的学生代码隔离执行环境（C0）尚未验收，首版仅作静态审阅；支持的手动轨迹不能证明程序运行正确。
-- F4 为开发版章节参考练习；F5 原句对应与模型意见都不直接增加独立成功。
-- F1 仍以受控 Newton 任务为主，F2 仍是课程摘录与 Markdown 原文伴读；完整 PDF 标注、跨设备草稿、完整教师后台仍待实现。
-- 密码找回、邮箱验证、正式库的会话迁移验收、真实模型质量、教师核对及真人学习效果仍需后续验证。
-
-## 项目结构
+## 仓库导航
 
 ```text
-apps/api/app/api/                # FastAPI 路由与鉴权入口
-apps/api/app/tutor/              # 教学编排、求根任务、伴读及代码静态审阅
-apps/api/app/knowledge/          # 课程图谱、持久记录与复习策略
-apps/api/app/math_tools/         # 表达式解析、求根诊断与参考轨迹
-apps/api/tests/                  # 离线后端回归测试
-apps/web/app/                    # 首页、对话、六类学习入口与账号页面
-apps/web/components/learning/    # 共享学习界面与轨迹回放
-apps/web/lib/                    # 请求、输入校验与前端工具测试
-apps/web/public/brand/           # 用户提供的 Logo 与小珞立绘
-luojia-math-tutor/               # 助教 Skill 与课程参考资料
-planning/learning-experience-2026-10/ # 六个月功能规划与实施回执
-scripts/                        # 评测、数据校验与维护脚本
-results/                        # 本地生成证据，不跟踪
+apps/api/              API、教学编排、受控核验与测试
+apps/web/              Chat、共享工作区与交互组件
+luojia-math-tutor/      Tutor Skill、知识说明与整理后的参考数据
+evaluation/            协议、开发题、审核材料与评测合同
+scripts/               评测与维护工具
+docs/                  架构、学习设计、运行、评测与维护说明
 ```
 
-## 规划与交接
+开发约定见 [AGENTS.md](AGENTS.md)，文档归档与恢复见[维护说明](docs/maintenance.md)。历史提交保留，开发过程材料已从公开工作树收口。
 
-- [六个月功能规划](planning/learning-experience-2026-10/README.md)：F1–F8 的范围、启动条件与主线衔接。
-- [F1–F4 首版](planning/learning-experience-2026-10/f1-f4-delivery.md)、[首页及 F5/F8](planning/learning-experience-2026-10/home-f5-f8-delivery.md)、[小珞与流程加强](planning/learning-experience-2026-10/xiaoluo-chat-lab-review.md)：实现与验收边界。
-- [M0/M1 课程图谱](COURSE_GRAPH_M0_M1.md)、[M2/M3 求根过程](COURSE_GRAPH_M2_M3.md)：课程与研究主线。
-- [分支日志](luojia_tutor2_branch_log.md)、[研究规划](luojia_tutor2_course_graph_research_refined.md)、[交接文档](CODEX_HANDOFF.md)、[贡献约定](AGENTS.md)。
-- [海报更新提示词](planning/learning-experience-2026-10/poster-update-prompt.md)：现有视觉材料的更新说明。
+## 已知限制
 
-## 项目海报
+有限步骤检查不证明整道题；证明辅导依赖模型。课程资料的发布标记不等于独立数学审校。掌握度是教学策略输入，参考实验成功不能证明学生独立掌握。生产鉴权、数据库备份恢复与部署配置需要在目标环境验收，详见[限制与安全边界](docs/limitations.md)。
 
-![珞珈数智助教新版海报：小珞、Newton 迭代示意与六项学习功能](LJ_Tutor_Poster.png)
+## License
 
-新版海报展示小珞、求根实验与六项学习入口；实验面板为静态示意，功能范围与验证证据以上文为准。
-
-<details>
-<summary>查看第一版海报</summary>
-
-![第一版珞珈数智助教海报，保留历史视觉设计](v1poster.png)
-
-第一版保留为历史归档。图中的性能数字、绝对验证措辞和旧功能排列不作为当前能力说明。
-
-</details>
-
-## 许可证
-
-核心代码、脚本及 Skill 配置采用 [MIT License](LICENSE)。教材文件和引用材料遵循各自的授权范围；仓库代码许可证不自动授予教材内容的使用权限。
-
-### 离线 Agent 可靠性评测
-
-运行 `python scripts/eval_agent_reliability.py`，结果保存为 `results/agent-reliability.json`（不跟踪）。当前 v2 含 38 个协议合同、92 个参数化实例，覆盖生成异常、固定计算进程回收、原生工具请求、调用计量、交付 Guard、数据库原子性和 owner 隔离；v1 历史19合同/40实例保留。报告公开分子/分母、Git SHA、案例与源码哈希；这是离线 fixture 协议评测，不是模型准确率。CI 同步执行并上传报告。
-
-### 多领域数值实验首版
-
-从首页“数值实验台”进入 `/lab`，切换到 `/numerical-lab`：
-
-| 领域 | 方法 | 核对范围 |
-| --- | --- | --- |
-| 非线性求根 | 二分、不动点、Newton | 原有求根规则、练习与独立检验流程 |
-| 线性方程组 | Jacobi、Gauss–Seidel | 浮点残差、更新次序、严格行对角占优充分条件；不把步差小当成已解出 |
-| 数值积分 | 复合梯形、复合 Simpson、自适应 Simpson | 加密 / 局部细分与误差估计；不声称严格积分误差已达标 |
-
-新模块支持预测、逐步回放、方法对照、保存参数复用、账户历史与数值答案核对，沿用现有 owner-scoped 学习记录，不新增数据库迁移或依赖。参考帮助不计入独立成绩，不执行学生程序；当前自检 / 独立 probe 未完成时，新模块的参考读取、运行与核对均被服务端阻止。
-
-积分反例 `sin(16*pi*x)^2` 的真实积分为 1/2，但均匀采样可能落在零点，因此“误差估计很小”和“与参考结果相符”不代表正确积分。可改分段数复核。线性/积分实验问题目前仍复制到聊天，属于用户提供的上下文。已保存的 Newton 实验已接入服务端可信引用与实验内聊天。F1/F4/F8 的专门任务、成绩和代码审阅仍以求根为主，不宣称全课程学习闭环完成。
-
-本轮交付和后续路线见 [A3 与多领域数值实验回执](planning/agent-engineering-2026-10/delivery-a3-numerical.md)。
-
-S1/A4.1 与 S2/A6.1/A4.2 已交付 Newton 单路径：实验内问小珞 → 服务端读取真实轨迹 → 用户编辑参数并预览 → 明确保存 → 同页更新。桌面侧栏、手机抽屉、版本检查、每卡三次预览与幂等保存已接入；业务卡片由服务器组装。完整交付与边界见 [S1/S2 回执](planning/agent-engineering-2026-10/delivery-s1-s2.md)。
-
-S3/A6.2 与 S4/A7 已接入普通聊天的原生固定函数 `math_differentiate` / `numerical_run`、最多两轮预算、实际子进程取消/超时/输出回收，以及客户端调用 span、正文首片段时间、提供方 usage 和可选价格版本。模型生成 Python 不再执行。网页“本轮过程”可回看工具与请求、用量覆盖；缺失用量和费用保持未知，不把计算成功当整段数学证明。新计算工具默认关闭，只有实际模型/端点的匹配能力配置才启用；配置与验收见 [S3/S4 回执](planning/agent-engineering-2026-10/delivery-s3-s4.md)。本轮无真实模型能力/真实账单或教学收益验证。
-
-下一步 S5/A5 行为与质量评测；A8 持久恢复有条件启动。详见 [聊天与工作区审阅 / 日程](planning/agent-engineering-2026-10/chat-workspace-review.md)、[Runtime 判断](planning/agent-engineering-2026-10/runtime-review-schedule.md)与 [计算工具切片](planning/agent-engineering-2026-10/a6-tool-runtime.md)。
-
-前一轮补齐章节自检期间共享帮助限制、求根实验缓存重试/历史读取及伴读解释检查，当时离线知识 JSON / API589 / Web45 通过，未重跑前端构建或真实模型。本轮 S1/S2 已另完成上述生产构建与浏览器验收。已打开材料、旧聊天、外部帮助和在途请求不由入口检查完全收回。
+项目代码采用 [MIT License](LICENSE)。外部教材和上传资料的使用仍须遵守各自授权。

@@ -22,6 +22,8 @@ jobs:
           LUOJIA_NO_DOTENV: '1'
       - name: Offline Agent reliability contracts
         run: python scripts/eval_agent_reliability.py
+      - name: Public documentation links
+        run: python scripts/check_docs.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
