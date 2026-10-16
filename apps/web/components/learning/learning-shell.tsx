@@ -1,21 +1,13 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { BrandLogo } from "@/components/brand-logo";
+import {SiteFrame} from "./site-frame";
+import {type ReactNode} from "react";
 import { 
   Sparkles, 
   CheckCircle2, 
   HelpCircle, 
   AlertCircle, 
-  ArrowUpRight, 
-  BookOpen, 
-  Layers, 
   TrendingDown,
   Activity,
-  Cpu,
-  ChevronRight
 } from "lucide-react";
 
 export const learningButton = "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-olive-600 to-olive-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:from-olive-500 hover:to-olive-600 hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none border border-olive-500/30 transition-all duration-200 cursor-pointer";
@@ -28,7 +20,7 @@ export function LearningShell({
   description, 
   children, 
   wide = false,
-  badgeText = "非线性方程求根 · 研学工坊",
+  badgeText = "数学助教 · 学习工作区",
 }: {
   title: string; 
   description: string; 
@@ -36,25 +28,8 @@ export function LearningShell({
   wide?: boolean;
   badgeText?: string;
 }) {
-  const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const navItems = [
-    { href: "/study", label: "今日研学", keyHint: "1", icon: Layers },
-    { href: "/reading", label: "定理研读", keyHint: "2", icon: BookOpen },
-    { href: "/lab", label: "数值实验", keyHint: "3", icon: Sparkles },
-    { href: "/assessment", label: "认知自检", keyHint: "4", icon: CheckCircle2 },
-    { href: "/teach-back", label: "费曼讲坛", keyHint: "5", icon: HelpCircle },
-    { href: "/code-workshop", label: "算法工坊", keyHint: "6", icon: ArrowUpRight },
-    { href: "/admin/knowledge", label: "教师审核", keyHint: "", icon: CheckCircle2 },
-  ];
-
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans antialiased relative selection:bg-olive-500/20 selection:text-olive-900 dark:selection:text-olive-100">
+    <SiteFrame><div className="min-h-full bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans antialiased relative selection:bg-olive-500/20 selection:text-olive-900 dark:selection:text-olive-100">
       {/* 数学工程草纸微网格背景 (Engineering Graph Paper Subtle Grid) */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.25] dark:opacity-[0.10]" 
@@ -71,72 +46,12 @@ export function LearningShell({
         aria-hidden="true" 
       />
 
-      {/* 现代玻璃化研学顶栏 (Glassmorphic Atelier Header) */}
-      <header className="sticky top-0 z-40 border-b border-paper-300/80 dark:border-paper-800/80 bg-[var(--bg-header)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex shrink-0 items-center gap-2.5 font-title text-xl font-semibold tracking-wide hover:opacity-90 transition-opacity">
-              <BrandLogo />
-              <span className="text-[var(--text-primary)]">珞珈数智</span>
-              <div className="hidden sm:flex items-center gap-1.5 font-sans text-xs px-2.5 py-0.5 rounded-full bg-olive-500/10 text-olive-800 dark:text-olive-200 border border-olive-600/25">
-                <span className="w-1.5 h-1.5 rounded-full bg-olive-600 animate-pulse" />
-                <span>{badgeText}</span>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link 
-              href="/chat" 
-              className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-xl border border-olive-600/30 bg-olive-500/5 text-olive-800 dark:text-olive-200 hover:bg-olive-500/15 active:scale-95 transition-all shadow-xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-olive-600 group-hover:rotate-12 transition-transform" />
-              <span>对话助教小珞</span>
-              <span className="hidden md:inline font-mono text-[10px] px-1.5 py-0.2 rounded bg-olive-600/15 text-olive-700 dark:text-olive-300 ml-1">
-                Chat
-              </span>
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-
-        {/* 悬浮胶囊工作区导航条 (Floating Pill Atelier Navigation) */}
-        <nav aria-label="学习工作区导航" className="mx-auto max-w-7xl px-4 sm:px-8 overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-1 sm:gap-1.5 border-t border-paper-200/50 dark:border-paper-800/40 py-2">
-            {navItems.map(({ href, label, keyHint, icon: Icon }) => {
-              const active = pathname === href || (href === "/lab" && pathname === "/numerical-lab");
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={`group relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    active
-                      ? "bg-olive-600/15 text-olive-800 dark:text-olive-200 font-semibold shadow-xs border border-olive-600/30"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/70"
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 transition-colors ${active ? "text-olive-600" : "text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]"}`} />
-                  <span>{label}</span>
-                  <span className={`hidden lg:inline font-mono text-[10px] px-1 rounded opacity-50 ${active ? "bg-olive-600/20 text-olive-900 dark:text-olive-100" : "bg-paper-200 dark:bg-paper-800 text-[var(--text-muted)]"}`}>
-                    {keyHint}
-                  </span>
-                  {active && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-olive-600 rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      </header>
-
       {/* 核心工作区主舞台 */}
       <main className={`relative z-10 mx-auto w-full ${wide ? "max-w-[1540px] py-6 sm:py-8" : "max-w-7xl py-6 sm:py-10"} px-4 sm:px-8`}>
         <div className="mb-8 max-w-3xl animate-fade-in">
           <div className="inline-flex items-center gap-2 text-xs font-mono text-olive-700 dark:text-olive-300 font-semibold tracking-wider uppercase mb-1">
             <Activity className="w-3.5 h-3.5" />
-            <span>认知工坊 · 研学中枢</span>
+            <span>{badgeText}</span>
           </div>
           <h1 className="font-title text-2xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
             {title}
@@ -147,7 +62,7 @@ export function LearningShell({
         </div>
         {children}
       </main>
-    </div>
+    </div></SiteFrame>
   );
 }
 

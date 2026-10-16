@@ -11,8 +11,8 @@ export function TutorCompanion({compact = false}: {compact?: boolean}) {
     </div>
     <div className="min-w-0">
       <p className="text-base sm:text-sm text-olive-700 dark:text-olive-300">小珞 · 数学学姐</p>
-      <h2 className={compact ? "mt-2 font-serif text-xl font-medium" : "mt-3 font-serif text-2xl font-medium sm:text-3xl"}>陪你读教材，也陪你做实验。</h2>
-      <p className="mt-3 max-w-[42ch] text-base leading-7 text-[var(--text-secondary)]">一起辨清公式的条件，看看迭代怎样走，再把你的理解讲出来。</p>
+      <h2 className={compact ? "mt-2 font-serif text-xl font-medium" : "mt-3 font-serif text-2xl font-medium sm:text-3xl"}>{compact?"从你想聊的问题开始。":"聊清问题，也一起读懂材料。"}</h2>
+      <p className="mt-3 max-w-[42ch] text-base leading-7 text-[var(--text-secondary)]">聊一个概念，贴一段推导，或一起检查一个数学主张。想读材料、做实验时，再打开对应工作区。</p>
       <p className="mt-2 text-base sm:text-xs leading-6 text-[var(--text-muted)]">珞珈数智的 AI 助教形象</p>
       {!compact && <div className="mt-4 flex flex-wrap gap-x-6"><Link href="/reading" className="inline-flex min-h-12 items-center text-base text-olive-700 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-olive-600 dark:text-olive-300">一起读教材 →</Link><Link href="/lab" className="inline-flex min-h-12 items-center text-base text-olive-700 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-olive-600 dark:text-olive-300">去做一次实验 →</Link></div>}
     </div>

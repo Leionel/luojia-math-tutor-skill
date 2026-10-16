@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {clearLearningBrowserState,migratePrivateReadingStorage,referenceBrowserStorage} from "./learning-browser-storage.ts";
+import {storeChatEntry,readChatEntry} from "./chat-entry.ts";
 
 function storage(initial:Record<string,string>={}):Storage{
  const items=new Map(Object.entries(initial));
@@ -33,7 +34,7 @@ test("old private reading questions and their discussion drafts move to tab stor
 
 test("logout clears learning drafts and private handoffs from both stores, not preferences",()=>{
  const local=storage({"reading-note:alice:source":"未保存笔记","trace-draft:alice:task_1":"x0=1.5;x1=1.414","code-workshop:alice:new:code":"print(1)","luojia_user_api_key":"synthetic-key","luojia-theme":"dark"});
- const session=storage({"reading-selection:alice:source":"私题","luojia_private_chat_ref_v1:ref":"私题","pendingQuiz":"待讨论"});
+ const session=storage({"reading-selection:alice:source":"私题","luojia_private_chat_ref_v1:ref":"私题","luojia_chat_draft_v1:home":"未发送问题","pendingQuiz":"待讨论"});
  clearLearningBrowserState(local,session);
  assert.equal(local.getItem("reading-note:alice:source"),null);
  assert.equal(local.getItem("trace-draft:alice:task_1"),null);
@@ -41,4 +42,17 @@ test("logout clears learning drafts and private handoffs from both stores, not p
  assert.equal(local.getItem("luojia_user_api_key"),null);
  assert.equal(session.length,0);
  assert.equal(local.getItem("luojia-theme"),"dark");
+});
+
+test("home chat entry stays in owner-scoped tab storage with a bounded lifetime",()=>{
+ const tab=storage(),id="12345678-1234-1234-1234-123456789abc";
+ storeChatEntry(tab,"alice",id,"证明中这一行有什么条件？",100);
+ assert.equal(readChatEntry(tab,"alice",id,101),"证明中这一行有什么条件？");
+ assert.equal(readChatEntry(tab,"bob",id,101),null);
+ assert.equal(readChatEntry(tab,"alice",id,99),null);
+ assert.equal(readChatEntry(tab,"alice",id,100+30*60*1000+1),null);
+ assert.equal(readChatEntry(tab,"alice","unexpected-id",101),null);
+ assert.throws(()=>storeChatEntry(tab,"alice",id," ",100));
+ assert.throws(()=>storeChatEntry(tab,"alice",id,"x".repeat(4001),100));
+ clearLearningBrowserState(storage(),tab);assert.equal(readChatEntry(tab,"alice",id,101),null);
 });

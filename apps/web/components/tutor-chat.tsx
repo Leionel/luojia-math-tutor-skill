@@ -6,7 +6,7 @@ import type { ReviewData } from "./review-card";
 import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
 import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
-import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown, FlaskConical, BookOpen, CalendarCheck2, Code2 } from "lucide-react";
+import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useScrollPinning } from "@/lib/use-scroll-pinning";
 import { getPreferredModel, getUserApiKey } from "@/lib/local-settings";
 import { AppHeader } from "./app-header";
@@ -33,6 +33,8 @@ import {ContextBanner} from "./learning/context-banner";
 import {CanvasWorkspace, type WorkspaceTab} from "./learning/canvas-workspace";
 import type {WorkspaceIntent} from "@/lib/intelligent-ui";
 import type {RootContextRef} from "@/lib/learning-context";
+import {readChatEntry} from "@/lib/chat-entry";
+import {ChatWorkspaceBar} from "./learning/chat-workspace-bar";
 import {ReferenceSelection} from "@/lib/reference-selection";
 import { clampPaneWidth, defaultPaneWidth, type ResizablePane } from "@/lib/interaction-physics";
 
@@ -79,31 +81,25 @@ function latestLearningMeta(items: Message[]): TutorMeta | null {
   return null;
 }
 
-const welcome = `### 从你正在读的一页、正在算的一步开始
-我是小珞，珞珈数智的 AI 数学助教。我们可以一起读教材、核对推导、做数值实验，也可以讨论高等数学、线性代数和概率统计。
+const welcome = `### 从你想聊的问题开始
+我是小珞，珞珈数智的 AI 数学助教。你可以直接聊概念、贴一段推导，或一起检查一个数学主张。
 
-- **读懂条件**：说明公式在什么条件下适用；教材伴读会保留原文来源。
-- **检查过程**：把自己的步骤发来；求根轨迹可用数值规则核对，其他回答会注明检查依据与限制。
-- **按需帮助**：默认给适量提示；切换“直接讲解”或明确索取时可以给完整过程。练习先给题目，作答后再核对。
-- **回看记录**：学习面板的估计与错题记录供复习参考，不等于已证明掌握。
-
-试试问我：
-> 牛顿法的残差很小，就一定接近根了吗？`;
+想读讲义或教材时，点“选材料一起读”；需要实验和练习时再打开工作区。`;
 
 const PROMPT_SUGGESTIONS = [
   {
-    category: "数值分析",
-    icon: "xₖ",
-    title: "残差与根误差",
-    desc: "残差很小，为什么还需要误差依据？",
-    prompt: "牛顿法得到的残差很小，是否一定接近根？请解释两者关系与需要的条件。",
+    category: "数学分析",
+    icon: "f′(a)",
+    title: "连续与可导",
+    desc: "用定义与反例理解结论之间的关系。",
+    prompt: "连续一定可导吗？请用定义和反例解释两者关系。",
   },
   {
-    category: "数值分析",
-    icon: "[a,b]",
-    title: "二分法的前提",
-    desc: "端点异号之外，还需确认什么？",
-    prompt: "对函数 1/x 在 [-1,1] 上用二分法，因为端点异号所以一定有根，对吗？",
+    category: "推理检查",
+    icon: "⇒",
+    title: "一起检查证明",
+    desc: "先确认条件，再讨论推理是否充分。",
+    prompt: "我想检查一段证明，请先和我确认题目条件，再看推理是否充分。",
   },
   {
     category: "线性代数",
@@ -286,7 +282,7 @@ export function TutorChat() {
     localStorage.setItem("luojia_sidebar_collapsed", String(collapsed));
   };
   const [learningWidth, setLearningWidth] = useState(DEFAULT_LEARNING_WIDTH);
-  const [isLearningCollapsed, setIsLearningCollapsed] = useState(false);
+  const [isLearningCollapsed, setIsLearningCollapsed] = useState(true);
   const [isResizing, setIsResizing] = useState<ResizablePane | null>(null);
   const dragOriginWidthRef = useRef<number>(0);
 
@@ -346,7 +342,7 @@ export function TutorChat() {
     alive.current=true;
     const manager=lifetime.current,generation=viewGeneration;
     void bootstrap();
-    const ownerChanged=()=>{viewGeneration.current++;lifetime.current.invalidate();setMessages([]);setLearningContext(null);setContextError("身份已变化，请刷新后继续。");setIsStreaming(false);};
+    const ownerChanged=()=>{viewGeneration.current++;lifetime.current.invalidate();setMessages([]);setInputValue("");setLearningContext(null);setContextError("身份已变化，请刷新后继续。");setIsStreaming(false);};
     const storage=(event:StorageEvent)=>{if(event.key?.startsWith("luojia_auth_")||event.key===null)ownerChanged();};
     window.addEventListener("luojia-auth-change",ownerChanged);window.addEventListener("storage",storage);
     return()=>{alive.current=false;generation.current++;manager.invalidate();window.removeEventListener("luojia-auth-change",ownerChanged);window.removeEventListener("storage",storage);};
@@ -441,6 +437,12 @@ export function TutorChat() {
     if(!valid())return;
     setSessions(existing);
     const params=new URLSearchParams(window.location.search),labId=params.get("lab"),encodedRef=params.get("ref"),handoffId=params.get("handoff");
+    if((params.get("new")==="1"||params.has("draft"))&&!(labId||encodedRef||handoffId)){
+      resetToDraftSession(true);
+      const draft=params.get("draft");
+      if(draft){const text=readChatEntry(sessionStorage,owner,draft);if(text)setInputValue(text);else setRootError("转交的草稿已过期或不属于当前账号，请重新输入。");}
+      restoreWorkspace(params);return;
+    }
     if(labId||encodedRef||handoffId){
       try{
         const step=params.get("step");
@@ -459,7 +461,7 @@ export function TutorChat() {
         if(!valid())return;
         migratePrivateReadingStorage(localStorage,sessionStorage,owner);
         const mapped=referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref),localStorage,sessionStorage).getItem(referenceChatKey(owner,snapshot.ref));
-        const restoredSession=verifiedReferenceSession(params.get("session"),existing,owner)??verifiedReferenceSession(mapped,existing,owner);
+        const restoredSession=params.get("new")==="1"?undefined:verifiedReferenceSession(params.get("session"),existing,owner)??verifiedReferenceSession(mapped,existing,owner);
         if(restoredSession) await selectSession(restoredSession,snapshot);
         else {
           resetToDraftSession(true);
@@ -469,13 +471,13 @@ export function TutorChat() {
       }catch(e){if(valid()){setContextError(e instanceof Error?e.message:"来源引用不可用");setContextLoading(false);}}
       return;
     }
-    const selected=existing.find(s=>s.id===params.get("session"))??existing[0];
-    if(selected)await selectSession(selected.id);else resetToDraftSession();
+    const selected=existing.find(s=>s.id===params.get("session"));
+    if(selected)await selectSession(selected.id,undefined,params.get("context")==="none");else resetToDraftSession();
     restoreWorkspace(params);
   }
 
   function resetToDraftSession(preserveUrl = false) {
-    setWorkspaceOpen(false);setWorkspacePrediction(undefined);
+    setWorkspaceOpen(false);setWorkspacePrediction(undefined);setInputValue("");
     lifetime.current.adoptSession(undefined);
     viewGeneration.current++;lifetime.current.invalidate();setIsStreaming(false);setContextLoading(false);
     if (!preserveUrl) window.history.replaceState(null,"","/chat");
@@ -501,7 +503,7 @@ export function TutorChat() {
     resetToDraftSession();
   }
 
-  async function selectSession(nextSessionId: string, override?:LearningTaskSnapshot) {
+  async function selectSession(nextSessionId: string, override?:LearningTaskSnapshot, suppressReference=false) {
     setWorkspaceOpen(false);setWorkspacePrediction(undefined);
     lifetime.current.adoptSession(nextSessionId);
     const generation=++viewGeneration.current,owner=getCurrentUserId();
@@ -519,13 +521,14 @@ export function TutorChat() {
     let currentMessages: LocalMessage[] = mapServerMessages(serverMessages);
     const lastMeta = serverMessages.at(-1)?.learning_meta;
     let snapshot=override??null, contextFailure="";
-    if(!override&&lastMeta?.learning_context){
+    if(!override&&!suppressReference&&lastMeta?.learning_context){
       try{snapshot=await learningRequest<LearningTaskSnapshot>("/tutor/context",lastMeta.learning_context.ref,AbortSignal.timeout(15000));}
       catch(e){contextFailure=e instanceof Error?e.message:"实验引用不可用";}
     }
     if(!valid())return;
     setLearningContext(snapshot);setContextError(contextFailure);setContextLoading(false);
     const query=new URLSearchParams({session:nextSessionId});
+    if(suppressReference)query.set("context","none");
     if(snapshot){try{appendContextQuery(query,snapshot.ref,owner);}catch{ /* Saved replies can restore their last context. */ }referenceBrowserStorage(needsPrivateChatHandoff(snapshot.ref),localStorage,sessionStorage).setItem(referenceChatKey(owner,snapshot.ref),nextSessionId);}
     window.history.replaceState(null,"",`/chat?${query}`);
     if (lastMeta?.awaiting_confirmation && lastMeta.vision_draft) setVisionDraft(lastMeta.vision_draft);
@@ -578,6 +581,7 @@ export function TutorChat() {
       setLearningContext(null);
       setContextError("");
       const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
+      if(sessionId)query.set("context","none");
       const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
       if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
       window.history.replaceState(null, "", `/chat${query.size ? `?${query}` : ""}`);
@@ -592,6 +596,7 @@ export function TutorChat() {
       setLearningContext(snapshot);
       const query = new URLSearchParams(sessionId ? { session: sessionId } : {});
       const visibleWorkspace = new URLSearchParams(window.location.search).get("workspace");
+      if(!sessionId)query.set("new","1");
       appendContextQuery(query, snapshot.ref, owner);
       if (workspaceOpenRef.current && visibleWorkspace) query.set("workspace", visibleWorkspace);
       window.history.replaceState(null, "", `/chat?${query}`);
@@ -653,6 +658,10 @@ export function TutorChat() {
         const createdId=await manager.ensureSession(lease,getCurrentUserId,"综合");
         if(!valid())return;
         activeSession=createdId;setSessionId(activeSession);
+        const query=new URLSearchParams({session:createdId});
+        if(activeSnapshot)appendContextQuery(query,activeSnapshot.ref,getCurrentUserId());
+        if(workspaceOpenRef.current)query.set("workspace",activeWorkspaceTab);
+        window.history.replaceState(null,"",`/chat?${query}`);
       }
       if(activeSnapshot)referenceBrowserStorage(needsPrivateChatHandoff(activeSnapshot.ref),localStorage,sessionStorage).setItem(referenceChatKey(getCurrentUserId(),activeSnapshot.ref),activeSession);
       const userMessage:LocalMessage={id:crypto.randomUUID(),role:"user",content:value};
@@ -963,10 +972,9 @@ export function TutorChat() {
 
       {!isZenMode && (
         <AppHeader
-          onOpenSearch={() => setIsGlobalSearchOpen(true)}
           onNewSession={() => {
             // If already on an empty draft (no real session yet), nothing to do.
-            if (!sessionId && !messages.some((m) => m.role === "user")) {
+            if (!sessionId && !learningContext && !inputValue.trim() && !messages.some((m) => m.role === "user")) {
               setNewSessionBlocked(true);
             } else {
               setShowNewSessionConfirm(true);
@@ -998,8 +1006,8 @@ export function TutorChat() {
       <div id="main-layout" className="flex min-h-0 flex-1 relative">
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
-          <MobileDrawer title="历史会话" side="left" breakpoint={1024} onClose={() => setIsMobileSidebarOpen(false)}>
-            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          <MobileDrawer title="导航与历史会话" side="left" breakpoint={1024} onClose={() => setIsMobileSidebarOpen(false)}>
+            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => { void selectSession(id); setIsMobileSidebarOpen(false); }} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
           </MobileDrawer>
         )}
 
@@ -1011,7 +1019,7 @@ export function TutorChat() {
 
         {!isZenMode && !isSidebarCollapsed && (
           <div className="group hidden shrink-0 flex-col lg:flex relative" style={{ width: sidebarWidth }}>
-            <Sidebar sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <Sidebar onOpenSearch={() => {setIsMobileSidebarOpen(false);setIsGlobalSearchOpen(true);}} onNavigate={() => setIsMobileSidebarOpen(false)} sessions={sessions} activeSessionId={sessionId} onSelect={(id) => void selectSession(id)} onRefresh={() => listSessions("demo-user", searchQuery).then(setSessions).catch(() => {})} onDeleted={handleSessionDeleted} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
             <button
               onClick={() => handleToggleSidebar(true)}
               className="absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-primary)] bg-white dark:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#617a55] hover:scale-110 transition-all shadow-sm opacity-0 group-hover:opacity-100"
@@ -1041,98 +1049,12 @@ export function TutorChat() {
           </button>
         )}
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200/80 dark:border-paper-800/80 bg-[var(--bg-card)]/80 backdrop-blur-md px-4 py-2">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-olive-500/10 text-olive-700 dark:text-olive-300">
-                <Sparkles className="size-3.5" />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-title text-xs font-semibold text-[var(--text-primary)]">学术伴读工坊</span>
-                <span className="text-[10px] text-olive-700 dark:text-olive-300 bg-olive-500/10 px-1.5 py-0.5 rounded-full font-mono border border-olive-500/20">
-                  {workspaceOpen ? ({lab: "实验联动中", reading: "文献对照中", study: "日课演练中", code: "代码审阅中"}[activeWorkspaceTab]) : "随时可开启分栏画布"}
-                </span>
-              </div>
-            </div>
-
-            {/* Center: Canvas Workspace Quick Switchers */}
-            <div className="hidden sm:flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!workspaceOpen || activeWorkspaceTab !== "lab") openWorkspace({ ref: learningContext?.ref }, "lab");
-                  else closeWorkspace();
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  workspaceOpen && activeWorkspaceTab === "lab"
-                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
-                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
-                }`}
-              >
-                <FlaskConical className="size-3" />
-                <span>数值实验</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!workspaceOpen || activeWorkspaceTab !== "reading") openWorkspace({ ref: learningContext?.ref }, "reading");
-                  else closeWorkspace();
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  workspaceOpen && activeWorkspaceTab === "reading"
-                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
-                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
-                }`}
-              >
-                <BookOpen className="size-3" />
-                <span>定理研读</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!workspaceOpen || activeWorkspaceTab !== "study") openWorkspace({ ref: learningContext?.ref }, "study");
-                  else closeWorkspace();
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  workspaceOpen && activeWorkspaceTab === "study"
-                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
-                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
-                }`}
-              >
-                <CalendarCheck2 className="size-3" />
-                <span>今日日课</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!workspaceOpen || activeWorkspaceTab !== "code") openWorkspace({ ref: learningContext?.ref }, "code");
-                  else closeWorkspace();
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  workspaceOpen && activeWorkspaceTab === "code"
-                    ? "bg-olive-600 text-white shadow-2xs font-semibold"
-                    : "text-[var(--text-secondary)] hover:bg-paper-200/50 dark:hover:bg-paper-800/50"
-                }`}
-              >
-                <Code2 className="size-3" />
-                <span>算法工坊</span>
-              </button>
-            </div>
-
-            {/* Right: Quick Toggle Button */}
-            <button
-              type="button"
-              onClick={() => (workspaceOpen ? closeWorkspace() : openWorkspace({ ref: learningContext?.ref }, activeWorkspaceTab))}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-olive-700 hover:bg-olive-500/10 dark:text-olive-300 border border-olive-500/20 transition-colors"
-            >
-              <Target aria-hidden="true" className="size-3.5" />
-              <span>{workspaceOpen ? "收起工坊画布" : "展开工坊画布"}</span>
-            </button>
-          </div>
-          {(learningContext || contextError || contextLoading) && <div className="mx-auto w-full max-w-4xl px-4 pt-4">
-            {learningContext && <ContextBanner snapshot={learningContext} disabled={isStreaming} onRemove={() => {void validateAndBindReference(null);}}/>}
-            {contextLoading && <p role="status" className="p-3">正在核对实验引用…</p>}
+          {!isZenMode&&<>
+          <div className="shrink-0 px-4">
+            {learningContext && <ContextBanner compact snapshot={learningContext} disabled={isStreaming} onRemove={() => {void validateAndBindReference(null);}}/>}
+            {contextLoading && <p role="status" className="p-3">正在核对当前来源…</p>}
             {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {void validateAndBindReference(null);}}>移除失效引用，继续普通聊天</button></div>}
-          </div>}
+          </div></>}
           <div
             className={`flex-1 overflow-y-auto ${isZenMode ? "scrollbar-hide" : ""}`}
             ref={scrollContainerRef}
@@ -1152,7 +1074,7 @@ export function TutorChat() {
               {(() => {
                 const lastAssistantIdx = messages.reduce((acc, m, i) =>
                   m.role === "assistant" && m.status !== "thinking" ? i : acc, -1);
-                return messages.map((message, idx) => (
+                return messages.map((message, idx) => message.id==="welcome"?null:(
                   <MathMessage
                     onOpenWorkspace={openWorkspace} onLabSaved={run=>void selectWorkspaceReference(rootContextRef(run))}
                     learningMeta={message.learningMeta} messageId={message.id} learningContext={learningContext?.ref} actionsDisabled={isStreaming || contextLoading || !!contextError}
@@ -1218,10 +1140,10 @@ export function TutorChat() {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(learningContext&&learningContext.ref.kind!=="root_lab"?[{category:"当前引用",icon:"↗",title:"解释当前来源",desc:"区分原文、条件与推断",prompt:"请只依据本轮引用解释必要条件与不能确定的结论。"}]:learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:[{category:"今日学习",icon:"✓",title:"查看今日任务",desc:"读取已有计划，不自动创建",prompt:"今天学什么"},...PROMPT_SUGGESTIONS]).map((item, pIdx) => (
+                    {(learningContext&&learningContext.ref.kind!=="root_lab"?[{category:"当前引用",icon:"↗",title:"解释当前来源",desc:"区分原文、条件与推断",prompt:"请只依据本轮引用解释必要条件与不能确定的结论。"}]:learningContext?[{category:"当前实验",icon:"xₖ",title:"解释迭代现象",desc:"从已保存的真实轨迹出发",prompt:"请解释这次实验的迭代现象，说明相关条件与局限。"},{category:"当前实验",icon:"x₀",title:"换一个初值",desc:"编辑参数后亲自预览",prompt:"我想改变初值做对照。请解释应该观察什么，然后让我调整参数预览。"}]:PROMPT_SUGGESTIONS).map((item, pIdx) => (
                       <button
                         key={pIdx}
-                        onClick={() => void submit(item.prompt)}
+                        onClick={() => setInputValue(item.prompt)}
                         className="group text-left p-3.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] hover:border-olive-500/40 hover:bg-olive-500/[0.03] transition-all duration-200 shadow-xs hover:shadow-card flex flex-col justify-between cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1282,11 +1204,14 @@ export function TutorChat() {
               </div>
             )}
             <div className="mx-auto max-w-4xl px-4 flex flex-wrap gap-2 items-center">
-              <button type="button" disabled={isStreaming} className="text-xs rounded border px-3 py-2" onClick={() => {setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}}>求根过程验证</button>
+
               {rootError && <span role="alert" className="text-xs text-cinnabar-600">{rootError}</span>}
             </div>
             {rootForm && <RootAttemptForm key={`${rootDraft?.episode_id || "new"}-${rootDraft?.attempt_id || "first"}`} initial={rootDraft} instruction={rootInstruction} disabled={isStreaming} onClose={()=>setRootForm(false)} onSubmit={submission => {setRootForm(false);void submit(`求根过程：${submission.attempt.function}\n\n\`\`\`root-attempt\n${JSON.stringify(submission, null, 2)}\n\`\`\``, mode, false, undefined, submission);}}/>}
+            {!isZenMode&&<ChatWorkspaceBar open={workspaceOpen} tab={activeWorkspaceTab} hasReference={!!learningContext} disabled={isStreaming||contextLoading}
+            onRootCheck={()=>{setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}} onOpen={tab=>openWorkspace({},tab)} onClose={closeWorkspace} onPlain={()=>{void validateAndBindReference(null).then(result=>{if(result.ok){closeWorkspace();setIsLearningCollapsed(true);}});}}/>}
             <TutorInput
+              placeholder={learningContext?"围绕当前引用提问，也可以先移除引用再自由讨论。":"说说你的问题、想法，或贴一段推导…"}
               value={inputValue}
               onChange={setInputValue}
               disabled={isStreaming || contextLoading || !!contextError}
@@ -1320,6 +1245,8 @@ export function TutorChat() {
             style={{ width: isWorkspaceMaximized ? "85%" : `${workspaceWidth}px` }}
           >
             <CanvasWorkspace
+              key={getCurrentUserId()}
+              disabled={isStreaming||contextLoading}
               activeTab={activeWorkspaceTab}
               onTabChange={switchWorkspaceTab}
               onClose={closeWorkspace}
@@ -1343,7 +1270,7 @@ export function TutorChat() {
               onDiscussReading={async (ref, prompt) => {
                 const res = await validateAndBindReference(ref);
                 if (!res.ok) return;
-                void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                if(prompt)setInputValue(current=>current.trim()?`${current}\n\n${prompt}`:prompt);
               }}
               onDiscussStudy={async (prompt, taskRef) => {
                 const res = await validateAndBindReference(taskRef || null);
@@ -1356,14 +1283,16 @@ export function TutorChat() {
         {workspaceOpen && !desktopWorkspace && !isZenMode && (
           <div className="xl:hidden">
             <MobileDrawer
-              title={`学术工坊 · ${{lab: "数值实验台", reading: "经典研读录", study: "今日日课案", code: "算法工坊案"}[activeWorkspaceTab]}`}
+              title={`学习工作区 · ${{lab: "数学实验", reading: "材料伴读", study: "学习任务", code: "代码静态审阅"}[activeWorkspaceTab]}`}
               side="right"
               breakpoint={1280}
               onClose={closeWorkspace}
             >
               <div className="h-full overflow-y-auto">
                 <CanvasWorkspace
-                  activeTab={activeWorkspaceTab}
+              key={getCurrentUserId()}
+                  disabled={isStreaming||contextLoading}
+              activeTab={activeWorkspaceTab}
                   onTabChange={switchWorkspaceTab}
                   onClose={closeWorkspace}
                   isMaximized={false}
@@ -1381,7 +1310,7 @@ export function TutorChat() {
                     closeWorkspace();
                     const res = await validateAndBindReference(ref);
                     if (!res.ok) return;
-                    void submit(prompt, "socratic", false, undefined, undefined, undefined, res.snapshot);
+                    if(prompt)setInputValue(current=>current.trim()?`${current}\n\n${prompt}`:prompt);
                   }}
                   onDiscussStudy={async (prompt, taskRef) => {
                     closeWorkspace();

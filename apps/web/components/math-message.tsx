@@ -481,6 +481,7 @@ export function MathMessage({
             <span>本轮引用 · {referenceDescription(learningMeta.learning_context)}</span>
             <Link href={referenceHref(learningMeta.learning_context)} className="underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600">回看原始来源</Link>
           </p>}
+            {!isUser && learningMeta?.learning_context && "citation" in learningMeta.learning_context && <details className="mb-4 rounded-lg border border-[var(--border-primary)] px-3 text-sm"><summary className="min-h-11 cursor-pointer py-3 text-dai-700 dark:text-dai-300">回看这条回答实际引用的原文</summary><blockquote className="mb-3 max-h-60 overflow-auto whitespace-pre-wrap break-words border-l-2 border-dai-500 pl-3 leading-7">{learningMeta.learning_context.citation.quote}</blockquote><p className="mb-3 text-xs text-[var(--text-muted)]">此选段随本轮消息保存，当前材料的切换不会改写它。</p></details>}
 
           {!isUser && learningMeta?.study_summary && <StudyResumeCard summary={learningMeta.study_summary}/>}
 

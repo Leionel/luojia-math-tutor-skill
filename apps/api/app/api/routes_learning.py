@@ -293,6 +293,26 @@ def documents(principal: Principal = Depends(get_principal)):
     return {"documents": workspace().repository.list_documents(principal.user_id)}
 
 
+class TextMaterialRequest(Body):
+    title: str = Field(min_length=1, max_length=120)
+    text: str = Field(min_length=1, max_length=20000)
+
+
+@router.post("/reading/documents", status_code=201)
+def text_material(body: TextMaterialRequest, principal: Principal = Depends(get_principal)):
+    """Persist original text through the existing owner-scoped document store."""
+    if not principal.authenticated:
+        raise HTTPException(401, "请先登录，再保存自己的材料。")
+    title = body.title.strip().replace("\\", "/").rsplit("/", 1)[-1]
+    if not title or not body.text.strip() or "\x00" in body.text or "\x00" in title:
+        raise HTTPException(422, "材料名称和正文不能为空，也不能包含空字符。")
+    service = workspace()
+    service.repository.ensure_user(principal.user_id)
+    # Each save is a new immutable source, so earlier message references stay valid.
+    document_id = service.repository.insert_document(title, principal.user_id, body.text)
+    return invoke(lambda: service.document(principal.user_id, document_id))
+
+
 @router.post("/root-lab/runs")
 def lab(body: LabRequest, principal: Principal = Depends(get_principal)):
     service = workspace()

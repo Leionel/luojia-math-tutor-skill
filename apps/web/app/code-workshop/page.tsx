@@ -17,7 +17,7 @@ export default function CodeWorkshopPage() {
 
   return (
     <LearningShell
-      title="算法工坊 · 静态代码审阅"
+      title="代码静态审阅 · 过程与依据"
       description="Newton 法等经典作业的代码规范核对与数值轨迹诊断。学生代码安全隔离不予执行，呈现严密数学依据。"
     >
       <Suspense fallback={<div className="p-12 text-center text-xs text-[var(--text-muted)]">正在加载算法工坊…</div>}>

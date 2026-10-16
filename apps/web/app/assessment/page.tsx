@@ -78,7 +78,7 @@ export default function AssessmentPage() {
 
   return (
     <LearningShell
-      title="认知自检 · 概念试金石"
+      title="章节自检 · 回看理解"
       description="非线性方程求根辨析试题，全面覆盖适用条件、单步更新与停止依据。支持三层剥茧式解析与弱项定向复盘。"
     >
       <Notice error={error} />

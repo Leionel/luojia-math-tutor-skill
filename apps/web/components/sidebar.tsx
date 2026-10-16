@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import {SidebarNavigation,SidebarAccount} from "./learning/sidebar-navigation";
 import type { Session } from "@/lib/api";
-import { Edit2, Trash2, Check, X, User, Search } from "lucide-react";
+import { Edit2, Trash2, Check, X, Search } from "lucide-react";
 import { deleteSession, renameSession } from "@/lib/api";
 import {
   nextVisibleSessionCount,
@@ -19,7 +19,8 @@ export function Sidebar({
   onDeleted,
   searchQuery,
   onSearchChange,
-  onModeSelect,
+  onOpenSearch,
+  onNavigate,
 }: {
   sessions: Session[];
   activeSessionId: string | null;
@@ -28,7 +29,8 @@ export function Sidebar({
   onDeleted?: (deletedId: string) => void;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
-  onModeSelect?: (modeId: string) => void;
+  onOpenSearch: () => void;
+  onNavigate?: () => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -85,14 +87,12 @@ export function Sidebar({
 
   const content = (
     <div className="flex flex-col h-full relative">
-      {/* Top decorative ink drop / gradient */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#617a55]/10 to-transparent pointer-events-none -mt-5 -mx-5" />
-
-      {/* Section: Sessions */}
-      <Link href="/admin/knowledge" className="relative mb-4 inline-flex min-h-12 items-center gap-2 rounded-xl border border-dai-600/25 px-3 text-sm font-medium text-dai-700 hover:bg-dai-500/10 dark:text-dai-300">教师审核</Link>
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <SidebarNavigation onOpenSearch={onOpenSearch} onNavigate={onNavigate}/>
+      <div role="separator" className="my-4 border-t border-[var(--border-primary)]"/>
       <div className="mb-4 flex items-center gap-3">
         <div className="h-px bg-[var(--border-subtle)] flex-1"></div>
-        <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-[var(--text-muted)] font-body">最近会话 Sessions</div>
+        <div className="text-[10px] font-bold tracking-wide text-[var(--text-muted)] font-body">最近会话</div>
         <div className="h-px bg-[var(--border-subtle)] flex-1"></div>
       </div>
       
@@ -141,7 +141,7 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="space-y-2 font-body flex-1 overflow-y-auto pr-1">
+      <div className="space-y-2 font-body">
         {visibleSessions.map((session) => (
           <div
             key={session.id}
@@ -215,12 +215,14 @@ export function Sidebar({
           </button>
         )}
       </div>
+      </div>
+      <SidebarAccount/>
     </div>
   );
 
   return (
     <>
-      <aside className="h-full w-full min-h-0 overflow-y-auto border-r border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-5">
+      <aside className="h-full w-full min-h-0 overflow-hidden border-r border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-3">
         {content}
       </aside>
 

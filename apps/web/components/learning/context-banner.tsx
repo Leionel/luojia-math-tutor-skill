@@ -3,9 +3,10 @@ import Link from "next/link";
 import {BookOpen, X} from "lucide-react";
 import {referenceDescription,referenceHref,type LearningTaskSnapshot} from "@/lib/learning-context";
 
-export function ContextBanner({snapshot, onRemove, disabled=false}: {
-  snapshot: LearningTaskSnapshot; onRemove?: () => void; disabled?: boolean;
+export function ContextBanner({snapshot, onRemove, disabled=false, compact=false}: {
+  snapshot: LearningTaskSnapshot; onRemove?: () => void; disabled?: boolean; compact?: boolean;
 }) {
+  if(compact)return <div className="my-2 flex min-w-0 items-start gap-2 rounded-xl border border-dai-600/20 bg-dai-500/5 px-3"><details className="min-w-0 flex-1"><summary className="min-h-11 cursor-pointer break-words py-3 text-sm text-dai-800 dark:text-dai-200">正在讨论 · {snapshot.title} <span className="text-xs">（查看选段与来源）</span></summary><div className="max-h-[45dvh] overflow-auto pb-3"><ContextBanner snapshot={snapshot}/></div></details>{onRemove&&<button type="button" disabled={disabled} onClick={onRemove} aria-label="移除当前引用" className="flex size-11 shrink-0 items-center justify-center disabled:opacity-50"><X className="size-4"/></button>}</div>;
   const reading = snapshot.ref.kind === "reading" && "citation" in snapshot ? (snapshot as import("@/lib/learning-context").ReadingSnapshot) : null;
 
   return <div className="flex min-w-0 items-start gap-3 rounded-xl atelier-hairline border border-olive-500/20 bg-[var(--atelier-surface-1)]/70 p-4 text-[var(--text-primary)]">

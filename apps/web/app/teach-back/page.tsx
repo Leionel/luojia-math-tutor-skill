@@ -91,7 +91,7 @@ export default function TeachBackPage() {
 
   return (
     <LearningShell
-      title="费曼讲坛 · 概念内化"
+      title="讲给助教听 · 检查自己的解释"
       description="用你自己的数学直觉与推导逻辑，向小珞讲清公式为什么可用、何时失效。将你的论述原句与核心定理条件一一锚定。"
     >
       <Notice error={error} />

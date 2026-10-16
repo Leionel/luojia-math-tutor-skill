@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { LabWorkspace } from "./lab-workspace";
-import { ReadingDomainView } from "./reading-domain-view";
+import { MaterialWorkspace } from "./material-workspace";
 import { StudyDomainView } from "./study-domain-view";
 import { CodeDomainView } from "./code-domain-view";
 import type { RootContextRef, ReadingContextRef, LearningContextRef, CodeContextRef } from "@/lib/learning-context";
@@ -23,6 +23,7 @@ export type WorkspaceTab = "lab" | "reading" | "study" | "code";
 
 export interface CanvasWorkspaceProps {
   activeTab: WorkspaceTab;
+  disabled?: boolean;
   onTabChange: (tab: WorkspaceTab) => void;
   onClose: () => void;
   isMaximized: boolean;
@@ -42,6 +43,7 @@ export interface CanvasWorkspaceProps {
 
 export function CanvasWorkspace({
   activeTab,
+  disabled=false,
   onTabChange,
   onClose,
   isMaximized,
@@ -74,7 +76,7 @@ export function CanvasWorkspace({
             }`}
           >
             <FlaskConical className="w-3.5 h-3.5 text-olive-600" />
-            <span>数值实验台</span>
+            <span>数学实验</span>
           </button>
 
           <button
@@ -87,7 +89,7 @@ export function CanvasWorkspace({
             }`}
           >
             <BookOpen className="w-3.5 h-3.5 text-olive-600" />
-            <span>经典研读录</span>
+            <span>材料伴读</span>
           </button>
 
           <button
@@ -100,7 +102,7 @@ export function CanvasWorkspace({
             }`}
           >
             <CalendarCheck2 className="w-3.5 h-3.5 text-olive-600" />
-            <span>今日日课案</span>
+            <span>学习任务</span>
           </button>
 
           <button
@@ -113,7 +115,7 @@ export function CanvasWorkspace({
             }`}
           >
             <Code2 className="w-3.5 h-3.5 text-olive-600" />
-            <span>算法工坊案</span>
+            <span>代码静态审阅</span>
           </button>
         </div>
 
@@ -178,8 +180,8 @@ export function CanvasWorkspace({
         </div>
 
         <div className={activeTab === "reading" ? "h-full" : "hidden"}>
-          <ReadingDomainView
-            mode="canvas"
+          <MaterialWorkspace
+            disabled={disabled}
             initialReference={readingRef}
             onDiscuss={(ref, prompt) => {
               if (onDiscussReading) {
