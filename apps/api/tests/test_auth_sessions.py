@@ -95,8 +95,8 @@ def test_invalid_or_unbacked_session_cannot_authorize(auth,case):
 
 def test_role_is_resolved_from_current_server_configuration(auth):
     client,_,settings=auth
-    settings.teacher_user_ids='alice'
     token=register(client)
+    settings.teacher_user_ids='alice'
     assert client.get('/teacher',headers=headers(token)).status_code==200
     settings.teacher_user_ids=''
     assert client.get('/teacher',headers=headers(token)).status_code==403
@@ -141,3 +141,18 @@ def test_failed_auth_migration_rolls_back_without_deleting_old_accounts(auth,mon
         assert conn.execute("select password_hash from users where id='alice'").fetchone()[0]==pw
         assert conn.execute("select count(*) from sqlite_master where name='auth_sessions'").fetchone()[0]==0
         assert conn.execute('pragma integrity_check').fetchone()[0]=='ok'
+
+
+def test_reserved_staff_names_cannot_self_register(auth):
+    client,repo,settings=auth
+    settings.teacher_user_ids='reserved-teacher'
+    response=client.post('/api/auth/register',json={'user_id':'reserved-teacher','password':'synthetic-passphrase-123'})
+    assert response.status_code==403
+    assert repo.get_auth_user('reserved-teacher') is None
+    # Provisioned accounts still authenticate; no automatic role demotion.
+    from app.auth import hash_password
+    password_hash,salt=hash_password('synthetic-passphrase-123')
+    assert repo.create_auth_user('reserved-teacher','Offline staff',password_hash,salt)
+    login=client.post('/api/auth/login',json={'user_id':'reserved-teacher','password':'synthetic-passphrase-123'})
+    assert login.status_code==200
+    assert client.get('/teacher',headers=headers(login.json()['access_token'])).status_code==200

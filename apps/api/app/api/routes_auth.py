@@ -46,6 +46,9 @@ def register(
     repo: Repository = Depends(get_repository),
     settings: Settings = Depends(get_app_settings),
 ):
+    # A public registration must never turn an unclaimed staff name into a role.
+    if payload.user_id in settings.teacher_ids:
+        raise HTTPException(403, "此账号名称由教师管理员保留，请联系管理员开通。")
     response,sid,expires_at=_prepare_session(payload.user_id,settings)
     password_hash,salt=hash_password(payload.password)
     created=repo.create_auth_user_with_session(payload.user_id,payload.display_name or payload.user_id,password_hash,salt,sid,expires_at)

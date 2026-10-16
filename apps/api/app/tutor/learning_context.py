@@ -339,6 +339,13 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
             "error_bound":checked['error_bound'],"error_bound_includes_roundoff":False,
             "unknown_reason":None if recalculated['condition_sufficient'] else
                 "未证严格行对角占优；不能仅凭这条充分条件判断收敛，也不能从残差直接推出同数值的解误差。"}
+        if run.get("exploration_id"):
+            # Recompute the matrix-specific rule; saved labels are not authority.
+            from app.tutor.explorations import GS, matrix_evidence
+            evidence=matrix_evidence(GS.model_validate(task.model_dump()))
+            if run.get("matrix_evidence")!=evidence:
+                raise ValueError("探索矩阵证据与参数不一致，请重新运行。")
+            linear_check["matrix_specific"]=evidence
         return _bounded({**common,"title":"线性方程组参考实验","task":task.model_dump(),
             "rows":[{k:row[k] for k in ('k','vector','residual','step','error_bound','work')} for i,row in enumerate(rows) if i in selected],
             "conditions":conditions,"evidence_scope":scope,"stop_detail":stop,"linear_check":linear_check,

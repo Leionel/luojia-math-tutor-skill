@@ -10,7 +10,7 @@ import {clearAuthSession,signOutCurrentSession} from "@/lib/demo-auth";
 const row="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-olive-600";
 export function SidebarNavigation({onOpenSearch,onNavigate}: {onOpenSearch:()=>void;onNavigate?:()=>void}) {
   const pathname=usePathname();
-  const items=[{href:"/study",label:"今日学习",icon:CalendarCheck2},{href:"/assessment",label:"章节自检",icon:CheckCircle2},{href:"/teach-back",label:"讲给助教听",icon:MessageCircle},{href:"/code-workshop",label:"代码静态审阅",icon:Code2},{href:"/graph",label:"知识网络",icon:Network},{href:"/notebook",label:"笔记本",icon:NotebookPen},{href:"/mistake-book",label:"错题本",icon:BookOpen},{href:"/admin/knowledge",label:"教师审核",icon:BookmarkCheck}];
+  const items=[{href:"/explore",label:"数学探索",icon:Network},{href:"/study",label:"今日学习",icon:CalendarCheck2},{href:"/assessment",label:"章节自检",icon:CheckCircle2},{href:"/teach-back",label:"讲给助教听",icon:MessageCircle},{href:"/code-workshop",label:"代码静态审阅",icon:Code2},{href:"/graph",label:"知识网络",icon:Network},{href:"/notebook",label:"笔记本",icon:NotebookPen},{href:"/mistake-book",label:"错题本",icon:BookOpen},{href:"/admin/knowledge",label:"教师审核",icon:BookmarkCheck}];
   return <div onClick={event=>{if((event.target as HTMLElement).closest("a"))onNavigate?.();}}>
     <LearningNavigation/>
     <div role="separator" className="my-4 border-t border-[var(--border-primary)]"/>

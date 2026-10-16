@@ -91,3 +91,6 @@ app.include_router(search_router)
 app.include_router(root_diagnostics_router)
 app.include_router(learning_router)
 app.include_router(numerical_lab_router)
+
+from app.api.routes_explorations import router as explorations_router
+app.include_router(explorations_router)

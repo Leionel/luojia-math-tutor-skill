@@ -161,6 +161,19 @@ class Repository(AgentRunRepository):
             )
         return {"session_id": session_id, "title": title, "subject": subject, "document_id": document_id}
 
+    def sessions_for_run_refs(self, owner: str, run_ids: list[str]) -> list[dict[str, Any]]:
+        """Resolve saved message references without copying chat content into tasks."""
+        if not run_ids:
+            return []
+        placeholders = ",".join("?" for _ in run_ids)
+        with self.connect() as conn:
+            rows = conn.execute(f"""select distinct s.id, s.title, s.updated_at
+                from sessions s join messages m on m.session_id=s.id
+                where s.user_id=? and json_valid(m.learning_meta)
+                  and json_extract(m.learning_meta, '$.learning_context.ref.record_id') in ({placeholders})
+                order by s.updated_at desc limit 100""", (owner, *run_ids)).fetchall()
+        return [dict(row) for row in rows]
+
     def list_sessions(self, user_id: str, query: str | None = None) -> list[dict[str, Any]]:
         with self.connect() as conn:
             if query:

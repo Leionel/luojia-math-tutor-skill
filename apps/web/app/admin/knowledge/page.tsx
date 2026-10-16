@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LatexRenderer } from "@/components/latex-renderer";
 import { Textarea } from "@/components/ui/textarea";
 import { MathView, MathMarkdown } from "@/components/math-view";
-import { getAuthHeaders } from "@/lib/demo-auth";
+import { getAuthHeaders, isAuthStorageKey } from "@/lib/demo-auth";
 import {
   generateCandidatesFromDocument,
   listUploadedDocuments,
@@ -121,146 +121,9 @@ const RELATION_LABELS: Record<string, string> = {
 const relationLabel = (relationType?: string): string =>
   (relationType && RELATION_LABELS[relationType]) || relationType || "未指定关系";
 
-// Fallback initial candidates if backend server is not running or returns empty
-const FALLBACK_CANDIDATES: GraphCandidate[] = [
-  {
-    candidate_id: "CAND_SECANT_METHOD",
-    candidate_type: "new_unit",
-    course_id: "numerical_analysis",
-    payload: {
-      id: "NA_SECANT",
-      title: "割线法 / 弦截法 (Secant Method)",
-      type: "algorithm",
-      content:
-        "用相邻两点的割线斜率代替切线导数 $f'(x_k)$，避免解析求导。其渐进收敛阶为黄金分割比 $p = \\frac{1+\\sqrt{5}}{2} \\approx 1.618$，属于超线性收敛。每次迭代只需计算一次新函数值。",
-      latex: "x_{k+1} = x_k - f(x_k) \\frac{x_k - x_{k-1}}{f(x_k) - f(x_{k-1})}",
-      keywords: ["割线法", "弦截法", "Secant", "超线性收敛", "避免导数"],
-      difficulty: 3,
-      scope_level: "core",
-      teaching_role: "core"
-    },
-    proposed_by: "student_query_cluster",
-    support_count: 14,
-    evidence_refs: ["query_cluster_202609_01", "student_dialogue_#849", "exam_review_2025"],
-    status: "pending",
-    first_seen: "2026-09-15T09:30:00Z",
-    last_seen: "2026-09-17T08:12:00Z"
-  },
-  {
-    candidate_id: "CAND_NEWTON_MODIFIED",
-    candidate_type: "new_unit",
-    course_id: "numerical_analysis",
-    payload: {
-      id: "NA_SIMPLIFIED_NEWTON",
-      title: "简化牛顿法 / 平行弦法 (Modified Newton Method)",
-      type: "algorithm",
-      content:
-        "在迭代全过程中固定使用初始导数值 $f'(x_0)$ 代替每次更新的 $f'(x_k)$。几何意义为用斜率固定的平行切线逼近根。每步迭代只需计算函数值，极大减少了导数计算开销，但收敛速度降为局部线性收敛。",
-      latex: "x_{k+1} = x_k - \\frac{f(x_k)}{f'(x_0)}",
-      keywords: ["简化牛顿法", "平行弦法", "固定斜率", "线性收敛"],
-      difficulty: 3,
-      scope_level: "core",
-      teaching_role: "extension"
-    },
-    proposed_by: "teacher",
-    support_count: 5,
-    evidence_refs: ["textbook_ch2_sec3", "assignment_hw3_p2"],
-    status: "pending",
-    first_seen: "2026-09-16T14:10:00Z",
-    last_seen: "2026-09-17T06:00:00Z"
-  },
-  {
-    candidate_id: "CAND_ALIAS_TANGENT_METHOD",
-    candidate_type: "new_alias",
-    course_id: "numerical_analysis",
-    payload: {
-      target_id: "NA_NEWTON",
-      alias: "切线法",
-      note: "多位学生在提问中将牛顿迭代法直接称为“切线法”，建议合并为 NA_NEWTON 规范别名以提升匹配召回率。"
-    },
-    proposed_by: "student_query_cluster",
-    support_count: 28,
-    evidence_refs: ["query_cluster_202609_02", "dialogue_#1022", "dialogue_#1104"],
-    status: "pending",
-    first_seen: "2026-09-14T11:00:00Z",
-    last_seen: "2026-09-17T07:45:00Z"
-  },
-  {
-    candidate_id: "CAND_CASE_INITIAL_DIVERGENCE",
-    candidate_type: "new_case",
-    course_id: "numerical_analysis",
-    payload: {
-      case_id: "CASE_NEWTON_OSCILLATION_CYCLE",
-      course_id: "numerical_analysis",
-      title: "牛顿法初值选取导致的周期振荡案例",
-      task_type: "debug_task",
-      learning_objectives: [
-        "引导学生诊断牛顿法在特定非凸多项式（如 $f(x)=x^3-x-3$）初值不当导致在局部极值两侧周期振荡的原因",
-        "掌握二分法与牛顿法混合初值估计策略"
-      ],
-      concept_ids: ["NA_NEWTON", "NA_LOCAL_CONVERGENCE", "NA_STOPPING_CRITERIA"],
-      required_condition_ids: ["initial_guess_in_convergence_ball", "cycle_detection"],
-      reasoning_signature: [
-        "检查导数是否过小 ($f'(x_k) \\approx 0$)",
-        "检测序列是否在两点间循环振荡",
-        "建议先使用二分法迭代数次获取收敛球内初值"
-      ],
-      accepted_variants: [
-        "为什么牛顿法算出来一直在几个数之间跳",
-        "牛顿迭代法死循环怎么排查",
-        "初值怎么选才能保证牛顿法收敛"
-      ],
-      disclosure_policy: "scaffolded"
-    },
-    proposed_by: "teacher",
-    support_count: 8,
-    evidence_refs: ["office_hour_case_2026", "midterm_common_mistake"],
-    status: "pending",
-    first_seen: "2026-09-16T16:00:00Z",
-    last_seen: "2026-09-17T08:00:00Z"
-  },
-  {
-    candidate_id: "CAND_AITKEN_ACCELERATION",
-    candidate_type: "new_unit",
-    course_id: "numerical_analysis",
-    payload: {
-      id: "NA_AITKEN_ACCELERATION",
-      title: "埃特金加速法 (Aitken Acceleration)",
-      type: "algorithm",
-      content:
-        "通过利用三个连续迭代值的外推，消除线性收敛序列的主误差项，将线性收敛序列加速为更高阶收敛序列。",
-      latex: "\\bar{x}_k = x_k - \\frac{(x_{k+1} - x_k)^2}{x_{k+2} - 2x_{k+1} + x_k}",
-      difficulty: 4,
-      scope_level: "extension"
-    },
-    proposed_by: "teacher",
-    support_count: 3,
-    evidence_refs: ["syllabus_expansion"],
-    status: "approved",
-    reviewer_id: "prof_luojia",
-    review_note: "已批准纳入本课程扩展知识元，供进阶学员探索。",
-    first_seen: "2026-09-12T10:00:00Z",
-    last_seen: "2026-09-13T15:20:00Z"
-  }
-];
-
-// Available canonical units in Course Graph for merge targets
-const CANONICAL_UNITS = [
-  { id: "NA_ROOT_FINDING", title: "非线性方程求根问题" },
-  { id: "NA_BISECTION", title: "二分法 (Bisection Method)" },
-  { id: "NA_FIXED_POINT", title: "不动点迭代法 (Fixed-Point Iteration)" },
-  { id: "NA_NEWTON", title: "牛顿迭代法 (Newton-Raphson Method)" },
-  { id: "NA_LOCAL_CONVERGENCE", title: "局部收敛性 (Local Convergence)" },
-  { id: "NA_CONVERGENCE_ORDER", title: "收敛阶 (Order of Convergence)" },
-  { id: "NA_STOPPING_CRITERIA", title: "停机准则 (Stopping Criteria)" },
-  { id: "NA_TAYLOR_EXPANSION", title: "泰勒局部线性化" },
-  { id: "NA_RESIDUAL", title: "残差估计" }
-];
-
-// ==========================================
-// Candidate Review View Component
-// ==========================================
+// Candidate state comes only from persisted server responses.
 function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: string }) {
+  const [canonicalUnits,setCanonicalUnits]=useState<{id:string;title:string}[]>([]);
   const [candidates, setCandidates] = useState<GraphCandidate[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("pending");
@@ -294,47 +157,36 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
     evidence_ref: ""
   });
 
-  const fetchCandidates = async () => {
+  const fetchCandidates = useCallback(async () => {
     try {
       setLoading(true);
       const url = `${API_BASE}/api/courses/${courseId}/candidates${
         statusFilter !== "all" ? `?status=${statusFilter}` : ""
       }`;
       const res = await fetch(url, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.candidates && data.candidates.length > 0) {
-          setCandidates(data.candidates);
-          if (!selectedId && data.candidates.length > 0) {
-            setSelectedId(data.candidates[0].candidate_id);
-          }
-          return;
-        }
-      }
-      // If server empty or fails, use fallback seed data
-      setCandidates(FALLBACK_CANDIDATES);
-      if (!selectedId && FALLBACK_CANDIDATES.length > 0) {
-        setSelectedId(FALLBACK_CANDIDATES[0].candidate_id);
-      }
-    } catch {
-      setCandidates(FALLBACK_CANDIDATES);
-      if (!selectedId && FALLBACK_CANDIDATES.length > 0) {
-        setSelectedId(FALLBACK_CANDIDATES[0].candidate_id);
-      }
+      if(!res.ok)throw Error(`候选读取失败（HTTP ${res.status}），未使用演示条目替代。`);
+      const data=await res.json();
+      if(!Array.isArray(data.candidates))throw Error("候选回执格式不可确认。");
+      setCandidates(data.candidates);
+      setSelectedId(current=>data.candidates.some((c:GraphCandidate)=>c.candidate_id===current)?current:data.candidates[0]?.candidate_id??null);
+    } catch(error) {
+      setCandidates([]);setSelectedId(null);
+      setActionFeedback({type:"error",text:`候选读取失败：${error instanceof Error?error.message:"请重试。"}`});
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, statusFilter]);
 
   useEffect(() => {
     fetchCandidates();
+    fetch(`${API_BASE}/api/courses/${courseId}/graph?format=raw`,{headers:getAuthHeaders()}).then(async response=>{if(!response.ok)throw Error("课程节点不可读取，无法选择合并目标。");const data=await response.json();setCanonicalUnits(data.units||[]);}).catch(()=>setCanonicalUnits([]));
     listUploadedDocuments()
       .then((docs) => {
         setDocuments(docs);
         if (docs.length > 0) setSelectedDocumentId((current) => current || docs[0].id);
       })
       .catch(() => setDocuments([]));
-  }, [courseId, statusFilter]);
+  }, [courseId, statusFilter, fetchCandidates]);
 
   const handleGenerateFromDocument = async () => {
     if (!selectedDocumentId) return;
@@ -379,53 +231,15 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
         body: JSON.stringify(payload)
       });
 
-      // Update local state regardless of whether backend is connected
-      const newStatus: CandidateStatus =
-        action === "approve" ? "approved" : action === "merge" ? "merged" : action === "reject" ? "rejected" : "deferred";
-
-      setCandidates((prev) =>
-        prev.map((c) =>
-          c.candidate_id === selectedCandidate.candidate_id
-            ? {
-                ...c,
-                status: newStatus,
-                reviewer_id: "teacher_admin",
-                review_note: payload.review_note,
-                last_seen: new Date().toISOString()
-              }
-            : c
-        )
-      );
-
-      setActionFeedback({
-        type: "success",
-        text:
-          action === "approve"
-            ? "已成功批准入图！知识元与教学决策已写入规范图谱。"
-            : action === "merge"
-            ? `已成功合并至概念 ${payload.merge_target_id}！`
-            : "已驳回候选条目。"
-      });
+      if(!res.ok)throw Error(`审核未确认（HTTP ${res.status}），候选状态未修改。`);
+      const receipt=await res.json();
+      if(!receipt||receipt.status!=="success"||receipt.candidate?.candidate_id!==selectedCandidate.candidate_id||!receipt.revision_id)throw Error("审核回执不完整，尚未确认结果，请刷新核对。");
+      await fetchCandidates();
+      setActionFeedback({type:"success",text:"服务端已保存审核回执；以刷新后的课程版本和候选状态为准。"});
       setIsMergeModalOpen(false);
       setReviewNote("");
     } catch (err: any) {
-      // Optimistic local update
-      const newStatus: CandidateStatus =
-        action === "approve" ? "approved" : action === "merge" ? "merged" : action === "reject" ? "rejected" : "deferred";
-
-      setCandidates((prev) =>
-        prev.map((c) =>
-          c.candidate_id === selectedCandidate.candidate_id
-            ? { ...c, status: newStatus, review_note: payload.review_note }
-            : c
-        )
-      );
-      setActionFeedback({
-        type: "success",
-        text: `操作已记录 (本地模式): ${action === "approve" ? "批准入图" : action === "merge" ? "已合并" : "已驳回"}`
-      });
-      setIsMergeModalOpen(false);
-      setReviewNote("");
+      setActionFeedback({type:"error",text:err instanceof Error?err.message:"审核失败，未记录成功。"});
     } finally {
       setActionLoading(false);
     }
@@ -460,7 +274,7 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
     };
 
     try {
-      await fetch(`${API_BASE}/api/courses/${courseId}/candidates`, {
+      const response=await fetch(`${API_BASE}/api/courses/${courseId}/candidates`, {
         method: "POST",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -471,13 +285,16 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
           evidence_ref: proposeForm.evidence_ref
         })
       });
-    } catch {
-      // Ignored for offline fallback
+      if(!response.ok)throw Error(`候选未保存（HTTP ${response.status}）。`);
+      const receipt=await response.json();
+      if(!receipt.candidate?.candidate_id)throw Error("未取得已保存候选回执。");
+      await fetchCandidates();
+      setSelectedId(receipt.candidate.candidate_id);
+      setIsProposeModalOpen(false);
+    } catch(error) {
+      setActionFeedback({type:"error",text:error instanceof Error?error.message:"候选提交失败。"});
+      return;
     }
-
-    setCandidates((prev) => [newCandidate, ...prev]);
-    setSelectedId(newCandidate.candidate_id);
-    setIsProposeModalOpen(false);
     setProposeForm({
       candidate_id: "",
       candidate_type: "new_unit",
@@ -600,6 +417,26 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
               <Plus className="w-3.5 h-3.5" /> 提议新候选
             </Button>
           </div>
+
+            {/* Notification Banner */}
+            {actionFeedback && (
+              <div
+                role={actionFeedback.type === "error" ? "alert" : "status"}
+                className={`p-3 text-xs flex items-center justify-between border-b ${
+                  actionFeedback.type === "success"
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300"
+                    : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300"
+                }`}
+              >
+                <span>{actionFeedback.text}</span>
+                <button
+                  onClick={() => setActionFeedback(null)}
+                  className="text-xs opacity-60 hover:opacity-100"
+                >
+                  关闭
+                </button>
+              </div>
+            )}
 
           {/* Textbook → candidates pipeline */}
           {documents.length > 0 && (
@@ -823,25 +660,6 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                 )}
               </div>
             </div>
-
-            {/* Notification Banner */}
-            {actionFeedback && (
-              <div
-                className={`p-3 text-xs flex items-center justify-between border-b ${
-                  actionFeedback.type === "success"
-                    ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300"
-                    : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300"
-                }`}
-              >
-                <span>{actionFeedback.text}</span>
-                <button
-                  onClick={() => setActionFeedback(null)}
-                  className="text-xs opacity-60 hover:opacity-100"
-                >
-                  关闭
-                </button>
-              </div>
-            )}
 
             {/* Review Note Input (if pending) */}
             {selectedCandidate.status === "pending" && (
@@ -1086,7 +904,8 @@ function GraphCandidatesView({ courseId = "numerical_analysis" }: { courseId?: s
                   value={mergeTargetId}
                   onChange={(e) => setMergeTargetId(e.target.value)}
                 >
-                  {CANONICAL_UNITS.map((u) => (
+                  <option value="">选择实际课程节点</option>
+                  {canonicalUnits.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.id} - {u.title}
                     </option>
@@ -1279,394 +1098,13 @@ type KnowledgeUnit = {
   status: string;
 };
 
-function KnowledgeReviewEditor({
-  unit,
-  onProcessed
-}: {
-  unit: KnowledgeUnit;
-  onProcessed: (id: string) => void;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(unit.content || "");
-  const [editLatex, setEditLatex] = useState(unit.latex || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const handleUpdate = async (status: string) => {
-    setIsSubmitting(true);
-    setErrorMsg(null);
-    try {
-      if (isEditing) {
-        const payload = { content: editContent, latex: editLatex };
-        const res = await fetch(`${API_BASE}/api/admin/knowledge/units/${unit.id}`, {
-          method: "PUT",
-          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error("Failed to save content edits.");
-      }
-
-      const action = status === "active" ? "approve" : "reject";
-      const resPost = await fetch(`${API_BASE}/api/admin/knowledge/review`, {
-        method: "POST",
-        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ unit_ids: [unit.id], action })
-      });
-      if (!resPost.ok) throw new Error("Failed to update status.");
-
-      onProcessed(unit.id);
-    } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || "Failed to process the unit.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate max-w-lg">
-          {unit.title}
-        </h2>
-        <div className="space-x-2 shrink-0 flex items-center">
-          {errorMsg && <span className="text-xs text-red-500 mr-2">{errorMsg}</span>}
-          {isEditing ? (
-            <Button variant="secondary" size="sm" onClick={() => setIsEditing(false)} disabled={isSubmitting}>
-              取消修改
-            </Button>
-          ) : (
-            <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)} disabled={isSubmitting}>
-              编辑内容
-            </Button>
-          )}
-          <Button variant="danger" size="sm" onClick={() => handleUpdate("rejected")} disabled={isSubmitting}>
-            {isSubmitting ? "处理中..." : "驳回"}
-          </Button>
-          <Button variant="success" size="sm" onClick={() => handleUpdate("active")} disabled={isSubmitting}>
-            {isSubmitting ? "处理中..." : "核准通过"}
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-6 pb-12">
-          {unit.source_span && (
-            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-4">
-              <h4 className="text-xs font-semibold text-amber-800 dark:text-amber-500 uppercase tracking-wider mb-2">
-                教材原书引用出处
-              </h4>
-              {unit.source_span.page_start && (
-                <div className="text-xs text-amber-700 dark:text-amber-400 mb-1 font-mono">
-                  页码: {unit.source_span.page_start} - {unit.source_span.page_end || unit.source_span.page_start}
-                </div>
-              )}
-              {unit.source_span.quote && (
-                <blockquote className="text-xs text-amber-900 dark:text-amber-200/80 border-l-2 border-amber-400 dark:border-amber-700 pl-3 italic">
-                  &quot;{unit.source_span.quote}&quot;
-                </blockquote>
-              )}
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 p-5">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">
-              条目文字内容
-            </h3>
-            {isEditing ? (
-              <Textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[220px] font-mono text-xs"
-              />
-            ) : (
-              <div className="prose dark:prose-invert max-w-none text-sm">
-                <LatexRenderer content={unit.content || ""} />
-              </div>
-            )}
-          </div>
-
-          {(unit.latex || isEditing) && (
-            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 p-5">
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">
-                LaTeX 独立数学公式
-              </h3>
-              {isEditing ? (
-                <Textarea
-                  value={editLatex}
-                  onChange={(e) => setEditLatex(e.target.value)}
-                  className="min-h-[100px] font-mono text-xs"
-                />
-              ) : (
-                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-md border border-slate-100 dark:border-slate-800 overflow-x-auto">
-                  <LatexRenderer content={`\\[ ${unit.latex || ""} \\]`} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function LegacyKnowledgeUnitsView() {
-  const [units, setUnits] = useState<KnowledgeUnit[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("draft");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
-  const [isPublishing, setIsPublishing] = useState(false);
-
-  const fetchUnits = async () => {
-    try {
-      setLoading(true);
-      setFetchError(null);
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/list`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error("Failed to fetch knowledge units");
-      const data = await res.json();
-      const list = data.units || data.items || [];
-      setUnits(list);
-      if (!selectedId && list.length > 0) {
-        setSelectedId(list[0].id);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setFetchError(err.message || "An unexpected error occurred while fetching units.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUnits();
-  }, []);
-
-  const handleProcessed = (id: string) => {
-    fetchUnits();
-  };
-
-  const handleBatchReview = async (action: "approve" | "reject") => {
-    if (selectedIds.size === 0) return;
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/review`, {
-        method: "POST",
-        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ unit_ids: Array.from(selectedIds), action })
-      });
-      if (!res.ok) throw new Error(`Failed to batch ${action}`);
-      setSelectedIds(new Set());
-      await fetchUnits();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePublish = async () => {
-    if (!confirm("即将根据已激活的知识库重新构建大语言模型的向量索引，是否继续？")) return;
-    setIsPublishing(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/knowledge/publish`, {
-        method: "POST",
-        headers: getAuthHeaders()
-      });
-      if (!res.ok) throw new Error("Failed to publish");
-      alert("发布成功！已重新构建向量库索引。");
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setIsPublishing(false);
-    }
-  };
-
-  const toggleChapter = (chapter: string) => {
-    setExpandedChapters((prev) => {
-      const next = new Set(prev);
-      if (next.has(chapter)) next.delete(chapter);
-      else next.add(chapter);
-      return next;
-    });
-  };
-
-  const toggleSelection = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const filteredUnits = units.filter((u) => {
-    if (
-      filterStatus !== "all" &&
-      (u as any).review_status !== filterStatus &&
-      (u as any).status !== filterStatus
-    ) {
-      const status = (u as any).review_status || (u as any).status || "draft";
-      if (status !== filterStatus) return false;
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return u.title?.toLowerCase().includes(q) || u.content?.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
-  const selectedUnit = units.find((u) => u.id === selectedId);
-
-  const grouped = filteredUnits.reduce((acc, unit) => {
-    const key = unit.chapter_path || "未分类章节";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(unit);
-    return acc;
-  }, {} as Record<string, KnowledgeUnit[]>);
-
-  return (
-    <div className="flex-1 flex overflow-hidden">
-      {/* Left Pane */}
-      <div className="w-96 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0">
-        <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold text-xs text-slate-700 dark:text-slate-300">
-              知识库分块核验 ({filteredUnits.length})
-            </h3>
-            <Button variant="primary" size="sm" className="h-7 text-xs" onClick={handlePublish} disabled={isPublishing}>
-              {isPublishing ? "构建索引中..." : "重新发布索引"}
-            </Button>
-          </div>
-
-          <input
-            type="text"
-            placeholder="搜索分块条目..."
-            className="w-full px-3 py-1.5 border rounded-md text-xs dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md text-xs">
-            {["draft", "active", "rejected", "all"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setFilterStatus(tab)}
-                className={`flex-1 py-1 text-center rounded text-[11px] capitalize transition-colors ${
-                  filterStatus === tab
-                    ? "bg-white dark:bg-slate-700 shadow-sm font-semibold"
-                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                {tab === "draft" ? "待审" : tab === "active" ? "已激活" : tab === "rejected" ? "已驳回" : "全部"}
-              </button>
-            ))}
-          </div>
-
-          {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                已选 {selectedIds.size} 项
-              </span>
-              <div className="space-x-1.5">
-                <Button variant="success" size="sm" className="h-6 text-[11px] px-2" onClick={() => handleBatchReview("approve")}>
-                  批量通过
-                </Button>
-                <Button variant="danger" size="sm" className="h-6 text-[11px] px-2" onClick={() => handleBatchReview("reject")}>
-                  批量驳回
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {loading ? (
-            <div className="text-xs text-slate-400 text-center py-6">正在加载条目...</div>
-          ) : fetchError ? (
-            <div className="text-xs text-red-500 bg-red-50 dark:bg-red-950/40 p-3 rounded-md">
-              {fetchError} <Button variant="ghost" size="sm" onClick={fetchUnits}>重试</Button>
-            </div>
-          ) : Object.keys(grouped).length === 0 ? (
-            <div className="text-xs text-slate-400 text-center py-6">没有匹配的分块条目。</div>
-          ) : (
-            Object.entries(grouped).map(([chapter, items]) => {
-              const isExpanded = !expandedChapters.has(chapter);
-              return (
-                <div key={chapter} className="border border-slate-100 dark:border-slate-800 rounded-md overflow-hidden">
-                  <div
-                    className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
-                    onClick={() => toggleChapter(chapter)}
-                  >
-                    <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider truncate mr-2" title={chapter}>
-                      {chapter}
-                    </h4>
-                    <span className="text-[11px] text-slate-400">{items.length}</span>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {items.map((unit) => (
-                        <div
-                          key={unit.id}
-                          onClick={() => setSelectedId(unit.id)}
-                          className={`flex items-start px-3 py-2 cursor-pointer transition-colors ${
-                            selectedId === unit.id
-                              ? "bg-blue-50 dark:bg-blue-900/20"
-                              : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
-                          }`}
-                        >
-                          <div className="pt-0.5 mr-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(unit.id)}
-                              onChange={() => {}}
-                              onClick={(e) => toggleSelection(unit.id, e)}
-                              className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-xs font-semibold truncate ${selectedId === unit.id ? "text-blue-900 dark:text-blue-200" : "text-slate-700 dark:text-slate-300"}`}>
-                              {unit.title}
-                            </div>
-                            <div className="text-[11px] text-slate-400 truncate mt-0.5">
-                              {unit.content?.substring(0, 45) || "无正文"}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Right Pane */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-slate-950">
-        {selectedUnit ? (
-          <KnowledgeReviewEditor key={selectedUnit.id} unit={selectedUnit} onProcessed={handleProcessed} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-            从左侧章节列表中选择一个分块条目进行核对与修改
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// Main Admin Dashboard Page
-// ==========================================
 export default function AdminKnowledgePage() {
-  const [activeTab, setActiveTab] = useState<"candidates" | "units">("candidates");
+  const [identity,setIdentity]=useState(0);
+  useEffect(()=>{const changed=()=>setIdentity(n=>n+1);const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};},[]);
+  return <AdminKnowledge key={identity}/>;
+}
+function AdminKnowledge() {
+
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-800 dark:text-slate-200">
@@ -1682,35 +1120,7 @@ export default function AdminKnowledgePage() {
             </span>
           </div>
 
-          {/* Tab Switcher */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-            <button
-              onClick={() => setActiveTab("candidates")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                activeTab === "candidates"
-                  ? "bg-white dark:bg-slate-700 font-bold text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>图谱动态演化候选</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono">
-                5
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("units")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                activeTab === "units"
-                  ? "bg-white dark:bg-slate-700 font-bold text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-blue-500" />
-              <span>基础知识分块条目</span>
-            </button>
-          </div>
+          <span className="text-xs text-[var(--text-secondary)]">官方更新仅通过课程候选审核；旧文件资料为只读兼容来源。</span>
         </div>
 
         {/* Quick Links */}
@@ -1733,7 +1143,7 @@ export default function AdminKnowledgePage() {
 
       {/* Main Tab Content */}
       <main className="flex-1 flex overflow-hidden">
-        {activeTab === "candidates" ? <GraphCandidatesView /> : <LegacyKnowledgeUnitsView />}
+        <GraphCandidatesView />
       </main>
     </div>
   );

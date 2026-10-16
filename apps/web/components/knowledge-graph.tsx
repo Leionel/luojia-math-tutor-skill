@@ -1,4 +1,5 @@
 "use client";
+import {getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
 
 import React, { useCallback, useMemo, useEffect } from 'react';
 import {
@@ -74,6 +75,8 @@ export function KnowledgeGraph({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const flowRef = React.useRef<ReactFlowInstance | null>(null);
 
+  const [authRevision,setAuthRevision]=React.useState(0);
+  useEffect(()=>{const changed=()=>{setNodes([]);setEdges([]);setAuthRevision(n=>n+1);};const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))changed();};window.addEventListener("luojia-auth-change",changed);window.addEventListener("storage",storage);return()=>{window.removeEventListener("luojia-auth-change",changed);window.removeEventListener("storage",storage);};},[setNodes,setEdges]);
   const layoutKey = nodes.map((node) => node.id).join("|");
   useEffect(() => {
     if (!layoutKey) return;
@@ -129,7 +132,7 @@ export function KnowledgeGraph({
       if (studentId) params.set("student_id", studentId);
 
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
-      fetch(`${apiBase}/api/courses/${courseId}/graph?${params.toString()}`, { signal: controller.signal })
+      fetch(`${apiBase}/api/courses/${courseId}/graph?${params.toString()}`, { signal: controller.signal, headers:getAuthHeaders() })
         .then((res) => {
           if (!res.ok) throw new Error("Graph fetch failed");
           return res.json();
@@ -152,7 +155,7 @@ export function KnowledgeGraph({
         });
       return () => controller.abort();
     }
-  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, setNodes, setEdges]);
+  }, [items, propNodes, propEdges, courseId, scopeFilter, studentId, setNodes, setEdges, authRevision]);
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNode }), []);
 

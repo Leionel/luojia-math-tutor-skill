@@ -1,0 +1,16 @@
+{
+  "version": "r6-freeze-v1",
+  "baseline_commit": "9e1411fcf1511a81cf0a6233334cc2c9367c04e0",
+  "review_status": "agent_prepared_only",
+  "files": {
+    "evaluation/r5/cases-v1.json": "bc15c1dea7a85a7222b01a26ee71d1e519d3486daf75a25e32eb40b940f74760",
+    "evaluation/r5/arms-v1.json": "bee77127f507bf8af810ed6e23d5eb2a9aaa1311399d2261c4f99c5dd28a90c1",
+    "scripts/eval_r5.py": "bbdd0ff5f9a2566ede8dd06688a488392d1e9b4e9b6bc5d299a75c52432a50b2"
+  },
+  "development_case": "G03",
+  "heldout_status": "unallocated_independent_author_required",
+  "real_model_runs": 0,
+  "real_scores": null,
+  "token_usage": null,
+  "provider_cost": null
+}
