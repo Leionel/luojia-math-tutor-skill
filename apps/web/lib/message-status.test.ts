@@ -19,7 +19,11 @@ test("failure and vision confirmation supersede positive badges",()=>{
   assert.equal(messageStatus({...base,awaiting_confirmation:true}),"等待题目核对");
 });
 
-const checked={version:"step-v1",execution_status:"succeeded" as const,origin:"student_claim",scope:"derivative",assumptions:["x为实数"],scope_complete:true,input_hash:"a".repeat(64),candidate_hash:"b".repeat(64),eligible_learning_evidence:true,unknown_reason:""};
+const checked={version:"step-v2",execution_status:"succeeded" as const,origin:"student_claim",scope:"derivative",assumptions:["x为实数"],scope_complete:true,input_hash:"a".repeat(64),candidate_hash:"b".repeat(64),eligible_learning_evidence:true,unknown_reason:""};
+test("old checker receipts retain their version instead of advertising current verification",()=>{
+  assert.equal(messageStatus({...base,verified:true,is_correct:true,step_check:{...checked,version:"step-v1"}}),"历史步骤检查（旧版核验器，保留原记录）");
+  assert.equal(messageStatus({...base,step_check:{...checked,version:"step-future"}}),"历史回答（核验范围未记录）");
+});
 test("current scoped checks do not inherit legacy certainty",()=>{
   assert.equal(messageStatus({...base,verified:true,is_correct:true,step_check:checked}),"本步候选核对通过（限指定范围）");
   assert.equal(messageStatus({...base,verified:true,is_correct:false,step_check:checked}),"本步候选存在差异（限指定范围）");

@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 
-GUARD_VERSION = "delivery-v2"
+GUARD_VERSION = "delivery-v3"
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,8 @@ def answer_requested(message: str) -> bool:
 
 
 def check_delivery(text: str, *, exercise: bool = False, allow_answer: bool = False,
-                   execution_succeeded: bool = False, tool_evidence=None) -> DeliveryCheck:
+                   execution_succeeded: bool = False, tool_evidence=None,
+                   student_step_verdict: bool | None = None) -> DeliveryCheck:
     """High precision checks of explicit claims/sections, not all semantic leaks.
 
     Unlabelled answers, indirect claims and mathematical correctness require
@@ -59,6 +60,18 @@ def check_delivery(text: str, *, exercise: bool = False, allow_answer: bool = Fa
     if not text.strip():
         violations.append("empty_body")
     assertions = _assertion_text(text)
+    # Deliberately narrow: only explicit verdicts on the selected local step.
+    # Other prose still requires mathematical review, not a keyword score.
+    subject = r"(?:这一步|该等式|这个等式|你的求导结果|你的导数|该行列式结果)"
+    predicate = (r"(?:是)?(?:错误的?|不正确|不对|算错了?)" if student_step_verdict is True
+                 else r"(?:是|完全|确实)?正确(?:的)?")
+    if student_step_verdict is not None:
+        boundary = r"(?=$|[。！!；;，,：:\s]|但|不过|只是|也|且|而|因为|所以|并|仍)"
+        for match in re.finditer(subject + r"\s*" + predicate + boundary, assertions):
+            prefix = re.split(r"[。！？.!?；;\n，,]", assertions[:match.start()])[-1][-30:]
+            if not re.search(r"不能说|不能认为|不(?:能)?代表|并非|并不|没有说|不要说|如果|假如|若", prefix):
+                violations.append("deterministic_verdict_contradiction")
+                break
     evidence = tool_evidence or []
     if evidence and not any(item.get("status") == "succeeded" for item in evidence) and _claims(assertions, r"(?:工具|求导|数值计算)(?:已|已经)?(?:成功|完成|验证通过)|经(?:工具|数值计算)验证"):
         violations.append("tool_result_contradiction")

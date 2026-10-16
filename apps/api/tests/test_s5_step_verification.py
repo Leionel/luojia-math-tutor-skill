@@ -14,7 +14,7 @@ from app.agents.typed_tools import ToolCall, MathToolResult
 from app.config import Settings
 from app.math_tools.step_checker import check_step, digest
 from app.math_tools.step_runtime import verify_student_step
-from app.math_tools.step_protocol import StepCheckRequest
+from app.math_tools.step_protocol import StepCheckRequest, STEP_CHECK_VERSION
 from app.math_tools.verifier import VerifyResult, parse_math
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
@@ -35,7 +35,7 @@ def test_private_step_worker_avoids_unrelated_native_tool_bootstrap():
         "assert 'app.math_tools.numerical_lab' not in sys.modules"
     )
     message = "我算 ∫2x dx = x² + C，对吗？"
-    packet = {"name": "student_step_check", "arguments": {"version": "step-v1", "message": message}}
+    packet = {"name": "student_step_check", "arguments": {"version": STEP_CHECK_VERSION, "message": message}}
     result = subprocess.run([sys.executable, "-I", "-c", script, str(worker)],
                             input=json.dumps(packet).encode(), capture_output=True, timeout=10)
     assert result.returncode == 0, result.stderr.decode(errors="replace")
@@ -45,12 +45,12 @@ def test_private_step_worker_avoids_unrelated_native_tool_bootstrap():
 
 
 @pytest.mark.parametrize("packet", [None, [], {},
-    {"version": "step-v1", "message": "x=x", "code": "print(1)"},
-    {"version": "step-v2", "message": "x=x"},
+    {"version": STEP_CHECK_VERSION, "message": "x=x", "code": "print(1)"},
+    {"version": "invalid-future-version", "message": "x=x"},
     {"version": True, "message": "x=x"},
-    {"version": "step-v1", "message": 1},
-    {"version": "step-v1", "message": ""},
-    {"version": "step-v1", "message": "x" * 4097}])
+    {"version": STEP_CHECK_VERSION, "message": 1},
+    {"version": STEP_CHECK_VERSION, "message": ""},
+    {"version": STEP_CHECK_VERSION, "message": "x" * 4097}])
 def test_private_step_protocol_rejects_extra_fields_and_coercion(packet):
     with pytest.raises(ValueError):
         StepCheckRequest.from_packet(packet)
@@ -58,7 +58,7 @@ def test_private_step_protocol_rejects_extra_fields_and_coercion(packet):
 
 def test_private_step_protocol_keeps_the_unicode_message_and_size_limit():
     text = "📘" * 4096
-    assert StepCheckRequest.from_packet({"version": "step-v1", "message": text}).message == text
+    assert StepCheckRequest.from_packet({"version": STEP_CHECK_VERSION, "message": text}).message == text
 
 
 @pytest.mark.parametrize("message,correct,eligible", [

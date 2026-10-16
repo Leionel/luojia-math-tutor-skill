@@ -11,7 +11,7 @@ from app.knowledge.search import search_evidence_pack
 from app.knowledge.concepts import extract_explicit_concepts
 from app.math_tools.step_checker import digest
 from app.math_tools.step_runtime import verify_student_step
-from app.math_tools.verifier import VerifyResult
+from app.math_tools.verifier import VerifyResult, CHECKER_VERSION
 from app.memory.mastery import mastery_label, update_mastery
 from app.memory.repository import Repository
 from app.tutor.fast_path import VerificationMode
@@ -290,8 +290,8 @@ class FastContextCollector:
                 if not isinstance(meta, dict): meta = {}
                 check = meta.get("step_check") or {}
                 if not isinstance(check, dict): check = {}
-                if check.get("version") != "step-v1":
-                    content = "[历史回答：未记录本步核验来源/范围，不能作为当前已核验事实。]\n" + content
+                if check.get("version") != CHECKER_VERSION:
+                    content = "[历史回答：核验器版本缺失或已过期，不能作为当前已核验事实。]\n" + content
                 else:
                     content = ("[历史核验仅作背景，需按当前候选重新检查；来源=" + str(check.get("origin", "unknown"))[:40]
                                + "，范围=" + str(check.get("scope", "unknown"))[:60] + "]\n" + content)

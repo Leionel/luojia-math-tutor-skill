@@ -61,7 +61,7 @@ def summarize(manifest, xml):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "results/agent-reliability.json")
-    parser.add_argument("--manifest", type=Path, default=ROOT / "evaluation/agent_reliability_v2.json")
+    parser.add_argument("--manifest", type=Path, default=ROOT / "evaluation/agent_reliability_v3.json")
     args = parser.parse_args()
     manifest_path = args.manifest.resolve()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

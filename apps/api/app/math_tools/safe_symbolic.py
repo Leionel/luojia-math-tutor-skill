@@ -8,6 +8,7 @@ import io
 import math
 import re
 import tokenize
+from decimal import Decimal, InvalidOperation
 
 
 class MathSyntaxError(ValueError):
@@ -15,6 +16,22 @@ class MathSyntaxError(ValueError):
 
 
 FUNCTIONS = {"sin", "cos", "tan", "exp", "log", "sqrt", "Abs"}
+
+
+def decimal_literal(source: str) -> str:
+    """Validate a decimal token before constructing an exact rational.
+
+    Bound exponent and significant digits before SymPy allocates integers;
+    Python's AST float value can already have rounded or underflowed to zero.
+    """
+    try:
+        value = Decimal(source)
+    except InvalidOperation as exc:
+        raise MathSyntaxError("number_not_supported") from exc
+    if (not value.is_finite() or len(value.as_tuple().digits) > 64
+            or abs(value.as_tuple().exponent) > 128 or value.copy_abs() > Decimal("1e12")):
+        raise MathSyntaxError("number_budget")
+    return str(value)
 
 
 def normalize_math(source: str) -> str:
@@ -60,9 +77,13 @@ def normalize_math(source: str) -> str:
 
 def math_tree(source: str, *, allow_constant=False):
     try:
-        tree = ast.parse(normalize_math(source), mode="eval")
+        normalized = normalize_math(source)
+        tree = ast.parse(normalized, mode="eval")
     except (SyntaxError, RecursionError) as exc:
         raise MathSyntaxError("expression_rejected") from exc
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and type(node.value) in {int, float}:
+            node.decimal_source = decimal_literal(ast.get_source_segment(normalized, node))
     validate_tree(tree, allow_constant=allow_constant)
     return tree
 
@@ -94,6 +115,7 @@ def validate_tree(tree, *, allow_constant=False):
         if isinstance(node, ast.Name) and node.id in names:
             return 1
         if isinstance(node, ast.Constant) and type(node.value) in {int, float}:
+            decimal_literal(getattr(node, "decimal_source", str(node.value)))
             if abs(node.value) > 1e12 or not math.isfinite(node.value):
                 raise MathSyntaxError("number_budget")
             return 1
@@ -129,7 +151,7 @@ def construct_math(tree, *, allow_constant=False, derivative=False):
             conditions.append(simplified)
     def build(node):
         if isinstance(node, ast.Constant):
-            return sp.Rational(str(node.value))
+            return sp.Rational(decimal_literal(getattr(node, "decimal_source", str(node.value))))
         if isinstance(node, ast.Name):
             return {"x": x, "pi": sp.pi, "e": sp.E, "C": sp.Symbol("C", real=True)}[node.id]
         if isinstance(node, ast.UnaryOp):

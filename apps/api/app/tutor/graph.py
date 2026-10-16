@@ -18,7 +18,7 @@ from app.agents.vision_agent import VisionParser
 from app.knowledge.search import search_knowledge_semantic
 from app.llm.openai_compatible import OpenAICompatibleClient
 from app.llm.completion_protocol import ModelCompletionError
-from app.math_tools.verifier import VerifyResult
+from app.math_tools.verifier import VerifyResult, bound_step_verdict
 from app.memory.repository import Repository
 from app.tutor.fast_context import FastContextCollector
 from app.search.web_search import search_status_text
@@ -930,7 +930,8 @@ class TutorWorkflow:
             return candidate, guard_report("unavailable", enabled=False)
         options = {"exercise": state.get("intent") == Intent.GENERATE_EXERCISE,
                    "allow_answer": answer_requested(state["message"]),
-                   "execution_succeeded": execution_succeeded, "tool_evidence": tool_evidence or []}
+                   "execution_succeeded": execution_succeeded, "tool_evidence": tool_evidence or [],
+                   "student_step_verdict": bound_step_verdict(state["message"], state.get("verifier_result"))}
         try:
             verdict = check_delivery(candidate, **options)
         except Exception as exc:

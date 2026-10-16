@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, FiniteFloat
 
-from app.math_tools.verifier import VerifyResult
+from app.math_tools.verifier import VerifyResult, bound_step_verdict
 from app.tutor.prompt_policy import resolve_teaching_policy
 from app.tutor.hint_policy import HintLevel
 
@@ -169,6 +169,12 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
             raise ValueError("missing_question_basis")
         if decision.claim_status != "unknown" and not any(ref != "claim:current" for ref in refs):
             raise ValueError("no_supporting_evidence")
+        verdict = bound_step_verdict(state.get("message", ""), state.get("verifier_result"))
+        claim = bundle["sources"][0]["data"]
+        if claim == state.get("message") and (
+                verdict is True and (decision.claim_status == "contradicted" or decision.action == "correct_claim")
+                or verdict is False and decision.claim_status == "supported"):
+            raise ValueError("deterministic_verdict_conflict")
         if decision.action == "offer_experiment":
             if not decision.experiment_proposal:
                 raise ValueError("missing_experiment_proposal")
@@ -186,7 +192,7 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
             raise ValueError("unrequested_experiment_proposal")
         accepted = {"version": DECISION_VERSION, "status": "accepted", "origin": "model_opinion", **decision.model_dump(), **bundle}
     except (ValueError, TypeError, ValidationError) as error:
-        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence", "missing_experiment_proposal", "experiment_parameter_unchanged", "unrequested_experiment_proposal", "invalid_experiment_context", "invalid_experiment_candidates"}:
+        if isinstance(error, ValueError) and str(error) in {"unknown_evidence_ref", "disclosure_conflict", "unsupported_conditions", "confirmation_conflict", "correction_conflict", "missing_question_basis", "no_supporting_evidence", "missing_experiment_proposal", "experiment_parameter_unchanged", "unrequested_experiment_proposal", "invalid_experiment_context", "invalid_experiment_candidates", "deterministic_verdict_conflict"}:
             fallback["reason_code"] = str(error)
         return fallback, None
 

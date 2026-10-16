@@ -8,3 +8,10 @@ test("delivery status cannot be confused with mathematical verification", () => 
   assert.match(deliveryGuardLabel({version:"delivery-v1",scope:"delivery_rules_only",status:"passed",enabled:false})!, /未启用/);
   assert.equal(deliveryGuardLabel({version:"unknown",scope:"delivery_rules_only",status:"passed"}), null);
 });
+
+test("current and saved guard versions display repaired or withheld state", () => {
+  for (const version of ["delivery-v2", "delivery-v3"]) {
+    assert.match(deliveryGuardLabel({version,scope:"delivery_rules_only",status:"repaired"})!, /不代表数学/);
+    assert.match(deliveryGuardLabel({version,scope:"delivery_rules_only",status:"withheld"})!, /未交付/);
+  }
+});

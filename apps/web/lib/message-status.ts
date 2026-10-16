@@ -8,7 +8,9 @@ export function verificationLabel(meta?: TutorMeta | null): string {
   if (meta.verification_kind === "root_oracle") return meta.verified ? "已完成求根核对" : "求根结果尚未确定";
   const review = meta.verification_kind === "llm_review" ? (meta.verified ? "推理审查意见" : "推理审查未完成") : "";
   const check = meta.step_check;
-  if (!check || check.version !== "step-v1") return review || (meta.verified ? "历史检查（范围未记录）" : "历史回答（核验范围未记录）");
+  if (!check || !["step-v1", "step-v2"].includes(check.version)) return review || (meta.verified ? "历史检查（范围未记录）" : "历史回答（核验范围未记录）");
+  // v1 receipts retain their provenance but predate exact decimal parsing.
+  if (check.version === "step-v1") return "历史步骤检查（旧版核验器，保留原记录）" + (review ? ` · ${review}` : "");
   let label: string;
   if (check.origin === "system_calculation" && check.execution_status === "succeeded") label = "参考计算（未核对学生答案）";
   else if (check.origin === "classification") label = "已检查未定式类型（未确认定理适用）";

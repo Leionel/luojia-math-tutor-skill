@@ -1,6 +1,7 @@
 """Extract a bounded student claim and bind the scoped checker to its source."""
 import hashlib
 import re
+from fractions import Fraction
 from app.math_tools.verifier import (VerifyResult, verify_derivative, verify_determinant_2x2,
     verify_equivalent, verify_integral, verify_lhopital_conditions)
 from app.tutor.misconception import Mistake, MISTAKES, detect_mistake
@@ -35,7 +36,7 @@ def _extract_determinant_attempt(text):
     compact = text.replace("$", "")
     match = re.search(r"\|(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*;\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\|(?:\s*=\s*([^，。\n]+))?", compact)
     if not match: return None
-    a,b,c,d = map(float, match.groups()[:4])
+    a,b,c,d = match.groups()[:4]
     return [[a,b],[c,d]], _candidate(match[5]) if match[5] else None
 
 
@@ -85,7 +86,7 @@ def _confirmed_mistake(result, expression, candidate):
             return MISTAKES["POWER_INTEGRAL_MISSING_DIVISOR"]
     if result.scope == "determinant_2x2" and result.expected and result.actual:
         try:
-            if float(result.expected) == -float(result.actual):
+            if Fraction(result.expected) == -Fraction(result.actual):
                 return MISTAKES["DETERMINANT_SIGN_ERROR"]
         except ValueError:
             pass
@@ -152,8 +153,15 @@ def check_step(message: str) -> tuple[VerifyResult, Mistake | None]:
     elif determinant:
         expression, candidate = determinant
         result = _bind(verify_determinant_2x2(expression, candidate), message, candidate)
-        sign_error = (result.eligible_learning_evidence and result.is_correct is False
-                      and float(result.actual) == expression[0][0]*expression[1][1] + expression[0][1]*expression[1][0])
+        sign_error = False
+        if result.eligible_learning_evidence and result.is_correct is False:
+            try:
+                sign_error = (Fraction(result.actual) == Fraction(expression[0][0])*Fraction(expression[1][1])
+                              + Fraction(expression[0][1])*Fraction(expression[1][0]))
+            except ValueError:
+                # An irrational candidate can be checked without assigning this
+                # rational-arithmetic misconception; retain the valid receipt.
+                pass
         return result, MISTAKES["DETERMINANT_SIGN_ERROR"] if sign_error else None
     elif any(word in message.lower() for word in ("洛必达", "lhopital", "l'hopital")):
         return _bind(verify_lhopital_conditions(message), message, None), None

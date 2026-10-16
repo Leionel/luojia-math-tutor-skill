@@ -4,9 +4,10 @@ import math
 import re
 
 import sympy as sp
-from app.math_tools.safe_symbolic import MathSyntaxError, math_tree, normalize_math, parse_bounded
+from app.math_tools.safe_symbolic import MathSyntaxError, decimal_literal, math_tree, normalize_math, parse_bounded
+from app.math_tools.step_protocol import STEP_CHECK_VERSION
 
-CHECKER_VERSION = "step-v1"
+CHECKER_VERSION = STEP_CHECK_VERSION
 
 
 @dataclass
@@ -126,15 +127,16 @@ def verify_integral(integrand: str, variable: str, candidate: str) -> VerifyResu
         return _unknown("积分候选超出受控语法或实数可微范围", "integral_candidate")
 
 
-def _matrix(value):
+def _matrix(value, *, exact_text=False):
     if not isinstance(value, list) or not 1 <= len(value) <= 8:
         raise ValueError("matrix_budget")
     columns = len(value[0]) if isinstance(value[0], list) else 0
     if not 1 <= columns <= 8 or any(not isinstance(row, list) or len(row) != columns for row in value):
         raise ValueError("matrix_shape")
-    if any(type(n) not in {int, float} or abs(n) > 1e12 or not math.isfinite(n) for row in value for n in row):
+    if any(not (type(n) in {int, float} and abs(n) <= 1e12 and math.isfinite(n)
+                or exact_text and type(n) is str and len(n) <= 128) for row in value for n in row):
         raise ValueError("matrix_numbers")
-    return sp.Matrix([[sp.Rational(str(n)) for n in row] for row in value])
+    return sp.Matrix([[sp.Rational(decimal_literal(str(n))) for n in row] for row in value])
 
 
 def compute_matrix_product(left, right) -> VerifyResult:
@@ -148,7 +150,7 @@ def compute_matrix_product(left, right) -> VerifyResult:
 
 def verify_determinant_2x2(matrix, candidate: str | None) -> VerifyResult:
     try:
-        value = _matrix(matrix)
+        value = _matrix(matrix, exact_text=True)
         if value.shape != (2, 2): raise ValueError("matrix_shape")
         target = value.det()
         if candidate is None:
@@ -161,6 +163,18 @@ def verify_determinant_2x2(matrix, candidate: str | None) -> VerifyResult:
         return result
     except Exception:
         return _unknown("行列式或候选输入不受支持", "determinant_2x2")
+
+
+def bound_step_verdict(message: str, result) -> bool | None:
+    """Only a current, complete student-claim receipt can constrain feedback."""
+    import hashlib
+    if (isinstance(result, VerifyResult) and result.version == CHECKER_VERSION
+            and result.origin == "student_claim" and result.execution_status == "succeeded"
+            and result.verified and result.scope_complete and result.eligible_learning_evidence
+            and result.candidate_hash and type(result.is_correct) is bool
+            and result.input_hash == hashlib.sha256(message.encode("utf-8")).hexdigest()):
+        return result.is_correct
+    return None
 
 
 _LIMIT_HEADING = re.compile(r"lim(?:it)?\s*(?:_\{?\s*)?(?P<var>[a-zA-Z])\s*(?:\\to|->|→)\s*(?P<point>[^\s,，;；]+)\s*\}?\s*[:：]?\s*(?P<expr>[^;；\n]+)", re.IGNORECASE)

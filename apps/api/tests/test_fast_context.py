@@ -92,7 +92,7 @@ async def test_collect_persists_user_message_and_returns_history():
 
     assert context.history == [
         {"role": "user", "content": "上一题"},
-        {"role": "assistant", "content": "[历史回答：未记录本步核验来源/范围，不能作为当前已核验事实。]\n上一轮回答"},
+        {"role": "assistant", "content": "[历史回答：核验器版本缺失或已过期，不能作为当前已核验事实。]\n上一轮回答"},
     ]
     assert repository.list_messages.return_value[1]["content"] == "上一轮回答"
     repository.ensure_user.assert_called_once_with("user-1")
