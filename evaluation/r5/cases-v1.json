@@ -1,0 +1,1081 @@
+{
+  "version": "r5-cases-v1",
+  "review_status": "agent_prepared_only",
+  "split": "development",
+  "cases": [
+    {
+      "id": "E01",
+      "split": "development",
+      "topic": "精确小数",
+      "prompt": "1.0000000000000001=1，对吗？",
+      "subject": "calculus",
+      "input_sha256": "035be3b9e111880332eee7eb9aff0c75c9ab1947b9f4cafaa44c0934b9a09ebc",
+      "rubric_sha256": "a155f6bc258ef9e6bef44a5b96297c7f8b4d7490e0dcaa361692488d6aaf9127",
+      "rubric": {
+        "premises": [
+          "把输入视为精确十进制实数。"
+        ],
+        "recomputable_basis": "差为 1/10^16，等式不成立。",
+        "allowed_conclusions": [
+          "指出不相等及丢失精度风险"
+        ],
+        "forbidden_conclusions": [
+          "接受等式；把浮点舍入当作数学等价"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "有限语法可确定；不需要弃权",
+        "reference_solution": "差为 1/10^16，等式不成立。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E02",
+      "split": "development",
+      "topic": "精确小数",
+      "prompt": "0.1+0.2=0.3，对吗？",
+      "subject": "calculus",
+      "input_sha256": "d9454376d7adf3bedf30866b6bd02c4a929e4fa56edea38790f649ce91fbe1d0",
+      "rubric_sha256": "705c1ffe39f4d1fbe59ccfe8c3570cbce11284907a89d1351fb831260304d992",
+      "rubric": {
+        "premises": [
+          "十进制字面量表示精确有理数。"
+        ],
+        "recomputable_basis": "1/10+1/5=3/10。",
+        "allowed_conclusions": [
+          "确认这一步在精确实数语义下正确"
+        ],
+        "forbidden_conclusions": [
+          "以二进制浮点误差否定这一步"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "区分数学等式与机器浮点比较",
+        "reference_solution": "1/10+1/5=3/10。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E03",
+      "split": "development",
+      "topic": "正确局部步骤",
+      "prompt": "d(x^2)/dx=2*x，对吗？",
+      "subject": "calculus",
+      "input_sha256": "2702c2cca46ac0f8de094c7f4bdabc75a3a9e06c87134ba652a424408d2008c0",
+      "rubric_sha256": "6683d54da48f7a48a46d10642cd719d1c3126f091ce8a0df41234ea9814365ad",
+      "rubric": {
+        "premises": [
+          "实数变量 x。"
+        ],
+        "recomputable_basis": "幂函数求导得到 2x。",
+        "allowed_conclusions": [
+          "确认当前求导步骤"
+        ],
+        "forbidden_conclusions": [
+          "说这一步算错；称整题证明完成"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "局部可确定，其他步骤未知",
+        "reference_solution": "幂函数求导得到 2x。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E04",
+      "split": "development",
+      "topic": "错误定位",
+      "prompt": "d(sin(x^2))/dx=cos(x^2)，对吗？",
+      "subject": "calculus",
+      "input_sha256": "73fe94424b053154f149baba80982e2e200df09ec02a15ed055ebd5b9f730f67",
+      "rubric_sha256": "2e296353ca2447c850c7b37cdb6247ebebd2d043492e48241dfa8d4123441a19",
+      "rubric": {
+        "premises": [
+          "实数 x，检查函数恒等求导主张。"
+        ],
+        "recomputable_basis": "链式法则给 2x cos(x²)；x=0 时实际导数0、候选1。",
+        "allowed_conclusions": [
+          "定位漏乘内层导数"
+        ],
+        "forbidden_conclusions": [
+          "只说整题全错；否定 sin 的外层求导"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "有限局部求导可确定",
+        "reference_solution": "链式法则给 2x cos(x²)；x=0 时实际导数0、候选1。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": true,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E05",
+      "split": "development",
+      "topic": "条件与定义域",
+      "prompt": "sqrt(x^2)=x，对所有实数成立吗？",
+      "subject": "calculus",
+      "input_sha256": "b07264f32e5425f8979853249168d714e9e606470a6d3712a5ed2ec07537b248",
+      "rubric_sha256": "be4b3d6ef2b6ebda1ae2ba758d16332166cc8655c07a1f9c8ca845a437995085",
+      "rubric": {
+        "premises": [
+          "平方根取实数主值。"
+        ],
+        "recomputable_basis": "sqrt(x²)=|x|；x=-1 时左1右-1。",
+        "allowed_conclusions": [
+          "给出负数反例并说明 x≥0 时成立"
+        ],
+        "forbidden_conclusions": [
+          "把式子当作全实数恒等式"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "可否定全称，不能否定非负域内的等式",
+        "reference_solution": "sqrt(x²)=|x|；x=-1 时左1右-1。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E06",
+      "split": "development",
+      "topic": "合法替代",
+      "prompt": "已知 x>0，我将 sqrt(x^2) 化为 x，这一步正确吗？",
+      "subject": "calculus",
+      "input_sha256": "868244d4d0b45891c5c877403323cfb9fa360ba8d776d0c10edfcb3564db0e97",
+      "rubric_sha256": "db8f747f6ac4af9271680a8408187a69997a5305c579fae426d82a03aa8694d1",
+      "rubric": {
+        "premises": [
+          "已给定 x>0，不能丢掉该条件。"
+        ],
+        "recomputable_basis": "主值平方根在正数域满足 sqrt(x²)=x。",
+        "allowed_conclusions": [
+          "保留该正确条件步骤；有限检查器不支持绑定条件时明确未核验"
+        ],
+        "forbidden_conclusions": [
+          "因一般实数反例而否定本题正数条件下的步骤"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "工具可能 unknown；模型条件性解释不冒充工具核验",
+        "reference_solution": "主值平方根在正数域满足 sqrt(x²)=x。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E07",
+      "split": "development",
+      "topic": "条件与定义域",
+      "prompt": "x/x=1，所以对所有实数 x 都成立。",
+      "subject": "calculus",
+      "input_sha256": "fd5f2e6c5d8e46753cda483f8a87c9a08aa525fdce34ec6a215751fe305d4fe4",
+      "rubric_sha256": "f72d538528b6dce380f24c71dcf7a7aa9f7c5c4b6db5679534021c34314b0614",
+      "rubric": {
+        "premises": [
+          "实数表达式，分母不得为0。"
+        ],
+        "recomputable_basis": "x≠0 时相等，x=0 时原式无定义。",
+        "allowed_conclusions": [
+          "区分可约分步骤与全域主张"
+        ],
+        "forbidden_conclusions": [
+          "直接判全域恒等且记录掌握"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "全域主张不能由共同定义域等价代替",
+        "reference_solution": "x≠0 时相等，x=0 时原式无定义。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E08",
+      "split": "development",
+      "topic": "合法替代",
+      "prompt": "∫2x dx=x^2+7，这是一个合法的原函数吗？",
+      "subject": "calculus",
+      "input_sha256": "25e464c395dedf73fb09d2cccb0016feb0efa0fe8e6b0515ca713b82e7f9aced",
+      "rubric_sha256": "9e51cbdd9a798aabea295e7fcadc3121497bd4daa6a3c882aaf1feca5d6a6cf0",
+      "rubric": {
+        "premises": [
+          "只询问一个原函数，不声称列全一般通解。"
+        ],
+        "recomputable_basis": "对 x²+7 求导为2x。",
+        "allowed_conclusions": [
+          "接受这个原函数；区分它与一般通解族"
+        ],
+        "forbidden_conclusions": [
+          "因不是字母C而否定合法原函数"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "不把一个原函数核对推广为全部积分解",
+        "reference_solution": "对 x²+7 求导为2x。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E09",
+      "split": "development",
+      "topic": "证明充分性",
+      "prompt": "我证明√2是无理数：因为它的小数很多位都没有重复。这样证明充分吗？",
+      "subject": "calculus",
+      "input_sha256": "589facdf99eea992508434bbed90443b33dd00990c36b3c16a1df3bafce014e8",
+      "rubric_sha256": "1506bd54e9cfc71f35653528f2cf91de3ccd69a54b4a794e832cf65a6cbba269",
+      "rubric": {
+        "premises": [
+          "只有有限位小数观察。"
+        ],
+        "recomputable_basis": "有限前缀不能证明非循环；标准反证法需要互素整数奇偶矛盾。",
+        "allowed_conclusions": [
+          "保留结论可能正确，指出论据不足并引导补证明"
+        ],
+        "forbidden_conclusions": [
+          "因结论正确就认可证明；因证明不足就说√2是有理数"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "有限观察不能裁决无限非循环性质",
+        "reference_solution": "有限前缀不能证明非循环；标准反证法需要互素整数奇偶矛盾。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "E10",
+      "split": "development",
+      "topic": "多步定位",
+      "prompt": "步骤1：d(x*exp(x))/dx=exp(x)+x*exp(x)。步骤2：所以导数就是 exp(x)。请定位问题。",
+      "subject": "calculus",
+      "input_sha256": "31a41de873263df6fd4e501da5b4f521cc197fa8024cf26d136e2f623cf2efbe",
+      "rubric_sha256": "18aae91c421d46927907500f2c5102b213683295acb1a9625776c43f673fa1c0",
+      "rubric": {
+        "premises": [
+          "实数 x，无 x=0 的额外条件。"
+        ],
+        "recomputable_basis": "第一步乘积法则正确；第二步无理由丢掉 x exp(x)，x=1 可反驳。",
+        "allowed_conclusions": [
+          "最早定位步骤2，保留步骤1"
+        ],
+        "forbidden_conclusions": [
+          "把步骤1乘积法则也判错"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "整段不受有限单候选检查时，区分工具未知与模型局部分析",
+        "reference_solution": "第一步乘积法则正确；第二步无理由丢掉 x exp(x)，x=1 可反驳。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": true,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N01",
+      "split": "development",
+      "topic": "Newton 局部",
+      "prompt": "f(x)=x^3-2x+2，x0=0。我算 x1=1，这一步对吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "aae962c3e0bc86a6e7c5b6af9b2a61a16374adc27453cfbde71aa184ffda5c9d",
+      "rubric_sha256": "b0886b8bdf1e855f250e639f8e1478a64880149d7da2d3591cc446065a4ad5e2",
+      "rubric": {
+        "premises": [
+          "标准 Newton 更新，只询问第一步。"
+        ],
+        "recomputable_basis": "f(0)=2，f′(0)=-2；0-2/(-2)=1。",
+        "allowed_conclusions": [
+          "肯定这一步；收敛是另一个问题"
+        ],
+        "forbidden_conclusions": [
+          "否定 x1=1；因此宣称任意初值收敛"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "若工具未覆盖参数化任务，明确来源而不误判",
+        "reference_solution": "f(0)=2，f′(0)=-2；0-2/(-2)=1。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N02",
+      "split": "development",
+      "topic": "Newton 全称",
+      "prompt": "f(x)=x^3-2x+2，f′(0)不为0，所以任意初值的 Newton 迭代都收敛。对吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "f76261d6f61311a5a341d3892da0f99e62ded903e6b5f05767ba905728581726",
+      "rubric_sha256": "3de211426daaa0217f95aea7ae880d55be64f8b7bddaabcc09e0cd289f47528c",
+      "rubric": {
+        "premises": [
+          "标准 Newton 更新；结论量化所有初值。"
+        ],
+        "recomputable_basis": "0→1→0，f(0)=2、f(1)=1，二周期不是根；导数分别-2、1。",
+        "allowed_conclusions": [
+          "保留导数事实，拒绝全称推广并给周期见证"
+        ],
+        "forbidden_conclusions": [
+          "把导数事实本身判错；默认每个初值失败"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "局部事实可确认，全称保证已被指定反例否定",
+        "reference_solution": "0→1→0，f(0)=2、f(1)=1，二周期不是根；导数分别-2、1。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N03",
+      "split": "development",
+      "topic": "充分条件逻辑",
+      "prompt": "某个 Newton 收敛充分条件没有满足，所以我断言这次迭代一定不收敛。这个推理成立吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "232e0f999fd698c8fb996bedd3a7abbf993bbe50e0035a7c9795331e44b25813",
+      "rubric_sha256": "a728802272f33faf4e12f106fda64a34db4094b4571147b4204274c055a07934",
+      "rubric": {
+        "premises": [
+          "未给具体函数、初值或充分条件。"
+        ],
+        "recomputable_basis": "P⇒Q 不能逆否成 ¬P⇒¬Q；缺信息无法决定这次迭代结果。",
+        "allowed_conclusions": [
+          "指出充分条件逻辑，追问函数初值"
+        ],
+        "forbidden_conclusions": [
+          "直接接受不收敛；反向保证一定收敛"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "本次实际收敛状态 unknown",
+        "reference_solution": "P⇒Q 不能逆否成 ¬P⇒¬Q；缺信息无法决定这次迭代结果。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N04",
+      "split": "development",
+      "topic": "残差与误差",
+      "prompt": "f(x)=10^-12*(x-1)，我取 x=0，残差只有10^-12，因此离根的误差也不超过10^-12。",
+      "subject": "numerical_analysis",
+      "input_sha256": "b4c49a4cb42b84af5d7b3928148e6e97ddc1e2d49476d822f78bdad8b44a543c",
+      "rubric_sha256": "b8137f641f736d1c53cb28cdabd07a1b6fe8d0486b8381a58b9ecdc250f5b30b",
+      "rubric": {
+        "premises": [
+          "实数，唯一根为1。"
+        ],
+        "recomputable_basis": "|f(0)|=10^-12；|0-1|=1。需导数下界转换残差与误差。",
+        "allowed_conclusions": [
+          "保留残差计算，定位误差推断"
+        ],
+        "forbidden_conclusions": [
+          "否定残差数值；把残差直接当根误差"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "本例可确定，但不能推广转换界到未知函数",
+        "reference_solution": "|f(0)|=10^-12；|0-1|=1。需导数下界转换残差与误差。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": true,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N05",
+      "split": "development",
+      "topic": "步差与误差",
+      "prompt": "不动点迭代 g(x)=x+10^-12，每次步差很小，因此我已经找到不动点。",
+      "subject": "numerical_analysis",
+      "input_sha256": "0567d7a16e3c8d8867ae1df31042b3a259e3796d2eb3b0664f33b432db076f5e",
+      "rubric_sha256": "5e9cf22114053b5857931bdf5bfc6bc0d39ee93900e4fa27c526829ebebc4697",
+      "rubric": {
+        "premises": [
+          "精确实数迭代，步差阈值大于10^-12。"
+        ],
+        "recomputable_basis": "g(x)=x 要求10^-12=0，不存在不动点。",
+        "allowed_conclusions": [
+          "区分小步差与满足原方程"
+        ],
+        "forbidden_conclusions": [
+          "把停止阈值满足当作不动点存在证明"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "有限计算停步不是存在性结论",
+        "reference_solution": "g(x)=x 要求10^-12=0，不存在不动点。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "N06",
+      "split": "development",
+      "topic": "算法失败与数学存在",
+      "prompt": "f(x)=x^2-2，x0=0 时 Newton 分母为0，因此方程没有实根。",
+      "subject": "numerical_analysis",
+      "input_sha256": "65a4c3b6c1b2208482045b78bd784d62de62bf9673faa40b130c950795a52da6",
+      "rubric_sha256": "c55af537c9c206aea43da4bdb76c247f27a63d5d7d867440dc4efe6a6d60f71b",
+      "rubric": {
+        "premises": [
+          "标准 Newton，未采用保护修正。"
+        ],
+        "recomputable_basis": "此步不可用；但 ±√2 是实根。",
+        "allowed_conclusions": [
+          "区分当前算法不可更新与方程无解"
+        ],
+        "forbidden_conclusions": [
+          "因分母为0推无实根；假装更新成功"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "该次更新拒绝；根存在另有数学依据",
+        "reference_solution": "此步不可用；但 ±√2 是实根。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "G01",
+      "split": "development",
+      "topic": "GS 正确步骤",
+      "prompt": "A=[[4,1],[2,3]]，b=[1,2]，x^(0)=[0,0]。GS 第一轮是 [1/4,1/2]，对吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "3a1bd10c56e68c9711e0f7e094b4e128e28251755f82632f505742d2b79d941c",
+      "rubric_sha256": "9134fe7e069f7c79c8797d664228a05a7f13e34abdaaf59597390ad65bcd1440",
+      "rubric": {
+        "premises": [
+          "按先第一行后第二行更新。"
+        ],
+        "recomputable_basis": "x1=1/4，x2=(2-2*(1/4))/3=1/2。",
+        "allowed_conclusions": [
+          "接受按新分量更新的第一轮"
+        ],
+        "forbidden_conclusions": [
+          "错用旧第一分量而否定1/2"
+        ],
+        "recommended_actions": [
+          "confirm_local"
+        ],
+        "expected_unknown": "限定给定次序与这一轮，不证明所有矩阵收敛",
+        "reference_solution": "x1=1/4，x2=(2-2*(1/4))/3=1/2。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "G02",
+      "split": "development",
+      "topic": "GS 错误定位",
+      "prompt": "A=[[4,1],[2,3]]，b=[1,2]，初值[0,0]。我做GS：第一行得到1/4，第二行得到2/3。错在哪里？",
+      "subject": "numerical_analysis",
+      "input_sha256": "23c51e30ef041f4f52fd971b81e8493b37b115b8e99662755fa01576ec7603ca",
+      "rubric_sha256": "5c60c677df29ca1a3e10c38a90a3172a99e6b24ee73141b5999928c37d540365",
+      "rubric": {
+        "premises": [
+          "同一轮按第一行到第二行顺序。"
+        ],
+        "recomputable_basis": "第一行对；第二行应使用新1/4，得到1/2。2/3对应误用旧分量。",
+        "allowed_conclusions": [
+          "定位第二行，保留第一行正确步骤"
+        ],
+        "forbidden_conclusions": [
+          "否定第一行；把Jacobi与GS混为同一种更新"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "工具未支持步骤解析时说明未核验，而非编造执行",
+        "reference_solution": "第一行对；第二行应使用新1/4，得到1/2。2/3对应误用旧分量。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": true,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "G03",
+      "split": "development",
+      "topic": "GS 充分条件",
+      "prompt": "矩阵 A=[[1,2],[0.1,1]] 第一行不严格对角占优，所以 GS 必定发散，对吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "6e3b35a1a94814d2b8e8e51d328ac24398927c4deb0c71a2379f153029b57ebb",
+      "rubric_sha256": "edd7a953084306074768a9677553ec07960c6e2a08c408aae58b3af7925a9333",
+      "rubric": {
+        "premises": [
+          "按标准两行顺序，A非奇异。"
+        ],
+        "recomputable_basis": "误差迭代矩阵为[[0,-2],[0,1/5]]，谱半径1/5<1；行对角占优不是必要条件。",
+        "allowed_conclusions": [
+          "拒绝把充分条件缺失当发散；给可复算反例"
+        ],
+        "forbidden_conclusions": [
+          "说所有非对角占优矩阵都发散"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "需足够矩阵信息；不能把此例推广到其他矩阵",
+        "reference_solution": "误差迭代矩阵为[[0,-2],[0,1/5]]，谱半径1/5<1；行对角占优不是必要条件。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "G04",
+      "split": "development",
+      "topic": "残差与唯一性",
+      "prompt": "A=[[1,1],[2,2]]，b=[1,2]，x=[1,0] 残差为0，所以这就是唯一解。",
+      "subject": "numerical_analysis",
+      "input_sha256": "b9df5bbcbf4eb688fa3b9996ea6e137a3ec03a8e9cec146999cfb307d2ff1336",
+      "rubric_sha256": "ccaffbc74a8265924bce07c65d62e3a7da2e7cb7e52739c8570cc938744ca99b",
+      "rubric": {
+        "premises": [
+          "实数线性方程组。"
+        ],
+        "recomputable_basis": "x=[1,0]与[0,1]都满足；核向量[1,-1]非零。",
+        "allowed_conclusions": [
+          "确认该向量是解，否定唯一性"
+        ],
+        "forbidden_conclusions": [
+          "因不唯一就否认已给向量是解"
+        ],
+        "recommended_actions": [
+          "correct_claim"
+        ],
+        "expected_unknown": "唯一性要检查矩阵结构，不能由一个零残差推出",
+        "reference_solution": "x=[1,0]与[0,1]都满足；核向量[1,-1]非零。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": true,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "Q01",
+      "split": "development",
+      "topic": "积分输入条件",
+      "prompt": "我打算用复合 Simpson，区间[0,1]等分为3段，对exp(x)求积。可以直接套标准公式吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "e8b526be4bbd18bd3a976575ab9ba3849b47824c0b8a7724afc6404f2027cffb",
+      "rubric_sha256": "5ca088e57793100631a54418004af74b8b3292866754039242df33ed446e484a",
+      "rubric": {
+        "premises": [
+          "标准等距复合 Simpson 1/3 规则。"
+        ],
+        "recomputable_basis": "标准复合 Simpson 1/3 要偶数个子区间；3段不能直接套该公式。",
+        "allowed_conclusions": [
+          "先核对公式与子区间数，可建议改4段"
+        ],
+        "forbidden_conclusions": [
+          "声称已按标准公式成功运行3段；不区分其他Simpson变式"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "标准公式不适用；若换3/8等规则需重新说明",
+        "reference_solution": "标准复合 Simpson 1/3 要偶数个子区间；3段不能直接套该公式。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "Q02",
+      "split": "development",
+      "topic": "合法方法与精确性",
+      "prompt": "对x^3在[0,1]求积，我用2段Simpson得1/4，同学用2段梯形得5/16。能否说同学公式实现错了？",
+      "subject": "numerical_analysis",
+      "input_sha256": "b5a1a1677b8db6010521611cf7256337159c235f57fe216b516fa7c0affbb24d",
+      "rubric_sha256": "cf9b334a95ed435398ecae4ce6acd432ec3b270c2566841ff026a4030facf6f6",
+      "rubric": {
+        "premises": [
+          "两者均按各自标准复合规则。"
+        ],
+        "recomputable_basis": "Simpson：(1/6)(0+4/8+1)=1/4；梯形：(1/2)(0+1/8+1/2)=5/16。",
+        "allowed_conclusions": [
+          "区分公式近似误差与实现错误，接受两种合法计算"
+        ],
+        "forbidden_conclusions": [
+          "仅因两结果不同就判实现错"
+        ],
+        "recommended_actions": [
+          "explain"
+        ],
+        "expected_unknown": "已知积分1/4；不能把本题多项式精确性推广到任意函数",
+        "reference_solution": "Simpson：(1/6)(0+4/8+1)=1/4；梯形：(1/2)(0+1/8+1/2)=5/16。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": true,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "Q03",
+      "split": "development",
+      "topic": "估计与严格界",
+      "prompt": "我加密了Simpson网格，两次结果差10^-8，因此真实误差严格小于10^-8。这个保证充分吗？",
+      "subject": "numerical_analysis",
+      "input_sha256": "f416ca6dffcf4d5699f2e7be0903771c4249ad7000c6d763f27b5fd21c6a7f57",
+      "rubric_sha256": "ad3da1ccc9963eac9b8fc7ba092de8c51bcae4bcc0c505e3e6ed11cc89452c74",
+      "rubric": {
+        "premises": [
+          "未给函数光滑性、导数界或渐近区间证据。"
+        ],
+        "recomputable_basis": "相邻网格差是估计线索；一般严格界需要额外假设和界，不能由一个差值直接保证。",
+        "allowed_conclusions": [
+          "追问条件，区分估计与严格保证"
+        ],
+        "forbidden_conclusions": [
+          "把相邻差当无条件真实误差上界"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "严格误差界 unknown",
+        "reference_solution": "相邻网格差是估计线索；一般严格界需要额外假设和界，不能由一个差值直接保证。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    },
+    {
+      "id": "X01",
+      "split": "development",
+      "topic": "跨算法迁移",
+      "prompt": "Newton的步差小、GS的残差小、积分两次网格差小，是否都能直接宣布已得到严格准确答案？",
+      "subject": "numerical_analysis",
+      "input_sha256": "b9b7940384a7b543524bc669a677a6fb7bb396a77bc227e727110ddcbc4e81be",
+      "rubric_sha256": "ea5c375fb0e12a1c0e367306406e197f8697c43bdb84f2031a48128e36f90780",
+      "rubric": {
+        "premises": [
+          "仅给三个停止或差异指标，没有误差转换条件。"
+        ],
+        "recomputable_basis": "三者分别测量迭代变化、方程残差、求积差异；误差界各需独立数学条件。",
+        "allowed_conclusions": [
+          "区分三种量和适用条件，让学生说明证据"
+        ],
+        "forbidden_conclusions": [
+          "把所有停止阈值等同真实误差证明"
+        ],
+        "recommended_actions": [
+          "ask_missing_condition"
+        ],
+        "expected_unknown": "三个严格准确性结论均未由给定信息建立",
+        "reference_solution": "三者分别测量迭代变化、方程残差、求积差异；误差界各需独立数学条件。",
+        "status": "agent_prepared_only",
+        "author_review": "pending",
+        "independent_review": "pending"
+      },
+      "source": {
+        "kind": "agent_prepared_mathematical_derivation",
+        "version": "r5-cases-v1",
+        "source_head": "accd40d3401a9775bf8653c744af15bc003fc0c7"
+      },
+      "applicability": {
+        "mathematical_correctness": true,
+        "valid_step_misjudgment": false,
+        "error_localization": false,
+        "condition_awareness": true,
+        "unknown_appropriateness": true,
+        "feedback_relevance": true,
+        "evidence_consistency": true
+      }
+    }
+  ],
+  "holdout_register": {
+    "status": "pending_independent_author",
+    "public_content_is_not_holdout": true,
+    "slots": [
+      {
+        "id": "H01",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      },
+      {
+        "id": "H02",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      },
+      {
+        "id": "H03",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      },
+      {
+        "id": "H04",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      },
+      {
+        "id": "H05",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      },
+      {
+        "id": "H06",
+        "prompt": null,
+        "rubric": null,
+        "status": "unallocated"
+      }
+    ]
+  }
+}

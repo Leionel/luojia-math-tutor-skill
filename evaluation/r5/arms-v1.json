@@ -1,0 +1,22 @@
+{
+  "version": "r5-arms-v1",
+  "transport": "in_process_ASGI_SSE",
+  "execution": "fixed_fixture_only",
+  "live_ready": false,
+  "model_label": "same-fixed-response-v1",
+  "generation": {"reasoning_effort": "medium", "temperature": null, "max_model_calls_per_run": 3, "latency_observation_threshold_seconds": 25, "owned_capture_timeout_seconds": 300},
+  "shared": ["original student message", "fresh isolated student and course stores", "same synthetic owner", "same disclosure mode", "same model fixture and body", "existing delivery guard"],
+  "arms": {
+    "D0": {"description": "ordinary math tutoring prompt; no project mathematics receipt, course retrieval or structured teaching decision", "math_receipt": false, "project_context": false, "teaching_decision": false},
+    "D1": {"description": "same ordinary prompt plus current bounded mathematics receipt; no project course/student prompting", "math_receipt": true, "project_context": false, "teaching_decision": false},
+    "D2": {"description": "native application prompt, bounded mathematics checks, teaching decision and local course context", "math_receipt": true, "project_context": true, "teaching_decision": true}
+  },
+  "fairness": {
+    "type": "declared_feature_ablation_not_equal_resource_policy_trial",
+    "intended_differences": ["mathematics evidence availability", "project prompt and local course context", "teaching decision protocol"],
+    "uncontrolled": ["prompt length differs by design", "native routing may change auxiliary call count", "no real model token or price evidence", "fresh state does not evaluate longitudinal personalization"],
+    "policy_comparison": "unreviewed fixtures must retain baseline; feature ablation cannot establish same-resource policy superiority"
+  },
+  "live_admission_required": ["explicit separate authorization", "provider and model allowlist", "verified token ceiling", "reservation before every request including retry", "request and cost budget", "independent mathematical review"],
+  "live_transport_implemented": false
+}
