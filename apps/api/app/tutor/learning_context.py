@@ -169,7 +169,15 @@ class TeachBackContextRef(BaseModel):
     condition_id: str = Field(min_length=1, max_length=100)
 
 
-ReferenceContext = Annotated[LearningContextRef | LinearContextRef | IntegrationContextRef | ReadingContextRef | CodeContextRef | TeachBackContextRef, Field(discriminator="kind")]
+class ExplorationContextRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["exploration"]
+    record_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")
+    revision: int = Field(ge=1)
+    selected_run_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,80}$")
+
+
+ReferenceContext = Annotated[LearningContextRef | LinearContextRef | IntegrationContextRef | ReadingContextRef | CodeContextRef | TeachBackContextRef | ExplorationContextRef, Field(discriminator="kind")]
 
 
 def _bounded(snapshot):
@@ -179,6 +187,9 @@ def _bounded(snapshot):
 
 
 def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
+    if ref.kind == "exploration":
+        from app.tutor.exploration_advice import exploration_context
+        return exploration_context(workspace, owner, ref)
     if ref.kind=="root_lab":return _resolve_root_context(workspace,owner,ref)
     with workspace.store.transaction():
         assert_reference_help_allowed(owner,workspace.course)

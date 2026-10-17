@@ -61,6 +61,7 @@ export default function HomePage() {
           <p className="mt-7 max-w-[48ch] text-base leading-8 text-[var(--text-secondary)]">可以只聊概念和推导，也可以带一份材料来读。需要练习或实验时，再选择适合的工作区。</p>
           <p className="mt-5 text-base sm:text-xs tracking-wide text-[var(--text-muted)]">直接讨论 / 围绕材料 / 连续学习</p>
           <HomeConversationEntry/>
+          <Link href="/explore" className="mt-4 inline-flex min-h-12 items-center gap-2 text-sm text-olive-700 underline dark:text-olive-300">有一个想验证的判断？开始数学探索 →</Link>
         </div>
         <section aria-labelledby="next-step" aria-busy={loading} className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-6 sm:p-8 lg:mt-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="next-step" className="text-lg font-semibold">继续你的学习</h2><span className="text-base sm:text-sm text-[var(--text-muted)]">{overview?.local_date ?? "学习工作区"}</span></div>
@@ -88,7 +89,7 @@ export default function HomePage() {
         </Link>)}</div>
       </section>
       {overview?.latest_assessment && <section aria-label="最近章节自检" className="mt-8 border-l-2 border-olive-600 pl-5"><h2 className="font-semibold">最近一次章节自检 · 参考 {overview.latest_assessment.score.percentage} 分</h2><p className="mt-2 text-base sm:text-sm leading-7 text-[var(--text-secondary)]">{overview.latest_assessment.review_units.length?"建议回看：":"这组参考题全部匹配，可继续核对自己的求根过程。"}{overview.latest_assessment.review_units.map((id,i)=><span key={id}>{i>0?"、":""}<Link href={`/reading?unit=${encodeURIComponent(id)}`} className={`text-olive-700 dark:text-olive-300 underline ${focus}`}>{unitNames[id] ?? id}</Link></span>)} 参考分数用于训练自查。</p><Link href={`/assessment?id=${encodeURIComponent(overview.latest_assessment.id)}`} className={`mt-2 inline-flex min-h-12 items-center text-olive-700 dark:text-olive-300 underline ${focus}`}>查看本次解析 →</Link></section>}
-      <section aria-label="其他学习工具" className="mt-10 border-t border-[var(--border-primary)] pt-6"><h2 className="text-lg font-semibold">其他学习工具</h2><nav aria-label="其他工具" className="mt-2 flex flex-wrap gap-x-6">{[["/records","学习记录"],["/mistake-book","错题本"],["/notebook","随堂笔记"],["/graph","知识图谱"]].map(([href,label])=><Link key={href} href={href} className={`inline-flex min-h-12 items-center text-base sm:text-sm text-[var(--text-secondary)] hover:text-olive-700 dark:hover:text-olive-300 ${focus}`}>{label} ↗</Link>)}</nav></section>
+      <section aria-label="其他学习工具" className="mt-10 border-t border-[var(--border-primary)] pt-6"><h2 className="text-lg font-semibold">其他学习工具</h2><nav aria-label="其他工具" className="mt-2 flex flex-wrap gap-x-6">{[["/records","学习记录"],["/mistake-book","错题本"],["/notebook","随堂笔记"],["/graph?view=personal","我的知识网络"],["/graph?view=course","课程知识网络"]].map(([href,label])=><Link key={href} href={href} className={`inline-flex min-h-12 items-center text-base sm:text-sm text-[var(--text-secondary)] hover:text-olive-700 dark:hover:text-olive-300 ${focus}`}>{label} ↗</Link>)}</nav></section>
       <footer className="mt-8 text-base sm:text-xs text-[var(--text-muted)]">珞珈数智助教 · 陪你读教材、做实验，保存每一步学习记录。</footer>
     </div>
   </div></SiteFrame></MotionConfig>;

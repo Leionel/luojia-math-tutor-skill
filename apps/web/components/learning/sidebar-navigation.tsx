@@ -1,27 +1,31 @@
 "use client";
 import Link from "next/link";
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import {usePathname} from "next/navigation";
 import {Search, Network, NotebookPen, BookOpen, BookmarkCheck, CalendarCheck2, CheckCircle2, MessageCircle, Code2, LogOut, LogIn, ChevronDown} from "lucide-react";
 import {LearningNavigation} from "./learning-navigation";
 import {SettingsDrawer} from "../settings-drawer";
 import {ThemeToggle} from "../theme-toggle";
 import {clearAuthSession,signOutCurrentSession} from "@/lib/demo-auth";
+import {learningRequest} from "@/lib/learning-api";
+import {getAuthHeaders,isAuthStorageKey} from "@/lib/demo-auth";
 const row="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-olive-600";
 export function SidebarNavigation({onOpenSearch,onNavigate}: {onOpenSearch:()=>void;onNavigate?:()=>void}) {
   const pathname=usePathname();
-  const items=[{href:"/explore",label:"数学探索",icon:Network},{href:"/study",label:"今日学习",icon:CalendarCheck2},{href:"/assessment",label:"章节自检",icon:CheckCircle2},{href:"/teach-back",label:"讲给助教听",icon:MessageCircle},{href:"/code-workshop",label:"代码静态审阅",icon:Code2},{href:"/graph",label:"知识网络",icon:Network},{href:"/notebook",label:"笔记本",icon:NotebookPen},{href:"/mistake-book",label:"错题本",icon:BookOpen},{href:"/admin/knowledge",label:"教师审核",icon:BookmarkCheck}];
+  const [teacher,setTeacher]=useState(false);
+  useEffect(()=>{let generation=0;const read=()=>{const token=++generation;setTeacher(false);const credential=getAuthHeaders().Authorization;void learningRequest<{authenticated:boolean;role:string}>("/auth/me").then(p=>{if(token===generation&&credential===getAuthHeaders().Authorization)setTeacher(p.authenticated&&["teacher","admin"].includes(p.role));}).catch(()=>{});};const storage=(e:StorageEvent)=>{if(isAuthStorageKey(e.key))read();};read();window.addEventListener("luojia-auth-change",read);window.addEventListener("storage",storage);return()=>{generation++;window.removeEventListener("luojia-auth-change",read);window.removeEventListener("storage",storage);};},[]);
+  const items=[{href:"/explore",label:"数学探索",icon:Network},{href:"/study",label:"今日学习",icon:CalendarCheck2},{href:"/assessment",label:"章节自检",icon:CheckCircle2},{href:"/teach-back",label:"讲给助教听",icon:MessageCircle},{href:"/code-workshop",label:"代码静态审阅",icon:Code2},{href:"/graph?view=personal",label:"我的知识网络",icon:Network},{href:"/graph?view=course",label:"课程知识网络",icon:Network},{href:"/notebook",label:"笔记本",icon:NotebookPen},{href:"/mistake-book",label:"错题本",icon:BookOpen},{href:"/admin/knowledge",label:"教师审核",icon:BookmarkCheck}];
   return <div onClick={event=>{if((event.target as HTMLElement).closest("a"))onNavigate?.();}}>
     <LearningNavigation/>
     <div role="separator" className="my-4 border-t border-[var(--border-primary)]"/>
     <nav aria-label="学习工具" className="grid gap-0.5">
       <button type="button" onClick={onOpenSearch} aria-label="搜索对话与知识" className={row}><Search className="size-4"/>搜索对话与知识<kbd className="ml-auto text-[10px] text-[var(--text-muted)]">Ctrl K</kbd></button>
       <Link href="/materials" aria-current={pathname==="/materials"?"page":undefined} className={`${row} ${pathname==="/materials"?"bg-olive-600/10 text-olive-800 dark:text-olive-200":""}`}><BookOpen className="size-4"/>我的资料</Link>
-      <details className="group" open={items.slice(0,-1).some(item=>item.href===pathname)||undefined}>
+      <details className="group" open={items.slice(0,-1).some(item=>item.href.split("?")[0]===pathname)||undefined}>
         <summary className={`${row} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}><BookOpen className="size-4"/>学习工具与资料<ChevronDown className="ml-auto size-3.5 transition-transform group-open:rotate-180"/></summary>
         <div className="ml-3 border-l border-[var(--border-primary)] pl-2">{items.slice(0,-1).map(({href,label,icon:Icon})=><Link key={href} href={href} aria-current={pathname===href?"page":undefined} className={`${row} ${pathname===href?"bg-olive-600/10 text-olive-800 dark:text-olive-200":""}`}><Icon className="size-4"/>{label}</Link>)}</div>
       </details>
-      <Link href="/admin/knowledge" aria-current={pathname==="/admin/knowledge"?"page":undefined} className={row}><BookmarkCheck className="size-4"/>教师审核</Link>
+      {teacher&&<Link href="/admin/knowledge" aria-current={pathname==="/admin/knowledge"?"page":undefined} className={row}><BookmarkCheck className="size-4"/>教师审核</Link>}
     </nav>
   </div>;
 }

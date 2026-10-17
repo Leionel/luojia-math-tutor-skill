@@ -9,3 +9,9 @@ evaluation/r2/b4-variants-v1.json text eol=lf
 apps/api/app/tutor/learning_workspace.py text eol=lf
 apps/api/app/tutor/learning_extensions.py text eol=crlf
 protocol/intelligent-ui-prompt.txt text eol=lf
+
+# R6 freezes the original Windows bytes. Preserve that exact checkout on Linux
+# too; the Git blob remains normalized LF and no frozen digest is rewritten.
+evaluation/r5/cases-v1.json text eol=crlf
+evaluation/r5/arms-v1.json text eol=lf
+scripts/eval_r5.py text eol=lf

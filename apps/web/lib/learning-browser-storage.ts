@@ -6,7 +6,7 @@ const LEARNING_PREFIXES=[
  "code-workshop:","assessment-draft:","lab-draft:","lab-request:","lab-reflection:",
  "learning-trace:","learning-request:","newton-activity:","lab-action:","numerical-request:",
  "luojia_private_chat_ref_v1:","luojia_chat_draft_v1:",
-  "luojia_exploration_draft_v1:","trace-draft:",
+  "luojia_exploration_draft_v1:","luojia_experiment_editor:","trace-draft:",
 ];
 const LEARNING_EXACT_KEYS=new Set(["pendingQuiz","luojia_user_api_key"]);
 

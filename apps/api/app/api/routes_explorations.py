@@ -1,8 +1,9 @@
 """Owner-scoped exploration adapter over the existing learning record store."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from app.auth import Principal, get_principal
-from app.main_deps import get_learning_workspace
+from app.auth import Principal, get_principal, get_forwarded_llm_key
+from app.main_deps import get_learning_workspace, get_app_settings
+from app.tutor.exploration_advice import AdviceRequest, advise
 from app.tutor.help_boundary import assert_reference_help_allowed
 from app.tutor.learning_workspace import digest
 from app.tutor.explorations import (
@@ -14,6 +15,7 @@ from app.tutor.explorations import (
     Execute,
     proposal,
     KIND,
+    AdviceFeedback,
 )
 
 router = APIRouter(prefix="/api/explorations", tags=["explorations"])
@@ -95,6 +97,30 @@ def create(
     return invoke(lambda: Explorations(workspace).create(user, body))
 
 
+@router.get("/from-chat/{session_id}")
+def chat_seed(session_id: str, user=Depends(owner), workspace=Depends(get_learning_workspace)):
+    def read_seed():
+        assert_reference_help_allowed(user, workspace.course)
+        session = next((s for s in workspace.repository.list_sessions(user) if s["id"] == session_id), None)
+        if not session:
+            raise KeyError("session")
+        messages = workspace.repository.list_messages(session_id)
+        claim = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        return {"title": session["title"][:160], "claim": claim[:2000], "origin_session_id": session_id}
+    return invoke(read_seed)
+
+
+@router.post("/{id}/advice")
+async def advice(id: str, body: AdviceRequest, user=Depends(owner), workspace=Depends(get_learning_workspace),
+                 settings=Depends(get_app_settings), api_key=Depends(get_forwarded_llm_key)):
+    try:
+        return await advise(workspace, user, id, body, settings, api_key)
+    except KeyError as exc:
+        raise HTTPException(404, "探索不存在或不属于当前账号。") from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
 @router.get("/{id}")
 def read(id: str, user=Depends(owner), workspace=Depends(get_learning_workspace)):
     return invoke(
@@ -144,3 +170,8 @@ def run(
     workspace=Depends(get_learning_workspace),
 ):
     return invoke(lambda: Explorations(workspace).update(user, id, "run", body))
+
+
+@router.post("/{id}/reject-relation")
+def reject_relation(id: str, body: AdviceFeedback, user=Depends(owner), workspace=Depends(get_learning_workspace)):
+    return invoke(lambda: Explorations(workspace).update(user, id, "reject_relation", body))

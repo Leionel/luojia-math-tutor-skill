@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {readChatEntry} from "@/lib/chat-entry";
 import { useEffect, useRef, useState } from "react";
 import {
   LearningShell,
@@ -19,17 +20,14 @@ import {
 } from "@/lib/demo-auth";
 import { chatReferenceHref, readingSourceRef } from "@/lib/learning-context";
 import {
-  draftTask,
-  taskDraft,
-  emptyTask,
   gsStatus,
-  type DraftTask,
   type Exploration,
   type PersonalGraph,
   type Source,
   type Run,
 } from "@/lib/explorations";
-import type { LinearTask } from "@/lib/numerical-lab";
+import {ExplorationExperiment} from "@/components/learning/exploration-experiment";
+import {PersonalNetwork} from "@/components/learning/personal-network";
 
 type Catalog = {
   course: { title: string; ref: Source }[];
@@ -42,26 +40,16 @@ type Draft = {
   claim: string;
   reason: string;
   graph: PersonalGraph;
-  tasks: DraftTask[];
-  prediction: string;
-  compare: boolean;
-  metrics: string[];
   base: number;
 };
 const fresh = (): Draft => ({
-  title: "GS：对角占优是必要条件吗？",
+  title: "我的数学探索",
   claim: "",
   reason: "",
   graph: { nodes: [], edges: [] },
-  tasks: [{ ...emptyTask }, { ...emptyTask }],
-  prediction: "",
-  compare: false,
-  metrics: ["residual", "step", "spectral_radius"],
   base: 0,
 });
 function savedDraft(saved: Exploration): Draft {
-  const run = [...saved.history].reverse().find((h) => h.payload.runs?.length);
-  const tasks = run?.payload.runs?.map((r) => taskDraft(r.task)) || [];
   const revision = [...saved.history]
     .reverse()
     .find((h) => h.action === "revise");
@@ -71,10 +59,6 @@ function savedDraft(saved: Exploration): Draft {
     claim: saved.claim,
     graph: saved.graph,
     base: saved.revision,
-    tasks: [tasks[0] || { ...emptyTask }, tasks[1] || { ...emptyTask }],
-    compare: tasks.length === 2,
-    prediction: run?.payload.prediction || "",
-    metrics: run?.payload.metrics || fresh().metrics,
     reason: revision?.payload.reason || "",
   };
 }
@@ -104,6 +88,7 @@ export default function ExplorePage() {
 function Explore() {
   const owner = getCurrentUserId(),
     credential = getAuthHeaders().Authorization;
+  const [originSession,setOriginSession]=useState("");
   const [id, setId] = useState(""),
     [record, setRecord] = useState<Exploration | null>(null),
     [draft, setDraft] = useState<Draft>(fresh);
@@ -120,7 +105,6 @@ function Explore() {
     [error, setError] = useState(""),
     [storageError, setStorageError] = useState("");
   const [pending, setPending] = useState<Pending | null>(null),
-    [confirmed, setConfirmed] = useState(false),
     [ready, setReady] = useState(false);
   const [nodeLabel, setNodeLabel] = useState(""),
     [sourceChoice, setSourceChoice] = useState(""),
@@ -134,8 +118,10 @@ function Explore() {
     alive.current &&
     owner === getCurrentUserId() &&
     credential === getAuthHeaders().Authorization;
+  const newScope=()=>{if(typeof window==="undefined")return "standalone";const params=new URLSearchParams(window.location.search);return params.get("draft")||params.get("session")||"standalone";};
   const key = (value: string) =>
-    `luojia_exploration_draft_v1:${owner}:${value || "new"}`;
+    `luojia_exploration_draft_v1:${owner}:${value || `new:${newScope()}`}`;
+  const draftStorageKey=key(id);
   function stored(value: string) {
     try {
       const cached = JSON.parse(localStorage.getItem(key(value)) || "null");
@@ -143,27 +129,10 @@ function Explore() {
       const text = (v: unknown) => typeof v === "string";
       if (
         !d ||
-        ![d.title, d.claim, d.reason, d.prediction].every(text) ||
-        typeof d.compare !== "boolean" ||
+        ![d.title, d.claim, d.reason].every(text) ||
         !Number.isInteger(d.base) ||
-        d.base < 0 ||
-        !Array.isArray(d.metrics) ||
-        !d.metrics.every(
-          (m: unknown) =>
-            typeof m === "string" &&
-            ["residual", "step", "spectral_radius"].includes(m),
-        )
-      )
-        return null;
-      if (
-        !Array.isArray(d.tasks) ||
-        d.tasks.length !== 2 ||
-        !d.tasks.every(
-          (t: DraftTask) =>
-            t && [t.matrix, t.rhs, t.initial, t.tolerance, t.limit].every(text),
-        )
-      )
-        return null;
+        d.base < 0
+      ) return null;
       if (
         !Array.isArray(d.graph?.nodes) ||
         !Array.isArray(d.graph?.edges) ||
@@ -182,7 +151,7 @@ function Explore() {
       const p = cached.pending;
       const allowed = value
         ? new RegExp(
-            `^/explorations/${value}/(claim|graph|restore-graph|runs)$`,
+            `^/explorations/${value}/(claim|graph|restore-graph|runs|reject-relation)$`,
           )
         : /^\/explorations$/;
       return {
@@ -226,7 +195,6 @@ function Explore() {
     setError("");
     setRecord(null);
     setPending(null);
-    setConfirmed(false);
     setId(value);
     try {
       const cached = stored(value);
@@ -237,7 +205,17 @@ function Explore() {
         if (!valid() || token !== epoch.current) return;
         setRecord(saved);
         setDraft(cached?.draft ?? savedDraft(saved));
-      } else setDraft(cached?.draft ?? fresh());
+      } else {
+        const entryId=new URLSearchParams(window.location.search).get("draft");
+        const entry=entryId?readChatEntry(sessionStorage,owner,entryId):null;
+        if(entryId&&!entry)throw Error("转交的问题草稿已过期或不属于当前账号，请回对话重新选择。");
+        const session=new URLSearchParams(window.location.search).get("session");
+        if(session){
+          const seed=await learningRequest<{title:string;claim:string;origin_session_id:string}>(`/explorations/from-chat/${encodeURIComponent(session)}`);
+          if(!valid()||token!==epoch.current)return;
+          setOriginSession(seed.origin_session_id);setDraft(cached?.draft??{...fresh(),title:seed.title,claim:entry?.slice(0,2000)??seed.claim});
+        }else {setOriginSession("");setDraft(cached?.draft??{...fresh(),claim:entry?.slice(0,2000)??""});}
+      }
       if (valid() && token === epoch.current) {
         setPending(cached?.pending ?? null);
         setReady(true);
@@ -278,7 +256,7 @@ function Explore() {
       return;
     try {
       localStorage.setItem(
-        `luojia_exploration_draft_v1:${owner}:${id || "new"}`,
+        draftStorageKey,
         JSON.stringify({ draft, pending }),
       );
       setStorageError("");
@@ -287,10 +265,9 @@ function Explore() {
         "浏览器无法保存草稿，刷新前请复制未提交的文字；服务端已保存记录不受影响。",
       );
     }
-  }, [draft, pending, id, ready, owner, credential]);
+  }, [draft, pending, draftStorageKey, ready, owner, credential]);
   function change(value: Partial<Draft>) {
     setDraft((old) => ({ ...old, ...value }));
-    setConfirmed(false);
   }
   const conflict = !!record && draft.base !== record.revision;
   async function send(operation: Pending) {
@@ -316,8 +293,7 @@ function Explore() {
           : {}),
       }));
       setPending(null);
-      setConfirmed(false);
-      saveLocal(
+        saveLocal(
         saved.id,
         {
           ...draft,
@@ -409,31 +385,16 @@ function Explore() {
       if (valid()) setBusy(false);
     }
   }
-  async function adopt() {
-    setBusy(true);
-    setError("");
-    try {
-      const value = await learningRequest<{
-        origin: string;
-        tasks: LinearTask[];
-        notice: string;
-      }>("/explorations/proposal");
-      if (valid()) change({ tasks: value.tasks.map(taskDraft), compare: true });
-    } catch (e) {
-      if (valid()) setError(e instanceof Error ? e.message : "建议暂不可用。");
-    } finally {
-      if (valid()) setBusy(false);
-    }
-  }
   const disabled = busy || !!pending || conflict;
   const runs = record?.history.flatMap((h) => h.payload.runs || []) || [];
   return (
     <LearningShell
-      title="数学探索 · GS 与收敛条件"
+      title="数学探索"
       description="保存你的主张，编辑私人知识关联，用受控实验检查想法，再修订。私人关系与计算结果不会自动进入官方图谱或计为独立掌握。"
       wide
     >
       <div className="mb-5 flex flex-wrap items-center gap-3">
+        <Link href="/graph?view=personal" className="min-h-11 py-3 text-sm underline">我的知识网络</Link>
         <Link href="/records" className="min-h-11 py-3 text-sm underline">
           学习记录
         </Link>
@@ -611,6 +572,7 @@ function Explore() {
                         request_id: crypto.randomUUID(),
                         title: draft.title,
                         claim: draft.claim,
+                        origin_session_id: originSession || null,
                       },
                     })
                   }
@@ -629,8 +591,28 @@ function Explore() {
                     部分已绑定来源已删除或版本发生变化。历史定位保留；后续实验不会静默换用新版。请移除或重新选择相关引用后保存私人关系。
                   </p>
                 )}
-                <section className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
+                <ExplorationExperiment key={record.id} record={record} disabled={disabled}
+                  onSaved={saved=>{setRecord(saved);change({base:saved.revision});}}
+                  onRun={body=>mutate("runs",body)}
+                  onReject={()=>mutate("reject-relation",{reason:"学生拒绝本次候选关联"})}
+                  onGraph={g=>{const ids=new Map(g.nodes.map(n=>[n.id,crypto.randomUUID()]));change({graph:{nodes:[...draft.graph.nodes,...g.nodes.map(n=>({...n,id:ids.get(n.id)!}))],edges:[...draft.graph.edges,...g.edges.map(e=>({...e,id:crypto.randomUUID(),source:ids.get(e.source)!,target:ids.get(e.target)!}))]}});}}/>
+                {!!runs.length && (
+                <section aria-label="探索实验结果" className="mt-6 space-y-4">
+                    <h2 className="font-serif text-xl">已保存的实验与证据</h2>
+                    {runs.map((run, index) => (
+                      <RunView
+                        key={run.ref.record_id}
+                        run={run}
+                        record={record}
+                        index={index}
+                      />
+                    ))}
+                  </section>
+                )}
+                  <section className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
                   <h2 className="font-serif text-xl">私人知识关联</h2>
+                  <PersonalNetwork record={record}/>
+                  <details><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">编辑节点、来源与私人关系</summary>
                   <p className="text-xs leading-6 text-[var(--text-secondary)]">
                     节点与关系由你编辑；这里的“支持、质疑、推出”表示你的想法，均未经数学审核。可引用课程节点、个人笔记或资料首个章节。
                   </p>
@@ -654,7 +636,7 @@ function Explore() {
                         className={`${learningInput} mt-1`}
                       >
                         <option value="">我的个人想法，无已绑定来源</option>
-                        <optgroup label="官方课程节点">
+                        <optgroup label="课程节点（保留审核状态）">
                           {catalog.course.map((c, i) => (
                             <option key={i} value={`course:${i}`}>
                               {c.title}
@@ -971,163 +953,8 @@ function Explore() {
                   >
                     保存私人关联
                   </button>
+                  </details>
                 </section>
-                <section className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
-                  <h2 className="font-serif text-xl">设计受控对照实验</h2>
-                  <p className="text-sm leading-7">
-                    采用建议后可修改全部参数，也可以手工填写。当前只执行 GS
-                    数值任务，不运行学生代码。建议来自规则模板，不是模型已完成的计算。
-                  </p>
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => void adopt()}
-                    className={learningButtonSecondary}
-                  >
-                    采用可编辑的对照建议
-                  </button>
-                  <label className="flex min-h-11 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={draft.compare}
-                      onChange={(e) => change({ compare: e.target.checked })}
-                    />
-                    增加第二组对照
-                  </label>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {draft.tasks
-                      .slice(0, draft.compare ? 2 : 1)
-                      .map((task, index) => (
-                        <fieldset
-                          key={index}
-                          className="min-w-0 space-y-3 rounded-xl border border-[var(--border-primary)] p-4"
-                        >
-                          <legend className="px-2 text-sm font-semibold">
-                            实验 {index === 0 ? "A" : "B"} · Gauss–Seidel
-                          </legend>
-                          {(
-                            [
-                              [
-                                "matrix",
-                                "系数矩阵（每行一行，数字用空格分隔）",
-                              ],
-                              ["rhs", "右端项"],
-                              ["initial", "初始向量"],
-                              ["tolerance", "残差阈值"],
-                              ["limit", "迭代上限"],
-                            ] as const
-                          ).map(([field, label]) => (
-                            <label key={field} className="block text-sm">
-                              {label}
-                              <textarea
-                                aria-label={`实验${index === 0 ? "A" : "B"} ${field}`}
-                                rows={field === "matrix" ? 3 : 1}
-                                value={task[field]}
-                                onChange={(e) =>
-                                  change({
-                                    tasks: draft.tasks.map((t, i) =>
-                                      i === index
-                                        ? { ...t, [field]: e.target.value }
-                                        : t,
-                                    ),
-                                  })
-                                }
-                                className={`${learningInput} mt-1 font-mono`}
-                              />
-                            </label>
-                          ))}
-                        </fieldset>
-                      ))}
-                  </div>
-                  <label className="block text-sm">
-                    运行前，我的预测
-                    <textarea
-                      aria-label="运行前我的预测"
-                      maxLength={2000}
-                      rows={3}
-                      value={draft.prediction}
-                      onChange={(e) => change({ prediction: e.target.value })}
-                      className={`${learningInput} mt-1`}
-                    />
-                  </label>
-                  <fieldset className="flex flex-wrap gap-4">
-                    <legend className="mb-2 text-sm">我关注的指标</legend>
-                    {[
-                      ["residual", "残差"],
-                      ["step", "相邻步变化"],
-                      ["spectral_radius", "谱半径"],
-                    ].map(([metric, label]) => (
-                      <label
-                        key={metric}
-                        className="flex min-h-11 items-center gap-2 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={draft.metrics.includes(metric)}
-                          onChange={(e) =>
-                            change({
-                              metrics: e.target.checked
-                                ? [...draft.metrics, metric]
-                                : draft.metrics.filter((x) => x !== metric),
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </fieldset>
-                  <label className="flex min-h-11 items-start gap-2 text-sm leading-7">
-                    <input
-                      type="checkbox"
-                      className="mt-2"
-                      checked={confirmed}
-                      onChange={(e) => setConfirmed(e.target.checked)}
-                    />
-                    我已核对参数，确认运行参考计算；结果不会记作独立通过。
-                  </label>
-                  <button
-                    type="button"
-                    disabled={
-                      disabled ||
-                      !confirmed ||
-                      !draft.prediction.trim() ||
-                      !draft.metrics.length
-                    }
-                    className={learningButton}
-                    onClick={() => {
-                      try {
-                        mutate("runs", {
-                          tasks: draft.tasks
-                            .slice(0, draft.compare ? 2 : 1)
-                            .map(draftTask),
-                          prediction: draft.prediction,
-                          metrics: draft.metrics,
-                          confirmed: true,
-                        });
-                      } catch (e) {
-                        setError(
-                          e instanceof Error
-                            ? e.message
-                            : "参数不可用，草稿保留。",
-                        );
-                      }
-                    }}
-                  >
-                    确认执行受控实验
-                  </button>
-                </section>
-                {!!runs.length && (
-                  <section aria-label="探索实验结果" className="mt-6 space-y-4">
-                    <h2 className="font-serif text-xl">已保存的实验与证据</h2>
-                    {runs.map((run, index) => (
-                      <RunView
-                        key={run.ref.record_id}
-                        run={run}
-                        index={index}
-                      />
-                    ))}
-                  </section>
-                )}
                 <section className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
                   <h2 className="font-serif text-xl">
                     探索过程 · 版本 {record.revision}
@@ -1158,6 +985,8 @@ function Explore() {
                             restore_graph: "恢复私人图",
                             revise: "修订主张",
                             run: "确认参考实验",
+                            advice: "保存助教建议（尚未执行）",
+                            reject_relation: "拒绝候选关联",
                           } as Record<string, string>
                         )[h.action] || "保存记录"}{" "}
                         · {new Date(h.at).toLocaleString("zh-CN")}
@@ -1202,12 +1031,12 @@ function Explore() {
     </LearningShell>
   );
 }
-function RunView({ run, index }: { run: Run; index: number }) {
+function RunView({ run, index,record }: { run: Run; index: number;record:Exploration }) {
   const evidence = run.matrix_evidence;
   return (
     <article className="min-w-0 space-y-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
       <h3 className="font-serif text-lg">
-        实验 {index + 1} · {gsStatus(run.status)}
+        实验 {index + 1} · {(run.task.domain==="root_finding"?run.stop_detail:gsStatus(run.status))}
       </h3>
       <p className="text-xs leading-6">
         受控浮点计算 · 观察当前参数与初值的有限轨迹；不计独立掌握。
@@ -1217,7 +1046,7 @@ function RunView({ run, index }: { run: Run; index: number }) {
           <thead>
             <tr>
               <th className="p-2">步数</th>
-              <th className="p-2">向量</th>
+              <th className="p-2">{run.task.domain==="root_finding"?"迭代值 x":"向量"}</th>
               <th className="p-2">残差</th>
               <th className="p-2">相邻步变化</th>
             </tr>
@@ -1230,16 +1059,16 @@ function RunView({ run, index }: { run: Run; index: number }) {
               >
                 <td className="p-2">{row.k}</td>
                 <td className="p-2 font-mono">
-                  {row.vector?.map((x) => x.toPrecision(5)).join(", ")}
+                  {row.x!==undefined?row.x.toPrecision(6):row.vector?.map((x) => x.toPrecision(5)).join(", ")}
                 </td>
-                <td className="p-2">{row.residual?.toExponential(3)}</td>
+                <td className="p-2">{(row.fx??row.residual)?.toExponential(3)}</td>
                 <td className="p-2">{row.step?.toExponential(3) ?? "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {evidence.status === "deterministic_calculation" ? (
+      {evidence?.status === "deterministic_calculation" ? (
         <div className="space-y-2 border-l-2 border-dai-600 pl-3 text-sm leading-7">
           <h4 className="font-semibold">针对这个矩阵的有理数计算</h4>
           <p>
@@ -1256,7 +1085,7 @@ function RunView({ run, index }: { run: Run; index: number }) {
           <p className="text-xs">{evidence.statement_scope}</p>
         </div>
       ) : (
-        <p className="text-sm">{evidence.reason}</p>
+        <p className="text-sm">{run.next_question??evidence?.reason}</p>
       )}
       <details className="text-xs">
         <summary className="min-h-11 cursor-pointer py-3">
@@ -1267,7 +1096,7 @@ function RunView({ run, index }: { run: Run; index: number }) {
             {
               task: run.task,
               source: run.ref,
-              iteration_matrix: evidence.iteration_matrix,
+              iteration_matrix: evidence?.iteration_matrix,
             },
             null,
             2,
@@ -1277,13 +1106,13 @@ function RunView({ run, index }: { run: Run; index: number }) {
       <div className="flex flex-wrap gap-4 text-sm">
         <Link
           className="min-h-11 py-3 text-olive-700 dark:text-olive-300 underline"
-          href={chatReferenceHref(run.ref)}
+          href={`${chatReferenceHref({kind:"exploration",record_id:record.id,revision:record.revision,selected_run_id:run.ref.record_id})}${record.origin_session_id?`&session=${encodeURIComponent(record.origin_session_id)}`:""}`}
         >
           围绕这次已保存计算讨论
         </Link>
         <Link
           className="min-h-11 py-3 underline"
-          href={`/numerical-lab?id=${encodeURIComponent(run.ref.record_id)}`}
+          href={`/${run.ref.kind==="root_lab"?"lab":"numerical-lab"}?id=${encodeURIComponent(run.ref.record_id)}`}
         >
           查看原始数值记录
         </Link>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {useSearchParams} from "next/navigation";
 import {
   ArrowLeft,
   Network,
@@ -25,6 +26,9 @@ import { matchCourseCase, listCourseCases } from "@/lib/api";
 import { MathView, MathMarkdown } from "@/components/math-view";
 import { Node } from "@xyflow/react";
 
+import {PersonalNetworkBrowser} from "@/components/learning/personal-network";
+import {learningRequest} from "@/lib/learning-api";
+
 const PRESET_QUERIES = [
   "为什么牛顿法初值选不好会发散？",
   "重根情况下牛顿法的收敛速度是多少？",
@@ -32,7 +36,8 @@ const PRESET_QUERIES = [
   "二分法需要满足什么条件？"
 ];
 
-export default function GraphPage() {
+function CourseGraphPage() {
+  const sourceUnit=useSearchParams().get("unit");
   const [courseId] = useState("numerical_analysis");
   const [scopeFilter, setScopeFilter] = useState<string | undefined>(undefined);
   const [selectedNode, setSelectedNode] = useState<Node<any> | null>(null);
@@ -51,6 +56,17 @@ export default function GraphPage() {
       .then(setCourseCases)
       .catch(() => setCourseCases([]));
   }, [courseId]);
+  useEffect(()=>{
+    const id=sourceUnit;
+    if(!id)return;
+    let live=true;
+    void learningRequest<{nodes:Node[]}>(`/courses/${courseId}/graph?format=react_flow`).then(graph=>{
+      if(!live)return;
+      const node=graph.nodes.find(n=>n.id===id);
+      if(node){setSelectedNode(node);setHighlightNodeIds([id]);}
+    }).catch(()=>{if(live)setMatchError("绑定的课程节点暂不可读取，请重试。");});
+    return()=>{live=false;};
+  },[courseId,sourceUnit]);
 
   const handleRunMatch = (queryText: string) => {
     if (!queryText.trim()) return;
@@ -405,3 +421,10 @@ export default function GraphPage() {
     </div>
   );
 }
+
+function GraphView(){
+  const params=useSearchParams();
+  const view=params.get("view")==="personal"?"personal":"course";
+  return <><nav aria-label="知识网络视角" className="flex flex-wrap gap-3 border-b border-[var(--border-primary)] p-4">{[["course","课程知识网络"],["personal","我的知识网络"]].map(([v,label])=><Link key={v} href={`/graph?view=${v}`} aria-current={view===v?"page":undefined} className={`min-h-11 rounded-lg px-4 py-3 text-sm ${view===v?"bg-olive-600/10":""}`}>{label}</Link>)}<Link className="min-h-11 px-4 py-3 text-sm underline" href="/explore">数学探索</Link></nav>{view==="personal"?<PersonalNetworkBrowser/>:<CourseGraphPage/>}</>;
+}
+export default function GraphPage(){return <Suspense fallback={<p role="status" className="p-5">正在打开知识网络…</p>}><GraphView/></Suspense>;}

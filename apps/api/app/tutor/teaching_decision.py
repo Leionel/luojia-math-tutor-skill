@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, FiniteFloat
 from app.math_tools.verifier import VerifyResult, bound_step_verdict
 from app.tutor.prompt_policy import resolve_teaching_policy
 from app.tutor.hint_policy import HintLevel
+from app.math_tools.exploration_tasks import ExplorationTask
 
 CATALOG = json.loads((Path(__file__).resolve().parents[4] / "protocol/intelligent-ui-catalog.json").read_text(encoding="utf-8"))
 CATALOG_PROMPT = (Path(__file__).resolve().parents[4] / "protocol/intelligent-ui-prompt.txt")
@@ -39,6 +40,14 @@ class ExperimentProposal(BaseModel):
     observable: str = Field(min_length=1, max_length=200)
 
 
+class StructuredExperimentProposal(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    question_to_test: str = Field(min_length=1, max_length=300)
+    changed_parameter: Literal["task_parameters"] = "task_parameters"
+    tasks: list[ExplorationTask] = Field(min_length=1, max_length=2)
+    observable: str = Field(min_length=1, max_length=200)
+
+
 class TeachingDecision(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     claim_ref: Literal["claim:current"]
@@ -50,7 +59,7 @@ class TeachingDecision(BaseModel):
     disclosure: Literal["full", "scaffolded"]
     reason: str = Field(min_length=1, max_length=360)
     assessments: list[Assessment] = Field(default_factory=list, max_length=6)
-    experiment_proposal: ExperimentProposal | None = None
+    experiment_proposal: ExperimentProposal | StructuredExperimentProposal | None = None
 
 
 
@@ -65,7 +74,7 @@ def source_bundle(state: dict, tool_evidence: list | None = None) -> dict:
     context = state.get("learning_context") or {}
     sources = [{"id": "claim:current", "kind": "student_claim", "data":
                 (context.get("student_claim") or {}).get("text", state.get("message", ""))}]
-    for key in ("parameters", "rows", "exact_check", "linear_check", "citation", "condition_review", "finding", "code_excerpt", "condition"):
+    for key in ("parameters", "rows", "exact_check", "linear_check", "citation", "condition_review", "finding", "code_excerpt", "condition", "original_claim", "personal_relations", "experiments", "revisions", "teaching_focus"):
         if key in context:
             sources.append({"id": f"context:{key}", "kind": "scoped_check" if key in {"exact_check", "linear_check"} else "reference", "data": context[key]})
     verifier = state.get("verifier_result")
@@ -176,7 +185,7 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
                 or verdict is False and decision.claim_status == "supported"):
             raise ValueError("deterministic_verdict_conflict")
         if decision.action == "offer_experiment":
-            if not decision.experiment_proposal:
+            if not isinstance(decision.experiment_proposal, ExperimentProposal):
                 raise ValueError("missing_experiment_proposal")
             context = state.get("learning_context") or {}
             params = context.get("parameters") or {}

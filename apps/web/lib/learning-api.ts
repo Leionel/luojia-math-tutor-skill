@@ -95,11 +95,11 @@ export class LearningRequestError extends Error {
   constructor(message: string, public readonly status: number) { super(message); }
 }
 
-export async function learningRequest<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+export async function learningRequest<T>(path: string, body?: unknown, signal?: AbortSignal, extraHeaders?:Record<string,string>): Promise<T> {
   const response = await fetch(`${API_BASE}/api${path}`, {
     method: body === undefined ? "GET" : "POST", cache: "no-store",
     signal,
-    headers: {...getAuthHeaders(), ...(body === undefined ? {} : {"Content-Type": "application/json"})},
+    headers: {...getAuthHeaders(), ...extraHeaders, ...(body === undefined ? {} : {"Content-Type": "application/json"})},
     ...(body === undefined ? {} : {body: JSON.stringify(body)}),
   });
   const payload = await response.json().catch(() => null);

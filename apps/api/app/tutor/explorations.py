@@ -6,7 +6,10 @@ from fractions import Fraction
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
-from app.math_tools.numerical_lab import LinearTask, run_numerical
+from app.math_tools.numerical_lab import run_numerical
+from app.math_tools.exploration_tasks import GS, NewtonTask, ExplorationTask
+from app.math_tools.root_runner import LabRequest
+from app.math_tools.root_finding import RootAttempt
 from app.tutor.learning_context import ReadingContextRef, resolve_learning_context
 from app.tutor.learning_workspace import digest
 from app.tutor.help_boundary import assert_reference_help_allowed
@@ -89,6 +92,7 @@ class Create(Strict):
     request_id: ID
     title: str = Field(min_length=1, max_length=160)
     claim: Text
+    origin_session_id: ID | None = None
 
 
 class Command(Strict):
@@ -109,12 +113,16 @@ class RestoreGraph(Command):
     target_revision: int = Field(ge=1)
 
 
-class GS(LinearTask):
-    method: Literal["gauss_seidel"] = "gauss_seidel"
+class SaveAdvice(Command):
+    advice: dict
+
+
+class AdviceFeedback(Command):
+    reason: Text
 
 
 class Execute(Command):
-    tasks: list[GS] = Field(min_length=1, max_length=2)
+    tasks: list[ExplorationTask] = Field(min_length=1, max_length=2)
     prediction: Text
     metrics: list[Literal["residual", "step", "spectral_radius"]] = Field(
         min_length=1, max_length=3
@@ -243,26 +251,33 @@ class Explorations:
                     )
         for run in value["runs"]:
             current = self.w.store.learning_record(
-                owner, self.w.course_id, "numerical_lab", run["record_id"]
+                owner, self.w.course_id, "lab" if run["kind"] == "root_lab" else "numerical_lab", run["record_id"]
             )
-            if not current or current["source_hash"] != run["source_hash"]:
+            hash_key = "input_hash" if run["kind"] == "root_lab" else "source_hash"
+            if not current or current[hash_key] != run[hash_key]:
                 health.append(
                     {"run_id": run["record_id"], "state": "unavailable_or_changed"}
                 )
         result["linked_chats"] = self.w.repository.sessions_for_run_refs(
-            owner, [r["record_id"] for r in value["runs"]]
+            owner, [value["id"], *[r["record_id"] for r in value["runs"]]]
         )
+        origin = value.get("origin_session_id")
+        session = next((s for s in self.w.repository.list_sessions(owner) if s["id"] == origin), None)
+        if session and not any(s["id"] == origin for s in result["linked_chats"]):
+            result["linked_chats"].insert(0, {"id": origin, "title": session["title"]})
         result["reference_health"] = health
         return result
 
     def create(self, owner, body):
         assert_reference_help_allowed(owner, self.w.course)
+        if body.origin_session_id and not any(s["id"] == body.origin_session_id for s in self.w.repository.list_sessions(owner)):
+            raise KeyError("session")
         with self.w.store.transaction():
             old = self.w.store.learning_record(
                 owner, self.w.course_id, KIND, body.request_id
             )
             if old:
-                if old["create_hash"] != digest(body.model_dump()):
+                if old["create_hash"] not in {digest(body.model_dump()), digest(body.model_dump(exclude_none=True))}:
                     raise ValueError("请求标识已用于不同的探索")
                 return self.view(owner, old)
             timestamp = now()
@@ -274,6 +289,7 @@ class Explorations:
                 "create_hash": digest(body.model_dump()),
                 "title": body.title,
                 "claim": body.claim,
+                "origin_session_id": body.origin_session_id,
                 "claim_status": "unreviewed_student_claim",
                 "revision": 1,
                 "created_at": timestamp,
@@ -318,7 +334,12 @@ class Explorations:
             if len(value["history"]) >= 100:
                 raise ValueError("本探索已达到100次保存预算，请另建探索")
             payload = {}
-            if action == "revise":
+            if action == "advice":
+                value["advice"] = body.advice
+                payload = body.advice
+            elif action == "reject_relation":
+                payload = {"reason": body.reason, "advice_revision": value.get("advice", {}).get("based_on_revision")}
+            elif action == "revise":
                 value["claim"] = body.claim
                 payload = {"claim": body.claim, "reason": body.reason}
             elif action in ("graph", "restore_graph"):
@@ -347,6 +368,20 @@ class Explorations:
                 outputs = []
                 for index, task in enumerate(body.tasks):
                     run_id = f"exp_{digest([owner,id,key,index])[:32]}"
+                    if isinstance(task, NewtonTask):
+                        result = self.w.lab(owner, LabRequest(
+                            request_id=run_id, prediction=body.prediction[:1000], max_iterations=task.limit,
+                            attempt=RootAttempt(method="newton", function=task.function,
+                                                initial_value=task.initial_value, tolerance=task.tolerance, goal="residual")))
+                        result["exploration_id"] = id
+                        self.w.save(owner, "lab", run_id, result)
+                        ref = {"kind": "root_lab", "record_id": run_id, "input_hash": result["input_hash"],
+                               "runner_version": result["runner_version"], "graph_revision": result["graph_revision"], "selected_step": None}
+                        value["runs"].append(ref)
+                        outputs.append({"ref": ref, "task": task.model_dump(), "status": result["stop_reason"],
+                                        "rows": result["rows"], "stop_detail": result["stop_detail"],
+                                        "evidence_scope": "finite_newton_trajectory", "next_question": result["diagnosis"]["next_probe"]})
+                        continue
                     run_body = {
                         "request_id": run_id,
                         "task": task.model_dump(),

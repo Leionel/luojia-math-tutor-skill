@@ -1,6 +1,10 @@
 import type { LinearTask, NumericalRow } from "./numerical-lab";
 import { numericMatrix, numericVector } from "./numerical-lab.ts";
-import type { ReadingContextRef, LinearContextRef } from "./learning-context";
+import type {
+  ReadingContextRef,
+  LinearContextRef,
+  RootContextRef,
+} from "./learning-context";
 export type Source =
   | ReadingContextRef
   | { kind: "course"; unit_id: string; graph_revision: string }
@@ -30,12 +34,41 @@ export type Evidence = {
   is_counterexample_to_necessity?: boolean;
   statement_scope?: string;
 };
-export type Run = {
-  ref: LinearContextRef;
-  task: LinearTask;
-  matrix_evidence: Evidence;
+export type NewtonTask = {
+  domain: "root_finding";
+  method: "newton";
+  function: string;
+  initial_value: number;
+  tolerance: number;
+  limit: number;
+};
+export type ExplorationTask = LinearTask | NewtonTask;
+export type ExplorationAdvice = {
   status: string;
-  rows: NumericalRow[];
+  reason?: string;
+  based_on_revision: number;
+  decision?: {
+    known_conditions: string[];
+    missing_conditions: string[];
+    reason: string;
+    experiment_proposal?: {
+      question_to_test: string;
+      observable: string;
+      tasks: ExplorationTask[];
+    } | null;
+  };
+  suggested_graph?: PersonalGraph;
+  follow_up?: string;
+  exploration?: Exploration;
+};
+export type Run = {
+  ref: LinearContextRef | RootContextRef;
+  task: ExplorationTask;
+  matrix_evidence?: Evidence;
+  stop_detail?: string;
+  next_question?: string;
+  status: string;
+  rows: (Partial<NumericalRow> & { k: number; x?: number; fx?: number })[];
   evidence_scope: string;
 };
 export type History = {
@@ -62,7 +95,9 @@ export type Exploration = {
   updated_at: string;
   graph: PersonalGraph;
   history: History[];
-  runs: LinearContextRef[];
+  runs: (LinearContextRef | RootContextRef)[];
+  origin_session_id?: string;
+  advice?: ExplorationAdvice;
   help_exposure: boolean;
   independent_success: false;
   linked_chats: { id: string; title: string }[];

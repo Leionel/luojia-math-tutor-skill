@@ -1209,7 +1209,7 @@ export function TutorChat() {
               {rootError && <span role="alert" className="text-xs text-cinnabar-600">{rootError}</span>}
             </div>
             {rootForm && <RootAttemptForm key={`${rootDraft?.episode_id || "new"}-${rootDraft?.attempt_id || "first"}`} initial={rootDraft} instruction={rootInstruction} disabled={isStreaming} onClose={()=>setRootForm(false)} onSubmit={submission => {setRootForm(false);void submit(`求根过程：${submission.attempt.function}\n\n\`\`\`root-attempt\n${JSON.stringify(submission, null, 2)}\n\`\`\``, mode, false, undefined, submission);}}/>}
-            {!isZenMode&&<ChatWorkspaceBar open={workspaceOpen} tab={activeWorkspaceTab} hasReference={!!learningContext} disabled={isStreaming||contextLoading}
+            {!isZenMode&&<ChatWorkspaceBar draftText={inputValue} sessionId={sessionId} open={workspaceOpen} tab={activeWorkspaceTab} hasReference={!!learningContext} disabled={isStreaming||contextLoading}
             onRootCheck={()=>{setRootDraft(undefined);setRootInstruction("");setRootForm(!rootForm);}} onOpen={tab=>openWorkspace({},tab)} onClose={closeWorkspace} onPlain={()=>{void validateAndBindReference(null).then(result=>{if(result.ok){closeWorkspace();setIsLearningCollapsed(true);}});}}/>}
             {learningContext&&<ContextBanner compact snapshot={learningContext} disabled={isStreaming} onRemove={()=>{void validateAndBindReference(null);}}/>}
             <TutorInput
