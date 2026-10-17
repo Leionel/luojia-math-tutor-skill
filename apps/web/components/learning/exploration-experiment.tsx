@@ -338,31 +338,7 @@ export function ExplorationExperiment({
             </>
           )}
           <p>{advice.follow_up}</p>
-          {!!advice.suggested_graph?.edges.length && (
-            <div>
-              <p>
-                建议关联：
-                {advice.suggested_graph.nodes.map((n) => n.label).join(" → ")} ·{" "}
-                {advice.suggested_graph.edges[0].reason}
-              </p>
-              <button
-                type="button"
-                disabled={disabled || stale}
-                className={learningButtonSecondary}
-                onClick={() => onGraph(advice.suggested_graph!)}
-              >
-                加入私人关联草稿，再核对保存
-              </button>
-              <button
-                type="button"
-                disabled={disabled || stale}
-                className="ml-3 min-h-11 underline"
-                onClick={onReject}
-              >
-                拒绝这条建议关联
-              </button>
-            </div>
-          )}
+          {!!advice.suggested_graph?.edges.length && <p>关系提议已保存，请在下方“候选关系与处理回执”中编辑、接受或拒绝。</p>}
         </div>
       )}
       <fieldset className="flex gap-4">

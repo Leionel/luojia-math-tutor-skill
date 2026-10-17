@@ -42,6 +42,7 @@ export type TutorMeta = {
   mastery_estimate_notice?: string;
   tutor_artifacts?: unknown[];
   learning_context?: import("./learning-context").LearningTaskSnapshot;
+  personal_context?: { id: string; exploration_id: string; revision: number; relation_id: string; relation_version: string; authority: string; selection_reason: string; original_claim: string; current_claim: string; next_question: string }[];
   agent_run?: AgentRun;
   answer_guard?: import("./delivery-guard").DeliveryGuard;
   teaching_mode?: TutorMode;

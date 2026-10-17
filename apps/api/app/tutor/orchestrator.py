@@ -239,6 +239,7 @@ class TutorOrchestrator:
             "route": state.get("metrics", {}).get("route", ""),
             "answer_guard": state.get("answer_guard"),
             "teaching_decision": state.get("teaching_decision"),
+            "personal_context": state.get("personal_context", []),
         }
 
     async def stream_reply(self, session_id: str, user_id: str, message: str,
@@ -336,13 +337,21 @@ class TutorOrchestrator:
         )
 
         snapshot = None
+        personal_context = []
+        if learning_workspace is not None and not learning_context and not root_submission and not search.factual:
+            from app.tutor.personal_recall import select_personal_context
+            personal_context = await asyncio.to_thread(select_personal_context, learning_workspace, user_id, message)
         async def validate_reference():
             if learning_context:
                 return await asyncio.to_thread(resolve_learning_context, learning_workspace, user_id, learning_context)
+            if personal_context:
+                from app.tutor.personal_recall import validate_personal_context
+                await asyncio.to_thread(validate_personal_context, learning_workspace, user_id, personal_context)
         if learning_context:
             snapshot = await validate_reference()
 
         initial_state = {
+            "personal_context": personal_context,
             "root_submission": root_submission,
             "message": message,
             "original_message": message,
@@ -568,6 +577,8 @@ class TutorOrchestrator:
                 "concepts": explicit_concepts,
             }
         learning_meta = self._build_learning_meta(final_state)
+        if personal_context and not awaiting_input:
+            await validate_reference()
         if snapshot and not awaiting_input:
             await validate_reference()
             learning_meta.update(learning_context=snapshot, verified=False, is_correct=None,

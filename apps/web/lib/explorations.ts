@@ -98,6 +98,8 @@ export type Exploration = {
   runs: (LinearContextRef | RootContextRef)[];
   origin_session_id?: string;
   advice?: ExplorationAdvice;
+  relation_candidates?: { id: string; version: number; status: "pending" | "accepted" | "rejected"; origin: string; graph: PersonalGraph; reason?: string }[];
+  decision_receipts?: Record<string, { candidate_id: string; candidate_version: number; status: string; revision: number }>;
   help_exposure: boolean;
   independent_success: false;
   linked_chats: { id: string; title: string }[];

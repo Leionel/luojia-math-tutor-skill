@@ -16,6 +16,7 @@ from app.tutor.explorations import (
     proposal,
     KIND,
     AdviceFeedback,
+    RelationDecision,
 )
 
 router = APIRouter(prefix="/api/explorations", tags=["explorations"])
@@ -175,3 +176,8 @@ def run(
 @router.post("/{id}/reject-relation")
 def reject_relation(id: str, body: AdviceFeedback, user=Depends(owner), workspace=Depends(get_learning_workspace)):
     return invoke(lambda: Explorations(workspace).update(user, id, "reject_relation", body))
+
+
+@router.post("/{id}/relations/decision")
+def relation_decision(id: str, body: RelationDecision, user=Depends(owner), workspace=Depends(get_learning_workspace)):
+    return invoke(lambda: Explorations(workspace).update(user, id, "relation_decision", body))

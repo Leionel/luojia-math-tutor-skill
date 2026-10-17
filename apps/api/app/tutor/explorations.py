@@ -121,6 +121,14 @@ class AdviceFeedback(Command):
     reason: Text
 
 
+class RelationDecision(Command):
+    candidate_id: ID
+    candidate_version: int = Field(ge=1)
+    decision: Literal["edit", "accept", "reject"]
+    reason: Text
+    graph: PersonalGraph | None = None
+
+
 class Execute(Command):
     tasks: list[ExplorationTask] = Field(min_length=1, max_length=2)
     prediction: Text
@@ -337,6 +345,40 @@ class Explorations:
             if action == "advice":
                 value["advice"] = body.advice
                 payload = body.advice
+                graph = PersonalGraph.model_validate(body.advice.get("suggested_graph", {"nodes": [], "edges": []}))
+                if graph.edges:
+                    candidate_id = f"rel_{key.replace('-', '')[:32]}"
+                    value.setdefault("relation_candidates", []).append({
+                        "id": candidate_id, "version": 1, "status": "pending",
+                        "origin": "model_opinion", "graph": graph.model_dump(),
+                        "based_on_revision": value["revision"], "created_at": now(),
+                    })
+            elif action == "relation_decision":
+                candidate = next((c for c in value.get("relation_candidates", []) if c["id"] == body.candidate_id), None)
+                if candidate is None:
+                    raise KeyError("candidate")
+                if candidate["version"] != body.candidate_version or candidate["status"] != "pending":
+                    raise ValueError("候选关系已处理或版本变化，请重新读取")
+                graph = body.graph or PersonalGraph.model_validate(candidate["graph"])
+                if len(graph.nodes) > 2 or len(graph.edges) != 1:
+                    raise ValueError("每次只处理一条候选关系及其两个端点")
+                if body.decision != "reject":
+                    self.graph_sources(owner, graph)
+                candidate.update(graph=graph.model_dump(), version=candidate["version"] + 1,
+                                 status={"edit": "pending", "accept": "accepted", "reject": "rejected"}[body.decision],
+                                 reason=body.reason, decided_at=now())
+                if body.decision == "accept":
+                    # Separate IDs prevent a model candidate from overwriting an existing opinion.
+                    nodes = [{**n.model_dump(), "id": f"{candidate['id']}_{i}"} for i, n in enumerate(graph.nodes)]
+                    ids = {n.id: nodes[i]["id"] for i, n in enumerate(graph.nodes)}
+                    edges = [{**e.model_dump(), "id": candidate["id"], "source": ids[e.source], "target": ids[e.target]} for e in graph.edges]
+                    merged = PersonalGraph(nodes=[*value["graph"]["nodes"], *nodes], edges=[*value["graph"]["edges"], *edges])
+                    value["source_bindings"] = self.graph_sources(owner, merged)
+                    value["graph"] = merged.model_dump()
+                payload = {"candidate_id": candidate["id"], "candidate_version": candidate["version"],
+                           "status": candidate["status"], "decision": body.decision, "reason": body.reason,
+                           "authority": "student_confirmed_unreviewed" if body.decision == "accept" else "model_opinion"}
+                value.setdefault("decision_receipts", {})[key] = {**payload, "revision": value["revision"] + 1}
             elif action == "reject_relation":
                 payload = {"reason": body.reason, "advice_revision": value.get("advice", {}).get("based_on_revision")}
             elif action == "revise":

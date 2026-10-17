@@ -74,6 +74,8 @@ def source_bundle(state: dict, tool_evidence: list | None = None) -> dict:
     context = state.get("learning_context") or {}
     sources = [{"id": "claim:current", "kind": "student_claim", "data":
                 (context.get("student_claim") or {}).get("text", state.get("message", ""))}]
+    for entry in state.get("personal_context", []):
+        sources.append({"id": entry["id"], "kind": "personal_judgment", "data": entry})
     for key in ("parameters", "rows", "exact_check", "linear_check", "citation", "condition_review", "finding", "code_excerpt", "condition", "original_claim", "personal_relations", "experiments", "revisions", "teaching_focus"):
         if key in context:
             sources.append({"id": f"context:{key}", "kind": "scoped_check" if key in {"exact_check", "linear_check"} else "reference", "data": context[key]})
@@ -177,6 +179,8 @@ def resolve_decision(raw: str, state: dict, tool_evidence=None) -> tuple[dict, d
         if decision.action == "ask_missing_condition" and not decision.missing_conditions:
             raise ValueError("missing_question_basis")
         if decision.claim_status != "unknown" and not any(ref != "claim:current" for ref in refs):
+            raise ValueError("no_supporting_evidence")
+        if decision.claim_status == "supported" and not any(available[ref]["kind"] in {"scoped_check", "reference"} for ref in refs):
             raise ValueError("no_supporting_evidence")
         verdict = bound_step_verdict(state.get("message", ""), state.get("verifier_result"))
         claim = bundle["sources"][0]["data"]

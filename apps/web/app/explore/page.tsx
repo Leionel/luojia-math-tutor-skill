@@ -27,6 +27,7 @@ import {
   type Run,
 } from "@/lib/explorations";
 import {ExplorationExperiment} from "@/components/learning/exploration-experiment";
+import {RelationCandidates} from "@/components/learning/relation-candidates";
 import {PersonalNetwork} from "@/components/learning/personal-network";
 
 type Catalog = {
@@ -596,6 +597,7 @@ function Explore() {
                   onRun={body=>mutate("runs",body)}
                   onReject={()=>mutate("reject-relation",{reason:"学生拒绝本次候选关联"})}
                   onGraph={g=>{const ids=new Map(g.nodes.map(n=>[n.id,crypto.randomUUID()]));change({graph:{nodes:[...draft.graph.nodes,...g.nodes.map(n=>({...n,id:ids.get(n.id)!}))],edges:[...draft.graph.edges,...g.edges.map(e=>({...e,id:crypto.randomUUID(),source:ids.get(e.source)!,target:ids.get(e.target)!}))]}});}}/>
+                <RelationCandidates record={record} disabled={disabled} onDecide={body=>mutate("relations/decision",body)}/>
                 {!!runs.length && (
                 <section aria-label="探索实验结果" className="mt-6 space-y-4">
                     <h2 className="font-serif text-xl">已保存的实验与证据</h2>

@@ -27,6 +27,19 @@ class Advice(BaseModel):
     follow_up: str = Field(min_length=1, max_length=600)
 
 
+def checked_experiment(workspace, owner, saved_ref):
+    if saved_ref["kind"] == "root_lab":
+        saved = workspace.get(owner, "lab", saved_ref["record_id"])
+        recalculated = run_reference(LabRequest(request_id=saved["id"], prediction=saved["prediction"],
+                                              max_iterations=saved["max_iterations"], attempt=RootAttempt(**saved["parameters"])))
+        if any(saved.get(k) != recalculated[k] for k in ("rows", "stop_detail", "stop_reason")):
+            raise ValueError("探索求根轨迹与参数不一致，请重新运行。")
+    checked = resolve_learning_context(workspace, owner, TypeAdapter(ReferenceContext).validate_python(saved_ref))
+    result = {key: checked[key] for key in ("ref", "parameters", "task", "linear_check", "exact_check", "stop_detail", "evidence_scope", "estimate_is_bound", "conditions") if key in checked}
+    result["rows"] = checked["rows"][:2] + checked["rows"][-2:] if len(checked["rows"]) > 4 else checked["rows"]
+    return result
+
+
 def exploration_context(workspace, owner, ref: ExplorationContextRef):
     assert_reference_help_allowed(owner, workspace.course)
     service = Explorations(workspace)
@@ -57,15 +70,7 @@ def exploration_context(workspace, owner, ref: ExplorationContextRef):
             raise ValueError("选中的计算不属于当前探索。")
         run_refs = [chosen, *[r for r in value["runs"][-1:] if r["record_id"] != chosen["record_id"]]]
     for saved_ref in run_refs:
-        if saved_ref["kind"] == "root_lab":
-            saved = workspace.get(owner, "lab", saved_ref["record_id"])
-            recalculated = run_reference(LabRequest(request_id=saved["id"], prediction=saved["prediction"],
-                                                  max_iterations=saved["max_iterations"], attempt=RootAttempt(**saved["parameters"])))
-            if any(saved.get(k) != recalculated[k] for k in ("rows", "stop_detail", "stop_reason")):
-                raise ValueError("探索求根轨迹与参数不一致，请重新运行。")
-        checked = resolve_learning_context(workspace, owner, TypeAdapter(ReferenceContext).validate_python(saved_ref))
-        runs.append({key: checked[key] for key in ("ref", "parameters", "task", "linear_check", "exact_check", "stop_detail", "evidence_scope") if key in checked})
-        runs[-1]["rows"] = checked["rows"][:3] + checked["rows"][-2:] if len(checked["rows"]) > 5 else checked["rows"]
+        runs.append(checked_experiment(workspace, owner, saved_ref))
     # Select one relation to revisit rather than repeatedly explaining from zero.
     selected = next((e for e in reversed(edges) if e["relation"] in ("implies", "challenges")), edges[-1] if edges else None)
     by_id = {n["id"]: n for n in nodes}

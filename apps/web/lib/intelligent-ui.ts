@@ -24,6 +24,7 @@ const sourceSchema = z
       "scoped_check",
       "reference",
       "model_opinion",
+      "personal_judgment",
       "unavailable",
     ]),
     data: z.unknown(),

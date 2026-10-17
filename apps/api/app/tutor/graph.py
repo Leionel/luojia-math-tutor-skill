@@ -63,6 +63,7 @@ def sse(event: str, data: dict) -> str:
 
 
 class AgentState(TypedDict, total=False):
+    personal_context: list[dict[str, Any]]
     targeted_result: Any
     teaching_decision_enabled: bool
     teaching_decision: dict
@@ -1047,6 +1048,7 @@ class TutorWorkflow:
             evidence_pack=evidence_pack,
             web_search_report=state.get("web_search_report"),
             learning_context=state.get("learning_context"),
+            personal_context=state.get("personal_context"),
         )
 
     @staticmethod

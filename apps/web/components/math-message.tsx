@@ -477,6 +477,7 @@ export function MathMessage({
           )}
 
           {!isUser && <AgentRunReceipt value={agentRun} disconnected={isIncomplete} />}
+          {!isUser && !!learningMeta?.personal_context?.length && <details className="mb-4 rounded-lg border border-[var(--border-primary)] px-3 text-sm"><summary className="min-h-11 cursor-pointer py-3">为何联想到这个旧判断／实验</summary>{learningMeta.personal_context.map(entry => <div key={entry.id} className="mb-4 space-y-2 leading-7"><p>{entry.selection_reason} · 私人确认，未经数学审核</p><p>原判断：{entry.original_claim}</p><p>后来修订：{entry.current_claim}</p><Link className="underline" href={`/explore?id=${encodeURIComponent(entry.exploration_id)}`}>打开原始探索（本轮引用版本 {entry.revision}）</Link><p className="break-all text-xs">关系 {entry.relation_id} · {entry.relation_version.slice(0, 12)}</p></div>)}</details>}
           {!isUser && learningMeta?.learning_context && <p className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-olive-500/15 pb-3 text-xs leading-6 text-[var(--text-secondary)]">
             <span>本轮引用 · {referenceDescription(learningMeta.learning_context)}</span>
             <Link href={referenceHref(learningMeta.learning_context)} className="underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-olive-600">回看原始来源</Link>
