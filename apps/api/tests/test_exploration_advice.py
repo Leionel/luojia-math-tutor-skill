@@ -21,13 +21,13 @@ def create(w, claim="Newton 对 x^3-2*x+2 从0开始为什么循环？"):
     return Explorations(w).create("alice", Create(request_id="exp", title="数学探索", claim=claim))
 
 
-def fixture_advice(domain="root_finding"):
+def fixture_advice(domain="root_finding", claim="Newton 对 x^3-2*x+2 从0开始为什么循环？"):
     tasks = [dict(domain="root_finding", method="newton", function="x^3-2*x+2", initial_value=x, limit=12) for x in (0, -2)] if domain=="root_finding" else proposal()["tasks"]
     return {"decision":{"claim_ref":"claim:current", "evidence_refs":["claim:current"],
                         "known_conditions":["已给函数和初值"],"missing_conditions":["全局收敛条件"],
                         "claim_status":"unknown","action":"offer_experiment","disclosure":"scaffolded",
                         "reason":"对比两个初值的有限轨迹，再检查局部收敛条件", "assessments":[],
-                        "experiment_proposal":{"question_to_test":"初值对轨迹的影响", "changed_parameter":"task_parameters", "tasks":tasks,"observable":"迭代值、残差与相邻步变化"}},
+                        "experiment_proposal":{"claim_to_test":claim,"known_conditions":["指定的参数"],"varying_factors":["initial_value"] if domain=="root_finding" else ["matrix"],"fixed_factors":["method","tolerance"],"mathematical_reason":"保持其他因素，比较参数对有限轨迹的影响","tool_limitations":["有限计算不能证明一般收敛"],"question_to_test":"初值对轨迹的影响", "changed_parameter":"task_parameters", "tasks":tasks,"observable":"迭代值、残差与相邻步变化"}},
             "suggested_graph":{"nodes":[{"id":"initial","label":"初值"},{"id":"convergence","label":"收敛"}],"edges":[{"id":"e","source":"initial","target":"convergence","relation":"related","reason":"不同初值可能改变收敛行为"}]},
             "follow_up":"先核对0→1→0是否重复，再比较负初值的残差。有限实验不能证明全局收敛。"}
 
@@ -41,7 +41,7 @@ async def test_model_suggestion_edit_execute_graph_revision_and_chat_context(wor
     async def model(self,messages,**kwargs):
         assert kwargs["effort"]=="off"
         captured.append(json.loads(messages[-1]["content"])["context"])
-        result=fixture_advice(domain)
+        result=fixture_advice(domain, captured[-1]["student_claim"]["text"])
         if captured[-1].get("teaching_focus"):
             result["decision"]["evidence_refs"].append("context:personal_relations")
             result["decision"]["reason"]=captured[-1]["teaching_focus"]["question"]
@@ -143,9 +143,10 @@ async def test_live_response_contract_failures_are_not_delivered_as_ready_experi
     async def model(*args,**kwargs):return json.dumps(data)
     monkeypatch.setattr(OpenAICompatibleClient,"chat_completion",model)
     result=await advise(workspace,"alice","exp",AdviceRequest(expected_revision=1),Settings(llm_api_key="fixture-only"))
-    assert result["status"]=="unavailable"
+    assert result["status"]==("unavailable" if failure=="action_mismatch" else "suggested_not_executed")
     assert Explorations(workspace).get("alice","exp")["runs"]==[]
-    assert Explorations(workspace).get("alice","exp")["revision"]==1
+    assert Explorations(workspace).get("alice","exp")["revision"]==(1 if failure=="action_mismatch" else 2)
+    if failure=="dangling_candidate":assert result["candidate_warning"] and not result["suggested_graph"]["edges"]
 
 
 @pytest.mark.asyncio

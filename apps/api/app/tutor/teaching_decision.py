@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, FiniteFloat
 from app.math_tools.verifier import VerifyResult, bound_step_verdict
 from app.tutor.prompt_policy import resolve_teaching_policy
 from app.tutor.hint_policy import HintLevel
-from app.math_tools.exploration_tasks import ExplorationTask
+from app.math_tools.exploration_tasks import ExperimentPlan
 
 CATALOG = json.loads((Path(__file__).resolve().parents[4] / "protocol/intelligent-ui-catalog.json").read_text(encoding="utf-8"))
 CATALOG_PROMPT = (Path(__file__).resolve().parents[4] / "protocol/intelligent-ui-prompt.txt")
@@ -40,12 +40,7 @@ class ExperimentProposal(BaseModel):
     observable: str = Field(min_length=1, max_length=200)
 
 
-class StructuredExperimentProposal(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    question_to_test: str = Field(min_length=1, max_length=300)
-    changed_parameter: Literal["task_parameters"] = "task_parameters"
-    tasks: list[ExplorationTask] = Field(min_length=1, max_length=2)
-    observable: str = Field(min_length=1, max_length=200)
+StructuredExperimentProposal = ExperimentPlan
 
 
 class TeachingDecision(BaseModel):

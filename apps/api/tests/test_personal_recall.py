@@ -36,6 +36,7 @@ def test_relevant_unrelated_stale_and_user_isolation_from_reopened_store(workspa
     assert selected[0]["experiments"][0]["rows"][0]["x"]==0
     assert "初值" in selected[0]["next_question"] and selected[0]["relation_version"]
     assert select_personal_context(workspace,"alice","Simpson 积分误差估计能当误差界吗？")==[]
+    assert select_personal_context(workspace,"alice","GS 的初值怎样影响残差？")==[]
     assert select_personal_context(workspace,"bob","Newton 换初值还需要什么条件？")==[]
     path=workspace.store._query("PRAGMA database_list")[0][2]
     reopened=CourseStore(path)
@@ -44,6 +45,9 @@ def test_relevant_unrelated_stale_and_user_isolation_from_reopened_store(workspa
     reopened.close()
     assert workspace.repository.list_mastery("alice")==[]
     assert source_bundle({"message":"新问题","personal_context":selected})["sources"][1]["kind"]=="personal_judgment"
+    value=Explorations(workspace).get("alice","old");value["schema_version"]="unsupported-future-version"
+    workspace.save("alice","exploration","old",value)
+    assert select_personal_context(workspace,"alice","Newton 换初值还需要什么条件？")==[]
 
 
 def test_changed_source_is_omitted_and_existing_selection_fails_closed(workspace):
@@ -60,6 +64,19 @@ def test_changed_source_is_omitted_and_existing_selection_fails_closed(workspace
         conn.execute("update notes set content=? where id=?",("已改写条件",note["id"]))
     assert select_personal_context(workspace,"alice","Newton 换初值有什么影响？")==[]
     with pytest.raises(ValueError):validate_personal_context(workspace,"alice",selected)
+
+
+def test_changed_selected_run_does_not_fall_back_to_another_old_run(workspace):
+    seed(workspace)
+    s=Explorations(workspace)
+    v=s.update("alice","old","run",Execute(request_id="run2",expected_revision=4,
+        tasks=[{"domain":"root_finding","method":"newton","function":"x^3-2*x+2","initial_value":-2,"limit":6}],prediction="可能残差达标",metrics=["residual"],confirmed=True))
+    latest=v["runs"][-1]
+    saved=workspace.get("alice","lab",latest["record_id"]);saved["input_hash"]="0"*64
+    workspace.save("alice","lab",saved["id"],saved)
+    selected=select_personal_context(workspace,"alice","Newton 初值如何影响收敛？")
+    assert selected and not selected[0]["experiments"]
+    assert selected[0]["unavailable_experiments"][0]["ref"]==latest
 
 
 def test_pending_edit_accept_reject_receipts_revision_and_no_official_write(workspace):

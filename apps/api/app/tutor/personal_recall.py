@@ -1,7 +1,7 @@
 """Small owner-scoped recall of confirmed personal judgments, never course facts."""
 import json
 import re
-from app.tutor.explorations import Explorations, PersonalNode, KIND
+from app.tutor.explorations import Explorations, PersonalNode, KIND, VERSION
 from app.tutor.learning_workspace import digest
 from app.tutor.help_boundary import assert_reference_help_allowed
 
@@ -27,6 +27,8 @@ def select_personal_context(workspace, owner, question, *, limit=2):
     values = workspace.store.learning_records(owner, workspace.course_id, KIND)[-50:]
     ranked = []
     for value in values:
+        if value.get("schema_version") != VERSION:
+            continue
         nodes = {n["id"]: n for n in value["graph"]["nodes"]}
         for edge in value["graph"]["edges"]:
             pair = [nodes[edge[k]] for k in ("source", "target")]
@@ -35,6 +37,8 @@ def select_personal_context(workspace, owner, question, *, limit=2):
             labels = [n["label"].strip().lower() for n in pair]
             explicit = any(len(label) >= 2 and label in question.lower() for label in labels)
             shared = query_topics & topics(text)
+            if query_topics and topics(text) and not shared:
+                continue
             tokens = re.findall(r"[a-zA-Z]{3,}|[\u4e00-\u9fff]{2,}", question.lower())
             overlap = sum(len(t) >= 3 and t in text.lower() for t in tokens)
             if not explicit and not (shared and overlap):
@@ -44,7 +48,12 @@ def select_personal_context(workspace, owner, question, *, limit=2):
                 for node in pair:
                     source = PersonalNode.model_validate(node).source_ref
                     if source:
-                        sources.append(service.bind(owner, source))
+                        bound = service.bind(owner, source)
+                        if source.kind == "course":
+                            saved = workspace.store.load_graph(workspace.course_id) or {}
+                            unit = next(u for u in saved.get("data", {}).get("units", []) if u["id"] == source.unit_id)
+                            bound["conditions"] = [str(c)[:300] for c in unit.get("conditions", [])[:3]]
+                        sources.append(bound)
             except (ValueError, KeyError):
                 continue
             ranked.append((int(explicit) * 4 + len(shared) + overlap, value["updated_at"], value, edge, pair, sources))
@@ -53,14 +62,16 @@ def select_personal_context(workspace, owner, question, *, limit=2):
         if value["id"] in seen:
             continue
         experiments = []
+        unavailable_experiments = []
         # Reuse the existing reference validation/recalculation, never trust saved display rows.
         from app.tutor.exploration_advice import checked_experiment
-        for ref in reversed(value["runs"][-2:]):
+        relevant_refs = [r for r in value["runs"] if not query_topics or
+                         {"linear_lab": 0, "root_lab": 1, "integration_lab": 2}.get(r["kind"]) in query_topics]
+        for ref in relevant_refs[-1:]:
             try:
                 experiments.append(checked_experiment(workspace, owner, ref))
             except (ValueError, KeyError):
-                continue
-            break
+                unavailable_experiments.append({"ref": ref, "state": "unavailable_or_changed", "reason": "原版本不可引用；没有改用其他计算"})
         revised = [h for h in value["history"] if h["action"] == "revise"][-1:]
         entry = {
             "id": f"personal:{len(selected)}", "exploration_id": value["id"],
@@ -74,6 +85,7 @@ def select_personal_context(workspace, owner, question, *, limit=2):
             "relation": {**edge, "reason": edge["reason"][:400]},
             "nodes": [{**n, "description": n.get("description", "")[:150]} for n in pair],
             "evidence_refs": sources, "experiments": experiments,
+            "unavailable_experiments": unavailable_experiments,
             "next_question": f"你曾用“{edge['reason'][:150]}”联系{pair[0]['label']}与{pair[1]['label']}；这次还满足同样条件吗？",
         }
         if len(json.dumps([*selected, entry], ensure_ascii=False).encode()) > 7168:

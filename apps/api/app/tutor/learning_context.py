@@ -282,6 +282,10 @@ def resolve_learning_context(workspace,owner:str,ref:ReferenceContext) -> dict:
             raise ValueError("保存记录范围不可确认，请重新运行。")
         finite=lambda n:type(n) in {int,float} and math.isfinite(n) and abs(n)<=1e100
         if ref.kind=='integration_lab':
+            from app.math_tools.numerical_lab import integration_reference
+            recomputed = integration_reference(task)
+            if any(run.get(k) != recomputed[k] for k in ("rows", "status", "conditions", "stop_detail", "evidence_scope")):
+                raise ValueError("积分轨迹与原参数重算不符，请重新运行。")
             if run.get('evidence_scope')!='quadrature_error_estimate' or not run.get('conditions') or not isinstance(run.get('stop_detail'),str):
                 raise ValueError('积分估计的条件与停止范围缺失。')
             if not all(isinstance(x,str) for x in run['conditions']):raise ValueError('积分条件记录不符。')

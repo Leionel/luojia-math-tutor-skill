@@ -3,149 +3,159 @@ import { useEffect, useState } from "react";
 import { learningRequest } from "@/lib/learning-api";
 import { getCurrentUserId, getAuthHeaders } from "@/lib/demo-auth";
 import { getUserApiKey, getPreferredModel } from "@/lib/local-settings";
-import {
-  draftTask,
-  taskDraft,
-  emptyTask,
-  type Exploration,
-  type PersonalGraph,
-  type DraftTask,
+import type {
+  Exploration,
+  ExplorationAdvice,
+  ExperimentPlan,
+  ExplorationTask,
 } from "@/lib/explorations";
-import type { LinearTask } from "@/lib/numerical-lab";
+import {
+  experimentDomains,
+  experimentTaskDraft,
+  parseExperimentTask,
+  planForTasks,
+  type Domain,
+  type TaskDraft,
+} from "@/lib/experiment-plans";
 import {
   learningButton,
   learningButtonSecondary,
   learningInput,
 } from "./learning-shell";
 
-import type {
-  NewtonTask,
-  ExplorationTask,
-  ExplorationAdvice,
-} from "@/lib/explorations";
-
+type PlanDraft = {
+  question_to_test: string;
+  known_conditions: string;
+  varying_factors: string;
+  fixed_factors: string;
+  observable: string;
+  mathematical_reason: string;
+  tool_limitations: string;
+};
+function details(p: ExperimentPlan): PlanDraft {
+  return {
+    ...p,
+    known_conditions: p.known_conditions.join("\n"),
+    varying_factors: p.varying_factors.join(", "),
+    fixed_factors: p.fixed_factors.join(", "),
+    tool_limitations: p.tool_limitations.join("\n"),
+  };
+}
+const blankPlan: PlanDraft = {
+  question_to_test: "",
+  known_conditions: "",
+  varying_factors: "",
+  fixed_factors: "",
+  observable: "",
+  mathematical_reason: "",
+  tool_limitations: "",
+};
 export function ExplorationExperiment({
   record,
   disabled,
   onSaved,
   onRun,
-  onGraph,
-  onReject,
 }: {
   record: Exploration;
   disabled: boolean;
   onSaved: (r: Exploration) => void;
   onRun: (body: Record<string, unknown>) => void;
-  onGraph: (g: PersonalGraph) => void;
-  onReject: () => void;
 }) {
   const [advice, setAdvice] = useState<ExplorationAdvice | null>(
-      () => record.advice ?? null,
+      record.advice ?? null,
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const [kind, setKind] = useState<"gs" | "newton">("gs"),
-    [tasks, setTasks] = useState<DraftTask[]>([
-      { ...emptyTask },
-      { ...emptyTask },
+  const [domain, setDomain] = useState<Domain>("linear_system"),
+    [drafts, setDrafts] = useState<TaskDraft[]>([
+      { ...experimentDomains.linear_system.empty },
+      { ...experimentDomains.linear_system.empty },
     ]);
-  const [newton, setNewton] = useState(
-    [0, -2].map((x) => ({
-      function: "x^3-2*x+2",
-      initial: String(x),
-      limit: "20",
-      tolerance: "0.000001",
-    })),
-  );
-  const [compare, setCompare] = useState(true),
+  const [plan, setPlan] = useState<PlanDraft>(blankPlan),
+    [compare, setCompare] = useState(true),
     [prediction, setPrediction] = useState(""),
-    [confirmed, setConfirmed] = useState(false);
+    [confirmed, setConfirmed] = useState(false),
+    [origin, setOrigin] = useState("student_design");
   const owner = getCurrentUserId(),
-    credential = getAuthHeaders().Authorization;
-  const key = `luojia_experiment_editor:${owner}:${record.id}`;
+    credential = getAuthHeaders().Authorization,
+    key = `luojia_experiment_editor:${owner}:${record.id}`;
+  function loadTasks(tasks: ExplorationTask[], p?: ExperimentPlan | null) {
+    setDomain(tasks[0].domain);
+    setDrafts([
+      experimentTaskDraft(tasks[0]),
+      tasks[1]
+        ? experimentTaskDraft(tasks[1])
+        : { ...experimentTaskDraft(tasks[0]) },
+    ]);
+    setCompare(tasks.length === 2);
+    setPlan(
+      details(
+        p?.schema_version === "experiment-plan-v1"
+          ? p
+          : planForTasks(record.claim, tasks),
+      ),
+    );
+    setConfirmed(false);
+  }
   useEffect(() => {
     const latest = [...record.history]
       .reverse()
       .find((h) => h.payload.runs?.length);
-    const recent = latest?.payload.runs ?? [];
-    setPrediction(latest?.payload.prediction ?? "");
-    setCompare(recent.length === 2);
-    if (recent.length) {
-      const first = recent[0].task;
-      if (first.domain === "root_finding") {
-        setKind("newton");
-        setNewton(
-          recent
-            .filter((r) => r.task.domain === "root_finding")
-            .map((r) => {
-              const t = r.task as NewtonTask;
-              return {
-                function: t.function,
-                initial: String(t.initial_value),
-                limit: String(t.limit),
-                tolerance: String(t.tolerance),
-              };
-            }),
-        );
-        setCompare(recent.length === 2);
-      } else
-        setTasks([
-          taskDraft(first),
-          recent[1]?.task.domain === "linear_system"
-            ? taskDraft(recent[1].task)
-            : { ...emptyTask },
-        ]);
+    if (latest?.payload.runs?.length) {
+      loadTasks(
+        latest.payload.runs.map((r) => r.task),
+        latest.payload.plan,
+      );
+      setPrediction(latest.payload.prediction ?? "");
+      setOrigin(latest.payload.plan_origin ?? "student_design");
     }
     try {
       const d = JSON.parse(localStorage.getItem(key) ?? "null");
       if (
         d &&
-        ["gs", "newton"].includes(d.kind) &&
-        Array.isArray(d.tasks) &&
-        d.tasks.length === 2 &&
-        d.tasks.every(
-          (t: DraftTask) =>
+        d.domain in experimentDomains &&
+        Array.isArray(d.drafts) &&
+        d.drafts.length === 2 &&
+        d.drafts.every(
+          (t: TaskDraft) =>
             t &&
-            [t.matrix, t.rhs, t.initial, t.tolerance, t.limit].every(
-              (x) => typeof x === "string",
+            experimentDomains[d.domain as Domain].fields.every(
+              (f) => typeof t[f.name] === "string",
             ),
         ) &&
-        Array.isArray(d.newton) &&
-        d.newton.length >= 1 &&
-        d.newton.length <= 2 &&
-        d.newton.every(
-          (t: {
-            function: string;
-            initial: string;
-            limit: string;
-            tolerance: string;
-          }) =>
-            t &&
-            [t.function, t.initial, t.limit, t.tolerance].every(
-              (x) => typeof x === "string",
-            ),
-        ) &&
-        typeof d.compare === "boolean" &&
-        typeof d.prediction === "string"
+        typeof d.prediction === "string" &&
+        typeof d.compare === "boolean"
       ) {
-        setKind(d.kind);
-        setTasks(d.tasks);
-        setNewton(d.newton);
-        setCompare(d.compare);
+        setDomain(d.domain);
+        setDrafts(d.drafts);
         setPrediction(d.prediction);
+        setCompare(d.compare);
+        if (
+          [
+            "student_design",
+            "deterministic_template",
+            "model_proposal_edited_by_student",
+          ].includes(d.origin)
+        )
+          setOrigin(d.origin);
+        if (
+          d.plan &&
+          Object.keys(blankPlan).every((k) => typeof d.plan[k] === "string")
+        )
+          setPlan(d.plan);
       }
     } catch {}
-    // One editor per saved exploration. A confirmation is never restored.
+    // Saved history restores the workflow without local browser drafts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   function cache() {
     try {
       localStorage.setItem(
         key,
-        JSON.stringify({ kind, tasks, newton, compare, prediction }),
+        JSON.stringify({ domain, drafts, plan, compare, prediction, origin }),
       );
     } catch {
-      setError("实验草稿无法保存在浏览器，刷新前请复制参数。");
+      setError("草稿未能写入浏览器，请先保存实验或复制参数。");
     }
   }
   function edit() {
@@ -154,9 +164,10 @@ export function ExplorationExperiment({
   async function suggest(template = false) {
     setBusy(true);
     setError("");
+    setConfirmed(false);
     try {
       if (template) {
-        const p = await learningRequest<{ tasks: LinearTask[] }>(
+        const p = await learningRequest<{ tasks: ExplorationTask[] }>(
           "/explorations/proposal",
         );
         if (
@@ -164,11 +175,9 @@ export function ExplorationExperiment({
           credential !== getAuthHeaders().Authorization
         )
           return;
-        setTasks(p.tasks.map(taskDraft));
-        setKind("gs");
-        setCompare(true);
+        loadTasks(p.tasks);
+        setOrigin("deterministic_template");
         setAdvice(null);
-        edit();
       } else {
         const apiKey = getUserApiKey();
         const a = await learningRequest<ExplorationAdvice>(
@@ -186,7 +195,7 @@ export function ExplorationExperiment({
         if (a.exploration) onSaved(a.exploration);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "建议暂不可用，请重试。");
+      setError(e instanceof Error ? e.message : "建议暂不可用。");
     } finally {
       setBusy(false);
     }
@@ -194,77 +203,56 @@ export function ExplorationExperiment({
   const stale = !!advice && advice.based_on_revision !== record.revision - 1;
   function adopt() {
     const p = advice?.decision?.experiment_proposal;
-    if (!p) return;
-    const first = p.tasks[0];
-    if (p.tasks.some((t) => t.domain !== first.domain)) {
-      setError("请分别设计同类实验再作对照。");
-      return;
+    if (p) {
+      loadTasks(p.tasks, p);
+      setOrigin("model_proposal_edited_by_student");
     }
-    if (first.domain === "root_finding") {
-      setKind("newton");
-      setNewton(
-        p.tasks.map((x) => {
-          const t = x as NewtonTask;
-          return {
-            function: t.function,
-            initial: String(t.initial_value),
-            limit: String(t.limit),
-            tolerance: String(t.tolerance),
-          };
-        }),
-      );
-      setCompare(p.tasks.length === 2);
-    } else {
-      setKind("gs");
-      setTasks([
-        taskDraft(first),
-        p.tasks[1] ? taskDraft(p.tasks[1] as LinearTask) : { ...emptyTask },
-      ]);
-      setCompare(p.tasks.length === 2);
-    }
-    edit();
   }
   function run() {
     try {
-      const structured: ExplorationTask[] =
-        kind === "gs"
-          ? tasks.slice(0, compare ? 2 : 1).map(draftTask)
-          : newton.slice(0, compare ? 2 : 1).map((t) => {
-              const initial_value = Number(t.initial),
-                limit = Number(t.limit),
-                tolerance = Number(t.tolerance);
-              if (
-                !t.initial.trim() ||
-                !Number.isFinite(initial_value) ||
-                Math.abs(initial_value) > 1e6
-              )
-                throw Error("初值须为绝对值不超过1e6的有限数。");
-              if (
-                !Number.isInteger(limit) ||
-                limit < 1 ||
-                limit > 100 ||
-                !Number.isFinite(tolerance) ||
-                tolerance < 1e-12 ||
-                tolerance > 0.01
-              )
-                throw Error("迭代预算为1–100，阈值为1e−12至0.01。");
-              return {
-                domain: "root_finding",
-                method: "newton",
-                function: t.function,
-                initial_value,
-                tolerance,
-                limit,
-              };
-            });
+      const tasks = drafts
+        .slice(0, compare ? 2 : 1)
+        .map((t) => parseExperimentTask(domain, t));
+      const split = (s: string) =>
+        s
+          .split(/[,，\n]/)
+          .map((t) => t.trim())
+          .filter(Boolean);
+      const p = planForTasks(record.claim, tasks, {
+        ...(plan.question_to_test.trim()
+          ? { question_to_test: plan.question_to_test }
+          : {}),
+        known_conditions: plan.known_conditions.split("\n").filter(Boolean),
+        ...(plan.varying_factors.trim()
+          ? { varying_factors: split(plan.varying_factors) }
+          : {}),
+        ...(plan.fixed_factors.trim()
+          ? { fixed_factors: split(plan.fixed_factors) }
+          : {}),
+        ...(plan.observable.trim() ? { observable: plan.observable } : {}),
+        ...(plan.mathematical_reason.trim()
+          ? { mathematical_reason: plan.mathematical_reason }
+          : {}),
+        ...(plan.tool_limitations.trim()
+          ? {
+              tool_limitations: plan.tool_limitations
+                .split("\n")
+                .filter(Boolean),
+            }
+          : {}),
+      });
       cache();
       onRun({
-        tasks: structured,
+        tasks,
+        plan: p,
+        plan_origin: origin,
         prediction,
         metrics:
-          kind === "gs"
-            ? ["residual", "step", "spectral_radius"]
-            : ["residual", "step"],
+          domain === "integration"
+            ? ["value", "error_estimate", "work"]
+            : domain === "linear_system"
+              ? ["residual", "step", "spectral_radius"]
+              : ["residual", "step"],
         confirmed: true,
       });
       setConfirmed(false);
@@ -280,7 +268,8 @@ export function ExplorationExperiment({
     >
       <h2 className="font-serif text-xl">设计受控对照实验</h2>
       <p className="text-sm leading-7">
-        请先保存主张与私人关联，再让助教结合已有计算设计下一步。
+        主张 → 可编辑计划 → 我的预测 → 确认计算 → 比较证据 →
+        修订。助教提议不会自动运行。
       </p>
       <div className="flex flex-wrap gap-3">
         <button
@@ -311,9 +300,6 @@ export function ExplorationExperiment({
                 ? "历史助教建议 · 模型意见"
                 : "助教建议 · 模型意见，尚未执行"}
           </p>
-          {stale && advice.status !== "unavailable" && (
-            <p>探索已更新，可重新分析后采用建议。</p>
-          )}
           <p>{advice.decision?.reason}</p>
           {!!advice.decision?.known_conditions.length && (
             <p>已知条件：{advice.decision.known_conditions.join("；")}</p>
@@ -327,6 +313,16 @@ export function ExplorationExperiment({
                 检验问题：{advice.decision.experiment_proposal.question_to_test}
               </p>
               <p>观察量：{advice.decision.experiment_proposal.observable}</p>
+              <p>
+                数学理由：
+                {advice.decision.experiment_proposal.mathematical_reason}
+              </p>
+              <p>
+                工具限制：
+                {advice.decision.experiment_proposal.tool_limitations?.join(
+                  "；",
+                )}
+              </p>
               <button
                 type="button"
                 className={learningButtonSecondary}
@@ -338,25 +334,31 @@ export function ExplorationExperiment({
             </>
           )}
           <p>{advice.follow_up}</p>
-          {!!advice.suggested_graph?.edges.length && <p>关系提议已保存，请在下方“候选关系与处理回执”中编辑、接受或拒绝。</p>}
+          {advice.candidate_warning && <p>{advice.candidate_warning}</p>}
+          {!!advice.suggested_graph?.edges.length && (
+            <p>关系提议已保存，请在下方“候选关系与处理回执”中决定。</p>
+          )}
         </div>
       )}
-      <fieldset className="flex gap-4">
+      <fieldset className="flex flex-wrap gap-4">
         <legend className="mb-2 text-sm">实验方法</legend>
-        {(
-          [
-            ["gs", "GS 线性迭代"],
-            ["newton", "Newton 求根"],
-          ] as const
-        ).map(([v, label]) => (
-          <label key={v} className="flex min-h-11 items-center gap-2">
+        {(Object.keys(experimentDomains) as Domain[]).map((d) => (
+          <label key={d} className="flex min-h-11 items-center gap-2">
             <input
               type="radio"
               name={`method-${record.id}`}
-              checked={kind === v}
-              onChange={() => setKind(v)}
+              checked={domain === d}
+              onChange={() => {
+                setDomain(d);
+                setDrafts([
+                  { ...experimentDomains[d].empty },
+                  { ...experimentDomains[d].empty },
+                ]);
+                setPlan(blankPlan);
+                setOrigin("student_design");
+              }}
             />
-            {label}
+            {experimentDomains[d].label}
           </label>
         ))}
       </fieldset>
@@ -365,82 +367,88 @@ export function ExplorationExperiment({
           name="compare"
           type="checkbox"
           checked={compare}
-          onChange={(e) => {
-            setCompare(e.target.checked);
-            if (newton.length === 1) setNewton([...newton, { ...newton[0] }]);
-          }}
+          onChange={(e) => setCompare(e.target.checked)}
         />
         增加第二组对照
       </label>
-      {kind === "gs" ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {tasks.slice(0, compare ? 2 : 1).map((t, i) => (
-            <fieldset key={i} className="min-w-0 space-y-3">
-              <legend>实验 {i === 0 ? "A" : "B"}</legend>
-              {(
-                [
-                  ["matrix", "系数矩阵（每行一行）"],
-                  ["rhs", "右端项"],
-                  ["initial", "初始向量"],
-                  ["tolerance", "残差阈值"],
-                  ["limit", "迭代上限"],
-                ] as const
-              ).map(([f, label]) => (
-                <label className="block text-sm" key={f}>
-                  {label}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {drafts.slice(0, compare ? 2 : 1).map((t, i) => (
+          <fieldset key={`${domain}-${i}`} className="min-w-0 space-y-3">
+            <legend>
+              实验 {i === 0 ? "A" : "B"} · {experimentDomains[domain].label}
+            </legend>
+            {experimentDomains[domain].fields.map((f) => (
+              <label key={f.name} className="block text-sm">
+                {f.label}
+                {f.options ? (
+                  <select
+                    className={learningInput}
+                    aria-label={`实验${i === 0 ? "A" : "B"} ${f.name}`}
+                    value={t[f.name]}
+                    onChange={(e) =>
+                      setDrafts(
+                        drafts.map((x, j) =>
+                          i === j ? { ...x, [f.name]: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  >
+                    {f.options.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                ) : (
                   <textarea
-                    name={f}
-                    aria-label={`实验${i === 0 ? "A" : "B"} ${f}`}
-                    rows={f === "matrix" ? 3 : 1}
+                    rows={f.rows ?? 1}
+                    aria-label={`实验${i === 0 ? "A" : "B"} ${f.name}`}
                     className={`${learningInput} max-sm:text-base`}
-                    value={t[f]}
+                    value={t[f.name]}
                     onChange={(e) =>
-                      setTasks(
-                        tasks.map((x, j) =>
-                          j === i ? { ...x, [f]: e.target.value } : x,
+                      setDrafts(
+                        drafts.map((x, j) =>
+                          i === j ? { ...x, [f.name]: e.target.value } : x,
                         ),
                       )
                     }
                   />
-                </label>
-              ))}
-            </fieldset>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {newton.slice(0, compare ? 2 : 1).map((t, i) => (
-            <fieldset key={i} className="min-w-0 space-y-3">
-              <legend>实验 {i === 0 ? "A" : "B"} · Newton</legend>
-              {(
-                [
-                  ["function", "函数 f(x)"],
-                  ["initial", "初值"],
-                  ["tolerance", "残差阈值"],
-                  ["limit", "迭代上限"],
-                ] as const
-              ).map(([f, label]) => (
-                <label className="block text-sm" key={f}>
-                  {label}
-                  <input
-                    name={f}
-                    aria-label={`Newton${i === 0 ? "A" : "B"} ${label}`}
-                    className={`${learningInput} max-sm:text-base`}
-                    value={t[f]}
-                    onChange={(e) =>
-                      setNewton(
-                        newton.map((x, j) =>
-                          j === i ? { ...x, [f]: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                </label>
-              ))}
-            </fieldset>
-          ))}
-        </div>
-      )}
+                )}
+              </label>
+            ))}
+          </fieldset>
+        ))}
+      </div>
+      <details>
+        <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">
+          核对并编辑计划的理由、因素与限制
+        </summary>
+        <p className="text-xs leading-6">
+          因素使用参数字段名；空白因素在确认时按两组实际差异填写。编辑后须重新确认。
+        </p>
+        {(
+          [
+            ["question_to_test", "待检验的局部问题"],
+            ["known_conditions", "已知条件（每行一条）"],
+            ["varying_factors", "变化因素（字段名，用逗号分隔）"],
+            ["fixed_factors", "保持因素（字段名，用逗号分隔）"],
+            ["observable", "观测量"],
+            ["mathematical_reason", "建议背后的数学理由"],
+            ["tool_limitations", "工具限制（每行一条）"],
+          ] as const
+        ).map(([k, label]) => (
+          <label key={k} className="mt-3 block text-sm">
+            {label}
+            <textarea
+              className={learningInput}
+              value={plan[k]}
+              maxLength={k === "mathematical_reason" ? 600 : 500}
+              onChange={(e) => setPlan({ ...plan, [k]: e.target.value })}
+            />
+          </label>
+        ))}
+      </details>
+      <p className="text-sm leading-7">
+        工具范围：{experimentDomains[domain].limitations}
+      </p>
       <label className="block text-sm">
         运行前，我的预测
         <textarea

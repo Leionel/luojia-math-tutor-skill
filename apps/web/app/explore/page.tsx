@@ -594,9 +594,7 @@ function Explore() {
                 )}
                 <ExplorationExperiment key={record.id} record={record} disabled={disabled}
                   onSaved={saved=>{setRecord(saved);change({base:saved.revision});}}
-                  onRun={body=>mutate("runs",body)}
-                  onReject={()=>mutate("reject-relation",{reason:"学生拒绝本次候选关联"})}
-                  onGraph={g=>{const ids=new Map(g.nodes.map(n=>[n.id,crypto.randomUUID()]));change({graph:{nodes:[...draft.graph.nodes,...g.nodes.map(n=>({...n,id:ids.get(n.id)!}))],edges:[...draft.graph.edges,...g.edges.map(e=>({...e,id:crypto.randomUUID(),source:ids.get(e.source)!,target:ids.get(e.target)!}))]}});}}/>
+                  onRun={body=>mutate("runs",body)}/>
                 <RelationCandidates record={record} disabled={disabled} onDecide={body=>mutate("relations/decision",body)}/>
                 {!!runs.length && (
                 <section aria-label="探索实验结果" className="mt-6 space-y-4">
@@ -989,6 +987,7 @@ function Explore() {
                             run: "确认参考实验",
                             advice: "保存助教建议（尚未执行）",
                             reject_relation: "拒绝候选关联",
+                            relation_decision: "处理候选关系",
                           } as Record<string, string>
                         )[h.action] || "保存记录"}{" "}
                         · {new Date(h.at).toLocaleString("zh-CN")}
@@ -1006,6 +1005,7 @@ function Explore() {
                           运行前预测：{h.payload.prediction}
                         </p>
                       )}
+                      {h.payload.plan && <div className="mt-3 space-y-2 text-sm leading-7"><p>当时计划：{h.payload.plan.question_to_test}</p><p>变化：{h.payload.plan.varying_factors.join("、")}；保持：{h.payload.plan.fixed_factors.join("、")}</p><p>数学理由：{h.payload.plan.mathematical_reason}</p><p>范围：{h.payload.plan.tool_limitations.join("；")}</p></div>}
                       <p className="mt-2 text-xs">
                         私人节点 {h.graph.nodes.length} · 关系{" "}
                         {h.graph.edges.length} · 未审核
@@ -1038,7 +1038,7 @@ function RunView({ run, index,record }: { run: Run; index: number;record:Explora
   return (
     <article className="min-w-0 space-y-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
       <h3 className="font-serif text-lg">
-        实验 {index + 1} · {(run.task.domain==="root_finding"?run.stop_detail:gsStatus(run.status))}
+        实验 {index + 1} · {(run.task.domain==="linear_system"?gsStatus(run.status):run.stop_detail)}
       </h3>
       <p className="text-xs leading-6">
         受控浮点计算 · 观察当前参数与初值的有限轨迹；不计独立掌握。
@@ -1048,9 +1048,9 @@ function RunView({ run, index,record }: { run: Run; index: number;record:Explora
           <thead>
             <tr>
               <th className="p-2">步数</th>
-              <th className="p-2">{run.task.domain==="root_finding"?"迭代值 x":"向量"}</th>
-              <th className="p-2">残差</th>
-              <th className="p-2">相邻步变化</th>
+              <th className="p-2">{run.task.domain==="root_finding"?"迭代值 x":run.task.domain==="integration"?"积分近似值":"向量"}</th>
+              <th className="p-2">{run.task.domain==="integration"?"误差估计（非严格界）":run.task.domain==="root_finding"?"函数值 f(x)":"残差"}</th>
+              <th className="p-2">{run.task.domain==="integration"?"分段数 / 求值次数":"相邻步变化"}</th>
             </tr>
           </thead>
           <tbody>
@@ -1061,15 +1061,16 @@ function RunView({ run, index,record }: { run: Run; index: number;record:Explora
               >
                 <td className="p-2">{row.k}</td>
                 <td className="p-2 font-mono">
-                  {row.x!==undefined?row.x.toPrecision(6):row.vector?.map((x) => x.toPrecision(5)).join(", ")}
+                  {row.x!==undefined?row.x.toPrecision(6):run.task.domain==="integration"?row.value?.toPrecision(9):row.vector?.map((x) => x.toPrecision(5)).join(", ")}
                 </td>
-                <td className="p-2">{(row.fx??row.residual)?.toExponential(3)}</td>
-                <td className="p-2">{row.step?.toExponential(3) ?? "—"}</td>
+                <td className="p-2">{(run.task.domain==="integration"?row.error_estimate:(row.fx??row.residual))?.toExponential(3) ?? "—"}</td>
+                <td className="p-2">{run.task.domain==="integration"?`${row.intervals??"自适应"} / ${row.work}`:(row.step?.toExponential(3) ?? "—")}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {!!run.conditions?.length && <p className="text-sm leading-7">{run.conditions.join("；")}</p>}
       {evidence?.status === "deterministic_calculation" ? (
         <div className="space-y-2 border-l-2 border-dai-600 pl-3 text-sm leading-7">
           <h4 className="font-semibold">针对这个矩阵的有理数计算</h4>

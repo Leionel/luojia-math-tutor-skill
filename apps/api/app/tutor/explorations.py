@@ -1,4 +1,4 @@
-"""Private GS explorations over existing records, never an official graph writer."""
+"""Private mathematical explorations over existing learning records."""
 
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -6,10 +6,7 @@ from fractions import Fraction
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
-from app.math_tools.numerical_lab import run_numerical
-from app.math_tools.exploration_tasks import GS, NewtonTask, ExplorationTask
-from app.math_tools.root_runner import LabRequest
-from app.math_tools.root_finding import RootAttempt
+from app.math_tools.exploration_tasks import GS, ExplorationTask, ExperimentPlan
 from app.tutor.learning_context import ReadingContextRef, resolve_learning_context
 from app.tutor.learning_workspace import digest
 from app.tutor.help_boundary import assert_reference_help_allowed
@@ -131,11 +128,19 @@ class RelationDecision(Command):
 
 class Execute(Command):
     tasks: list[ExplorationTask] = Field(min_length=1, max_length=2)
-    prediction: Text
-    metrics: list[Literal["residual", "step", "spectral_radius"]] = Field(
+    prediction: str = Field(min_length=1, max_length=1000)
+    metrics: list[Literal["residual", "step", "spectral_radius", "value", "error_estimate", "work"]] = Field(
         min_length=1, max_length=3
     )
     confirmed: Literal[True]
+    plan: ExperimentPlan | None = None
+    plan_origin: Literal["student_design", "deterministic_template", "model_proposal_edited_by_student"] = "student_design"
+
+    @model_validator(mode="after")
+    def plan_matches_execution(self):
+        if self.plan and [t.model_dump() for t in self.plan.tasks] != [t.model_dump() for t in self.tasks]:
+            raise ValueError("确认参数与实验计划不一致，请重新核对")
+        return self
 
 
 def matrix_evidence(task: GS):
@@ -333,8 +338,12 @@ class Explorations:
             value = self.get(owner, id)
             key = body.request_id
             fingerprint = digest({"action": action, "body": body.model_dump()})
+            compatible_fingerprints = {fingerprint}
+            if action == "run" and body.plan is None and body.plan_origin == "student_design":
+                legacy = body.model_dump(exclude={"plan", "plan_origin"})
+                compatible_fingerprints.add(digest({"action": action, "body": legacy}))
             if key in value["receipts"]:
-                if value["receipts"][key] != fingerprint:
+                if value["receipts"][key] not in compatible_fingerprints:
                     raise ValueError("操作标识已用于不同内容")
                 return self.view(owner, value)
             if body.expected_revision != value["revision"]:
@@ -404,62 +413,24 @@ class Explorations:
                 value["graph"] = graph.model_dump()
             elif action == "run":
                 assert_reference_help_allowed(owner, self.w.course)
+                if body.plan and body.plan.claim_to_test != value["claim"]:
+                    raise ValueError("实验计划对应的主张已改变，请重新核对计划")
                 self.graph_sources(owner, PersonalGraph(**value["graph"]))
                 if len(value["runs"]) + len(body.tasks) > 10:
                     raise ValueError("本探索最多保存10次计算，请另建探索")
                 outputs = []
                 for index, task in enumerate(body.tasks):
                     run_id = f"exp_{digest([owner,id,key,index])[:32]}"
-                    if isinstance(task, NewtonTask):
-                        result = self.w.lab(owner, LabRequest(
-                            request_id=run_id, prediction=body.prediction[:1000], max_iterations=task.limit,
-                            attempt=RootAttempt(method="newton", function=task.function,
-                                                initial_value=task.initial_value, tolerance=task.tolerance, goal="residual")))
-                        result["exploration_id"] = id
-                        self.w.save(owner, "lab", run_id, result)
-                        ref = {"kind": "root_lab", "record_id": run_id, "input_hash": result["input_hash"],
-                               "runner_version": result["runner_version"], "graph_revision": result["graph_revision"], "selected_step": None}
-                        value["runs"].append(ref)
-                        outputs.append({"ref": ref, "task": task.model_dump(), "status": result["stop_reason"],
-                                        "rows": result["rows"], "stop_detail": result["stop_detail"],
-                                        "evidence_scope": "finite_newton_trajectory", "next_question": result["diagnosis"]["next_probe"]})
-                        continue
-                    run_body = {
-                        "request_id": run_id,
-                        "task": task.model_dump(),
-                        "prediction": body.prediction,
-                    }
-                    result = run_numerical(task)
-                    result.update(
-                        id=run_id,
-                        prediction=body.prediction,
-                        source_hash=digest(run_body),
-                        created_at=now(),
-                        exploration_id=id,
-                    )
-                    result["matrix_evidence"] = matrix_evidence(task)
-                    self.w.save(owner, "numerical_lab", run_id, result)
-                    ref = {
-                        "kind": "linear_lab",
-                        "record_id": run_id,
-                        "source_hash": result["source_hash"],
-                        "schema_version": "numerical-lab-v1",
-                        "selected_step": None,
-                    }
-                    value["runs"].append(ref)
-                    outputs.append(
-                        {
-                            "ref": ref,
-                            "task": task.model_dump(),
-                            "matrix_evidence": result["matrix_evidence"],
-                            "status": result["status"],
-                            "rows": result["rows"],
-                            "evidence_scope": result["evidence_scope"],
-                        }
-                    )
+                    from app.tutor.exploration_runner import run_exploration_task
+                    output = run_exploration_task(self.w, owner, id, run_id, task, body.prediction)
+                    value["runs"].append(output["ref"])
+                    outputs.append(output)
                 value["help_exposure"] = True
                 payload = {
                     "prediction": body.prediction,
+                    "plan": body.plan.model_dump() if body.plan else None,
+                    "plan_origin": body.plan_origin,
+                    "confirmed_tasks": [t.model_dump() for t in body.tasks],
                     "metrics": body.metrics,
                     "runs": outputs,
                     "proposal_origin": "student_confirmed_parameters",

@@ -138,7 +138,7 @@ const ConditionChecklist = defineComponent({
         <div className="flex items-center justify-between mb-3 border-b border-paper-200/60 dark:border-paper-800/60 pb-2">
           <h4 className="flex items-center gap-2 font-title text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
             <Scale className="w-4 h-4 text-olive-600 shrink-0" />
-            <span>结论成立 · 定理适用范围核对</span>
+            <span>条件与适用范围核对</span>
           </h4>
           <span className="font-mono text-[10px] text-[var(--text-muted)]">
             助教整理 · 严谨研学

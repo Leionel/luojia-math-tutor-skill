@@ -1,9 +1,14 @@
-import type { LinearTask, NumericalRow } from "./numerical-lab";
+import type {
+  LinearTask,
+  IntegrationTask,
+  NumericalRow,
+} from "./numerical-lab";
 import { numericMatrix, numericVector } from "./numerical-lab.ts";
 import type {
   ReadingContextRef,
   LinearContextRef,
   RootContextRef,
+  IntegrationContextRef,
 } from "./learning-context";
 export type Source =
   | ReadingContextRef
@@ -42,30 +47,41 @@ export type NewtonTask = {
   tolerance: number;
   limit: number;
 };
-export type ExplorationTask = LinearTask | NewtonTask;
+export type ExplorationTask = LinearTask | NewtonTask | IntegrationTask;
+export type ExperimentPlan = {
+  schema_version: "experiment-plan-v1";
+  claim_to_test: string;
+  known_conditions: string[];
+  question_to_test: string;
+  changed_parameter: "task_parameters";
+  tasks: ExplorationTask[];
+  varying_factors: string[];
+  fixed_factors: string[];
+  observable: string;
+  mathematical_reason: string;
+  tool_limitations: string[];
+};
 export type ExplorationAdvice = {
   status: string;
   reason?: string;
+  candidate_warning?: string;
   based_on_revision: number;
   decision?: {
     known_conditions: string[];
     missing_conditions: string[];
     reason: string;
-    experiment_proposal?: {
-      question_to_test: string;
-      observable: string;
-      tasks: ExplorationTask[];
-    } | null;
+    experiment_proposal?: ExperimentPlan | null;
   };
   suggested_graph?: PersonalGraph;
   follow_up?: string;
   exploration?: Exploration;
 };
 export type Run = {
-  ref: LinearContextRef | RootContextRef;
+  ref: LinearContextRef | RootContextRef | IntegrationContextRef;
   task: ExplorationTask;
   matrix_evidence?: Evidence;
   stop_detail?: string;
+  conditions?: string[];
   next_question?: string;
   status: string;
   rows: (Partial<NumericalRow> & { k: number; x?: number; fx?: number })[];
@@ -80,6 +96,8 @@ export type History = {
   graph: PersonalGraph;
   payload: {
     reason?: string;
+    plan?: ExperimentPlan | null;
+    plan_origin?: string;
     prediction?: string;
     metrics?: string[];
     runs?: Run[];
@@ -95,11 +113,26 @@ export type Exploration = {
   updated_at: string;
   graph: PersonalGraph;
   history: History[];
-  runs: (LinearContextRef | RootContextRef)[];
+  runs: (LinearContextRef | RootContextRef | IntegrationContextRef)[];
   origin_session_id?: string;
   advice?: ExplorationAdvice;
-  relation_candidates?: { id: string; version: number; status: "pending" | "accepted" | "rejected"; origin: string; graph: PersonalGraph; reason?: string }[];
-  decision_receipts?: Record<string, { candidate_id: string; candidate_version: number; status: string; revision: number }>;
+  relation_candidates?: {
+    id: string;
+    version: number;
+    status: "pending" | "accepted" | "rejected";
+    origin: string;
+    graph: PersonalGraph;
+    reason?: string;
+  }[];
+  decision_receipts?: Record<
+    string,
+    {
+      candidate_id: string;
+      candidate_version: number;
+      status: string;
+      revision: number;
+    }
+  >;
   help_exposure: boolean;
   independent_success: false;
   linked_chats: { id: string; title: string }[];

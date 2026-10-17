@@ -1,0 +1,53 @@
+{
+  "evidence_policy": "Model plans are orchestration fixtures; numerical results come from real runners.",
+  "cases": [
+    {
+      "id": "gs", "claim": "非严格行对角占优的矩阵，GS一定发散。", "prediction": "第二组不占优，所以我预测会发散。",
+      "plan": {
+        "claim_to_test": "非严格行对角占优的矩阵，GS一定发散。", "known_conditions": ["指定两个二阶实矩阵"],
+        "question_to_test": "不占优是否仍可能使GS误差谱半径小于1？", "varying_factors": ["matrix"], "fixed_factors": ["rhs", "initial", "method", "tolerance", "limit"],
+        "tasks": [
+          {"domain":"linear_system","method":"gauss_seidel","matrix":[[4,1],[1,3]],"rhs":[1,1],"initial":[0,0],"tolerance":0.000001,"limit":40},
+          {"domain":"linear_system","method":"gauss_seidel","matrix":[[1,2],[0.1,1]],"rhs":[1,1],"initial":[0,0],"tolerance":0.000001,"limit":40}
+        ],
+        "observable": "严格行对角占优、二阶误差矩阵谱半径、残差",
+        "mathematical_reason": "用指定矩阵的有理数误差矩阵计算检查全称判断的反例，浮点轨迹另行展示。",
+        "tool_limitations": ["谱半径精确计算仅限二阶GS矩阵；不计独立掌握。"]
+      },
+      "revised_claim": "严格行对角占优是GS收敛的充分条件，但不是必要条件。",
+      "revision_reason": "第二组不严格行对角占优，输入按十进制有理数解释时误差谱半径为1/5。"
+    },
+    {
+      "id": "newton", "claim": "Newton法对x^3-2*x+2从任意初值都收敛。", "prediction": "初值0与-2应该都能收敛。",
+      "plan": {
+        "claim_to_test": "Newton法对x^3-2*x+2从任意初值都收敛。", "known_conditions": ["f(x)=x^3-2*x+2，标准Newton更新"],
+        "question_to_test": "改变初值是否出现循环与残差达标的不同轨迹？", "varying_factors": ["initial_value"], "fixed_factors": ["function", "method", "tolerance", "limit"],
+        "tasks": [
+          {"domain":"root_finding","method":"newton","function":"x^3-2*x+2","initial_value":0,"tolerance":0.000001,"limit":12},
+          {"domain":"root_finding","method":"newton","function":"x^3-2*x+2","initial_value":-2,"tolerance":0.000001,"limit":12}
+        ],
+        "observable": "迭代值、函数值、相邻步变化、停止原因",
+        "mathematical_reason": "保持函数与停止规则，只改变初值，对比标准Newton的有限轨迹。",
+        "tool_limitations": ["有限轨迹不证明吸引域边界，不能假设吸引域为单区间；残差达标不等同严格根误差界。"]
+      },
+      "revised_claim": "该函数从0出发进入0与1循环，不能声称任意初值都收敛。",
+      "revision_reason": "真实runner保存0→1→0；由f(0)=2、f'(0)=-2和f(1)=1、f'(1)=1可代数核对该循环。-2的残差达标只是指定输入观察。"
+    },
+    {
+      "id": "integration", "claim": "对x^4在[0,1]用Simpson，细分后的误差估计小就证明严格误差界。", "prediction": "分段加倍后近似值更接近1/5，但误差估计的性质还不清楚。",
+      "plan": {
+        "claim_to_test": "对x^4在[0,1]用Simpson，细分后的误差估计小就证明严格误差界。", "known_conditions": ["光滑多项式x^4，有限区间[0,1]"],
+        "question_to_test": "固定函数与区间，初始分段数4和8的估计如何变化？", "varying_factors": ["intervals"], "fixed_factors": ["expression", "method", "left", "right", "tolerance", "limit"],
+        "tasks": [
+          {"domain":"integration","method":"simpson","expression":"x^4","left":0,"right":1,"intervals":4,"tolerance":0.000000000001,"limit":2},
+          {"domain":"integration","method":"simpson","expression":"x^4","left":0,"right":1,"intervals":8,"tolerance":0.000000000001,"limit":2}
+        ],
+        "observable": "积分近似值、细分差、Richardson估计、求值次数",
+        "mathematical_reason": "利用同一光滑函数的可控步长比较观察渐近误差；计算不替代导数上界的数学论证。",
+        "tool_limitations": ["Richardson误差估计不是严格误差上界；光滑性与渐近模型需另行判断，浮点舍入也未认证。"]
+      },
+      "revised_claim": "步长比较给出局部数值支持；误差估计不能直接升格为严格误差界。",
+      "revision_reason": "两组步长下近似值改善，runner仍将证据标为quadrature_error_estimate；严格界需要独立条件和论证。"
+    }
+  ]
+}
