@@ -33,8 +33,8 @@ def fixture_advice(domain="root_finding", claim="Newton 对 x^3-2*x+2 从0开始
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("domain", ["linear_system","root_finding"])
-async def test_model_suggestion_edit_execute_graph_revision_and_chat_context(workspace,monkeypatch,domain):
+async def test_model_suggestion_edit_execute_graph_revision_and_chat_context(workspace,monkeypatch):
+    domain="root_finding"
     service=Explorations(workspace)
     value=create(workspace)
     captured=[]

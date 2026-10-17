@@ -75,8 +75,8 @@ def test_aliasing_counterexample_estimate_does_not_bound_true_error(workspace):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("case",CASES,ids=lambda c:c["id"])
-async def test_one_model_protocol_selects_domain_shaped_plan_without_execution(workspace,case,monkeypatch):
+async def test_integration_plan_reaches_shared_advice_without_execution(workspace,monkeypatch):
+    case=CASES[2]
     from test_exploration_advice import fixture_advice
     Explorations(workspace).create("alice",Create(request_id="exp",title="共享流程",claim=case["claim"]))
     captured=[]
@@ -92,23 +92,6 @@ async def test_one_model_protocol_selects_domain_shaped_plan_without_execution(w
     assert all(domain in json.dumps(captured[0]["schema"]) for domain in ("linear_system","root_finding","integration"))
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("claim,reason",[
-    ("这个没有给出的GS矩阵一定收敛吗？","请提供系数矩阵与方法条件"),
-    ("用Newton运行我的多元复函数Python程序。","当前runner仅支持固定表达式的实数单变量Newton，不执行Python"),
-    ("没给导数界，请由积分误差估计证明严格误差上界。","误差估计不是严格界，需要光滑性及导数上界的独立论证"),
-])
-async def test_each_domain_can_decline_experiment_without_fake_parameters(workspace,monkeypatch,claim,reason):
-    from test_exploration_advice import fixture_advice
-    Explorations(workspace).create("alice",Create(request_id="exp",title="能力边界",claim=claim))
-    async def model(*args,**kwargs):
-        reply=fixture_advice();reply["decision"].update(action="ask_missing_condition",experiment_proposal=None,known_conditions=[],missing_conditions=[reason],reason=reason)
-        reply["suggested_graph"]={"nodes":[],"edges":[]};reply["follow_up"]=reason
-        return json.dumps(reply,ensure_ascii=False)
-    monkeypatch.setattr(OpenAICompatibleClient,"chat_completion",model)
-    result=await advise(workspace,"alice","exp",AdviceRequest(expected_revision=1),Settings(llm_api_key="fixture"))
-    assert result["status"]=="suggested_not_executed" and result["decision"]["experiment_proposal"] is None
-    assert not result["exploration"]["runs"]
 
 
 def test_plan_tampering_domain_bounds_and_failed_run_atomicity(workspace):

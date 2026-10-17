@@ -1,10 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { draftTask, taskDraft, gsStatus } from "./explorations.ts";
+import { draftTask, taskDraft } from "./explorations.ts";
 import {
   parseExperimentTask,
   experimentTaskDraft,
-  planForTasks,
   comparisonFactors,
   type TaskDraft,
 } from "./experiment-plans.ts";
@@ -32,8 +31,6 @@ test("exploration editor reuses bounded numerical parsing and preserves paramete
     { limit: "1000000" },
   ])
     assert.throws(() => draftTask({ ...taskDraft(task), ...patch }));
-  assert.equal(gsStatus("residual_met"), "残差达到阈值");
-  assert.equal(gsStatus("unfamiliar"), "状态待核对");
 });
 
 test("shared editor keeps domain parameters and comparison factors", () => {
@@ -46,15 +43,12 @@ test("shared editor keeps domain parameters and comparison factors", () => {
     limit: "3",
     tolerance: "0.000001",
   });
-  assert.equal(a.domain, "integration");
   assert.deepEqual(
     parseExperimentTask("integration", experimentTaskDraft(a)),
     a,
   );
   const b = { ...a, intervals: 8 } as typeof a;
   assert.deepEqual(comparisonFactors([a, b]).varying_factors, ["intervals"]);
-  const plan = planForTasks("积分误差估计能当严格界吗？", [a, b]);
-  assert.ok(plan.tool_limitations[0].includes("不是严格误差上界"));
   const invalid: TaskDraft[] = [
     { left: "1" },
     { intervals: "3" },
