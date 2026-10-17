@@ -1,0 +1,2329 @@
+{
+  "version": "r64-acceptance-2026-10-17",
+  "starting_head": "fdbef06d8aa985c10ae25518015cd68e17f63f7a",
+  "working_tree_was_dirty": true,
+  "scope": "offline_functional_and_automated_browser_only",
+  "levels": {
+    "E0": {
+      "legacy": {
+        "planned": 72,
+        "completed": 72,
+        "failed": 0,
+        "not_run": 0,
+        "human_reviewed": 0,
+        "quality": null
+      },
+      "exploration": {
+        "planned": 15,
+        "completed": 15,
+        "failed": 0,
+        "not_run": 0,
+        "human_reviewed": 0,
+        "quality": null
+      },
+      "private_context": {
+        "planned": 18,
+        "completed": 18,
+        "failed": 0,
+        "not_run": 0,
+        "human_reviewed": 0,
+        "quality": null
+      },
+      "pair_input_control": [
+        {
+          "case_id": "gs-related",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "gs-stale_source",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "gs-unrelated",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "integration-related",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "integration-stale_source",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "integration-unrelated",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "newton-related",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "newton-stale_source",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        },
+        {
+          "case_id": "newton-unrelated",
+          "planned_arms": 2,
+          "completed_arms": 2,
+          "input_control_matched": true,
+          "confounds": [],
+          "real_quality_comparable": false,
+          "quality_delta": null,
+          "confidence_interval": null,
+          "improvement_observed": null
+        }
+      ],
+      "evidence_source": "offline_functional_only",
+      "quality": null,
+      "usage": null,
+      "actual_cost": null
+    },
+    "E1": {
+      "planned": 105,
+      "completed": 0,
+      "failed": 0,
+      "not_run": 105,
+      "human_reviewed": 0,
+      "quality": null,
+      "usage": null,
+      "actual_cost": null,
+      "model": null,
+      "model_version": null,
+      "provider": null,
+      "status": "blocked_live_admission_and_independent_review",
+      "planned_by_track": {
+        "legacy_D0_D1_D2": 72,
+        "exploration": 15,
+        "private_pairs": 18
+      },
+      "private_pair_quality": {
+        "planned_pairs": 9,
+        "scored_pairs": 0,
+        "difference": null,
+        "interval": null
+      },
+      "failure_denominator_policy": "all planned cases retained"
+    },
+    "E2": {
+      "automation": {
+        "planned": 5,
+        "completed": 5,
+        "failed": 0,
+        "not_run": 0,
+        "human_reviewed": 0,
+        "quality": null,
+        "tasks": [
+          {
+            "task_id": "chat_to_gs_and_restore",
+            "status": "completed",
+            "steps": [
+              "Chat draft transferred through visible exploration link",
+              "Edited limits, recorded prediction, explicitly confirmed real controlled runner",
+              "Accepted pending candidate as private relation",
+              "Cleared local exploration drafts; prediction, revision and runs restored after refresh",
+              "Returned to Chat with saved calculation reference, sent fixture discussion, restored saved answer, reopened original exploration"
+            ],
+            "artifact_refs": [
+              {
+                "path": "output/playwright/r64-gs.png",
+                "sha256": "303036a1aa32d1286304dd38da370d3316ea243dc19ef2cce88986037f0449d9"
+              },
+              {
+                "path": "results/r64/browser-restore.log",
+                "sha256": "00031da77e5de2894149471b27d7d6101600a1da8b21c625c14199f666d05336"
+              }
+            ],
+            "evidence_source": "offline_browser_fixture",
+            "model_quality": null,
+            "persisted_record": {
+              "id": "255755a5-bb7b-474d-97bf-3221364b7d0f",
+              "revision": 5,
+              "claim": "严格行对角占优是GS收敛充分条件，不能把不占优直接判为发散。",
+              "history_actions": [
+                "created",
+                "advice",
+                "run",
+                "relation_decision",
+                "revise"
+              ],
+              "canonical_sha256": "db54f7a06bf977bcfdd0235996cbe729a15c4ca321bf2311fd8512a76ee12dd2"
+            }
+          },
+          {
+            "task_id": "newton_to_chat_and_return",
+            "status": "completed",
+            "steps": [
+              "Chat draft transferred through visible exploration link",
+              "Edited limits, recorded prediction, explicitly confirmed real controlled runner",
+              "Cleared local exploration drafts; prediction, revision and runs restored after refresh",
+              "Returned to Chat with saved calculation reference, sent fixture discussion, restored saved answer, reopened original exploration"
+            ],
+            "artifact_refs": [
+              {
+                "path": "output/playwright/r64-newton.png",
+                "sha256": "22b87512b284fc6feb6b2c8cd8cb4d347e77b8bbe9d2ee922d8fe9639398333f"
+              },
+              {
+                "path": "results/r64/browser-restore.log",
+                "sha256": "00031da77e5de2894149471b27d7d6101600a1da8b21c625c14199f666d05336"
+              }
+            ],
+            "evidence_source": "offline_browser_fixture",
+            "model_quality": null,
+            "persisted_record": {
+              "id": "8c820ba3-5f7a-4127-a803-30c9ee6e5145",
+              "revision": 4,
+              "claim": "该函数从0开始出现0与1循环，不能推广任意初值收敛。",
+              "history_actions": [
+                "created",
+                "advice",
+                "run",
+                "revise"
+              ],
+              "canonical_sha256": "f33d67073c6965f92c613f48811cb9678ffc565ee1683ba5d4a1e083147bcccf"
+            }
+          },
+          {
+            "task_id": "integration_to_chat_and_return",
+            "status": "completed",
+            "steps": [
+              "Chat draft transferred through visible exploration link",
+              "Edited limits, recorded prediction, explicitly confirmed real controlled runner",
+              "Cleared local exploration drafts; prediction, revision and runs restored after refresh",
+              "Returned to Chat with saved calculation reference, sent fixture discussion, restored saved answer, reopened original exploration"
+            ],
+            "artifact_refs": [
+              {
+                "path": "output/playwright/r64-integration.png",
+                "sha256": "845aa64ea4eaa1d234bd94cebced14f674b4b45393571774cad9e9a04d254456"
+              },
+              {
+                "path": "results/r64/browser-restore.log",
+                "sha256": "00031da77e5de2894149471b27d7d6101600a1da8b21c625c14199f666d05336"
+              }
+            ],
+            "evidence_source": "offline_browser_fixture",
+            "model_quality": null,
+            "persisted_record": {
+              "id": "87cb88f1-acfb-4bd8-96ad-c52eda4bfa13",
+              "revision": 4,
+              "claim": "步长比较支持局部数值观察；误差估计不能直接升格为严格界。",
+              "history_actions": [
+                "created",
+                "advice",
+                "run",
+                "revise"
+              ],
+              "canonical_sha256": "c72507453a46f9e4482919dcd98c42db3acbbc1427a0abf15013bd8c70d60bf8"
+            }
+          },
+          {
+            "task_id": "personal_graph_restore",
+            "status": "completed",
+            "steps": [
+              "Selected accepted GS private graph; cleared local exploration drafts; navigated again and restored persisted nodes and relation"
+            ],
+            "artifact_refs": [
+              {
+                "path": "output/playwright/r64-graph.png",
+                "sha256": "3eab694c99ab82c339e67713bbf11a94aeefffd07fec63c775bd982fa0f9bd80"
+              },
+              {
+                "path": "results/r64/browser-restore.log",
+                "sha256": "00031da77e5de2894149471b27d7d6101600a1da8b21c625c14199f666d05336"
+              }
+            ],
+            "model_quality": null
+          },
+          {
+            "task_id": "material_reference_restore",
+            "status": "completed",
+            "steps": [
+              "Selected original Newton reading; opened full Chat; sent reference-bound question; restored saved message after removing local reading selection; opened persisted quote and original source"
+            ],
+            "artifact_refs": [
+              {
+                "path": "output/playwright/r64-reading.png",
+                "sha256": "0508a6c6c072d2d0df41c70f1d39d21aa8338830be1d1c7ce20dee65263895a5"
+              },
+              {
+                "path": "results/r64/browser-restore.log",
+                "sha256": "00031da77e5de2894149471b27d7d6101600a1da8b21c625c14199f666d05336"
+              }
+            ],
+            "model_quality": null
+          }
+        ],
+        "execution_source": "actual_browser"
+      },
+      "human": {
+        "planned_tasks": 5,
+        "participants": 0,
+        "completed": 0,
+        "status": "not_run_no_participants_or_consent",
+        "completion_rate": null
+      }
+    },
+    "E3": {
+      "planned": 12,
+      "completed": 0,
+      "not_run": 12,
+      "status": "blocked_no_independent_items_participants_or_delay",
+      "quality": null,
+      "help_free_transfer_score": null,
+      "delayed_score": null
+    }
+  },
+  "materials": {
+    "public_case_slots": 39,
+    "unique_public_prompts": 32,
+    "independently_reviewed_holdout": 0,
+    "holdout_slots_unallocated": 6,
+    "engineering_fixture_cases": 3,
+    "review_status": "agent_prepared_only"
+  },
+  "outbound": {
+    "provider_requests": 0,
+    "usage": null,
+    "actual_cost": null,
+    "live_transport_enabled": false
+  },
+  "r7_decision": {
+    "verdict": "repair_quality_first",
+    "mathematical_or_learning_improvement_observed": null,
+    "reason": "No authorized comparable real-model observations, independent human ratings or human transfer results; E0/E2 automation cannot establish improvement"
+  },
+  "source_sha256": {
+    "apps/api/app/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/agents/code_executor.py": "83d82885b9bcae8152cc6f0b1e4b7dce74aaa1280c369ce06620c92dbbee1853",
+    "apps/api/app/agents/cron_agent.py": "bbaed73b62c88a0f2fe249438cd313d659abd973ff9c3293132d64d3cd7e9bdb",
+    "apps/api/app/agents/harness_evaluator.py": "76bccfd26a3284a3bf649da72a7389c0b504181114fd5e2ac78159a3818bd773",
+    "apps/api/app/agents/math_worker.py": "537ee6d22df5816852a854f9f7baf1562d34d2e14053dc66e710c454f8f39d37",
+    "apps/api/app/agents/multimodal.py": "bf3f445ab1041a021846142c6fc0a97fa4c4b4966cac04cdbbb602720209d4ec",
+    "apps/api/app/agents/tool_limits.py": "a33dbd704f00384cc78374e304ce928a6dae9256b8b5c6267036baa951d8e5e6",
+    "apps/api/app/agents/tool_result.py": "a0ed58df4c1d65739930b3dcd79a0e45da90f31de1e5183e09b52adcc8d701b7",
+    "apps/api/app/agents/typed_tools.py": "03a680cee76423306dcdf29cae5e6ae08b5acf87003dbc4ab0b53c070af995c5",
+    "apps/api/app/agents/vision_agent.py": "873fdd197b9e3a6cdb5acfb8afdbb7ccbc24274230f099b64e90331b073e1da0",
+    "apps/api/app/api/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/api/routes_admin_knowledge.py": "9851aefd0b50a01003f047feb994957a7aeaaf1a93f34ae5b12691ae29031546",
+    "apps/api/app/api/routes_auth.py": "ec827a620c9f259db685d19311e6247e83150d0a382900bb65f3e55f9677112e",
+    "apps/api/app/api/routes_courses.py": "35013e9dd00499ab9fa70ccffd6c7597a64269a62fc85e04cf357965b2d38cc2",
+    "apps/api/app/api/routes_cron.py": "f2982658f3934311285b1b21ff1c2ef25c5349a2045a77ecc2c590f2e63228f3",
+    "apps/api/app/api/routes_exercises.py": "d716ad71817020aa088d9c3165abda8aa10d0729a1cefbce523947bd8bf42c72",
+    "apps/api/app/api/routes_explorations.py": "7899d01a5d88af66c621f1e2d1914ae58cb7acbb60922829c77e82b9d0c3c515",
+    "apps/api/app/api/routes_knowledge.py": "30ad7beee37a36ed16bd4073b369e9a59c745ac89fbb3ed26fbcf52c6ac9271b",
+    "apps/api/app/api/routes_learning.py": "9961d5bc6277f79062cab69398026b167741ff84ffee94ce0f0aa84609c5cea8",
+    "apps/api/app/api/routes_mastery.py": "8702f1cf6f73ff2b4b71d1a005bcc83070a6e53702f4930f43c3bc9e66adb304",
+    "apps/api/app/api/routes_mistakes.py": "52725641577f801b51e589e6eba6434cd5d482595864c17a34c7fa3b4760a5e8",
+    "apps/api/app/api/routes_models.py": "79c5937ddfc70629e461bc65a4f5a5d19aff07ffed6e328d7756f55dc22703d7",
+    "apps/api/app/api/routes_notes.py": "727f790c18c2f9212c0c7bc38985fee610939ff4509deb4e6b50cb07b8a211b4",
+    "apps/api/app/api/routes_numerical_lab.py": "ce43a221f5fd931ede3e8d70467a71610257956c4053d337734e08fc078c2095",
+    "apps/api/app/api/routes_observability.py": "e321ac0925cec087011e7ea0f1ca278e13d0aba2482c5e38cf4dc1378a76ae37",
+    "apps/api/app/api/routes_resources.py": "b22415e1c7a4154d99de23ad3f125625896e3ad74725a6ab15c70e3d9eecc8f4",
+    "apps/api/app/api/routes_root_diagnostics.py": "a5d58335286dfcdbd9d91549b100d934c6d36dcdc28d46bae9ed4ee7d49ca839",
+    "apps/api/app/api/routes_search.py": "8de517729358e573277cbee33862eb0bf4ba21535db653753536b1060a7f8104",
+    "apps/api/app/api/routes_sessions.py": "c1d327ab14e38993bbbed38f83412b2d02728d5bdbc537cf235433a6db9fdc1d",
+    "apps/api/app/api/routes_tutor.py": "8642eb91389771c0ba172828006b3f41a19f5f766de1da0962c3b187b64608e6",
+    "apps/api/app/api/routes_uploads.py": "3d5d96bb9513847edfd3d871dedfd9f98f8263926e1ebdf531cfd46a171f357c",
+    "apps/api/app/api/routes_viz.py": "5a1277b8a07556bac36d1e4a936f2d6ea633cbf59446ff94f3283d7baf8f016f",
+    "apps/api/app/api/tutor_streaming.py": "b2dce4daa1a65843f9ec9a4e0ecd6553b603563174c560e56d3e24b28405cbe0",
+    "apps/api/app/auth.py": "18204f6456b3ebb0636f28369d6dfb8f8f703cb5e1b916d9859302b14a8c1000",
+    "apps/api/app/config.py": "d09c41659fe8104d8dcd9a5ed9a1459f24c108dfedf95c34b6612fb11a954c3c",
+    "apps/api/app/knowledge/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/knowledge/boundary.py": "7fcfd42cd7a8505cdbb5272fe1b1231abb9677362e4e02be2a19f8af0f874841",
+    "apps/api/app/knowledge/candidate_graph.py": "7a9aaab088261ab545ecb2a1b3a2ca3fec8dc26db155d9c6b7e9cb34db8b5715",
+    "apps/api/app/knowledge/candidate_pipeline.py": "041f899485d87b768b054692917fdc2980d0871a27727528984a30fbb0ed0c08",
+    "apps/api/app/knowledge/case_matcher.py": "c8e79b44f677e3b2cef5093187d8bf8c08f8e15b5cfacd6735d5cd828f24e225",
+    "apps/api/app/knowledge/case_repository.py": "917923b23fc26a3a0c0924f0088e477457343a50462bbfe12c9cc1b4e7010562",
+    "apps/api/app/knowledge/case_schema.py": "c8c496212e21e0d51d06c48f9f6ba0d33f1bdc6dd1ab7d0ecd8f6796f00cca89",
+    "apps/api/app/knowledge/concepts.py": "27ff953c05214ba0753eb978158b823167bc933a3644c4898dc919bfe94a3bc4",
+    "apps/api/app/knowledge/course_retrieval.py": "0d4299cef0735c70550ab01c408a215547e2c84e896e771a14f97cb6ec179a02",
+    "apps/api/app/knowledge/course_service.py": "5e6d9daa85a1caafd5c3f13442cd10879594fd3e00dffde71e7af71d4d79932d",
+    "apps/api/app/knowledge/course_store.py": "d27f6caa01f379fd48e5764aefc01bea0542ef94cfdc2e88a8a169230136c26b",
+    "apps/api/app/knowledge/document_chunking.py": "988e2d9b6b8222129fedf5880394e71e70eb4debf0c323df00fcc2f032cb8c1e",
+    "apps/api/app/knowledge/evidence_builder.py": "25842b6f5900b1230de2bd0012833f8e2e5ab93e5ee2c252f3851445d54f3606",
+    "apps/api/app/knowledge/graph_repository.py": "dc4b24867160b7e34edf360ca7d9a5920afef6c55c4ac067beefa3cbe59a0e52",
+    "apps/api/app/knowledge/graph_review.py": "064d0fc6638fa80d9a0bc62ed09217aa7135910f6de91030616a7a13bfe7702f",
+    "apps/api/app/knowledge/loader.py": "a821ab051aea00ac0de4ea9bd02b38247e5382138977482f60502bbe7f4b835f",
+    "apps/api/app/knowledge/pipeline/__init__.py": "f454cafaa958da60e8fbde969b0939f93a28d74c83b828b7061994a92b5a37fa",
+    "apps/api/app/knowledge/pipeline/extractor.py": "edda3a598599507b54eb6f51919d57f0a89ff7507b2016a83f28a37b2ff78ad6",
+    "apps/api/app/knowledge/pipeline/ingest.py": "3ad35af0135d789464e9fb86093178ba1347149008e439430baab928bb938683",
+    "apps/api/app/knowledge/pipeline/relations.py": "4177e0dc3aed64d04e1d828e6042414db37be9a8affcde38736f94dd4171b027",
+    "apps/api/app/knowledge/pipeline/runner.py": "0e9c65e5d265ffb25633a7f682d938c7ab43611cf1a6edffca0531ab32367f6e",
+    "apps/api/app/knowledge/pipeline/validator.py": "7db56a9be107f20ed4a7e47a4e3c15cefd3ddbc87dbb32ae23abdbd6b5bb331b",
+    "apps/api/app/knowledge/review_schedule.py": "d9d12040a1713f77dbaabbfe91756a4b7e23a07673a4726e2ee9a090923cea0b",
+    "apps/api/app/knowledge/schema.py": "faca5f817fa09c7f88aa21becc53a8ca05c0d2c415d5baf478b999968a3cfce3",
+    "apps/api/app/knowledge/search.py": "4b2e889b3458a55e1fa27a2edfdd84b6ceb2dd1be2534c9ef61d8ba257a0d376",
+    "apps/api/app/knowledge/student_overlay.py": "b501d1a58a915f9aab1722ea59fe9f2097d3882e87cc2de445c2bce0d39ed4a1",
+    "apps/api/app/knowledge/targeted_retrieval.py": "b64e140d792400a3b9b238b3fc479021caf44dff7316f6ad2841b43a43643094",
+    "apps/api/app/knowledge/vector_store.py": "ede9dc18caf635f6dc9a6f336b3d77e3092f473096b4efa07b1e883a1c796dec",
+    "apps/api/app/llm/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/llm/call_observation.py": "fc4b31faa470abc72db0793b4b6d25ead93035022bf291c31a9c3c8f62ecc9f7",
+    "apps/api/app/llm/capabilities.py": "d43240a57ac37d5a95b667dac2bd0711833b6466d6f3e98da36049e870853e98",
+    "apps/api/app/llm/completion_protocol.py": "be00403bc993fcc5eb893bad5bbbe855f9e5e9fd1d3f5cec31211ed2529985da",
+    "apps/api/app/llm/model_turn.py": "b0c83a2c2e377c6378529ddfed922d7ff0c69ec5ff286abcc09cf98af8e6c260",
+    "apps/api/app/llm/openai_compatible.py": "647c33f3422335bee5d23ac8925e2a0428328a2cd47df8d677854790c6e12800",
+    "apps/api/app/llm/pricing.py": "f6ea186267d930f0fcf4bc2b35d047db98169b134bd192d09de45d739e2139b3",
+    "apps/api/app/main.py": "f233ff2a2a91ddc886720082dbfa5907949018712b4391e205a9d2ebbd3d3ecd",
+    "apps/api/app/main_deps.py": "a85c0a5bf2c1853e73abfa82c68c6c65d809b6bc425b4a55db345d6ee13194d4",
+    "apps/api/app/math_tools/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/math_tools/exploration_tasks.py": "d85f7955c602eb52b97e00944cf76f2ba9d4417e0b7e9408132c21e22070bf69",
+    "apps/api/app/math_tools/numerical_lab.py": "9bc5e5919e7f5eae7aadcd3236030b91c2e00d0694a1ae00749b1cc8215be3e2",
+    "apps/api/app/math_tools/root_expression.py": "6bfe57272e22ba3a58c3c9571591ee3a82411a28c80abaedacf6de62d796075d",
+    "apps/api/app/math_tools/root_finding.py": "19b2ca3bfb65c917042c4d0f5b4d788fd4c3a26997adff5e710beb989b5083eb",
+    "apps/api/app/math_tools/root_runner.py": "77e6a3f752414b245e3f252f3eea9a37f8f75ec6ce4887129f8e8e5c830f2adb",
+    "apps/api/app/math_tools/safe_symbolic.py": "d090e965f0e369749f7d18d551453249c0d78816f906b31b665aa1aef0bdb206",
+    "apps/api/app/math_tools/step_checker.py": "e46e5b9459834f0f469a64bc740028b467d0b2101bb9368009676661add85af5",
+    "apps/api/app/math_tools/step_protocol.py": "53b7dac5bc5ae1e34699c5c247e8afb63c79a856610b9bb729f6029b52560a7a",
+    "apps/api/app/math_tools/step_runtime.py": "236e08029382c0da2d5538e3371fda684e17ba2bb4d1daa8414371b02b65937a",
+    "apps/api/app/math_tools/verifier.py": "5b567ed5f82c8ed3670b0c8038894f3c39ee2ad05bf23b7e8e277c243f578c4d",
+    "apps/api/app/math_tools/visualizer.py": "c775287db3d9721cc111a3c29ba72e4ae39f6804378f5c44b86c67f2d98d1b6e",
+    "apps/api/app/memory/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/memory/agent_runs.py": "9bed621c7d574df65f6ae24bf31a6b1484423084eed2be8ac2047a68aa0fed1b",
+    "apps/api/app/memory/mastery.py": "e25c47fc5f5b9f75d9c24e1174e9fbcb9e7e581305caccd1f44715c9c4bdceac",
+    "apps/api/app/memory/migrations.py": "ea5a0e69993d0493099f655202de670447eac0a2b54b2e4e135aa0161236961d",
+    "apps/api/app/memory/models.py": "b51d6768160d0ba794fb65cefd00b1ce0112600daeb54ea85af55ddbd67685f3",
+    "apps/api/app/memory/repository.py": "e6abda218c2d5864d9a8937cc34b6e916d1d48268302911cf391c2b955349974",
+    "apps/api/app/memory/text_index.py": "b603af2ce142742a0cf348ee76f7b7e54579ff09d3ca008ce9366635f07afc02",
+    "apps/api/app/observability.py": "1ea0336323625e843a0cf8a6d6a8ba85c18af34d56b1410ebd8136d9e3215d11",
+    "apps/api/app/search/__init__.py": "d61c7d4c2fdb7777594d735f90235f6aa15f7aca394207237f186221d53d7006",
+    "apps/api/app/search/policy.py": "cd02cb05a795655c419bf2b1910fdebc38edf31d233889881412a1b75b0717c6",
+    "apps/api/app/search/web_search.py": "6d29def1a117fb15aff87df9b82847c8b553c052f326e24726589ea5414c17f1",
+    "apps/api/app/services/mineru_client.py": "14071f5019d682fddf4846d24bdbec6de6bfac7ffbc6f201acdc83e700d40f06",
+    "apps/api/app/text_preview.py": "0c25211624661633f0a0b25518e592f1e5c1466f62dcbdf36b99ba784f23bf61",
+    "apps/api/app/tutor/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "apps/api/app/tutor/answer_guard.py": "b2163e4550a5168d1c7718e07497d36ad57c3cd5fe7de35c083790d13da9c058",
+    "apps/api/app/tutor/exercise_generator.py": "31d037bdbf22c8cfbda550b10940f3b36c0d03233fc6fa59464aaca587adcbf8",
+    "apps/api/app/tutor/exploration_advice.py": "b8ec1d82e106e6b96e0f4ec0c743740799e8e7415f6c97bf25672439fea5929f",
+    "apps/api/app/tutor/exploration_runner.py": "be820876f05b0c3afbd0e76c7a523e96d820f3b4bf7dbc7decd696fc708408f6",
+    "apps/api/app/tutor/explorations.py": "7e93dd67cbc0439d4a7c576a2204669d515baf1849febb03f66f3b53d7ce9419",
+    "apps/api/app/tutor/fast_context.py": "75239101f6a7c5d2e0c93cbf9f38fc43fd66ef733f1c5a33fae5cd999878213a",
+    "apps/api/app/tutor/fast_path.py": "c6024454c1ab604a3215d9132c4aae326de247001589576cb4ebf78ad18b4a65",
+    "apps/api/app/tutor/graph.py": "93757e7081d801d4ce5f85206016788939c4fd315312ed33263ba626d19fce35",
+    "apps/api/app/tutor/help_boundary.py": "077058db301742329a1680a20590bb0724a63ab3120dd273ddbd70133a23472d",
+    "apps/api/app/tutor/hint_policy.py": "bdafbf4bb6786d185a238cada16a1e0b17b422cd8515239be789838bd2c2d98c",
+    "apps/api/app/tutor/intent_router.py": "e25b8ba99ab3241fd95da81683fc4a69357a2cc2700e7f35b373cbfdc75acf46",
+    "apps/api/app/tutor/learning_actions.py": "a3a9b32acf1850df337ac1e38d5f5b1c7e092355191b8018ae50b539279f070e",
+    "apps/api/app/tutor/learning_context.py": "a1886d8ea3abc9a9eb0a52db00e95490b2451890a4f8ceedb3efdd83c945afff",
+    "apps/api/app/tutor/learning_extensions.py": "6630128ba5941e18af888e60075bfb3ea1c9848af8d7dde821ebf8f0a7856eb6",
+    "apps/api/app/tutor/learning_resumption.py": "64e6261d1859b7dee99e29d2a563d70aef7307bf26aa8a32a64292a77a37d3a9",
+    "apps/api/app/tutor/learning_workspace.py": "e8efb174114abee471aff86194577e7bc8cf6e8aef8caa0f6c8d6780da9eaf00",
+    "apps/api/app/tutor/misconception.py": "1d270fe009f1f3c8480475de06066fec217b1df7abdc6a6e5d914e104723f1c4",
+    "apps/api/app/tutor/newton_activity.py": "8e1fe33d1a0d5bfc95c7a273ba2a269d1546871082dc244ad1db8abe9325938f",
+    "apps/api/app/tutor/orchestrator.py": "f5ef29f9a12b3896f24b3538ff2e9898865971a6f925697ac784d97ae3599062",
+    "apps/api/app/tutor/personal_recall.py": "160a82aacec484f7b657530671bfbf3540e91495689f354255ef2786fbfc31f7",
+    "apps/api/app/tutor/policy_comparison.py": "9226bca11c02c6bd36fb171a754b037c47f18dd460f50ab7b26bc73aa24ee7f8",
+    "apps/api/app/tutor/policy_router.py": "79a2bd2e97b3c210d80dc048c757d41ffa599be5d7011a0438106159a370e46e",
+    "apps/api/app/tutor/prompt_builder.py": "e1dcb7e22f55b9d8a23a8934bdccd67b40bc2bbbabd8fa9bec24f65d399e5def",
+    "apps/api/app/tutor/prompt_policy.py": "6a483c260b23dc341ffe49cd70f5159deed81a459ce80051744bdc2da1a91d2c",
+    "apps/api/app/tutor/proof_tutor.py": "7bc7fd9adfc91f1b7bd22fb8d2b4dfc2de1150f796f7ee9389df85eda6953d0e",
+    "apps/api/app/tutor/reading_explanation.py": "6e04a4ddd92b544cda1b0a85c3f3a354c72f805597dfe130be394ac55159babe",
+    "apps/api/app/tutor/root_diagnostics.py": "0851d06ccd2ad6c1465b0af0d3e41e19445376363f5998f1b9f2146156813522",
+    "apps/api/app/tutor/run_trace.py": "f495cc4efab9f0239ca2c2d5470ec1d95811567bee59dfa2b3777b02f81853b7",
+    "apps/api/app/tutor/study_summary.py": "c7ce79ac0f3c561b2ba48c6ebce5d78b543856079263d95e8761a6b1efa84530",
+    "apps/api/app/tutor/teachback_evidence.py": "7f6b774c98c094b1326ce47c52e93fe517d440108c8a6d35d14dabe69cf89107",
+    "apps/api/app/tutor/teaching_decision.py": "1778ac8e92f27312ebed662f64f7b6fa4956b36757117b7cb79d8654089c59eb",
+    "apps/api/app/tutor/title_generator.py": "9dbd9cba200357314c6a1dfc61a9338eb9307657229143b1677a0897c730b011",
+    "evaluation/r64/cases-v1.json": "bd20e628e749e464e9c2e1e9c3564fd4f7e7e710bfcb2da61ac6bc57dae593ce",
+    "evaluation/r64/failure-taxonomy-v1.json": "1f53b7193fa8b06e2700e914416f45adb5f49ffc8667084c3902c1591b73234c",
+    "evaluation/r64/freeze-v1.json": "b9646e4b0d3273ac34a973cf681ce669a1fd16b75e21ab9a4ad72ed7e4e982ae",
+    "evaluation/r64/protocol-v1.json": "78291a1657f8703a4d43bed9cdca64934da9fc79225d9886e4b1eb6a68ed9c69",
+    "evaluation/r64/rubric-v1.json": "daf10342c8f027ab1fe6139092390dbfce19e542ed45ff33f3eace402d0dace9",
+    "scripts/eval_r64.py": "0bf64b2949db634f1c2afc21ecac9376fde05e638114158cb591bce932ecab75",
+    "scripts/r64_browser_receipt.py": "2a31446db94f8723f3b0353baf5c746d27eb7c0558c6b6f082e15bac88731624",
+    "scripts/r64_capture.py": "0b060c39fe3009256f4cf8a6e0fdc904b902db3a70fc200e1f0866f2e58456f7",
+    "scripts/r64_quality.py": "9ffa4924cdfd505192eebcaf3dcba6eba5fb12acb9c90da65fa7e2627750eb7e",
+    "scripts/r64_r5_capture.py": "d229642b2548550d3530c98d02d65ad896f62f653dfa4f8c198b37310a4916e2",
+    "scripts/r64_ui_restore.cjs": "e3928a85c36eded411a5759eccee19a7da4d6ebcd14580ee94a044f9e12d6ad3",
+    "scripts/r64_ui_tasks.cjs": "3c523df1366802dec0320edf88029af74bdc397e6a2bc4578bb9a038080a2807"
+  },
+  "capture_sources_unchanged": true,
+  "records": {
+    "exploration": [
+      {
+        "case_id": "GS-local",
+        "domain": "gs",
+        "role": "correct_local",
+        "input_sha256": "3a1bd10c56e68c9711e0f7e094b4e128e28251755f82632f505742d2b79d941c",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/GS-local.json",
+        "artifact_sha256": "fbb8547b398c2484f8639b53abc7e217309b4e44071161e19e57a4570a6b34d2"
+      },
+      {
+        "case_id": "GS-missing",
+        "domain": "gs",
+        "role": "insufficient_conditions",
+        "input_sha256": "afbf9b247784494803d4124e83060eb4e5b3312ecd725b3d08957343b0ded85d",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/GS-missing.json",
+        "artifact_sha256": "49425771464cd40d82f602fb32565d82ec06d4fd4a59fd9816f69285d48f0078"
+      },
+      {
+        "case_id": "GS-universal",
+        "domain": "gs",
+        "role": "false_universal",
+        "input_sha256": "6e3b35a1a94814d2b8e8e51d328ac24398927c4deb0c71a2379f153029b57ebb",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/GS-universal.json",
+        "artifact_sha256": "d261a49d78e94447c6e9f457e0e8a84ff725a385a49b8c3709ab0922ae3bcb69"
+      },
+      {
+        "case_id": "GS-design",
+        "domain": "gs",
+        "role": "counterexample_design",
+        "input_sha256": "6ffc972032d7746393b0fe27c12268a4fa11ee538d3b8a9ee8312ebdcc582976",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": true,
+        "real_local_runner_count": 2,
+        "artifact_ref": "final-v3-artifacts/explorations/GS-design.json",
+        "artifact_sha256": "26efcd7232822bae04bab037aafe9e9972d09fbd223cf9dfa00ecd5b3115b088"
+      },
+      {
+        "case_id": "GS-boundary",
+        "domain": "gs",
+        "role": "tool_cannot_decide",
+        "input_sha256": "77ee9a9595163bb6dc06a9b2add5f1e0095698bdef746b6fd34fa9fc547bba4f",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/GS-boundary.json",
+        "artifact_sha256": "1a01b82a2815bbb8bf7e7d5d6d124cefc4564de6c92e883fbc3852eb22b67c5a"
+      },
+      {
+        "case_id": "N-local",
+        "domain": "newton",
+        "role": "correct_local",
+        "input_sha256": "aae962c3e0bc86a6e7c5b6af9b2a61a16374adc27453cfbde71aa184ffda5c9d",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/N-local.json",
+        "artifact_sha256": "df619297367cdf533c949878c149bda5ef4ec77a45f81e8fd5302fd0acf22d7e"
+      },
+      {
+        "case_id": "N-missing",
+        "domain": "newton",
+        "role": "insufficient_conditions",
+        "input_sha256": "232e0f999fd698c8fb996bedd3a7abbf993bbe50e0035a7c9795331e44b25813",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/N-missing.json",
+        "artifact_sha256": "1df309ad6d30cc888cb722ea26d8d001628dddf84a6ac55f080154c612fd1b04"
+      },
+      {
+        "case_id": "N-universal",
+        "domain": "newton",
+        "role": "false_universal",
+        "input_sha256": "f76261d6f61311a5a341d3892da0f99e62ded903e6b5f05767ba905728581726",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/N-universal.json",
+        "artifact_sha256": "5124ecd0c68943cbe469e5774d5a485c1b18aaeff23d0c97ec57a42c00fb736d"
+      },
+      {
+        "case_id": "N-design",
+        "domain": "newton",
+        "role": "counterexample_design",
+        "input_sha256": "200d76edb39521a23a116f011492bc079620ef61a8426df80a67c664cbf26a9c",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": true,
+        "real_local_runner_count": 2,
+        "artifact_ref": "final-v3-artifacts/explorations/N-design.json",
+        "artifact_sha256": "ec34cd134b6c7c29d3aeb2969d02b3bbabf4e8e1de2a6920193ef5baefe2f101"
+      },
+      {
+        "case_id": "N-boundary",
+        "domain": "newton",
+        "role": "tool_cannot_decide",
+        "input_sha256": "cfa39c1ce1bf850371e1d37d032286e3632a5df8d98f8a1074bad7433d22e926",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/N-boundary.json",
+        "artifact_sha256": "87fd06ed814c3c2d8dc5926210e993e157ee9ca2895062aa0cf189ea113016a7"
+      },
+      {
+        "case_id": "Q-local",
+        "domain": "integration",
+        "role": "correct_local",
+        "input_sha256": "b5a1a1677b8db6010521611cf7256337159c235f57fe216b516fa7c0affbb24d",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/Q-local.json",
+        "artifact_sha256": "a564c4f7a815bc3ee0e83ac6cf035a9b40711fc155437527946afcc84c71bb28"
+      },
+      {
+        "case_id": "Q-missing",
+        "domain": "integration",
+        "role": "insufficient_conditions",
+        "input_sha256": "7d47ce8d02bc3d5f235207a761fbbee71a10727ca82cdd81e841aaa9bac4fe62",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/Q-missing.json",
+        "artifact_sha256": "0a6a980c673d7c64cad7fdcb27bf41d422bb579464345dbe425282aca67f6b35"
+      },
+      {
+        "case_id": "Q-universal",
+        "domain": "integration",
+        "role": "false_universal",
+        "input_sha256": "f416ca6dffcf4d5699f2e7be0903771c4249ad7000c6d763f27b5fd21c6a7f57",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/Q-universal.json",
+        "artifact_sha256": "0be0ef177246178318c67d7887473223aa55e454704167efbdbc4cc192d0e045"
+      },
+      {
+        "case_id": "Q-design",
+        "domain": "integration",
+        "role": "counterexample_design",
+        "input_sha256": "ac7bb81d3b766e154f104ba897ad47f51c31209559ec55956c285c28efe689d8",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": true,
+        "real_local_runner_count": 2,
+        "artifact_ref": "final-v3-artifacts/explorations/Q-design.json",
+        "artifact_sha256": "7aa96c41efa1aed6e0913da8f5b85564d3d168003165f8cbb7b0555017cef60e"
+      },
+      {
+        "case_id": "Q-boundary",
+        "domain": "integration",
+        "role": "tool_cannot_decide",
+        "input_sha256": "3e0134b0b73b8405ebbf33e3e27cd3b803ceeffc1d70371eed555f479c1e48a0",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "http_status": 200,
+        "advice_status": "suggested_not_executed",
+        "model_calls": 1,
+        "plan_offered": false,
+        "real_local_runner_count": 0,
+        "artifact_ref": "final-v3-artifacts/explorations/Q-boundary.json",
+        "artifact_sha256": "ad5d316898704af4caa7ffcc212a1edd14449c1cc8f39223a92effae1f00711c"
+      }
+    ],
+    "private": [
+      {
+        "case_id": "gs-related",
+        "arm": "P0",
+        "domain": "gs",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "e60fabc7b9f727cf2caf1065cfaf93f5239699b0a6fc2ba33ed728ba32f3424a",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "afb16a420ed72cffa46ff47b162db53fce63dd908153853ea5714a074737265d",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-related-P0.json",
+        "artifact_sha256": "c3f2ee292c1fd4bcb56cd0dfdc94309d1ef684a9b8eafbc0176b6d9b679fd0c9"
+      },
+      {
+        "case_id": "gs-related",
+        "arm": "P1",
+        "domain": "gs",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "e60fabc7b9f727cf2caf1065cfaf93f5239699b0a6fc2ba33ed728ba32f3424a",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 1,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "947357b804fb96fd4e1b67da08373440d99fe12c755164c0e6ac7d3b2555db89",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-related-P1.json",
+        "artifact_sha256": "c91aab1c40e3457b74be3bbb73d18f6c7e4c8f2f99470b0527e596dbf5db3c57"
+      },
+      {
+        "case_id": "gs-unrelated",
+        "arm": "P0",
+        "domain": "gs",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "e60fabc7b9f727cf2caf1065cfaf93f5239699b0a6fc2ba33ed728ba32f3424a",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f13ece6627496c064d7564b1e3afc57e88cd9c63d9289b6f3b837b60d3569d15",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-unrelated-P0.json",
+        "artifact_sha256": "302af0622d86a5b6d286f7a1a0f1ca4ebc4b6d8db90ad6173f51157e73663d3f"
+      },
+      {
+        "case_id": "gs-unrelated",
+        "arm": "P1",
+        "domain": "gs",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "e60fabc7b9f727cf2caf1065cfaf93f5239699b0a6fc2ba33ed728ba32f3424a",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f13ece6627496c064d7564b1e3afc57e88cd9c63d9289b6f3b837b60d3569d15",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-unrelated-P1.json",
+        "artifact_sha256": "fdf9bcfc5c8904327183ae5fac83a08a679d20502816df86983500f1092e0e82"
+      },
+      {
+        "case_id": "gs-stale_source",
+        "arm": "P0",
+        "domain": "gs",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "db77d4434f0ed29768dc423a74953be5881ffdd733a7d710a6c2c814d3df4d86",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "afb16a420ed72cffa46ff47b162db53fce63dd908153853ea5714a074737265d",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-stale_source-P0.json",
+        "artifact_sha256": "d180a9637963036ac91b3ce0f60fb054d1d2dc07d702929b64f01acd384e93f0"
+      },
+      {
+        "case_id": "gs-stale_source",
+        "arm": "P1",
+        "domain": "gs",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "db77d4434f0ed29768dc423a74953be5881ffdd733a7d710a6c2c814d3df4d86",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "afb16a420ed72cffa46ff47b162db53fce63dd908153853ea5714a074737265d",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/gs-stale_source-P1.json",
+        "artifact_sha256": "29acce5b475385e951be9db8b7acb25233fe3e5223c927233268e5f15e8111ea"
+      },
+      {
+        "case_id": "newton-related",
+        "arm": "P0",
+        "domain": "newton",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "9bb1fec209b690885e2badce10adbcb8c80789dfeaf54e10760c069f6259e432",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f13ece6627496c064d7564b1e3afc57e88cd9c63d9289b6f3b837b60d3569d15",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-related-P0.json",
+        "artifact_sha256": "baa6f580a17a90ddee218d9763e688463f78edfc99aeffdae0b14f6848dcd6a9"
+      },
+      {
+        "case_id": "newton-related",
+        "arm": "P1",
+        "domain": "newton",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "9bb1fec209b690885e2badce10adbcb8c80789dfeaf54e10760c069f6259e432",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 1,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f66c00f57145c4646d3cf3b88d356e5424ed9b60d681f2d6545bfc770554f1e5",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-related-P1.json",
+        "artifact_sha256": "8d324c87386e5a1cc4695c93c861f2fcfde2085315751853ab2db9a889b1e51e"
+      },
+      {
+        "case_id": "newton-unrelated",
+        "arm": "P0",
+        "domain": "newton",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "9bb1fec209b690885e2badce10adbcb8c80789dfeaf54e10760c069f6259e432",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "8472d8d20125816375477629373c4be942d753878df5333e4b4a2cc8c91230e0",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-unrelated-P0.json",
+        "artifact_sha256": "a91ae9930bf5118527cb4103595847ce0f7ff78c3e113c229b1fff2937f14072"
+      },
+      {
+        "case_id": "newton-unrelated",
+        "arm": "P1",
+        "domain": "newton",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "9bb1fec209b690885e2badce10adbcb8c80789dfeaf54e10760c069f6259e432",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "8472d8d20125816375477629373c4be942d753878df5333e4b4a2cc8c91230e0",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-unrelated-P1.json",
+        "artifact_sha256": "e8f78a3bc2931f59112ec56bf77b977394f51ad0432c51323c05cc0079922c06"
+      },
+      {
+        "case_id": "newton-stale_source",
+        "arm": "P0",
+        "domain": "newton",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "d6f23c10b112ae644b093a957510480b2518d7a4ecffb1134c194c7435b0be47",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f13ece6627496c064d7564b1e3afc57e88cd9c63d9289b6f3b837b60d3569d15",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-stale_source-P0.json",
+        "artifact_sha256": "456c16566757f6b8bcd95538c6ec27c180819000049365c5f6f2d3f60dc11b17"
+      },
+      {
+        "case_id": "newton-stale_source",
+        "arm": "P1",
+        "domain": "newton",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "d6f23c10b112ae644b093a957510480b2518d7a4ecffb1134c194c7435b0be47",
+        "input_sha256": "ba1d54fc709cffe8e46340ebefa5d68063ba66fa30e22cc426a7b0be84d8de86",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "edcc9ac5285a439324b9b3665d726d01265b10258bad7d144a1429ae36ef6c55",
+        "prompt_sha256": "f13ece6627496c064d7564b1e3afc57e88cd9c63d9289b6f3b837b60d3569d15",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/newton-stale_source-P1.json",
+        "artifact_sha256": "99f33428f4013d35d652906d8415b8c2c3fbd86832c76cce2bd4c52e05e5a056"
+      },
+      {
+        "case_id": "integration-related",
+        "arm": "P0",
+        "domain": "integration",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "dc46cfbc7a02e803e131d1ddb75ac0327d1669e287bee89cda5f06d0ee93adec",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "8472d8d20125816375477629373c4be942d753878df5333e4b4a2cc8c91230e0",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-related-P0.json",
+        "artifact_sha256": "cf11ebe11519ae2edb13053b8ae84819459a5842d2b108f8705ceca424b4ac74"
+      },
+      {
+        "case_id": "integration-related",
+        "arm": "P1",
+        "domain": "integration",
+        "scenario": "related",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "dc46cfbc7a02e803e131d1ddb75ac0327d1669e287bee89cda5f06d0ee93adec",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 1,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "77369cb37ab96056451488c4f7d3b6e574997e52906185abdf2a2071df25779c",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-related-P1.json",
+        "artifact_sha256": "b1ad66cad259a04cbe7e263038adc87d7ba1573be9228e555cb7b9a31b49327f"
+      },
+      {
+        "case_id": "integration-unrelated",
+        "arm": "P0",
+        "domain": "integration",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "dc46cfbc7a02e803e131d1ddb75ac0327d1669e287bee89cda5f06d0ee93adec",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "afb16a420ed72cffa46ff47b162db53fce63dd908153853ea5714a074737265d",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-unrelated-P0.json",
+        "artifact_sha256": "fbd4fc1c111b455186fff0efd84e2a1b2e70628d43a5bb7a68c937fcbfce1370"
+      },
+      {
+        "case_id": "integration-unrelated",
+        "arm": "P1",
+        "domain": "integration",
+        "scenario": "unrelated",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "dc46cfbc7a02e803e131d1ddb75ac0327d1669e287bee89cda5f06d0ee93adec",
+        "input_sha256": "2c3b9007bf8d02631f605d25d6d5f4e510f0bff4dd708c768257ae187acf0e3e",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "01bbe9e39a8da9f7e00e6412b37e2752b975e742dc76198e92624ba1f0ffadb4",
+        "prompt_sha256": "afb16a420ed72cffa46ff47b162db53fce63dd908153853ea5714a074737265d",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-unrelated-P1.json",
+        "artifact_sha256": "024e2f29a572d7af12c4cb950443405d0a4ae8943f11824e6033e2b2f39d2a73"
+      },
+      {
+        "case_id": "integration-stale_source",
+        "arm": "P0",
+        "domain": "integration",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "1c75a9ef5894fa9e416c5468a8ce262de8805e0f3aa6f427ee97399746889e2a",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "8472d8d20125816375477629373c4be942d753878df5333e4b4a2cc8c91230e0",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-stale_source-P0.json",
+        "artifact_sha256": "c915ffa9366759a7660a45c7676f7d4d8fa340d18f3a2ccb9b9872cee2dcc0b7"
+      },
+      {
+        "case_id": "integration-stale_source",
+        "arm": "P1",
+        "domain": "integration",
+        "scenario": "stale_source",
+        "evidence_source": "fixed_fixture",
+        "status": "completed",
+        "quality": null,
+        "usage": null,
+        "actual_cost": null,
+        "provider_requests": 0,
+        "history_sha256": "1c75a9ef5894fa9e416c5468a8ce262de8805e0f3aa6f427ee97399746889e2a",
+        "input_sha256": "7689a849824954bc551e4c8f7b6a594ab16cf905a1e2ba46da3533a0d08e2951",
+        "selected_count": 0,
+        "model_calls": 1,
+        "model": "same-neutral-offline-fixture-v1",
+        "generation_sha256": "fbd023975fd543362d1ff90632738f23b9363e1c56ec1c4bf69c012b167307e0",
+        "normalized_prompt_sha256": "93cd6b0f677bac4213076f362fd7bb2ebc5b6c0b11ef68257b15021e25e73e58",
+        "prompt_sha256": "8472d8d20125816375477629373c4be942d753878df5333e4b4a2cc8c91230e0",
+        "response_sha256": "2b934645aae1155637f61798881e3924345b1e6ed92853f1a3b35b650402ce46",
+        "artifact_ref": "final-v3-artifacts/private/integration-stale_source-P1.json",
+        "artifact_sha256": "9a612bcbcc6ec0b628ac8dc848b078aa7c755aec8163f57312a29ce90377c067"
+      }
+    ]
+  },
+  "selected_context_examples": [
+    {
+      "case_id": "gs-related",
+      "selected_context": [
+        {
+          "id": "personal:0",
+          "exploration_id": "prior",
+          "revision": 4,
+          "relation_id": "relation",
+          "relation_version": "4513b2149d3701851cb3e5ff5628d42e3315363ccc5a978bbc530947c586d69e",
+          "authority": "student_confirmed_unreviewed",
+          "selection_reason": "当前问题明确涉及既往关系中的概念",
+          "original_claim": "非严格行对角占优的矩阵，GS一定发散。",
+          "current_claim": "严格行对角占优是GS收敛的充分条件，但不是必要条件。",
+          "revisions": [
+            {
+              "revision": 4,
+              "claim": "严格行对角占优是GS收敛的充分条件，但不是必要条件。",
+              "reason": "第二组不严格行对角占优，输入按十进制有理数解释时误差谱半径为1/5。"
+            }
+          ],
+          "relation": {
+            "id": "relation",
+            "source": "premise",
+            "target": "conclusion",
+            "relation": "related",
+            "reason": "我曾忽略适用条件，需要结合修订再检查"
+          },
+          "nodes": [
+            {
+              "id": "premise",
+              "label": "严格行对角占优",
+              "description": "",
+              "source_ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              }
+            },
+            {
+              "id": "conclusion",
+              "label": "GS收敛",
+              "description": "",
+              "source_ref": null
+            }
+          ],
+          "evidence_refs": [
+            {
+              "ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              },
+              "title": "原条件",
+              "review_state": "personal_unreviewed",
+              "evidence_scope": "personal_note"
+            }
+          ],
+          "experiments": [
+            {
+              "ref": {
+                "kind": "linear_lab",
+                "record_id": "exp_bccbe58ac7a14ab80758913cf1183dce",
+                "source_hash": "ab7171b5be8cd390ba1c0bb0fae7c427afaefaca45b6f8766787bfd25a4fd6c0",
+                "schema_version": "numerical-lab-v1",
+                "selected_step": null
+              },
+              "task": {
+                "domain": "linear_system",
+                "method": "gauss_seidel",
+                "matrix": [
+                  [
+                    1.0,
+                    2.0
+                  ],
+                  [
+                    0.1,
+                    1.0
+                  ]
+                ],
+                "rhs": [
+                  1.0,
+                  1.0
+                ],
+                "initial": [
+                  0.0,
+                  0.0
+                ],
+                "tolerance": 1e-06,
+                "limit": 40
+              },
+              "linear_check": {
+                "scope": "saved_linear_iteration_floating_point",
+                "method": "gauss_seidel",
+                "checked_step": 10,
+                "expected_vector": [
+                  -1.2499988480000002,
+                  1.1249998848
+                ],
+                "residual_infinity": 9.215999998701818e-07,
+                "condition_sufficient": false,
+                "error_bound": null,
+                "error_bound_includes_roundoff": false,
+                "unknown_reason": "未证严格行对角占优；不能仅凭这条充分条件判断收敛，也不能从残差直接推出同数值的解误差。",
+                "matrix_specific": {
+                  "status": "deterministic_calculation",
+                  "scope": "specified_decimal_rational_matrix",
+                  "iteration_matrix": [
+                    [
+                      "0",
+                      "-2"
+                    ],
+                    [
+                      "0",
+                      "1/5"
+                    ]
+                  ],
+                  "spectral_radius_exact": "1/5",
+                  "spectral_radius_display": 0.2,
+                  "strict_row_dominant": false,
+                  "rho_less_than_one": true,
+                  "is_counterexample_to_necessity": true,
+                  "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+                  "review_state": "deterministic_rule_not_human_review"
+                }
+              },
+              "stop_detail": "绝对残差已达标；不是独立学习成绩。",
+              "evidence_scope": "floating_point_residual",
+              "conditions": [
+                "未满足严格行对角占优；这不等于必然发散，需要其他收敛依据。",
+                "停止规则为绝对残差 ∥Ax−b∥∞ ≤ ε；相邻步很小不能单独证明方程已满足。",
+                "解误差界展示理论公式的浮点值，不包含残差计算的舍入误差；不是形式化误差证书。"
+              ],
+              "rows": [
+                {
+                  "k": 0,
+                  "vector": [
+                    0.0,
+                    0.0
+                  ],
+                  "residual": 1.0,
+                  "step": null,
+                  "error_bound": null,
+                  "work": 0
+                },
+                {
+                  "k": 1,
+                  "vector": [
+                    1.0,
+                    0.9
+                  ],
+                  "residual": 1.7999999999999998,
+                  "step": 1.0,
+                  "error_bound": null,
+                  "work": 1
+                },
+                {
+                  "k": 9,
+                  "vector": [
+                    -1.24999424,
+                    1.124999424
+                  ],
+                  "residual": 4.6080000002390875e-06,
+                  "step": 2.303999999986317e-05,
+                  "error_bound": null,
+                  "work": 9
+                },
+                {
+                  "k": 10,
+                  "vector": [
+                    -1.2499988480000002,
+                    1.1249998848
+                  ],
+                  "residual": 9.215999998701818e-07,
+                  "step": 4.6080000002390875e-06,
+                  "error_bound": null,
+                  "work": 10
+                }
+              ]
+            }
+          ],
+          "unavailable_experiments": [],
+          "next_question": "你曾用“我曾忽略适用条件，需要结合修订再检查”联系严格行对角占优与GS收敛；这次还满足同样条件吗？"
+        }
+      ],
+      "actual_fixed_reply": "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。\n\n离线固定回复，仅检查编排。请核对本题条件与计算范围；此回复不提供模型数学成绩。",
+      "quality": null
+    },
+    {
+      "case_id": "newton-related",
+      "selected_context": [
+        {
+          "id": "personal:0",
+          "exploration_id": "prior",
+          "revision": 4,
+          "relation_id": "relation",
+          "relation_version": "08b8a9db63da80b9b900570ece816b3e4b5942882a706b14210423d6024e3da4",
+          "authority": "student_confirmed_unreviewed",
+          "selection_reason": "当前问题明确涉及既往关系中的概念",
+          "original_claim": "Newton法对x^3-2*x+2从任意初值都收敛。",
+          "current_claim": "该函数从0出发进入0与1循环，不能声称任意初值都收敛。",
+          "revisions": [
+            {
+              "revision": 4,
+              "claim": "该函数从0出发进入0与1循环，不能声称任意初值都收敛。",
+              "reason": "真实runner保存0→1→0；由f(0)=2、f'(0)=-2和f(1)=1、f'(1)=1可代数核对该循环。-2的残差达标只是指定输入观察。"
+            }
+          ],
+          "relation": {
+            "id": "relation",
+            "source": "premise",
+            "target": "conclusion",
+            "relation": "related",
+            "reason": "我曾忽略适用条件，需要结合修订再检查"
+          },
+          "nodes": [
+            {
+              "id": "premise",
+              "label": "初值",
+              "description": "",
+              "source_ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              }
+            },
+            {
+              "id": "conclusion",
+              "label": "Newton收敛",
+              "description": "",
+              "source_ref": null
+            }
+          ],
+          "evidence_refs": [
+            {
+              "ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              },
+              "title": "原条件",
+              "review_state": "personal_unreviewed",
+              "evidence_scope": "personal_note"
+            }
+          ],
+          "experiments": [
+            {
+              "ref": {
+                "kind": "root_lab",
+                "record_id": "exp_bccbe58ac7a14ab80758913cf1183dce",
+                "input_hash": "342666aec565dfbe964d536638756e3b156c4daf8cb9049fc7ce0be11080d30d",
+                "runner_version": "root-runner-v1",
+                "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e",
+                "selected_step": null,
+                "activity_claim": null
+              },
+              "parameters": {
+                "method": "newton",
+                "function": "x^3-2*x+2",
+                "iterates": [],
+                "brackets": [],
+                "interval": null,
+                "initial_value": -2.0,
+                "phi": null,
+                "derivative": null,
+                "update": null,
+                "variant": "standard",
+                "damping": 1.0,
+                "multiplicity": 1,
+                "tolerance": 1e-06,
+                "goal": "residual",
+                "stop_reason": "none"
+              },
+              "stop_detail": "残差达到阈值",
+              "rows": [
+                {
+                  "k": 0,
+                  "x": -2.0,
+                  "fx": -2.0,
+                  "step": null,
+                  "bracket": null
+                },
+                {
+                  "k": 1,
+                  "x": -1.8,
+                  "fx": -0.23200000000000065,
+                  "step": 0.19999999999999996,
+                  "bracket": null
+                },
+                {
+                  "k": 3,
+                  "x": -1.769292662905941,
+                  "fx": -2.2814180962171804e-06,
+                  "step": 0.0006555236225564975,
+                  "bracket": null
+                },
+                {
+                  "k": 4,
+                  "x": -1.7692923542386998,
+                  "fx": -5.053735208093713e-13,
+                  "step": 3.0866724110012456e-07,
+                  "bracket": null
+                }
+              ]
+            }
+          ],
+          "unavailable_experiments": [],
+          "next_question": "你曾用“我曾忽略适用条件，需要结合修订再检查”联系初值与Newton收敛；这次还满足同样条件吗？"
+        }
+      ],
+      "actual_fixed_reply": "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。\n\n离线固定回复，仅检查编排。请核对本题条件与计算范围；此回复不提供模型数学成绩。",
+      "quality": null
+    },
+    {
+      "case_id": "integration-related",
+      "selected_context": [
+        {
+          "id": "personal:0",
+          "exploration_id": "prior",
+          "revision": 4,
+          "relation_id": "relation",
+          "relation_version": "7521314300753c25637f6c3bc31094462041150df4d411113376e108ae8e7949",
+          "authority": "student_confirmed_unreviewed",
+          "selection_reason": "当前问题明确涉及既往关系中的概念",
+          "original_claim": "对x^4在[0,1]用Simpson，细分后的误差估计小就证明严格误差界。",
+          "current_claim": "步长比较给出局部数值支持；误差估计不能直接升格为严格误差界。",
+          "revisions": [
+            {
+              "revision": 4,
+              "claim": "步长比较给出局部数值支持；误差估计不能直接升格为严格误差界。",
+              "reason": "两组步长下近似值改善，runner仍将证据标为quadrature_error_estimate；严格界需要独立条件和论证。"
+            }
+          ],
+          "relation": {
+            "id": "relation",
+            "source": "premise",
+            "target": "conclusion",
+            "relation": "related",
+            "reason": "我曾忽略适用条件，需要结合修订再检查"
+          },
+          "nodes": [
+            {
+              "id": "premise",
+              "label": "误差估计",
+              "description": "",
+              "source_ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              }
+            },
+            {
+              "id": "conclusion",
+              "label": "严格误差界",
+              "description": "",
+              "source_ref": null
+            }
+          ],
+          "evidence_refs": [
+            {
+              "ref": {
+                "kind": "note",
+                "note_id": "r64-source",
+                "source_hash": "d7cac6988b3ec6c86b619fe58d41dde7d006da4861d9851c3ab058a156695af0"
+              },
+              "title": "原条件",
+              "review_state": "personal_unreviewed",
+              "evidence_scope": "personal_note"
+            }
+          ],
+          "experiments": [
+            {
+              "ref": {
+                "kind": "integration_lab",
+                "record_id": "exp_bccbe58ac7a14ab80758913cf1183dce",
+                "source_hash": "9adb5843c4e49d1d7df15ad3d8acee0783845bc71a506e44381aa264d3ea1e88",
+                "schema_version": "numerical-lab-v1",
+                "selected_step": null
+              },
+              "task": {
+                "domain": "integration",
+                "method": "simpson",
+                "expression": "x^4",
+                "left": 0.0,
+                "right": 1.0,
+                "intervals": 8,
+                "tolerance": 1e-12,
+                "limit": 2
+              },
+              "stop_detail": "达到细分 / 求值预算，误差估计未达标。",
+              "evidence_scope": "quadrature_error_estimate",
+              "estimate_is_bound": false,
+              "conditions": [
+                "误差估计依赖函数足够光滑和渐近误差模型；不是严格误差上界。",
+                "保守区间解析用于排除定义域问题；估计很小仍可能漏掉振荡或局部尖峰。"
+              ],
+              "rows": [
+                {
+                  "k": 0,
+                  "value": 0.20003255208333331,
+                  "step": null,
+                  "error_estimate": null,
+                  "work": 9,
+                  "intervals": 8
+                },
+                {
+                  "k": 1,
+                  "value": 0.20000203450520831,
+                  "step": 3.0517578125e-05,
+                  "error_estimate": 2.0345052083333333e-06,
+                  "work": 17,
+                  "intervals": 16
+                },
+                {
+                  "k": 2,
+                  "value": 0.2000001271565755,
+                  "step": 1.9073486328125e-06,
+                  "error_estimate": 1.2715657552083333e-07,
+                  "work": 33,
+                  "intervals": 32
+                }
+              ]
+            }
+          ],
+          "unavailable_experiments": [],
+          "next_question": "你曾用“我曾忽略适用条件，需要结合修订再检查”联系误差估计与严格误差界；这次还满足同样条件吗？"
+        }
+      ],
+      "actual_fixed_reply": "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。\n\n离线固定回复，仅检查编排。请核对本题条件与计算范围；此回复不提供模型数学成绩。",
+      "quality": null
+    }
+  ],
+  "real_local_computation_examples": [
+    {
+      "case_id": "GS-design",
+      "input": "严格行对角占优是GS收敛的必要条件吗？请设计可编辑的二阶矩阵反例对照实验，并说明观测量和范围。",
+      "tasks": [
+        {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              4.0,
+              1.0
+            ],
+            [
+              1.0,
+              3.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 40
+        },
+        {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              1.0,
+              2.0
+            ],
+            [
+              0.1,
+              1.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 40
+        }
+      ],
+      "runs": [
+        {
+          "status": "residual_met",
+          "first_rows": [
+            {
+              "k": 0,
+              "vector": [
+                0.0,
+                0.0
+              ],
+              "value": null,
+              "residual": 1.0,
+              "step": null,
+              "error_estimate": null,
+              "error_bound": 0.5000000000000002,
+              "work": 0
+            },
+            {
+              "k": 1,
+              "vector": [
+                0.25,
+                0.25
+              ],
+              "value": null,
+              "residual": 0.25,
+              "step": 0.25,
+              "error_estimate": null,
+              "error_bound": 0.12500000000000006,
+              "work": 1
+            },
+            {
+              "k": 2,
+              "vector": [
+                0.1875,
+                0.2708333333333333
+              ],
+              "value": null,
+              "residual": 0.02083333333333326,
+              "step": 0.0625,
+              "error_estimate": null,
+              "error_bound": 0.010416666666666633,
+              "work": 2
+            },
+            {
+              "k": 3,
+              "vector": [
+                0.18229166666666669,
+                0.2725694444444444
+              ],
+              "value": null,
+              "residual": 0.0017361111111111605,
+              "step": 0.005208333333333315,
+              "error_estimate": null,
+              "error_bound": 0.0008680555555555806,
+              "work": 3
+            }
+          ],
+          "last_row": {
+            "k": 7,
+            "vector": [
+              0.18181820465213477,
+              0.2727272651159551
+            ],
+            "value": null,
+            "residual": 8.372449422644479e-08,
+            "step": 2.511734825128009e-07,
+            "error_estimate": null,
+            "error_bound": 4.186224711322241e-08,
+            "work": 7
+          },
+          "matrix_evidence": {
+            "status": "deterministic_calculation",
+            "scope": "specified_decimal_rational_matrix",
+            "iteration_matrix": [
+              [
+                "0",
+                "-1/4"
+              ],
+              [
+                "0",
+                "1/12"
+              ]
+            ],
+            "spectral_radius_exact": "1/12",
+            "spectral_radius_display": 0.08333333333333333,
+            "strict_row_dominant": true,
+            "rho_less_than_one": true,
+            "is_counterexample_to_necessity": false,
+            "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+            "review_state": "deterministic_rule_not_human_review"
+          },
+          "evidence_scope": "floating_point_residual"
+        },
+        {
+          "status": "residual_met",
+          "first_rows": [
+            {
+              "k": 0,
+              "vector": [
+                0.0,
+                0.0
+              ],
+              "value": null,
+              "residual": 1.0,
+              "step": null,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 0
+            },
+            {
+              "k": 1,
+              "vector": [
+                1.0,
+                0.9
+              ],
+              "value": null,
+              "residual": 1.7999999999999998,
+              "step": 1.0,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 1
+            },
+            {
+              "k": 2,
+              "vector": [
+                -0.8,
+                1.08
+              ],
+              "value": null,
+              "residual": 0.3600000000000001,
+              "step": 1.8,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 2
+            },
+            {
+              "k": 3,
+              "vector": [
+                -1.1600000000000001,
+                1.116
+              ],
+              "value": null,
+              "residual": 0.07200000000000006,
+              "step": 0.3600000000000001,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 3
+            }
+          ],
+          "last_row": {
+            "k": 10,
+            "vector": [
+              -1.2499988480000002,
+              1.1249998848
+            ],
+            "value": null,
+            "residual": 9.215999998701818e-07,
+            "step": 4.6080000002390875e-06,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 10
+          },
+          "matrix_evidence": {
+            "status": "deterministic_calculation",
+            "scope": "specified_decimal_rational_matrix",
+            "iteration_matrix": [
+              [
+                "0",
+                "-2"
+              ],
+              [
+                "0",
+                "1/5"
+              ]
+            ],
+            "spectral_radius_exact": "1/5",
+            "spectral_radius_display": 0.2,
+            "strict_row_dominant": false,
+            "rho_less_than_one": true,
+            "is_counterexample_to_necessity": true,
+            "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+            "review_state": "deterministic_rule_not_human_review"
+          },
+          "evidence_scope": "floating_point_residual"
+        }
+      ],
+      "model_plan_origin": "engineering_fixture_not_real_model"
+    },
+    {
+      "case_id": "N-design",
+      "input": "对f(x)=x^3-2*x+2，用标准Newton比较不同初值的循环或残差达标，请设计可编辑对照实验，避免推广到全部初值。",
+      "tasks": [
+        {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": 0.0,
+          "tolerance": 1e-06,
+          "limit": 12
+        },
+        {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": -2.0,
+          "tolerance": 1e-06,
+          "limit": 12
+        }
+      ],
+      "runs": [
+        {
+          "status": "iteration_limit",
+          "first_rows": [
+            {
+              "k": 0,
+              "x": 0.0,
+              "fx": 2.0,
+              "step": null,
+              "bracket": null
+            },
+            {
+              "k": 1,
+              "x": 1.0,
+              "fx": 1.0,
+              "step": 1.0,
+              "bracket": null
+            },
+            {
+              "k": 2,
+              "x": 0.0,
+              "fx": 2.0,
+              "step": 1.0,
+              "bracket": null
+            },
+            {
+              "k": 3,
+              "x": 1.0,
+              "fx": 1.0,
+              "step": 1.0,
+              "bracket": null
+            }
+          ],
+          "last_row": {
+            "k": 12,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          "matrix_evidence": null,
+          "evidence_scope": "finite_newton_trajectory"
+        },
+        {
+          "status": "residual",
+          "first_rows": [
+            {
+              "k": 0,
+              "x": -2.0,
+              "fx": -2.0,
+              "step": null,
+              "bracket": null
+            },
+            {
+              "k": 1,
+              "x": -1.8,
+              "fx": -0.23200000000000065,
+              "step": 0.19999999999999996,
+              "bracket": null
+            },
+            {
+              "k": 2,
+              "x": -1.7699481865284974,
+              "fx": -0.004849661923670645,
+              "step": 0.030051813471502653,
+              "bracket": null
+            },
+            {
+              "k": 3,
+              "x": -1.769292662905941,
+              "fx": -2.2814180962171804e-06,
+              "step": 0.0006555236225564975,
+              "bracket": null
+            }
+          ],
+          "last_row": {
+            "k": 4,
+            "x": -1.7692923542386998,
+            "fx": -5.053735208093713e-13,
+            "step": 3.0866724110012456e-07,
+            "bracket": null
+          },
+          "matrix_evidence": null,
+          "evidence_scope": "finite_newton_trajectory"
+        }
+      ],
+      "model_plan_origin": "engineering_fixture_not_real_model"
+    },
+    {
+      "case_id": "Q-design",
+      "input": "请设计一个光滑振荡函数的Simpson步长对照，检验两次结果很接近是否就能保证严格误差界。说明估计的限制。",
+      "tasks": [
+        {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "sin(8*pi*x)^2",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 4,
+          "tolerance": 1e-06,
+          "limit": 1
+        },
+        {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "sin(8*pi*x)^2",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 6,
+          "tolerance": 1e-06,
+          "limit": 1
+        }
+      ],
+      "runs": [
+        {
+          "status": "estimated_tolerance_met",
+          "first_rows": [
+            {
+              "k": 0,
+              "value": 3.1994875363452962e-31,
+              "vector": null,
+              "residual": null,
+              "step": null,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 5,
+              "intervals": 4
+            },
+            {
+              "k": 1,
+              "value": 3.1994875363452962e-31,
+              "vector": null,
+              "residual": null,
+              "step": 0.0,
+              "error_estimate": 0.0,
+              "error_bound": null,
+              "work": 9,
+              "intervals": 8
+            }
+          ],
+          "last_row": {
+            "k": 1,
+            "value": 3.1994875363452962e-31,
+            "vector": null,
+            "residual": null,
+            "step": 0.0,
+            "error_estimate": 0.0,
+            "error_bound": null,
+            "work": 9,
+            "intervals": 8
+          },
+          "matrix_evidence": null,
+          "evidence_scope": "quadrature_error_estimate"
+        },
+        {
+          "status": "estimated_tolerance_met",
+          "first_rows": [
+            {
+              "k": 0,
+              "value": 0.5000000000000004,
+              "vector": null,
+              "residual": null,
+              "step": null,
+              "error_estimate": null,
+              "error_bound": null,
+              "work": 7,
+              "intervals": 6
+            },
+            {
+              "k": 1,
+              "value": 0.5,
+              "vector": null,
+              "residual": null,
+              "step": 4.440892098500626e-16,
+              "error_estimate": 2.960594732333751e-17,
+              "error_bound": null,
+              "work": 13,
+              "intervals": 12
+            }
+          ],
+          "last_row": {
+            "k": 1,
+            "value": 0.5,
+            "vector": null,
+            "residual": null,
+            "step": 4.440892098500626e-16,
+            "error_estimate": 2.960594732333751e-17,
+            "error_bound": null,
+            "work": 13,
+            "intervals": 12
+          },
+          "matrix_evidence": null,
+          "evidence_scope": "quadrature_error_estimate"
+        }
+      ],
+      "model_plan_origin": "engineering_fixture_not_real_model"
+    }
+  ],
+  "artifact_base": "results/r64",
+  "local_report": {
+    "path": "results/r64/final-v3.json",
+    "sha256": "90b8c37023263d13ef50decc1d79f0e4949bcf33e83a3907b741fb863545075e"
+  },
+  "preserved_failures": [
+    {
+      "path": "results/r64/r5-original-recheck.json",
+      "sha256": "0ad6da4aeb442041df7d1c4fcca92868795b31cd5c7790e54f50ddcc62f14ebb"
+    },
+    {
+      "path": "results/r64/capture-first.json",
+      "sha256": "b61eee536d8cd424a0462bc380a810de829da3b1ee31ade1f3b476989c391464"
+    },
+    {
+      "path": "results/r64/npm-test.log",
+      "sha256": "e951384a4774241ed87afacb37c9bd6b043b2bd29a4c08f129631fa6cdd0a05e"
+    }
+  ],
+  "validation": {
+    "focused": "25 passed",
+    "reliability": "47/47 contracts, 128/128 instances",
+    "typecheck": "passed",
+    "lint": "0 errors, 8 existing warnings",
+    "npm_test": "passed: 1128 API, 116 Web; 5 API warnings",
+    "build": "passed, 20 prerendered routes",
+    "r64_final_contracts": "11 passed after fixed-pair denominator and review-disposition validation",
+    "docs": "17 public files, 0 broken links",
+    "overwrite_guard": "existing Markdown report rejected before app import",
+    "initial_failure": "npm-test.log: 1127 passed, 1 failed SOURCE_DRIFT; retained and rerun",
+    "scope": "local CI workflow commands on the actual dirty worktree; no remote CI or push",
+    "no_run_cli": "passed: E0 completed 0, E1 not_run 105, quality null, requests 0, failures empty",
+    "logs": [
+      {
+        "path": "results/r64/npm-test-release.log",
+        "sha256": "e19f5739c764306825b5346d05b74e2481cc66eab203782b724679eee78823a8"
+      },
+      {
+        "path": "results/r64/focused-final.log",
+        "sha256": "cc6a2ba95c6139dc36d61c4ed8f18de6d63b515932746a91b00b2e01367a73f5"
+      },
+      {
+        "path": "results/r64/r64-final-check.log",
+        "sha256": "0947d8bbad66363fd43d88a585ceb632e16e8c4489fc81f03fa478624f9909cb"
+      },
+      {
+        "path": "results/r64/typecheck.log",
+        "sha256": "441a067004f4b17e81d37a42700af168081941f3d78eac188e8e01f9b50ee076"
+      },
+      {
+        "path": "results/r64/lint.log",
+        "sha256": "c5a122dd5bd84a0216ba74b1c31aa285a7beedf92359702e8f8c4b95ee3d071a"
+      },
+      {
+        "path": "results/r64/build.log",
+        "sha256": "988935621ce3ffe472558a32d134c693d61dd75bab34e2c2450ee443c5bf6282"
+      },
+      {
+        "path": "results/r64/docs-final.log",
+        "sha256": "6cefa23d51f5db5725e112a788559c068844cfeba93e5898528dd42b1e535563"
+      },
+      {
+        "path": "results/r64/reliability.log",
+        "sha256": "6dab1657a85eac7be0c91032d9022e6d9e71273836ffbfe584471fc2ecf0cf7b"
+      }
+    ]
+  },
+  "browser_source_sha256": {
+    "apps/web/app/admin/knowledge/page.tsx": "144668931da323befa86cbfb3755b816c6c950c2305d1e54283f225eac0f0bb6",
+    "apps/web/app/assessment/page.tsx": "01d3bbbcfe481d09230e5f38c74829fb4269746d227c5847e276c12abb291b08",
+    "apps/web/app/auth/layout.tsx": "0faf7f0efddcd9bca792865cbc527eaf0ee3b47342bb8826a22db1ad3233ef6f",
+    "apps/web/app/auth/login/page.tsx": "e79418f4cd2d36538dd860afe4f58194a803ddc46eac021267242d58be1de62b",
+    "apps/web/app/auth/register/page.tsx": "f63c4e25efa5ec71f8ebd34b414ba20bf7b0f8a531658ac7dba3310e5cc872f2",
+    "apps/web/app/chat/page.tsx": "c073633f9962ebe7e8d7cbd8d4cae98ee1830a1d29f457b65883eb578d9277a6",
+    "apps/web/app/code-workshop/page.tsx": "ab4c662a45c09426b07823d198a0db528fa648169497128196389c67f382f6f7",
+    "apps/web/app/explore/page.tsx": "d8a9a10fb7c60407e513273bd63d254481c418d2c5e04bee4f8d7da8e2860c90",
+    "apps/web/app/graph/page.tsx": "93cef1f6c1655e66a5abb75cf7b687e6afcaff63d67dee0d4fec865c3219188e",
+    "apps/web/app/lab/page.tsx": "15d017efd7e878bedf0601ebd6a2e553c7c824d4774d9491e983047687018ce6",
+    "apps/web/app/layout.tsx": "a75a85aca925744a069861ffbdb6866d567e701d5dc2d06459cf20b5dd76e342",
+    "apps/web/app/materials/page.tsx": "1e9736c0260ce21e5fe4d40bb53583d1907bbd327347c09e589df30ba38450b2",
+    "apps/web/app/mistake-book/page.tsx": "bb527d147281d4c471bd5bc4cb360e48862f80c0a0f566a9b63294e1890969f8",
+    "apps/web/app/notebook/page.tsx": "bb1c6553927405d58f1f7feee82c054b3590d23f958c3fc95284059b925d1502",
+    "apps/web/app/numerical-lab/page.tsx": "f7c714f4704b4ac73bf4f278dcba7e9242fec028fca008aee143e02d0394f58d",
+    "apps/web/app/page.tsx": "7cd248048f64b7b648eeed6cd6ac12528720f221b3727e6deb1ee5cda4a08758",
+    "apps/web/app/reading/page.tsx": "bb371567a4bf1bdb65a358e12db5d30a42901cf5aff6da2c5eba4c6cce26921f",
+    "apps/web/app/records/page.tsx": "39dc1a0f59bc43c8e4eaf58b57b4dcf217ab03ab4d6d57b5942d1c5b9d0e5d15",
+    "apps/web/app/study/page.tsx": "b057f3c9473e148b29c70b0d64308ab8ba3bb1d765b296c2adf41573e41b9eff",
+    "apps/web/app/teach-back/page.tsx": "7dec35b4868be6e597d6f7e3511ea350891b3b5e36990484347c08b4611a542e",
+    "apps/web/components/agent-architecture-diagram.tsx": "87fccd144629d7eaea4cdae3570dd48e95956e3c823db93cedbf042feb6460b5",
+    "apps/web/components/agent-run-receipt.tsx": "f8d88a2cdd23a70978a20a9f041d1ac16ae034ef0d1c91d2b42fe4467758a547",
+    "apps/web/components/app-header.tsx": "263019b4d29053449b9c50a973372e74f4a4f15070f576d40bf461d384b1b473",
+    "apps/web/components/auth-boundary.tsx": "df0d76cd663e3688bbe1f08412268891feb3e697870fdb4499dcc2aea53d64d1",
+    "apps/web/components/brand-logo.tsx": "67be807f1e27dc6fac25604835c087c8af276bc0e75725c10a16f0046affbff4",
+    "apps/web/components/confirm-dialog.tsx": "0fe2de3be2e1434c5c7a92c144339f452bc2a279e520de53df0a8d5bb0d04573",
+    "apps/web/components/desmos-modal.tsx": "8f1b7e826581e9d292f5709d1b55a3cf3e521f85cbb466bd50adf4298d5abf54",
+    "apps/web/components/document-note-upload.tsx": "5c9d0a6004e3e2346db0dde7d310f71fd5cdec11c097a79360e2286dccfcd803",
+    "apps/web/components/document-upload.tsx": "2eee855917507e651dba5d0746cc9bb5ad9148982d2f23e6f4d162a451972303",
+    "apps/web/components/global-search-modal.tsx": "09f3ca616f9cd5cda1cda3af4f7184827db03ab180cfee162e67157a0651723d",
+    "apps/web/components/ink-background.tsx": "5caa4ac3ec7e6e684096d05a92cf9f8cbdd1711f568c51d729dbdb5f473a2678",
+    "apps/web/components/knowledge-graph.tsx": "0e208e4ac3c1849a55ae6f164e64151a00aa1a23f38f73142ef5635796564e38",
+    "apps/web/components/latex-renderer.tsx": "db75744544cd9a7d8ca517cf826075a8db7e5ca39043967b2163850cc6a45c8f",
+    "apps/web/components/learning/canvas-workspace.tsx": "ad4847ebc6f960cba076fdd3176a3316dc946d15167b95c3fd80a35b82d60317",
+    "apps/web/components/learning/chat-workspace-bar.tsx": "2c53e7829b3e727940a3febf28750f5ab25c8f96599adf3f3f96fc0b5369ef19",
+    "apps/web/components/learning/code-domain-view.tsx": "0162e2cde4294768e18709e7df11c46a61de9bd4a198552a91097e458cc2c678",
+    "apps/web/components/learning/context-banner.tsx": "67340fad591ac9c2cfb2968a71fc327e4fc187203804762e32ce8b594d3f2e32",
+    "apps/web/components/learning/experiment-navigation.tsx": "7c78a5391d266081148abd4dc7075bca6a2261352724c72c09d8988d624b9d1b",
+    "apps/web/components/learning/exploration-experiment.tsx": "336136ce8b7a68e87040411f04f3ec3ef0ab36c4398eb84c7a46f8eaf0609d0a",
+    "apps/web/components/learning/home-conversation-entry.tsx": "2068fa14b8481e30d6d2185dcc22627bbeae19ffa8da512eb10cd1dc7fae5a08",
+    "apps/web/components/learning/home-root-illustration.tsx": "0b5965fc95c4540cf566ed5dd336e569c2694f5acf5e7744b40a022f8f23c1c8",
+    "apps/web/components/learning/intelligent-ui.tsx": "15be0188849d27e98ca7b3b131915b456a7c9472bc32178956bc0f96f123575a",
+    "apps/web/components/learning/lab-playback.tsx": "cee55de865784964db098a2d7791a4e129f073337bf88df159469f75068bcac6",
+    "apps/web/components/learning/lab-reflection.tsx": "4e612fba753540f8e9a2c400115e972c91c7fce12144a1b1b471746f03e5f155",
+    "apps/web/components/learning/lab-tutor.tsx": "0fa091427f2f14a5bc51560cd6e35021a29b3128316bc092f9e72e65fa5391e0",
+    "apps/web/components/learning/lab-workspace.tsx": "20b2bc1b869a10a3944ad8f44ad52825dbebca0b0bf1e618cabec26a1ed9e540",
+    "apps/web/components/learning/learning-navigation.tsx": "994bccdcc88925725a286a9feedf9fcdda15d32205526402b05d987833c000f7",
+    "apps/web/components/learning/learning-shell.tsx": "5e6914239c0d1078f27438de8de8e0658288c1042083204d6a49b67fe990502e",
+    "apps/web/components/learning/material-workspace.tsx": "e66989fb8bfe9e964bd7c3b73c202e887d7de3b2527648b70b728b7f142d0ac8",
+    "apps/web/components/learning/newton-activity.tsx": "1e06ef1a15e8946f76471889f58ee242f0b7ecad7b4e5d49a98ddf1ea68510c1",
+    "apps/web/components/learning/newton-tangent-view.tsx": "c2355bf07dd05e83d7527e5a9215633b43f28bfb17f4256bc8fcce941da9216c",
+    "apps/web/components/learning/numerical-playback.tsx": "f7d696a3d9328e27383b6a4180e7371b83cc9ae6602b401abc0e6154d47c5c32",
+    "apps/web/components/learning/personal-network.tsx": "53e665ec04ec25fa8bb5199de76957671c707256d95790526903ac2e050da2ba",
+    "apps/web/components/learning/reading-discussion.tsx": "1c9f99c4c5792aa172d5ba1d872971f506d2f2e3aa11239e0cc7706d10c3309d",
+    "apps/web/components/learning/reading-domain-view.tsx": "ea0625401ff254a771e1f72855d772f126d812c6dab6dfcc81ab6631bedac7a5",
+    "apps/web/components/learning/reading-explanation.tsx": "ca8c573562203ac33464e7f0147c3336c4eb91f9c8cf3eaf21affa288f11016b",
+    "apps/web/components/learning/reference-tutor.tsx": "2f10176b2c23f9afc0c43f8fcb2700803d6cb84d9a1ec8b2a9eb0f727f6ae1df",
+    "apps/web/components/learning/relation-candidates.tsx": "89ca2c3bbeca8a5e98389e17fa49d4608c702defdaa974ea7dd082b8d8c58f06",
+    "apps/web/components/learning/root-action-card.tsx": "95f4241c113669652ae9be0bc4ce36896e39d5e8efe6ffe8c74b434cad9ec778",
+    "apps/web/components/learning/saved-code-review.tsx": "0b4709e34ce2e03b46773014649ee129c044dbe4b3fc18802696328b833c3d6a",
+    "apps/web/components/learning/scroll-reveal.tsx": "095ee2351436004f5cfc5dd27d9bd7b83adaf7ad45a4a789fca55c1c8e7e8c69",
+    "apps/web/components/learning/sidebar-navigation.tsx": "1a6e9b5d5b21d598f4b912b3a92f2faea4d885ef6ad68a7c45746f73da07f39b",
+    "apps/web/components/learning/site-frame.tsx": "6ecaaf2edf49d8391db47d698043770daa8acab847a2ee4ec4e9b1f8258f599d",
+    "apps/web/components/learning/study-domain-view.tsx": "e3c856c074afc16c5de33cc7696fb1064945d2ba20b86a735bfd43399d9240e2",
+    "apps/web/components/learning/study-resume-card.tsx": "f2e95b6fa7045108e4b9751c1dd14553e263914fc9875b0ab2d7f0d3c08a0598",
+    "apps/web/components/learning/teachback-evidence.tsx": "65e2b87177cd8c02330e9c7fcc9b609c2b83f5dc62bb205f585f83670de8b94c",
+    "apps/web/components/learning-panel.tsx": "2cdcc8696841c3ad05ce02c8d48af94f89c1aac24fb63d6c92236e3dea4cab97",
+    "apps/web/components/live-sandbox.tsx": "e527ac588636cfbd37d037c1db442c8bb07466eddd5f9a21c0f250fb0e4ac8a6",
+    "apps/web/components/math-message.tsx": "793f0f94bdc13ae6322102b593376e82d2421929af0cec596f567b04dc4d1091",
+    "apps/web/components/math-plot.tsx": "cb5d61932068c3c3353ad8fb3b22433e7d1e3c28091382f505afa0be0b3a3187",
+    "apps/web/components/math-view.tsx": "aff8355f00885b459c36c602559477895e8e3ff05e318c25079e27ae6b60bbcd",
+    "apps/web/components/mobile-drawer.tsx": "d7918d85adf185da55f794815284bfbfc9043a0304ec9e5afd244d3233088b53",
+    "apps/web/components/mode-switcher.tsx": "fee7fffd6809d17977d77813754e6a90f53083b50c35cc775bb8e8c56553a853",
+    "apps/web/components/model-settings.tsx": "0225cb849c4d7ba63fb58617da0ddde7a062ab070f9b67dc31afe4df4d158f83",
+    "apps/web/components/notebook-chat.tsx": "c8b673068b40424b71474763bee9a8c973225989ce72aacf1ea42674dfd89733",
+    "apps/web/components/particle-field.tsx": "cab03d6c3ca1b5a128a0e130cfe4bac8442c8580c9338e8c214d359ff8271165",
+    "apps/web/components/radar-chart.tsx": "8003c4054d020f42665852a094f089c83fd79c3c189a37189b85edb239c83b6f",
+    "apps/web/components/review-card.tsx": "7f429d15c22dba867e8784e3f32d07aaf5ee31cd5b674a679d0ccee5d8d723e7",
+    "apps/web/components/root-attempt-form.tsx": "1abb67afb68aa15c3e02fc9e189bccb955d03530d4156e81759392bcc9390339",
+    "apps/web/components/root-diagnostic-card.tsx": "845c673f06c9326160a108be44872606abb484881bcd28a0bb4a63f9b63f7e1f",
+    "apps/web/components/settings-drawer.tsx": "958795084f8b5514179a364206be9cc69ea2c08cde7b3867521844af2043aeb8",
+    "apps/web/components/sidebar.tsx": "ecb559ae9c443563de6dda4616b90cdbb404a29e967754ea18f3b40c3f764d02",
+    "apps/web/components/source-span-card.tsx": "3e39ed1efc5a4c4c1d78157b30173f14b974161ca257db69e53071d865ecc560",
+    "apps/web/components/static-artifact.tsx": "bd5823387c511b7c9017814477a63e82b83a618613e0cba9c38b04f92f0acc2a",
+    "apps/web/components/theme-toggle.tsx": "3a9d5441678e92ac10624c07716689d8e1009b95a0e60f71bfb77686fed3babd",
+    "apps/web/components/tutor-chat.tsx": "d60704e4085b1a822d7a7f7d564bb828e74828d58810700671f07396cbbb5d07",
+    "apps/web/components/tutor-companion.tsx": "a2938a55d78337f134361bac3d11cfb30825a32a8597709fd8e9712e3eca8f9a",
+    "apps/web/components/tutor-conversation.tsx": "a793fe271232074fc5cab0cf03751883d5f7e6706fe7d61294449d2a956ab463",
+    "apps/web/components/tutor-input.tsx": "b2c74e6b28258e8511875d28665ffb693c90c60a219930f4811702e1833fbd5b",
+    "apps/web/components/ui/button.tsx": "5000424113d25d4d6bff3654793952d3f66199cba5e2d3e3b480040664eca0eb",
+    "apps/web/components/ui/card.tsx": "50b4e86cf44d0ca1ac23e2e80458033386b68c0efdc315b14d88f8ed4fa8b8eb",
+    "apps/web/components/ui/input.tsx": "cb52fa06a6a490afc9793ae3c433bfd52f6f16ad2c768cb2d6ea6c103c1ef9c4",
+    "apps/web/components/ui/select.tsx": "6ea72be7ab747d8237cc27eca3cc07884a9e96fde2162eeee96b3f5fb6abdb37",
+    "apps/web/components/ui/textarea.tsx": "8249e9fe4dd27c78f559f0db9d323c9a212e6fb3aecb016e349a6cd7072d923f",
+    "apps/web/components/video-recommend.tsx": "0b7360950b3cbe962b910a872f35c9c357939dab470536abc030ced599bf3a18",
+    "apps/web/components/zen-overlay.tsx": "9997ff23ad15177eb73ac7ab4c2420547f900bcd8d5d55c3f70b16ab054acba1",
+    "apps/web/lib/agent-run.test.ts": "6c34e4beea1f14cc650ff744c2d4adef88c698d989528d6c455f22bdfb802166",
+    "apps/web/lib/agent-run.ts": "5753d6e3fc4ed52ec1a88a2a46af8d4efc879e0e70425ef9dea5f66edb7e95e1",
+    "apps/web/lib/api-base.ts": "1788cd023efb1fdd5f8c9a9dddfb5938e64713eb70d744faece1b16b6046ae53",
+    "apps/web/lib/api.ts": "5ea34567a05e3a6e7f3e9f2864504409e2a2c2bf1f3c8a96ca6c6edf33a93d65",
+    "apps/web/lib/chat-entry.ts": "cbeca9518c2b5b94e9b290589457896b104d7664a8f45cc6df4e84863eb1ca22",
+    "apps/web/lib/chat-lifetime.test.ts": "a7a0bf815e67ffcdbfe71e5fb2e9ee9b0364644207f3d8801ec2e0ef9a1fefb8",
+    "apps/web/lib/chat-lifetime.ts": "6255960e4e13d47e9a5aeac02c9bab85fd8621bd4d11ad5b243b14023c9e9e9e",
+    "apps/web/lib/course-graph-layout.test.ts": "0d1574edf06f106dffc24ced165bd70523efa0111b041983917a463d0431058f",
+    "apps/web/lib/course-graph-layout.ts": "3c813bd59159e69112c326d33225dc52bd12794f855108aeafb9a187d2370680",
+    "apps/web/lib/delivery-guard.test.ts": "8ca3a151b1daf76acbadc6d2eb593877c245fedc2a882a858511aea55eb1f072",
+    "apps/web/lib/delivery-guard.ts": "d1111aa0d3ebfc3f6a5757649264eb72cca7510ea44ff860e1a22ecf190ac726",
+    "apps/web/lib/demo-auth.test.ts": "e064d3c7258039362706912c902747383a465c998f742cc52a789bf19b51ae1b",
+    "apps/web/lib/demo-auth.ts": "e95ed349d3f6f8525206b6b6aa3991d7ea70c113882bc6c64785661270c84495",
+    "apps/web/lib/document-note-source.ts": "03d4ebfef626513e39172470ef95dfcfb78e07c28c2b99967a56a091b83ec1b6",
+    "apps/web/lib/experiment-plans.ts": "9e235e3702a04b92f789a1f008851a832fa208b9fc1c4c9f91e45983abc932c5",
+    "apps/web/lib/explorations.test.ts": "20de7d13df188ea6454752f92568f3b494d49464f3a6b72e7b77e99aefcbbab9",
+    "apps/web/lib/explorations.ts": "d862a9ad95ae9465e445509b9994973ae47444301a167393e6a9e39b55ab7840",
+    "apps/web/lib/html-sanitize.test.ts": "f5e9ddded7eefedbbe85e7f6500d1f6e569328d2c41ad1647c99c2e85c469274",
+    "apps/web/lib/html-sanitize.ts": "b3e28d13e94dd2381e6c7113855070330181bc5cbe1f3b8abd5f1eb1a5c0b7e9",
+    "apps/web/lib/intelligent-ui.test.ts": "917ac6a505848419b277eca34928b7afb00f354472e4ccc359d227e931478d14",
+    "apps/web/lib/intelligent-ui.ts": "18f029e0cfced00495754adb7654640b297fef97c2248d3249debd91bcd8972e",
+    "apps/web/lib/interaction-physics.test.ts": "73dcae3b7413b10780cf67ba3881ff8a79ddccfd3c2ec32f09e6fdc23d3d21ff",
+    "apps/web/lib/interaction-physics.ts": "ef709d68db6c6241d7bb5ce1b95c1b1bc4a1b07c680fabef8d73be05d98059f7",
+    "apps/web/lib/latex-balance.ts": "3fc8a72182d516b08b197c38746275cae89d8928f613fe33b0fc539152d6a548",
+    "apps/web/lib/learning-actions.ts": "de607cdbf25c4c861d22b78b1ff6e604ce8bbdce912403e84e049cc96eab9614",
+    "apps/web/lib/learning-api.ts": "a45aa66c1a3349fc04f9cacf0312a5bfdb6b695cf1e990ffeedc5eb7a29cf0ba",
+    "apps/web/lib/learning-browser-storage.test.ts": "64ddeff7a4cebf71e442598b17c7924d7df748f44f530273385d9d198a899baa",
+    "apps/web/lib/learning-browser-storage.ts": "33f2ca34c6132c4607e89d7ba78dba660ab97a9375f9651c0086681f4900ae7b",
+    "apps/web/lib/learning-context.ts": "1dd5220ba3aac2d659093131ccfaa4754fdf398ece9a2f62f30cd94d83a5b381",
+    "apps/web/lib/learning-input.test.ts": "8e7ccc6afa5a06b641a2a47489d39e2dc73535ed17d8673a74e772382ef473ab",
+    "apps/web/lib/learning-input.ts": "2d79075bcaf4199d3892a2223175bb8b33e35cf5246684af79c0e245946720bf",
+    "apps/web/lib/local-settings.ts": "a6e40e8c2cda6bf2d155709cceb9ae6bdbdf2d8559525a5aaaccbfd68e182e70",
+    "apps/web/lib/material-policy.test.ts": "8c1e491e980c4bf6f3dc4518716e1378518cbd6855b56e04c98e81e9c8d2596c",
+    "apps/web/lib/material-policy.ts": "f4f545c9c1e96e669844400ec42845a96f983b63401f499edf63afaa0599323e",
+    "apps/web/lib/math-expression.test.ts": "e201d63cdaae8e84736bf631a25ff31a747b0c38b63104ff8c25d410f5843de5",
+    "apps/web/lib/math-expression.ts": "260f70afc42dedfcaa29723f8fe81e0d7b65044ac50c29da8ec70a7a7d20b072",
+    "apps/web/lib/message-parser.test.ts": "d52b812dc9fa15dc47129d2c1c1ecd539b36fc0aef0059c15dcf16504467e2b6",
+    "apps/web/lib/message-parser.ts": "f789cb3ed0ae268ec2aecbaf489251828ae5d76c359a6274b49de63c86bd95c2",
+    "apps/web/lib/message-status.test.ts": "01e3085a8ee996e3f17e862354beb0dcda2f0edf322b0c1c2979ab377bdccd8a",
+    "apps/web/lib/message-status.ts": "2d1b75df6a2d8e2a9c780e66a5da815a24fefbbc6ade28bd89f5973e14a5993c",
+    "apps/web/lib/numerical-lab.test.ts": "cd61038581160c856fcd8f1f0dfb8eb52bffee4bf51e48db61103299bd9334e1",
+    "apps/web/lib/numerical-lab.ts": "db4de33f8518c29157744d83622e3c9865b85f5e872f06db393d5533c514d1c0",
+    "apps/web/lib/reference-selection.ts": "22bfe5c1d3074e3e9b06925b7d06df656ba4fad3716031d522ca1c82c3da4c87",
+    "apps/web/lib/reference-upgrade.test.ts": "2b9da77938fdfc4917b58a776d74c79fdf7d442f10ee55b4bb5c55fa2983e556",
+    "apps/web/lib/study-summary.ts": "97f76a53a14bcf8d35ae7496418fcec054a83358e9328479051c1897f8e671ed",
+    "apps/web/lib/tutor-conversation-controller.test.ts": "ce1a93a77f3b208fad52b2d62ba1198faec05d392450dc3be580dcc1068d4432",
+    "apps/web/lib/tutor-conversation-controller.ts": "3d981311d13bf409e4295d410d207e534afcd7f0c6aa403792dc71e8db578f25",
+    "apps/web/lib/tutor-stream.test.ts": "0b8b8c652f0c08353044ad7c6d97d4a6955a70b3708cdb5263b94d76a4d22eb0",
+    "apps/web/lib/tutor-stream.ts": "02fe4b7fb177a935b61d572dd1627c7e735a29c2745f6cfa8d348c9779ad22b5",
+    "apps/web/lib/ui-runtime.test.ts": "9ac3ab371643544ae28f6d509f127f0791d0baf2ec3948f63b93bca3b6310577",
+    "apps/web/lib/ui-runtime.ts": "f405e382b324c3dd205353d6d45818af7cad0a10e176d185356c3e4291a93d25",
+    "apps/web/lib/use-scroll-pinning.ts": "0f1046fc4d359df0132b7ae1f3c85bf71371e8b828b5a3d0d98d9d2682a6c803",
+    "apps/web/lib/use-tutor-conversation.ts": "ddb0927824d9ece7e66e1837b507afd76b640c3b70c03020b5fe996c0aed917d",
+    "apps/web/lib/utils.ts": "c0adf27efbfa148d5abcf99e860f8e3e6c8fc77a1f99e023c08ef4f12e6ece29",
+    "apps/web/lib/visual-artifact.test.ts": "5d9dad0a0bc7ceb709e9cf145313558ccf445d8778ed7a40dfca5a40e63f203f",
+    "apps/web/lib/visual-artifact.ts": "8a86d78dfb48b8f672b741773169295d1d47e8661d9368f374e5255abbe4b377",
+    "scripts/r64_ui_restore.cjs": "e3928a85c36eded411a5759eccee19a7da4d6ebcd14580ee94a044f9e12d6ad3",
+    "scripts/r64_ui_tasks.cjs": "3c523df1366802dec0320edf88029af74bdc397e6a2bc4578bb9a038080a2807",
+    "scripts/r61_ui_fixture.py": "132f6d4223f5d972fe30f0ac827eb69d7062711972c6d62364f230878f9ba018",
+    "scripts/r3_ui_fixture.py": "65d9621a2ef410c736901732319225e9855578565c81a960e68933a69137f666"
+  },
+  "local_browser_receipt": {
+    "path": "results/r64/browser-receipt-v1.json",
+    "sha256": "e9f42e1367d12c3d0e7dd4fa3c99fe6050edccb227637efc92860b40b360414a"
+  },
+  "implementation_commits": [
+    "4c3bf80",
+    "db5c01f"
+  ]
+}

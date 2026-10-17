@@ -81,6 +81,8 @@ python scripts/r2_review_packet.py --check
 
 可复现命令、材料来源与失败分析见[评测说明](docs/evaluation.md)。
 
+[R6.4 探索评测](evaluation/r64/README.md)已完成 105 次离线采集和 5 项浏览器功能任务；真实模型、独立数学评分、真人与迁移测验未运行，不据此宣称教学收益。
+
 ## 仓库导航
 
 ```text
