@@ -1,0 +1,31 @@
+{
+  "version": "r64-protocol-v1",
+  "status": "public_development_not_independently_reviewed",
+  "reuse": ["r5_quality.load_cases/fairness/verify_artifacts", "s5_quality.load_json/digest/FAILURES", "existing ASGI/SSE and exploration runners"],
+  "levels": {
+    "E0": {"meaning": "offline protocol, controlled numerical computation, persistence and isolation", "model_quality": null},
+    "E1": {"meaning": "real model mathematical and teaching quality with response-bound human reviews", "planned_legacy_runs": 72, "planned_exploration_runs": 15, "planned_private_runs": 18, "execution": "not_run", "quality": null},
+    "E2": {"meaning": "automated browser functionality and consented human task usability kept separate", "planned_browser_tasks": 5, "planned_human_tasks": 5, "human_participants": 0},
+    "E3": {"meaning": "independent transfer and delayed tests without reference help", "planned_measurements": 12, "execution": "not_run", "quality": null}
+  },
+  "materials": {"legacy": "evaluation/r5/cases-v1.json", "exploration": "evaluation/r64/cases-v1.json", "rubric": "evaluation/r64/rubric-v1.json", "legacy_holdout_slots": 6, "independently_reviewed_holdout_cases": 0, "holdout_execution": "blocked_independent_author_review_required"},
+  "routing_adapter": {"scope": "offline harness only", "change": "PolicyRouter receives a typed routing fixture instead of verifier JSON", "policy": "use original fast-route fallback intent, no question ID or gold lookup", "native_live_routing_fixed": false},
+  "private_pair": {
+    "arms": ["P0_without_selected_context", "P1_with_selected_context"],
+    "domains": ["gs", "newton", "integration"], "scenarios": ["related", "unrelated", "stale_source"],
+    "changed_factor": "selected personal context only; derived source IDs/hash recorded",
+    "held_fixed": ["question", "same persisted synthetic history", "owner", "course revision", "model/configuration", "output cap", "request cap", "shared instruction", "retrieval policy", "no previous-arm response"],
+    "resource_policy": "equal caps, no automatic retries; actual input token difference caused by context is reported, never called equal actual usage",
+    "prompt_projection": "remove personal_context, personal:* source index entries and derived source_hash; remaining full model inputs must match",
+    "fixture_reply_policy": "same neutral fixture body in both arms; no simulated improvement score"
+  },
+  "live_admission": {
+    "implemented_transport": false,
+    "required": ["explicit authorization for this run", "provider and endpoint allowlist", "resolved model/version", "reviewed exact outbound-input hashes", "input/output token ceilings", "request ceiling including routing/review/retry", "currency and verified all-billable-items cost upper bound", "synthetic/deidentified data authorization", "pre-send atomic budget reservation", "failure/timeout usage receipts"],
+    "provider": null, "model": null, "model_version": null, "max_input_tokens": null, "max_output_tokens": null, "max_requests": null, "currency": null, "max_cost": null, "outbound_data_authorization": null,
+    "policy": "missing admission means zero provider requests; quality/usage/cost remain null"
+  },
+  "E2_tasks": ["chat_to_gs_and_restore", "newton_to_chat_and_return", "integration_to_chat_and_return", "personal_graph_restore", "material_reference_restore"],
+  "E3_design": {"slots_per_domain": 2, "domains": 3, "timepoints": ["independent_transfer", "delayed_7_days"], "items": null, "authors": null, "reviewers": null, "consent": null, "no_ai_reference_help": true},
+  "r7_gate": {"current": "repair_quality_first", "expand_only_if": ["reviewed material and authorized comparable live pairs", "no unresolved severe evidence overclaim or memory contamination", "human task completion and independent transfer evidence"], "no_composite_score": true}
+}

@@ -1,0 +1,13 @@
+{
+  "version": "r64-freeze-v1",
+  "policy": "new version required on drift; do not rewrite R5 gold or prior evidence",
+  "files": {
+    "evaluation/r64/protocol-v1.json": "78291a1657f8703a4d43bed9cdca64934da9fc79225d9886e4b1eb6a68ed9c69",
+    "evaluation/r64/cases-v1.json": "bd20e628e749e464e9c2e1e9c3564fd4f7e7e710bfcb2da61ac6bc57dae593ce",
+    "evaluation/r64/rubric-v1.json": "daf10342c8f027ab1fe6139092390dbfce19e542ed45ff33f3eace402d0dace9",
+    "evaluation/r5/cases-v1.json": "bc15c1dea7a85a7222b01a26ee71d1e519d3486daf75a25e32eb40b940f74760",
+    "evaluation/r5/arms-v1.json": "bee77127f507bf8af810ed6e23d5eb2a9aaa1311399d2261c4f99c5dd28a90c1",
+    "scripts/eval_r5.py": "bbdd0ff5f9a2566ede8dd06688a488392d1e9b4e9b6bc5d299a75c52432a50b2",
+    "evaluation/r64/failure-taxonomy-v1.json": "1f53b7193fa8b06e2700e914416f45adb5f49ffc8667084c3902c1591b73234c"
+  }
+}

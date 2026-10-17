@@ -1,0 +1,14 @@
+{
+  "version": "r64-failure-taxonomy-v1",
+  "extends": "scripts/s5_quality.py::FAILURES",
+  "clusters": [
+    {"code":"PHASE_PROTOCOL", "observed":"Original N03/Q03 shared verifier JSON with routing; 0/2 matched in rerun", "action":"Keep frozen R5; use typed phase-specific offline routing adapter; assess native live routing separately", "quality_inference":null},
+    {"code":"FIXTURE_NETWORK_GUARD", "observed":"First R64 capture failed 15 exploration cases because Windows TestClient startup needed an internal control socket", "action":"Create TestClient before blocking external network; retain deny counter and first failure receipts", "quality_inference":null},
+    {"code":"SOURCE_DRIFT", "observed":"One full-suite run rejected capture while r64 UI source was being edited", "action":"Freeze edits during source-bound capture and rerun full suite", "quality_inference":null},
+    {"code":"PAIR_CONFOUNDED", "observed":"No mismatched pairs in completed offline sample; guarded for missing/changed inputs, history, model and prompt projection", "action":"Preserve planned pairs and list confounds; exclude only from isolated deltas, never remove denominator", "quality_inference":null},
+    {"code":"EVIDENCE_OVERCLAIM", "observed":"Smooth quadrature aliasing gives estimate 0 with actual error near 1/2; prior real-call evidence remains in R6.1 report", "action":"Human review must reject upgrading an estimate or finite trace to a general proof", "quality_inference":null},
+    {"code":"MEMORY_CONTAMINATION", "observed":"Related selection differs; unrelated and stale-source selection empty in fixtures; no real response ratings", "action":"Review exact old claim/revision/source and response quotes in authorized P0/P1 pairs", "quality_inference":null},
+    {"code":"LIVE_NOT_ADMITTED", "observed":"No new provider, resolved model/version, cost ceiling or external-input authorization", "action":"Prepare exact inputs and obtain all bounded admission fields before enabling any real transport", "quality_inference":null},
+    {"code":"HUMAN_NOT_RUN", "observed":"No independent math ratings, consented task participants or delayed transfer measurements", "action":"Assign independent authors/reviewers and consenting participants; preserve empty holdout slots", "quality_inference":null}
+  ]
+}

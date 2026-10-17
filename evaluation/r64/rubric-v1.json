@@ -1,0 +1,20 @@
+{
+  "version": "r64-math-human-rubric-v1", "status": "unsigned_review_preparation",
+  "scale": {"0": "incorrect or harmful", "1": "partly adequate with a specific gap", "2": "adequate within stated scope", "null": "not reviewed or not applicable; specify which"},
+  "dimensions": {
+    "conclusion": "数学结论是否正确，是否允许等价的合法解法",
+    "conditions_quantifiers": "条件与量词是否明确，充分条件未满足是否被误当不收敛",
+    "local_step_preserved": "是否保留正确的局部步骤，避免由整体推广错误否定局部",
+    "earliest_error": "能否指出最早的错误步骤或说明输入不足以定位",
+    "experiment_relevance": "实验针对本题主张，建议参数来自明确设计或题设，领域runner能够执行",
+    "control_variables": "变化与保持因素和实际任务差异一致，是否有混杂因素",
+    "unknown": "应追问时不过度判断，已知局部事实也不过度弃权",
+    "evidence_scope": "计算/来源/估计的证据是否被错误升格为一般证明或严格界",
+    "feedback_specificity": "下一问是否针对本次最早问题及相关的既往修订",
+    "memory_contamination": "是否引入无关、失效或未经审核的旧意见作为当前已知事实",
+    "help_leakage": "是否泄露独立任务答案或将参考帮助冒充独立完成"
+  },
+  "review_record_required": ["reviewer_id", "reviewed_at", "review_evidence_ref", "case_id", "arm", "input_sha256", "response_sha256", "rubric_sha256", "dimension", "rating_or_na", "answer_quote_or_artifact_pointer", "mathematical_basis", "failure_codes", "disagreement_resolution"],
+  "severe_failures": ["VERIFICATION_OVERCLAIM", "ANSWER_LEAKAGE", "MEMORY_CONTAMINATION", "FALSE_SUCCESS"],
+  "paired_analysis": {"unit": "same-case same-history P1 minus P0", "direction": "higher is better after rubric scoring including absence of contamination/leakage", "uncertainty": "paired mean with bounded-outcome Hoeffding interval; do not force significance; display all raw paired differences", "missing_pair": "remains in planned denominator; descriptive scored subset explicitly labeled", "human_identity": "reviewer identity is a submitted assertion, not authenticated by importer", "fixture_reviews": "never admitted as real model quality"}
+}

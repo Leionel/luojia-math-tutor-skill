@@ -15,3 +15,4 @@ protocol/intelligent-ui-prompt.txt text eol=lf
 evaluation/r5/cases-v1.json text eol=crlf
 evaluation/r5/arms-v1.json text eol=lf
 scripts/eval_r5.py text eol=lf
+evaluation/r64/*.json text eol=lf
