@@ -56,4 +56,4 @@ SQLite 保存会话、实验与学习记录，课程库可单独配置路径。�
 
 ## 私人数学探索
 
-GS / Newton 探索复用学习记录、TeachingDecision、模型适配器和现有运行器。版本绑定的探索引用把主张、修订、受控计算与私人关系带回 Chat；私人关系参与后续条件追问，不写入课程图。双视角网络和上下文选择见 [R6.1 连续探索](r6.1-exploration.md)。正式课程写入与旧文件退役路径见 [R6 实现与兼容图](r6-exploration.md)，代码执行准入见 [隔离执行门禁](code-execution-gate.md)。
+GS / Newton / 数值积分共用 ExperimentPlan、探索历史和原有运行器，领域差异保留在任务形状与证据中，见 [R6.3 持续探索](r6.3-shared-experiments.md)。版本绑定的探索引用把主张、修订、受控计算与私人关系带回 Chat；[R6.2 私人历史召回](r6.2-personal-decisions.md)在同一用户新问题中筛选有限已确认关系、原来源和实验，接入原 Teacher/TeachingDecision，选择理由随消息持久化。候选关系默认 pending，接受仍是未经数学审核的私人确认。双视角网络见 [R6.1 连续探索](r6.1-exploration.md)。正式课程写入与旧文件退役路径见 [R6 实现与兼容图](r6-exploration.md)，代码执行准入见 [隔离执行门禁](code-execution-gate.md)。

@@ -1,0 +1,926 @@
+[
+  {
+    "case_id": "gs",
+    "validation": "real_local_runner; fixture_plan; not_real_model_quality",
+    "claim": "非严格行对角占优的矩阵，GS一定发散。",
+    "prediction": "第二组不占优，所以我预测会发散。",
+    "confirmed_plan": {
+      "schema_version": "experiment-plan-v1",
+      "claim_to_test": "非严格行对角占优的矩阵，GS一定发散。",
+      "known_conditions": [
+        "指定两个二阶实矩阵"
+      ],
+      "question_to_test": "不占优是否仍可能使GS误差谱半径小于1？",
+      "changed_parameter": "task_parameters",
+      "tasks": [
+        {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              4.0,
+              1.0
+            ],
+            [
+              1.0,
+              3.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 41
+        },
+        {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              1.0,
+              2.0
+            ],
+            [
+              0.1,
+              1.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 41
+        }
+      ],
+      "varying_factors": [
+        "matrix"
+      ],
+      "fixed_factors": [
+        "rhs",
+        "initial",
+        "method",
+        "tolerance",
+        "limit"
+      ],
+      "observable": "严格行对角占优、二阶误差矩阵谱半径、残差",
+      "mathematical_reason": "用指定矩阵的有理数误差矩阵计算检查全称判断的反例，浮点轨迹另行展示。",
+      "tool_limitations": [
+        "谱半径精确计算仅限二阶GS矩阵；不计独立掌握。"
+      ]
+    },
+    "plan_origin": "student_design",
+    "run_receipt_revision": 2,
+    "runs": [
+      {
+        "ref": {
+          "kind": "linear_lab",
+          "record_id": "exp_ecb043c70abc45275bea3a407407524f",
+          "source_hash": "83d85459989c6c8cdccc77ffcf7d5a831a5293ced2a2f00214f2f331988d8a4c",
+          "schema_version": "numerical-lab-v1",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              4.0,
+              1.0
+            ],
+            [
+              1.0,
+              3.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 41
+        },
+        "status": "residual_met",
+        "rows": [
+          {
+            "k": 0,
+            "vector": [
+              0.0,
+              0.0
+            ],
+            "value": null,
+            "residual": 1.0,
+            "step": null,
+            "error_estimate": null,
+            "error_bound": 0.5000000000000002,
+            "work": 0
+          },
+          {
+            "k": 1,
+            "vector": [
+              0.25,
+              0.25
+            ],
+            "value": null,
+            "residual": 0.25,
+            "step": 0.25,
+            "error_estimate": null,
+            "error_bound": 0.12500000000000006,
+            "work": 1
+          },
+          {
+            "k": 2,
+            "vector": [
+              0.1875,
+              0.2708333333333333
+            ],
+            "value": null,
+            "residual": 0.02083333333333326,
+            "step": 0.0625,
+            "error_estimate": null,
+            "error_bound": 0.010416666666666633,
+            "work": 2
+          },
+          {
+            "k": 3,
+            "vector": [
+              0.18229166666666669,
+              0.2725694444444444
+            ],
+            "value": null,
+            "residual": 0.0017361111111111605,
+            "step": 0.005208333333333315,
+            "error_estimate": null,
+            "error_bound": 0.0008680555555555806,
+            "work": 3
+          },
+          {
+            "k": 4,
+            "vector": [
+              0.1818576388888889,
+              0.2727141203703704
+            ],
+            "value": null,
+            "residual": 0.00014467592592604106,
+            "step": 0.0004340277777777901,
+            "error_estimate": null,
+            "error_bound": 7.233796296302056e-05,
+            "work": 4
+          },
+          {
+            "k": 5,
+            "vector": [
+              0.18182146990740738,
+              0.27272617669753085
+            ],
+            "value": null,
+            "residual": 1.20563271603924e-05,
+            "step": 3.6168981481510265e-05,
+            "error_estimate": null,
+            "error_bound": 6.028163580196201e-06,
+            "work": 5
+          },
+          {
+            "k": 6,
+            "vector": [
+              0.1818184558256173,
+              0.2727271813914609
+            ],
+            "value": null,
+            "residual": 1.0046939300512037e-06,
+            "step": 3.0140817900981e-06,
+            "error_estimate": null,
+            "error_bound": 5.02346965025602e-07,
+            "work": 6
+          },
+          {
+            "k": 7,
+            "vector": [
+              0.18181820465213477,
+              0.2727272651159551
+            ],
+            "value": null,
+            "residual": 8.372449422644479e-08,
+            "step": 2.511734825128009e-07,
+            "error_estimate": null,
+            "error_bound": 4.186224711322241e-08,
+            "work": 7
+          }
+        ],
+        "stop_detail": "绝对残差已达标；不是独立学习成绩。",
+        "conditions": [
+          "严格行对角占优：两种迭代均有收敛的充分条件。",
+          "停止规则为绝对残差 ∥Ax−b∥∞ ≤ ε；相邻步很小不能单独证明方程已满足。",
+          "解误差界展示理论公式的浮点值，不包含残差计算的舍入误差；不是形式化误差证书。"
+        ],
+        "evidence_scope": "floating_point_residual",
+        "matrix_evidence": {
+          "status": "deterministic_calculation",
+          "scope": "specified_decimal_rational_matrix",
+          "iteration_matrix": [
+            [
+              "0",
+              "-1/4"
+            ],
+            [
+              "0",
+              "1/12"
+            ]
+          ],
+          "spectral_radius_exact": "1/12",
+          "spectral_radius_display": 0.08333333333333333,
+          "strict_row_dominant": true,
+          "rho_less_than_one": true,
+          "is_counterexample_to_necessity": false,
+          "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+          "review_state": "deterministic_rule_not_human_review"
+        }
+      },
+      {
+        "ref": {
+          "kind": "linear_lab",
+          "record_id": "exp_a1f3f2bcf7e9ea70bb7ebf5c36e40ca6",
+          "source_hash": "6cfab57897f9f0af548f838a6939e9cca7e4c4d6009bf2fb3cc9f02490b24dcb",
+          "schema_version": "numerical-lab-v1",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "linear_system",
+          "method": "gauss_seidel",
+          "matrix": [
+            [
+              1.0,
+              2.0
+            ],
+            [
+              0.1,
+              1.0
+            ]
+          ],
+          "rhs": [
+            1.0,
+            1.0
+          ],
+          "initial": [
+            0.0,
+            0.0
+          ],
+          "tolerance": 1e-06,
+          "limit": 41
+        },
+        "status": "residual_met",
+        "rows": [
+          {
+            "k": 0,
+            "vector": [
+              0.0,
+              0.0
+            ],
+            "value": null,
+            "residual": 1.0,
+            "step": null,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 0
+          },
+          {
+            "k": 1,
+            "vector": [
+              1.0,
+              0.9
+            ],
+            "value": null,
+            "residual": 1.7999999999999998,
+            "step": 1.0,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 1
+          },
+          {
+            "k": 2,
+            "vector": [
+              -0.8,
+              1.08
+            ],
+            "value": null,
+            "residual": 0.3600000000000001,
+            "step": 1.8,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 2
+          },
+          {
+            "k": 3,
+            "vector": [
+              -1.1600000000000001,
+              1.116
+            ],
+            "value": null,
+            "residual": 0.07200000000000006,
+            "step": 0.3600000000000001,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 3
+          },
+          {
+            "k": 4,
+            "vector": [
+              -1.2320000000000002,
+              1.1232
+            ],
+            "value": null,
+            "residual": 0.014399999999999746,
+            "step": 0.07200000000000006,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 4
+          },
+          {
+            "k": 5,
+            "vector": [
+              -1.2464,
+              1.12464
+            ],
+            "value": null,
+            "residual": 0.0028800000000002157,
+            "step": 0.014399999999999746,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 5
+          },
+          {
+            "k": 6,
+            "vector": [
+              -1.2492800000000002,
+              1.124928
+            ],
+            "value": null,
+            "residual": 0.0005759999999996879,
+            "step": 0.0028800000000002157,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 6
+          },
+          {
+            "k": 7,
+            "vector": [
+              -1.2498559999999999,
+              1.1249856
+            ],
+            "value": null,
+            "residual": 0.00011520000000020403,
+            "step": 0.0005759999999996879,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 7
+          },
+          {
+            "k": 8,
+            "vector": [
+              -1.2499712,
+              1.12499712
+            ],
+            "value": null,
+            "residual": 2.303999999986317e-05,
+            "step": 0.00011520000000020403,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 8
+          },
+          {
+            "k": 9,
+            "vector": [
+              -1.24999424,
+              1.124999424
+            ],
+            "value": null,
+            "residual": 4.6080000002390875e-06,
+            "step": 2.303999999986317e-05,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 9
+          },
+          {
+            "k": 10,
+            "vector": [
+              -1.2499988480000002,
+              1.1249998848
+            ],
+            "value": null,
+            "residual": 9.215999998701818e-07,
+            "step": 4.6080000002390875e-06,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 10
+          }
+        ],
+        "stop_detail": "绝对残差已达标；不是独立学习成绩。",
+        "conditions": [
+          "未满足严格行对角占优；这不等于必然发散，需要其他收敛依据。",
+          "停止规则为绝对残差 ∥Ax−b∥∞ ≤ ε；相邻步很小不能单独证明方程已满足。",
+          "解误差界展示理论公式的浮点值，不包含残差计算的舍入误差；不是形式化误差证书。"
+        ],
+        "evidence_scope": "floating_point_residual",
+        "matrix_evidence": {
+          "status": "deterministic_calculation",
+          "scope": "specified_decimal_rational_matrix",
+          "iteration_matrix": [
+            [
+              "0",
+              "-2"
+            ],
+            [
+              "0",
+              "1/5"
+            ]
+          ],
+          "spectral_radius_exact": "1/5",
+          "spectral_radius_display": 0.2,
+          "strict_row_dominant": false,
+          "rho_less_than_one": true,
+          "is_counterexample_to_necessity": true,
+          "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+          "review_state": "deterministic_rule_not_human_review"
+        }
+      }
+    ],
+    "revised_claim": "严格行对角占优是GS收敛的充分条件，但不是必要条件。",
+    "revision_reason": "第二组不严格行对角占优，输入按十进制有理数解释时误差谱半径为1/5。",
+    "restored_revision": 3,
+    "independent_success": false,
+    "context_resolved": {
+      "kind": "exploration",
+      "record_id": "gs",
+      "revision": 3,
+      "selected_run_id": "exp_ecb043c70abc45275bea3a407407524f"
+    }
+  },
+  {
+    "case_id": "newton",
+    "validation": "real_local_runner; fixture_plan; not_real_model_quality",
+    "claim": "Newton法对x^3-2*x+2从任意初值都收敛。",
+    "prediction": "初值0与-2应该都能收敛。",
+    "confirmed_plan": {
+      "schema_version": "experiment-plan-v1",
+      "claim_to_test": "Newton法对x^3-2*x+2从任意初值都收敛。",
+      "known_conditions": [
+        "f(x)=x^3-2*x+2，标准Newton更新"
+      ],
+      "question_to_test": "改变初值是否出现循环与残差达标的不同轨迹？",
+      "changed_parameter": "task_parameters",
+      "tasks": [
+        {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": 0.0,
+          "tolerance": 1e-06,
+          "limit": 13
+        },
+        {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": -2.0,
+          "tolerance": 1e-06,
+          "limit": 13
+        }
+      ],
+      "varying_factors": [
+        "initial_value"
+      ],
+      "fixed_factors": [
+        "function",
+        "method",
+        "tolerance",
+        "limit"
+      ],
+      "observable": "迭代值、函数值、相邻步变化、停止原因",
+      "mathematical_reason": "保持函数与停止规则，只改变初值，对比标准Newton的有限轨迹。",
+      "tool_limitations": [
+        "有限轨迹不证明吸引域边界，不能假设吸引域为单区间；残差达标不等同严格根误差界。"
+      ]
+    },
+    "plan_origin": "student_design",
+    "run_receipt_revision": 2,
+    "runs": [
+      {
+        "ref": {
+          "kind": "root_lab",
+          "record_id": "exp_ab9cb7836e04fd236ec66b6bfa02dcc9",
+          "input_hash": "76fdc9e39e841427543d602363baa9ec91112f259a5a65e0a513972a919db7e7",
+          "runner_version": "root-runner-v1",
+          "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": 0.0,
+          "tolerance": 1e-06,
+          "limit": 13
+        },
+        "status": "iteration_limit",
+        "rows": [
+          {
+            "k": 0,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": null,
+            "bracket": null
+          },
+          {
+            "k": 1,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 2,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 3,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 4,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 5,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 6,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 7,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 8,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 9,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 10,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 11,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 12,
+            "x": 0.0,
+            "fx": 2.0,
+            "step": 1.0,
+            "bracket": null
+          },
+          {
+            "k": 13,
+            "x": 1.0,
+            "fx": 1.0,
+            "step": 1.0,
+            "bracket": null
+          }
+        ],
+        "stop_detail": "达到迭代上限",
+        "conditions": [],
+        "evidence_scope": "finite_newton_trajectory",
+        "next_question": "检查初值或迭代格式，考虑带区间保护的方法。"
+      },
+      {
+        "ref": {
+          "kind": "root_lab",
+          "record_id": "exp_4b8735d9a1cf07e0d1fafd790e4538e8",
+          "input_hash": "bcb85e0511b178f0942a7134c05a68f25107f3833790f932c0af3ce4eba8d7ef",
+          "runner_version": "root-runner-v1",
+          "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "root_finding",
+          "method": "newton",
+          "function": "x^3-2*x+2",
+          "initial_value": -2.0,
+          "tolerance": 1e-06,
+          "limit": 13
+        },
+        "status": "residual",
+        "rows": [
+          {
+            "k": 0,
+            "x": -2.0,
+            "fx": -2.0,
+            "step": null,
+            "bracket": null
+          },
+          {
+            "k": 1,
+            "x": -1.8,
+            "fx": -0.23200000000000065,
+            "step": 0.19999999999999996,
+            "bracket": null
+          },
+          {
+            "k": 2,
+            "x": -1.7699481865284974,
+            "fx": -0.004849661923670645,
+            "step": 0.030051813471502653,
+            "bracket": null
+          },
+          {
+            "k": 3,
+            "x": -1.769292662905941,
+            "fx": -2.2814180962171804e-06,
+            "step": 0.0006555236225564975,
+            "bracket": null
+          },
+          {
+            "k": 4,
+            "x": -1.7692923542386998,
+            "fx": -5.053735208093713e-13,
+            "step": 3.0866724110012456e-07,
+            "bracket": null
+          }
+        ],
+        "stop_detail": "残差达到阈值",
+        "conditions": [],
+        "evidence_scope": "finite_newton_trajectory",
+        "next_question": "需要根误差时请另给可验证误差界。"
+      }
+    ],
+    "revised_claim": "该函数从0出发进入0与1循环，不能声称任意初值都收敛。",
+    "revision_reason": "真实runner保存0→1→0；由f(0)=2、f'(0)=-2和f(1)=1、f'(1)=1可代数核对该循环。-2的残差达标只是指定输入观察。",
+    "restored_revision": 3,
+    "independent_success": false,
+    "context_resolved": {
+      "kind": "exploration",
+      "record_id": "newton",
+      "revision": 3,
+      "selected_run_id": "exp_ab9cb7836e04fd236ec66b6bfa02dcc9"
+    }
+  },
+  {
+    "case_id": "integration",
+    "validation": "real_local_runner; fixture_plan; not_real_model_quality",
+    "claim": "对x^4在[0,1]用Simpson，细分后的误差估计小就证明严格误差界。",
+    "prediction": "分段加倍后近似值更接近1/5，但误差估计的性质还不清楚。",
+    "confirmed_plan": {
+      "schema_version": "experiment-plan-v1",
+      "claim_to_test": "对x^4在[0,1]用Simpson，细分后的误差估计小就证明严格误差界。",
+      "known_conditions": [
+        "光滑多项式x^4，有限区间[0,1]"
+      ],
+      "question_to_test": "固定函数与区间，初始分段数4和8的估计如何变化？",
+      "changed_parameter": "task_parameters",
+      "tasks": [
+        {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "x^4",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 4,
+          "tolerance": 1e-12,
+          "limit": 3
+        },
+        {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "x^4",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 8,
+          "tolerance": 1e-12,
+          "limit": 3
+        }
+      ],
+      "varying_factors": [
+        "intervals"
+      ],
+      "fixed_factors": [
+        "expression",
+        "method",
+        "left",
+        "right",
+        "tolerance",
+        "limit"
+      ],
+      "observable": "积分近似值、细分差、Richardson估计、求值次数",
+      "mathematical_reason": "利用同一光滑函数的可控步长比较观察渐近误差；计算不替代导数上界的数学论证。",
+      "tool_limitations": [
+        "Richardson误差估计不是严格误差上界；光滑性与渐近模型需另行判断，浮点舍入也未认证。"
+      ]
+    },
+    "plan_origin": "student_design",
+    "run_receipt_revision": 2,
+    "runs": [
+      {
+        "ref": {
+          "kind": "integration_lab",
+          "record_id": "exp_bf2da476cdd70c50887d07a8b9ba1e20",
+          "source_hash": "1dfcb4f2cc536d4edf958047847d140c650789342b53465a54f7c839616aa6a0",
+          "schema_version": "numerical-lab-v1",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "x^4",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 4,
+          "tolerance": 1e-12,
+          "limit": 3
+        },
+        "status": "budget_exhausted",
+        "rows": [
+          {
+            "k": 0,
+            "value": 0.20052083333333331,
+            "vector": null,
+            "residual": null,
+            "step": null,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 5,
+            "intervals": 4
+          },
+          {
+            "k": 1,
+            "value": 0.20003255208333331,
+            "vector": null,
+            "residual": null,
+            "step": 0.00048828125,
+            "error_estimate": 3.255208333333333e-05,
+            "error_bound": null,
+            "work": 9,
+            "intervals": 8
+          },
+          {
+            "k": 2,
+            "value": 0.20000203450520831,
+            "vector": null,
+            "residual": null,
+            "step": 3.0517578125e-05,
+            "error_estimate": 2.0345052083333333e-06,
+            "error_bound": null,
+            "work": 17,
+            "intervals": 16
+          },
+          {
+            "k": 3,
+            "value": 0.2000001271565755,
+            "vector": null,
+            "residual": null,
+            "step": 1.9073486328125e-06,
+            "error_estimate": 1.2715657552083333e-07,
+            "error_bound": null,
+            "work": 33,
+            "intervals": 32
+          }
+        ],
+        "stop_detail": "达到细分 / 求值预算，误差估计未达标。",
+        "conditions": [
+          "误差估计依赖函数足够光滑和渐近误差模型；不是严格误差上界。",
+          "保守区间解析用于排除定义域问题；估计很小仍可能漏掉振荡或局部尖峰。"
+        ],
+        "evidence_scope": "quadrature_error_estimate"
+      },
+      {
+        "ref": {
+          "kind": "integration_lab",
+          "record_id": "exp_4a49912fc420e7043f2710204ee744de",
+          "source_hash": "05150e493200e8a2342a5a9a38af879b34d8c606b3e32654517854c13f1b030a",
+          "schema_version": "numerical-lab-v1",
+          "selected_step": null
+        },
+        "task": {
+          "domain": "integration",
+          "method": "simpson",
+          "expression": "x^4",
+          "left": 0.0,
+          "right": 1.0,
+          "intervals": 8,
+          "tolerance": 1e-12,
+          "limit": 3
+        },
+        "status": "budget_exhausted",
+        "rows": [
+          {
+            "k": 0,
+            "value": 0.20003255208333331,
+            "vector": null,
+            "residual": null,
+            "step": null,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 9,
+            "intervals": 8
+          },
+          {
+            "k": 1,
+            "value": 0.20000203450520831,
+            "vector": null,
+            "residual": null,
+            "step": 3.0517578125e-05,
+            "error_estimate": 2.0345052083333333e-06,
+            "error_bound": null,
+            "work": 17,
+            "intervals": 16
+          },
+          {
+            "k": 2,
+            "value": 0.2000001271565755,
+            "vector": null,
+            "residual": null,
+            "step": 1.9073486328125e-06,
+            "error_estimate": 1.2715657552083333e-07,
+            "error_bound": null,
+            "work": 33,
+            "intervals": 32
+          },
+          {
+            "k": 3,
+            "value": 0.20000000794728595,
+            "vector": null,
+            "residual": null,
+            "step": 1.1920928955078125e-07,
+            "error_estimate": 7.947285970052083e-09,
+            "error_bound": null,
+            "work": 65,
+            "intervals": 64
+          }
+        ],
+        "stop_detail": "达到细分 / 求值预算，误差估计未达标。",
+        "conditions": [
+          "误差估计依赖函数足够光滑和渐近误差模型；不是严格误差上界。",
+          "保守区间解析用于排除定义域问题；估计很小仍可能漏掉振荡或局部尖峰。"
+        ],
+        "evidence_scope": "quadrature_error_estimate"
+      }
+    ],
+    "revised_claim": "步长比较给出局部数值支持；误差估计不能直接升格为严格误差界。",
+    "revision_reason": "两组步长下近似值改善，runner仍将证据标为quadrature_error_estimate；严格界需要独立条件和论证。",
+    "restored_revision": 3,
+    "independent_success": false,
+    "context_resolved": {
+      "kind": "exploration",
+      "record_id": "integration",
+      "revision": 3,
+      "selected_run_id": "exp_bf2da476cdd70c50887d07a8b9ba1e20"
+    }
+  }
+]

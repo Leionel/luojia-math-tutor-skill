@@ -1,0 +1,324 @@
+[
+  {
+    "with_personal_context": false,
+    "selected": [],
+    "decision": {
+      "version": "teaching-decision-v1",
+      "status": "accepted",
+      "origin": "model_opinion",
+      "claim_ref": "claim:current",
+      "evidence_refs": [
+        "claim:current"
+      ],
+      "known_conditions": [],
+      "missing_conditions": [
+        "本题局部收敛条件"
+      ],
+      "claim_status": "unknown",
+      "action": "ask_missing_condition",
+      "disclosure": "scaffolded",
+      "reason": "请给出函数、初值与需要检查的收敛条件。",
+      "assessments": [],
+      "experiment_proposal": null,
+      "source_hash": "853ef1106725f69034015da39ca6db30bb5761006f9f3f7028bafb8030efd833",
+      "context_ref": null,
+      "sources": [
+        {
+          "id": "claim:current",
+          "kind": "student_claim",
+          "data": "什么是Newton局部收敛条件？换初值时如何理解？"
+        }
+      ]
+    },
+    "behavior": "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。\n\n请给出函数、初值与需要检查的收敛条件。",
+    "validation": "fixture_orchestration_not_teaching_quality"
+  },
+  {
+    "with_personal_context": true,
+    "selected": [
+      {
+        "id": "personal:0",
+        "exploration_id": "old",
+        "revision": 4,
+        "relation_id": "edge",
+        "relation_version": "393bed66ee593b8e75f0f89598b89c613d9a7bf2e3c4ca8aa402efb4d2562817",
+        "authority": "student_confirmed_unreviewed",
+        "selection_reason": "当前问题明确涉及既往关系中的概念",
+        "original_claim": "Newton任意初值都能收敛",
+        "current_claim": "Newton并非任意初值都收敛",
+        "revisions": [
+          {
+            "revision": 4,
+            "claim": "Newton并非任意初值都收敛",
+            "reason": "保存的初值0轨迹重复0与1"
+          }
+        ],
+        "relation": {
+          "id": "edge",
+          "source": "initial",
+          "target": "converge",
+          "relation": "implies",
+          "reason": "之前认为任意初值都可收敛"
+        },
+        "nodes": [
+          {
+            "id": "initial",
+            "label": "初值",
+            "description": "",
+            "source_ref": null
+          },
+          {
+            "id": "converge",
+            "label": "Newton收敛",
+            "description": "",
+            "source_ref": null
+          }
+        ],
+        "evidence_refs": [],
+        "experiments": [
+          {
+            "ref": {
+              "kind": "root_lab",
+              "record_id": "exp_ccb0b9d98c6fcb16e6fa6ab1b070393c",
+              "input_hash": "2f5f40e2c5c717000ec81907c99618e85e8ca21b11ad793398fbc532f6e25c1a",
+              "runner_version": "root-runner-v1",
+              "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e",
+              "selected_step": null,
+              "activity_claim": null
+            },
+            "parameters": {
+              "method": "newton",
+              "function": "x^3-2*x+2",
+              "iterates": [],
+              "brackets": [],
+              "interval": null,
+              "initial_value": 0.0,
+              "phi": null,
+              "derivative": null,
+              "update": null,
+              "variant": "standard",
+              "damping": 1.0,
+              "multiplicity": 1,
+              "tolerance": 1e-06,
+              "goal": "residual",
+              "stop_reason": "none"
+            },
+            "stop_detail": "达到迭代上限",
+            "rows": [
+              {
+                "k": 0,
+                "x": 0.0,
+                "fx": 2.0,
+                "step": null,
+                "bracket": null
+              },
+              {
+                "k": 1,
+                "x": 1.0,
+                "fx": 1.0,
+                "step": 1.0,
+                "bracket": null
+              },
+              {
+                "k": 5,
+                "x": 1.0,
+                "fx": 1.0,
+                "step": 1.0,
+                "bracket": null
+              },
+              {
+                "k": 6,
+                "x": 0.0,
+                "fx": 2.0,
+                "step": 1.0,
+                "bracket": null
+              }
+            ]
+          }
+        ],
+        "unavailable_experiments": [],
+        "next_question": "你曾用“之前认为任意初值都可收敛”联系初值与Newton收敛；这次还满足同样条件吗？"
+      }
+    ],
+    "decision": {
+      "version": "teaching-decision-v1",
+      "status": "accepted",
+      "origin": "model_opinion",
+      "claim_ref": "claim:current",
+      "evidence_refs": [
+        "claim:current",
+        "personal:0"
+      ],
+      "known_conditions": [],
+      "missing_conditions": [
+        "本题局部收敛条件"
+      ],
+      "claim_status": "unknown",
+      "action": "ask_missing_condition",
+      "disclosure": "scaffolded",
+      "reason": "你曾把任意初值与Newton收敛相联系，后来因0与1循环而修订。现在换初值时，你能说明本题满足哪些局部收敛条件吗？ [personal:0]",
+      "assessments": [],
+      "experiment_proposal": null,
+      "source_hash": "c52a0d8e16c08e6607e14a84791ac728a1ba12972bc403d96958fcd1cee63bdd",
+      "context_ref": null,
+      "sources": [
+        {
+          "id": "claim:current",
+          "kind": "student_claim",
+          "data": "什么是Newton局部收敛条件？换初值时如何理解？"
+        },
+        {
+          "id": "personal:0",
+          "kind": "personal_judgment",
+          "data": {
+            "id": "personal:0",
+            "exploration_id": "old",
+            "revision": 4,
+            "relation_id": "edge",
+            "relation_version": "393bed66ee593b8e75f0f89598b89c613d9a7bf2e3c4ca8aa402efb4d2562817",
+            "authority": "student_confirmed_unreviewed",
+            "selection_reason": "当前问题明确涉及既往关系中的概念",
+            "original_claim": "Newton任意初值都能收敛",
+            "current_claim": "Newton并非任意初值都收敛",
+            "revisions": [
+              {
+                "revision": 4,
+                "claim": "Newton并非任意初值都收敛",
+                "reason": "保存的初值0轨迹重复0与1"
+              }
+            ],
+            "relation": {
+              "id": "edge",
+              "source": "initial",
+              "target": "converge",
+              "relation": "implies",
+              "reason": "之前认为任意初值都可收敛"
+            },
+            "nodes": [
+              {
+                "id": "initial",
+                "label": "初值",
+                "description": "",
+                "source_ref": null
+              },
+              {
+                "id": "converge",
+                "label": "Newton收敛",
+                "description": "",
+                "source_ref": null
+              }
+            ],
+            "evidence_refs": [],
+            "experiments": [
+              {
+                "ref": {
+                  "kind": "root_lab",
+                  "record_id": "exp_ccb0b9d98c6fcb16e6fa6ab1b070393c",
+                  "input_hash": "2f5f40e2c5c717000ec81907c99618e85e8ca21b11ad793398fbc532f6e25c1a",
+                  "runner_version": "root-runner-v1",
+                  "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e",
+                  "selected_step": null,
+                  "activity_claim": null
+                },
+                "parameters": {
+                  "method": "newton",
+                  "function": "x^3-2*x+2",
+                  "iterates": [],
+                  "brackets": [],
+                  "interval": null,
+                  "initial_value": 0.0,
+                  "phi": null,
+                  "derivative": null,
+                  "update": null,
+                  "variant": "standard",
+                  "damping": 1.0,
+                  "multiplicity": 1,
+                  "tolerance": 1e-06,
+                  "goal": "residual",
+                  "stop_reason": "none"
+                },
+                "stop_detail": "达到迭代上限",
+                "rows": [
+                  {
+                    "k": 0,
+                    "x": 0.0,
+                    "fx": 2.0,
+                    "step": null,
+                    "bracket": null
+                  },
+                  {
+                    "k": 1,
+                    "x": 1.0,
+                    "fx": 1.0,
+                    "step": 1.0,
+                    "bracket": null
+                  },
+                  {
+                    "k": 5,
+                    "x": 1.0,
+                    "fx": 1.0,
+                    "step": 1.0,
+                    "bracket": null
+                  },
+                  {
+                    "k": 6,
+                    "x": 0.0,
+                    "fx": 2.0,
+                    "step": 1.0,
+                    "bracket": null
+                  }
+                ]
+              }
+            ],
+            "unavailable_experiments": [],
+            "next_question": "你曾用“之前认为任意初值都可收敛”联系初值与Newton收敛；这次还满足同样条件吗？"
+          }
+        },
+        {
+          "id": "targeted:0",
+          "kind": "reference",
+          "data": {
+            "title": "局部收敛性 (Local Convergence)",
+            "excerpt": "若初值 x_0 选在真根 x* 的充分小邻域内，迭代序列收敛到 x*。局部收敛性不保证任意较远的初值均能收敛。",
+            "provenance": "course_unit:NA_LOCAL_CONVERGENCE",
+            "goal": "prerequisite",
+            "scope": "reference_provenance_only",
+            "review_status": "verified",
+            "content_hash": "c381205e6e59efb53e6e8cb692b3ebf7912e6ecfe3029a30589278df882cd883",
+            "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+          }
+        },
+        {
+          "id": "targeted:1",
+          "kind": "reference",
+          "data": {
+            "title": "易错点：误以为牛顿法对任意初值必收敛",
+            "excerpt": "学生常误以为牛顿法收敛速度快就一定能收敛。忽略了其本质是局部收敛算法，初值不当会导致发散、振荡或跑到其他远处的根。",
+            "provenance": "course_unit:MISC_NEWTON_ALWAYS_CONVERGES",
+            "goal": "prerequisite",
+            "scope": "reference_provenance_only",
+            "review_status": "verified",
+            "content_hash": "d30a6e03adae0aeff1424b91d40464b5ca5f1c8823dd487744e33cdc2c099f62",
+            "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+          }
+        },
+        {
+          "id": "targeted:2",
+          "kind": "reference",
+          "data": {
+            "title": "牛顿迭代法 (Newton-Raphson Method)",
+            "excerpt": "利用函数的一阶泰勒展开进行局部线性化，切线与 x 轴交点作为新的近似值。对于单根具有局部二阶收敛性。",
+            "provenance": "course_unit:NA_NEWTON",
+            "goal": "prerequisite",
+            "scope": "reference_provenance_only",
+            "review_status": "verified",
+            "content_hash": "d69ea25f05acac4848eb703f4fad1e5ec4d742cbddf51f3922978414b6974c79",
+            "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+          }
+        }
+      ]
+    },
+    "behavior": "我们先抓住这个概念解决的核心问题，再看它怎样用于题目。\n\n你曾把任意初值与Newton收敛相联系，后来因0与1循环而修订。现在换初值时，你能说明本题满足哪些局部收敛条件吗？ [personal:0]",
+    "validation": "fixture_orchestration_not_teaching_quality"
+  }
+]
