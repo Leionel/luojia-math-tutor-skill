@@ -6,6 +6,8 @@
 
 [快速启动](#快速启动) · [架构](docs/architecture.md) · [学习设计](docs/learning-design.md) · [评测](docs/evaluation.md) · [已知限制](docs/limitations.md)
 
+第一次使用可按[完成一次数学探索](docs/exploration-guide.md)操作：从 Chat 转交主张，编辑预测与实验，确认计算，再修订并回到原会话。没有模型服务时也可手工实验或使用标注的 GS 示例。
+
 ## 可以怎样学
 
 | 学习活动 | 当前实现 |
@@ -82,6 +84,8 @@ python scripts/r2_review_packet.py --check
 可复现命令、材料来源与失败分析见[评测说明](docs/evaluation.md)。
 
 [R6.4 探索评测](evaluation/r64/README.md)已完成 105 次离线采集和 5 项浏览器功能任务；真实模型、独立数学评分、真人与迁移测验未运行，不据此宣称教学收益。
+
+[R6.5 体验收束](evaluation/r65/README.md)修复入口发现性、资料加载时输入清空、历史定位与手机长公式溢出，并减少重复目录请求和自动标题模型调用。验收是本地生产构建的自动化功能检查；没有生产部署或真人完成率结论。
 
 ## 仓库导航
 

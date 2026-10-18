@@ -1,0 +1,710 @@
+{
+  "version": "r65-acceptance-2026-10-18",
+  "starting_head": "268d9a1dff1c89ba6672d9e5f09d4297f5b7ef88",
+  "implementation_commit": "36ef4513a576ec99f348381282217d19ce689c15",
+  "scope": "actual_dirty_worktree_local_production_build_with_fixed_models_and_typed_offline_router",
+  "human_participants": 0,
+  "provider_requests_this_round": 0,
+  "real_model_quality": null,
+  "real_provider_latency": null,
+  "production_environment_accepted": false,
+  "release_decision": "local_preview_ready; repair_math_quality_and_validate_target_before_formal_release",
+  "browser": {
+    "version": "r65-browser-v1",
+    "scope": "offline_functional_automation_not_human_or_model_quality",
+    "human_participants": 0,
+    "provider_requests": 0,
+    "tasks": [
+      {
+        "task": "Chat → 探索 → 原会话",
+        "status": "completed",
+        "steps": [
+          "Visible Chat entry with Enter",
+          "Persisted original claim and session",
+          "Collapsed blank parameters; edited proposal and prediction",
+          "Confirmed real runner with Space",
+          "Accepted private relation; returned to original session"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-chat.png",
+            "sha256": "8ce6d35ab78794ebb90fe38b0ae2b5fb1460e4ad0daed4b222b2481f2b2fc0fc"
+          },
+          {
+            "path": "output/playwright/r65-after-first-step.png",
+            "sha256": "5788070d11e81e4644f5c67a543f026e9649d33f7537612be520c352d60b2776"
+          }
+        ]
+      },
+      {
+        "task": "计算 → 引用会话 → 原探索版本",
+        "status": "completed",
+        "steps": [
+          "Discussed actual saved calculation",
+          "Reloaded saved answer",
+          "Original source retained revision and computation locator"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-history.png",
+            "sha256": "a4820f616c16db6d3df48b49543f24c57ea0746641f20ba1eb2af1c4c5c0ac97"
+          }
+        ]
+      },
+      {
+        "task": "私人图 → 原探索（无需选择节点）",
+        "status": "completed",
+        "steps": [
+          "No node click required",
+          "Keyboard return preserves exploration and version"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-graph.png",
+            "sha256": "fe30bf7c68287857be2c023ab65e98ffbee9e9536b2623b8ca4492fef20587c9"
+          }
+        ]
+      },
+      {
+        "task": "主张修订 → 学习记录 → 旧版本恢复",
+        "status": "completed",
+        "steps": [
+          "Saved new claim with reason",
+          "Records linked exact saved version",
+          "Selected original claim; cleared local drafts and restored",
+          "Latest editable claim stayed separate from historical claim"
+        ],
+        "artifact_refs": []
+      },
+      {
+        "task": "模型响应丢失 → 读取已保存建议（不重复模型）",
+        "status": "completed",
+        "steps": [
+          "Injected response loss after actual fixture persisted advice",
+          "Explicit recovery used GET only",
+          "Exactly one advice POST; no automatic model retry"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-recovery.png",
+            "sha256": "6190a6278a944067f96538edc225bff05d8bd9d2e18884928b7e48406e8a200b"
+          }
+        ]
+      },
+      {
+        "task": "私有资料 → 选段对话 → 已保存引用恢复",
+        "status": "completed",
+        "steps": [
+          "Synthetic owned material, no external parser",
+          "Full Chat preserves exact citation after reload"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-material.png",
+            "sha256": "7bcd394bf3d4c7593fa6bcf6e5f13212a0e58b3ec5812c18bab71b3e335b9f42"
+          }
+        ]
+      },
+      {
+        "task": "390px 与键盘：手工回退、长参数、表格",
+        "status": "completed",
+        "steps": [
+          "390px old-version view",
+          "Enter opens manual editor, Space confirms parameters",
+          "Long draft stays contained",
+          "No-model default example executes actual runner; saved table contained"
+        ],
+        "artifact_refs": [
+          {
+            "path": "output/playwright/r65-after-mobile.png",
+            "sha256": "34a86d94d64a62a3bc4e2b43938253cf9944c7b477b1e9c4921e5c0d31add94f"
+          },
+          {
+            "path": "output/playwright/r65-after-mobile-formula.png",
+            "sha256": "27e1306488ca5a3fb85928969fe97d95b058e38d820141be113e3cbda009009c"
+          }
+        ]
+      }
+    ],
+    "measurements": {
+      "free_chat_requests": [
+        {
+          "method": "POST",
+          "path": "/api/sessions"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/sessions/sess_f1268c4fcf16"
+        },
+        {
+          "method": "POST",
+          "path": "/api/tutor/stream"
+        },
+        {
+          "method": "GET",
+          "path": "/api/sessions"
+        },
+        {
+          "method": "GET",
+          "path": "/api/sessions"
+        },
+        {
+          "method": "GET",
+          "path": "/api/sessions/sess_f1268c4fcf16/mistakes"
+        },
+        {
+          "method": "GET",
+          "path": "/api/sessions/sess_f1268c4fcf16/messages"
+        }
+      ],
+      "automatic_title_model_requests": 0,
+      "fixture_advice_to_edit_ms": 2133,
+      "comparable_mutation_requests": [
+        {
+          "method": "POST",
+          "path": "/api/explorations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/explorations/ecf67b44-9c79-4f42-8680-c703381bc1e7/advice"
+        },
+        {
+          "method": "POST",
+          "path": "/api/explorations/ecf67b44-9c79-4f42-8680-c703381bc1e7/runs"
+        },
+        {
+          "method": "POST",
+          "path": "/api/explorations/ecf67b44-9c79-4f42-8680-c703381bc1e7/relations/decision"
+        }
+      ],
+      "controlled_evidence": [
+        {
+          "status": "residual_met",
+          "last_row": {
+            "k": 7,
+            "vector": [
+              0.18181820465213477,
+              0.2727272651159551
+            ],
+            "value": null,
+            "residual": 8.372449422644479e-08,
+            "step": 2.511734825128009e-07,
+            "error_estimate": null,
+            "error_bound": 4.186224711322241e-08,
+            "work": 7
+          },
+          "matrix_evidence": {
+            "status": "deterministic_calculation",
+            "scope": "specified_decimal_rational_matrix",
+            "iteration_matrix": [
+              [
+                "0",
+                "-1/4"
+              ],
+              [
+                "0",
+                "1/12"
+              ]
+            ],
+            "spectral_radius_exact": "1/12",
+            "spectral_radius_display": 0.08333333333333333,
+            "strict_row_dominant": true,
+            "rho_less_than_one": true,
+            "is_counterexample_to_necessity": false,
+            "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+            "review_state": "deterministic_rule_not_human_review"
+          }
+        },
+        {
+          "status": "residual_met",
+          "last_row": {
+            "k": 10,
+            "vector": [
+              -1.2499988480000002,
+              1.1249998848
+            ],
+            "value": null,
+            "residual": 9.215999998701818e-07,
+            "step": 4.6080000002390875e-06,
+            "error_estimate": null,
+            "error_bound": null,
+            "work": 10
+          },
+          "matrix_evidence": {
+            "status": "deterministic_calculation",
+            "scope": "specified_decimal_rational_matrix",
+            "iteration_matrix": [
+              [
+                "0",
+                "-2"
+              ],
+              [
+                "0",
+                "1/5"
+              ]
+            ],
+            "spectral_radius_exact": "1/5",
+            "spectral_radius_display": 0.2,
+            "strict_row_dominant": false,
+            "rho_less_than_one": true,
+            "is_counterexample_to_necessity": true,
+            "statement_scope": "对这个输入矩阵，精确误差迭代矩阵 B=−(D+L)⁻¹U。ρ(B)<1 是该线性定常迭代对任意初始误差趋于零的判据；输入按显示的十进制有理数解释。有限浮点轨迹本身不能证明一般命题，也不是学生掌握证明。",
+            "review_state": "deterministic_rule_not_human_review"
+          }
+        }
+      ],
+      "lazy_source_catalogue_reads": 1,
+      "dropped_response_model_posts": 1,
+      "material_input_locked_during_restore": true,
+      "mobile": {
+        "viewport": 390,
+        "scrollWidth": 390
+      },
+      "long_formula_layout": [
+        {
+          "tag": "MAIN",
+          "width": 390,
+          "scroll": 390
+        },
+        {
+          "tag": "DIV",
+          "width": 385,
+          "scroll": 385
+        },
+        {
+          "tag": "MAIN",
+          "width": 385,
+          "scroll": 385
+        }
+      ],
+      "long_formula_page_width": 390
+    },
+    "exploration_id": "ecf67b44-9c79-4f42-8680-c703381bc1e7",
+    "origin_session": "sess_f1268c4fcf16"
+  },
+  "before": {
+    "entry_and_history": {
+      "id": "1371293f-0c8e-4ad5-9da6-496803adbb72",
+      "exploreUrl": "http://127.0.0.1:3161/explore?id=1371293f-0c8e-4ad5-9da6-496803adbb72",
+      "graphDirectReturnVisible": false,
+      "selectedRevisionShown": false,
+      "mobile": {
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "chatDirectExploreVisible": false
+    },
+    "material_input_race": {
+      "editable_while_source_loading": true,
+      "typed": "来源加载时刚输入的问题",
+      "after_restore": "",
+      "input_lost": true
+    },
+    "automatic_title_model_requests": 1,
+    "nested_mobile_overflow": {
+      "scrollers": [
+        {
+          "tag": "DIV",
+          "label": null,
+          "cls": "min-w-0 flex-1 overflow-y-auto",
+          "width": 385,
+          "scroll": 1088,
+          "rect": 390
+        },
+        {
+          "tag": "DIV",
+          "label": null,
+          "cls": "min-h-full bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans antialiased relative selection:bg-olive-500/20 selection:text-olive-900 dark:selection:text-olive-100",
+          "width": 385,
+          "scroll": 1088,
+          "rect": 385.3333435058594
+        },
+        {
+          "tag": "MAIN",
+          "label": null,
+          "cls": "relative z-10 mx-auto w-full max-w-7xl py-6 sm:py-10 px-4 sm:px-8",
+          "width": 385,
+          "scroll": 1088,
+          "rect": 385.3333435058594
+        },
+        {
+          "tag": "DIV",
+          "label": null,
+          "cls": "grid gap-8 lg:grid-cols-12 items-start",
+          "width": 353,
+          "scroll": 1072,
+          "rect": 353.3333435058594
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "exploration_directory_GET": {
+      "before": 3,
+      "after": 0
+    },
+    "automatic_title_model_endpoint_requests": {
+      "before": 1,
+      "after": 0
+    },
+    "mobile_formula_final_audit": {
+      "scrollers": [
+        {
+          "tag": "DIV",
+          "label": null,
+          "cls": "group relative math-block my-3 px-4 py-3 rounded-xl border border-olive-500/15 dark:border-olive-400/15 bg-olive-500/[0.03] dark:bg-olive-400/[0.03] overflow-x-auto transition-all hover:border-olive-500/30 shadow-xs",
+          "width": 311,
+          "scroll": 1011,
+          "rect": 312
+        },
+        {
+          "tag": "DIV",
+          "label": null,
+          "cls": "",
+          "width": 275,
+          "scroll": 993,
+          "rect": 274.66668701171875
+        }
+      ]
+    },
+    "human_completion_rate": null,
+    "learning_gain": null,
+    "causal_latency_gain": null
+  },
+  "runtime": {
+    "python": "3.14.5",
+    "node": "v24.16.0",
+    "fastapi": "0.136.3"
+  },
+  "source_sha256_worktree": {
+    ".gitattributes": "a4d70d36488f361c5ad98a6911778678d7427c1e146236584e3b541873487296",
+    "apps/api/app/llm/openai_compatible.py": "647c33f3422335bee5d23ac8925e2a0428328a2cd47df8d677854790c6e12800",
+    "apps/api/app/tutor/exploration_advice.py": "b8ec1d82e106e6b96e0f4ec0c743740799e8e7415f6c97bf25672439fea5929f",
+    "apps/api/tests/test_r2_application_capture.py": "1634d15378acbfafab9c99e6a9087e97a36fb76e291e35eefe6dfbf6b246326f",
+    "apps/web/app/explore/page.tsx": "82f6767c21f7f54e15f6831c7407a221ef523c437e88f029bf713509897d5e40",
+    "apps/web/app/materials/page.tsx": "700f4723bbb6151aa8cc41d45fdd8715f453ed42da0fe51826a47a399bd1686f",
+    "apps/web/app/mistake-book/page.tsx": "b031c95dfcefdda0557d58381a22e7dd0a870c58372394ff7f450d76c27dcd9a",
+    "apps/web/app/notebook/page.tsx": "67a669df8a240bdd38fbcafbb80043d2f57ec62c70caaf740168fa4018c2e187",
+    "apps/web/app/numerical-lab/page.tsx": "28d48a0797f02a3068776e98fd8a984f01f2b423a3b13baa8d67dc1b4fb61921",
+    "apps/web/app/records/page.tsx": "c9c9fc1194dfffc23642fa582a8f3c62cac93a2edb832885153e3a04583a989a",
+    "apps/web/components/learning/chat-workspace-bar.tsx": "d50e5a8e817da1a4694718ec2b183a4e9ca207a50ae5889b9919e5485d058e38",
+    "apps/web/components/learning/exploration-experiment.tsx": "1574c30d6063c913cadf4bdee77b4416fbb833c69377cca6e667323f5adff424",
+    "apps/web/components/learning/exploration-guide.tsx": "fa0c3cbeb0b9e61b05c126540f4f6df3051614192dc5257b3af0d96f943bf368",
+    "apps/web/components/learning/lab-workspace.tsx": "4f5f315880f5fc38edd8a9c5264cc4c06468a0cd93167e8f091e3b530acadbae",
+    "apps/web/components/learning/personal-network.tsx": "dd37934ef26d95d79ac35640707e0b12ec37d13997e25bb9532201a10174be86",
+    "apps/web/components/learning/reading-domain-view.tsx": "dc27779981bf19ca3ef5e370ab32aec7699cb76b83e67a7a957660478805699a",
+    "apps/web/components/learning/sidebar-navigation.tsx": "407110b0ef3e5f2e6b22a72896683e091efd4f73be229c082b0e8e303fc24b78",
+    "apps/web/components/math-message.tsx": "4739f87e19eb1a11f7aecd3ab6af069a761118b686e67d81678b9eb8fc43582b",
+    "apps/web/components/sidebar.tsx": "b3ca8f71fc2d29af329fd5317de2db54b085620230f0f6dde8c1a6c5ae34b0e9",
+    "apps/web/components/tutor-chat.tsx": "39927e061870896b84886a96eee2d7599aaede14b39a3566a22567791df93a87",
+    "apps/web/components/tutor-input.tsx": "005ecd138755a444b655a30236e63ebe79e6ac241938a8e7ceaf39f4f5e47882",
+    "apps/web/lib/learning-context.ts": "5e807143c87aad7c5a4fff8c0fb3f259bc15daf37b4c921fbafa2f2a97674e8b",
+    "apps/web/lib/reference-upgrade.test.ts": "aaa8a909fd0f50713d25526cac889f44c0a0d5b5986c8663376be52e249e85bc",
+    "apps/web/next-env.d.ts": "b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000",
+    "apps/web/next.config.mjs": "29684a2db0571baa0f5a413639d21afcced8f1b90f44ab7c847f1a2607a8d51b",
+    "apps/web/package-lock.json": "89630acd97b2035d94c142cf17a0312dd3c6e6630ef1b8d6ed49eabab8f80965",
+    "evaluation/r2/e1-protocol-v1.md": "f40e77e9052ca183adec9cd33dacf6d09f684f3b20883a4b12c8cdc5f7c3cd6f",
+    "scripts/r2_application_capture.py": "58a4dbfe617e0c46edef7429178ad9bd68bea342662d5f40fcc5d95d7162fdc2",
+    "scripts/r3_ui_fixture.py": "65d9621a2ef410c736901732319225e9855578565c81a960e68933a69137f666",
+    "scripts/r61_ui_fixture.py": "132f6d4223f5d972fe30f0ac827eb69d7062711972c6d62364f230878f9ba018",
+    "scripts/r64_r5_capture.py": "d229642b2548550d3530c98d02d65ad896f62f653dfa4f8c198b37310a4916e2",
+    "scripts/r65_ui_fixture.py": "991f060349f2c18d5e75e751ce0870f8c035ea4c682ad96ab930abd8e0e984c8",
+    "scripts/r65_ui_tasks.cjs": "4071e653d31a75fc6b07b7c25c59b6d1cf78295baff392dcbf9f0ad707a74e29"
+  },
+  "source_sha256_index": {
+    ".gitattributes": "efc892b9af921fbcbae2f5ee7cbafc10a08d415a3ba6076aaeb22691568f922a",
+    "apps/api/app/llm/openai_compatible.py": "eb3c11570790700b7d47fe9b9297116adba7b88c72ae78c6dc3257afa7d99e26",
+    "apps/api/app/tutor/exploration_advice.py": "b8ec1d82e106e6b96e0f4ec0c743740799e8e7415f6c97bf25672439fea5929f",
+    "apps/api/tests/test_r2_application_capture.py": "4389d4cc1ce878992d6926b9b67e4a51552fc6c058105699020958deaf8a0773",
+    "apps/web/app/explore/page.tsx": "d0a2df3a269fbdf4529e41073cfa224d073bce4dbd33b8e75df84d25a54352b5",
+    "apps/web/app/materials/page.tsx": "45607f323d30924ff66625c4a3a6348fba7710fc420eaf4ea71059acba9202c8",
+    "apps/web/app/mistake-book/page.tsx": "05450f22e17bece22e93ea30871154894aff80b8d76142fe4753a1d719faa32b",
+    "apps/web/app/notebook/page.tsx": "8cdd8079dd8f75daf9be14a4debe2492a0841af066a389682385da16038778c1",
+    "apps/web/app/numerical-lab/page.tsx": "eebc26d33881b021c9a982f6a60a527532f01872ff33fbd96d192b60612e924b",
+    "apps/web/app/records/page.tsx": "d96157138e87c98c9a547d2ea69dca78fc430464e84a869da3f2dbb7bd926c86",
+    "apps/web/components/learning/chat-workspace-bar.tsx": "d50e5a8e817da1a4694718ec2b183a4e9ca207a50ae5889b9919e5485d058e38",
+    "apps/web/components/learning/exploration-experiment.tsx": "1574c30d6063c913cadf4bdee77b4416fbb833c69377cca6e667323f5adff424",
+    "apps/web/components/learning/exploration-guide.tsx": "fa0c3cbeb0b9e61b05c126540f4f6df3051614192dc5257b3af0d96f943bf368",
+    "apps/web/components/learning/lab-workspace.tsx": "20b2bc1b869a10a3944ad8f44ad52825dbebca0b0bf1e618cabec26a1ed9e540",
+    "apps/web/components/learning/personal-network.tsx": "dd37934ef26d95d79ac35640707e0b12ec37d13997e25bb9532201a10174be86",
+    "apps/web/components/learning/reading-domain-view.tsx": "dc27779981bf19ca3ef5e370ab32aec7699cb76b83e67a7a957660478805699a",
+    "apps/web/components/learning/sidebar-navigation.tsx": "e062e21444d0d107c2d53f7afc478bd65fcb1ca2e23c2257ea26840542409229",
+    "apps/web/components/math-message.tsx": "4739f87e19eb1a11f7aecd3ab6af069a761118b686e67d81678b9eb8fc43582b",
+    "apps/web/components/sidebar.tsx": "4fa0025e612bbe9a3ca30a973ed835720197b48052a5c7eb01d67b0b6f1719c6",
+    "apps/web/components/tutor-chat.tsx": "39927e061870896b84886a96eee2d7599aaede14b39a3566a22567791df93a87",
+    "apps/web/components/tutor-input.tsx": "9cfded74b5c337860b6714f8f6f4a3457c06f46f6bfe83d8b2ddb4472b6a3270",
+    "apps/web/lib/learning-context.ts": "5e807143c87aad7c5a4fff8c0fb3f259bc15daf37b4c921fbafa2f2a97674e8b",
+    "apps/web/lib/reference-upgrade.test.ts": "aaa8a909fd0f50713d25526cac889f44c0a0d5b5986c8663376be52e249e85bc",
+    "apps/web/next-env.d.ts": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+    "apps/web/next.config.mjs": "92635e4390fb091e6b0d433a275178b8f1b4f37d5b3d7e40094ee766bcd62e4b",
+    "apps/web/package-lock.json": "e3bc1ccf8e11159984f2cfbc4a4809ae26a16e7bf33b34a457ef385ce7189f76",
+    "evaluation/r2/e1-protocol-v1.md": "2e6d202c24c481e5b9785d694ea1090d2b5527f6029f938ae6b4e1a74396cd61",
+    "scripts/r2_application_capture.py": "65ff408d4d3b7bd5b26c0e29c0c15ab0a190738247144956d95121dbda9fe070",
+    "scripts/r3_ui_fixture.py": "65d9621a2ef410c736901732319225e9855578565c81a960e68933a69137f666",
+    "scripts/r61_ui_fixture.py": "132f6d4223f5d972fe30f0ac827eb69d7062711972c6d62364f230878f9ba018",
+    "scripts/r64_r5_capture.py": "d229642b2548550d3530c98d02d65ad896f62f653dfa4f8c198b37310a4916e2",
+    "scripts/r65_ui_fixture.py": "991f060349f2c18d5e75e751ce0870f8c035ea4c682ad96ab930abd8e0e984c8",
+    "scripts/r65_ui_tasks.cjs": "4071e653d31a75fc6b07b7c25c59b6d1cf78295baff392dcbf9f0ad707a74e29"
+  },
+  "protected_starting_worktree": {
+    "head": "268d9a1dff1c89ba6672d9e5f09d4297f5b7ef88",
+    "files": {
+      "apps/api/tests/test_r2_application_capture.py": "1634d15378acbfafab9c99e6a9087e97a36fb76e291e35eefe6dfbf6b246326f",
+      "apps/web/app/explore/page.tsx": "88851a91407d52ed30d6df07580d4c7b8a511e3e9eb041618e6354e6ca6618fc",
+      "apps/web/app/materials/page.tsx": "700f4723bbb6151aa8cc41d45fdd8715f453ed42da0fe51826a47a399bd1686f",
+      "apps/web/app/mistake-book/page.tsx": "b031c95dfcefdda0557d58381a22e7dd0a870c58372394ff7f450d76c27dcd9a",
+      "apps/web/app/notebook/page.tsx": "67a669df8a240bdd38fbcafbb80043d2f57ec62c70caaf740168fa4018c2e187",
+      "apps/web/app/numerical-lab/page.tsx": "28d48a0797f02a3068776e98fd8a984f01f2b423a3b13baa8d67dc1b4fb61921",
+      "apps/web/app/records/page.tsx": "74fd75e504158eb56f4153e19e19132394c6f85826fc2d7bd06c97db620d9342",
+      "apps/web/components/learning/lab-workspace.tsx": "4f5f315880f5fc38edd8a9c5264cc4c06468a0cd93167e8f091e3b530acadbae",
+      "apps/web/components/learning/sidebar-navigation.tsx": "407110b0ef3e5f2e6b22a72896683e091efd4f73be229c082b0e8e303fc24b78",
+      "apps/web/components/sidebar.tsx": "b3ca8f71fc2d29af329fd5317de2db54b085620230f0f6dde8c1a6c5ae34b0e9",
+      "apps/web/next-env.d.ts": "b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000",
+      "evaluation/r2/e1-protocol-v1.md": "f40e77e9052ca183adec9cd33dacf6d09f684f3b20883a4b12c8cdc5f7c3cd6f",
+      "scripts/r2_application_capture.py": "58a4dbfe617e0c46edef7429178ad9bd68bea342662d5f40fcc5d95d7162fdc2"
+    }
+  },
+  "preservation": {
+    "unrelated_modified_files_unchanged": true,
+    "overlapping_pages_staged_as_functional_increments_only": [
+      "apps/web/app/explore/page.tsx",
+      "apps/web/app/records/page.tsx"
+    ],
+    "starting_next_env_restored": true
+  },
+  "historical_real_model_receipts_not_current_performance": [
+    {
+      "source": "results/r61/real-model-attempt1.json",
+      "sha256": "9a61095990872e5366da86dec051de7e52b2f02db5f150a3a35c55f98f5fd8bf",
+      "cases": [
+        {
+          "id": "gs",
+          "duration_ms": 11358.03,
+          "status": "failed",
+          "error_code": "model_output_truncated",
+          "usage": {
+            "prompt_tokens": 3544,
+            "completion_tokens": 1536,
+            "total_tokens": 5080
+          }
+        },
+        {
+          "id": "newton",
+          "duration_ms": 10136.91,
+          "status": "failed",
+          "error_code": "model_output_truncated",
+          "usage": {
+            "prompt_tokens": 3580,
+            "completion_tokens": 1536,
+            "total_tokens": 5116
+          }
+        },
+        {
+          "id": "missing",
+          "duration_ms": 11512.05,
+          "status": "failed",
+          "error_code": "model_output_truncated",
+          "usage": {
+            "prompt_tokens": 3526,
+            "completion_tokens": 1536,
+            "total_tokens": 5062
+          }
+        }
+      ]
+    },
+    {
+      "source": "results/r61/real-model-attempt2.json",
+      "sha256": "a5511159120e92ad8ad1db74974357119e1ece5ff2d875c366137631c8ddc9d8",
+      "cases": [
+        {
+          "id": "gs",
+          "duration_ms": 5682.58,
+          "status": "succeeded",
+          "error_code": null,
+          "usage": {
+            "prompt_tokens": 3548,
+            "completion_tokens": 317,
+            "total_tokens": 3865
+          }
+        },
+        {
+          "id": "newton",
+          "duration_ms": 5494.36,
+          "status": "succeeded",
+          "error_code": null,
+          "usage": {
+            "prompt_tokens": 4770,
+            "completion_tokens": 621,
+            "total_tokens": 5391
+          }
+        },
+        {
+          "id": "missing",
+          "duration_ms": 3469.08,
+          "status": "succeeded",
+          "error_code": null,
+          "usage": {
+            "prompt_tokens": 3530,
+            "completion_tokens": 257,
+            "total_tokens": 3787
+          }
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "npm_test": {
+      "api_passed": 1128,
+      "web_passed": 117,
+      "api_warnings": 5
+    },
+    "latest_web_tests": 117,
+    "typecheck": "passed",
+    "staged_frontend_types": "passed, 19 overlays",
+    "build": "passed, 20 routes",
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 8
+    },
+    "reliability": {
+      "contracts_passed": 47,
+      "instances_passed": 128
+    },
+    "docs": "passed: 18 files, 0 broken local links",
+    "scoped_diff_check": "implementation commit and staged delivery passed",
+    "whole_worktree_diff_check": "two pre-existing trailing whitespace lines in sidebar.tsx; preserved",
+    "main_api_boot": {
+      "status": "passed",
+      "health": true,
+      "explorations_route": true,
+      "uploads_route": true,
+      "scope": "app.main with isolated databases, stripped model credentials and outbound HTTP denied; startup/health/OpenAPI only"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "output/playwright/r65-before-chat.png",
+      "sha256": "395349eb1977fe922e7375ee0e3f6ad6699d80c1e379923e90cd70d439047946"
+    },
+    {
+      "path": "output/playwright/r65-before-explore.png",
+      "sha256": "e1b2d164e65fc3bddcbe6bdf2dd194bc1152d5fa9e07ef86b694085effe67653"
+    },
+    {
+      "path": "output/playwright/r65-before-graph.png",
+      "sha256": "3d56a15203392ef66be8f9b0d85795aa61f534697eab1cd972ec23181ff5f2d4"
+    },
+    {
+      "path": "output/playwright/r65-before-mobile.png",
+      "sha256": "18f03b237094552453b36b92f8c63e394288295052a6a73ffc16b6e57872f3df"
+    },
+    {
+      "path": "output/playwright/r65-before-material-race.png",
+      "sha256": "8b913210b09e312073784095fc7a0ecf1b868861c6af0ef093a4201a6d61cd51"
+    },
+    {
+      "path": "output/playwright/r65-before-mobile-formula-overflow.png",
+      "sha256": "092d9ffd04c9a1ae26410c6d7094c25a26a83c23142c448249e95aaa111c02ee"
+    },
+    {
+      "path": "results/r65/before-browser.log",
+      "sha256": "0830ffe1255c3e0166ef95e5e05cb87d89e6ebc91d27addb71b96cf7cde4f9f7"
+    },
+    {
+      "path": "results/r65/material-before.log",
+      "sha256": "5a54b80fa985d27d1e429677603a82efc8a4a6889c3a993d598ab6469ebb48d2"
+    },
+    {
+      "path": "results/r65/title-before.log",
+      "sha256": "d57310c702231f26180407127cbc5559da0fc0a6c4c103268c2d87bc460be5bd"
+    },
+    {
+      "path": "results/r65/after-dev-browser.log",
+      "sha256": "f53fa3b12c8d0a04bbf683fdac00c4a841030592a209c39a63070dd8aea0e05c"
+    },
+    {
+      "path": "results/r65/after-dev-v2.log",
+      "sha256": "4caca0612534e10837692b157f742d4a5b3c44516e0db2d4864aa3406db3a9d7"
+    },
+    {
+      "path": "results/r65/after-dev-v3.log",
+      "sha256": "4f960cafea826ccc1ae62e693a3c5324eacb57890fb94e0a06015731faaaeca4"
+    },
+    {
+      "path": "results/r65/after-production.log",
+      "sha256": "667aad6cf8a13cb863bd351bf08b75759df24f7845e131e3f1b5fc6c2032af5a"
+    },
+    {
+      "path": "results/r65/mobile-audit.log",
+      "sha256": "517ad1e7b48d84f7b4a6a5d9287154e43606528705074b7cef03e95176eeba15"
+    },
+    {
+      "path": "results/r65/after-production-final.log",
+      "sha256": "226121d49c8320e734148cb18fbb2d496241a0e28bdd44e65cbd03a2fcf38563"
+    },
+    {
+      "path": "results/r65/mobile-audit-final.log",
+      "sha256": "e388f46b2d8f8ff103adc57955a71fea692ecbabf169891a893028663ad27db4"
+    },
+    {
+      "path": "results/r65/npm-test-final.log",
+      "sha256": "0f74b3706be0621fb73740811fa44e5f9ad010e787314ed1b109a2af6314384f"
+    },
+    {
+      "path": "results/r65/web-tests-final.log",
+      "sha256": "d00cb29b957ad67d54b694bf49645cc9ca269be4b5bfea690206f37bd050866b"
+    },
+    {
+      "path": "results/r65/typecheck-release.log",
+      "sha256": "441a067004f4b17e81d37a42700af168081941f3d78eac188e8e01f9b50ee076"
+    },
+    {
+      "path": "results/r65/lint-release.log",
+      "sha256": "ea127ec2986d36fa2ca63d0da8fc4f2992be959faa844da225b1607c7e21e00b"
+    },
+    {
+      "path": "results/r65/build-final-v2.log",
+      "sha256": "9b777458bb412230de35b149c61220567a7fe5076e9f2e64f6e4d24090f649c1"
+    },
+    {
+      "path": "results/r65/index-typecheck-release.log",
+      "sha256": "8370aea8356d20512ef052164699ea6a1980798abb5e0630e96192248ea9fbb8"
+    },
+    {
+      "path": "results/r65/reliability-final.log",
+      "sha256": "6dab1657a85eac7be0c91032d9022e6d9e71273836ffbfe584471fc2ecf0cf7b"
+    },
+    {
+      "path": "results/r65/docs-final.log",
+      "sha256": "59949ff34f5f4dbf8a18f489ab8a8204941d8abdd98d2603abd37e677166e25f"
+    },
+    {
+      "path": "results/r65/index-typecheck.log",
+      "sha256": "15bb55b1f063e790326abaae680c3a6a531b8a2f16f233d21fc6f4316538efe8"
+    },
+    {
+      "path": "results/r65/working-tree-diff-check.log",
+      "sha256": "b34ae16d83d52cad0302344e1ec2f8707d0e720b2c39718c96a2299e6d8131ac"
+    },
+    {
+      "path": "results/r65/main-smoke.py",
+      "sha256": "b758886b4b8de51b8c78cbd4e80e99eee2568cef0de315dc76831cf101eba6cb"
+    },
+    {
+      "path": "results/r65/main-api-startup.log",
+      "sha256": "c8d25ff68266880b52e1dcf8955086bd9d1c32ac25d351bcc66e25ada1dfaad8"
+    },
+    {
+      "path": "results/r65/main-api-smoke.json",
+      "sha256": "3b739b4731216a6b81e8fdfc38547ec47b53b20062da1714c36da1a0eecff96d"
+    }
+  ],
+  "remaining_unverified": [
+    "independent_math_review",
+    "real_model_plan_and_personal_context_quality",
+    "human_task_usability",
+    "transfer_and_delay",
+    "real_supplier_latency_and_cost",
+    "target_auth_backup_restore_dependencies_monitoring"
+  ]
+}
