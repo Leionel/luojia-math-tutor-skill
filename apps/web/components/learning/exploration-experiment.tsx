@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { learningRequest } from "@/lib/learning-api";
 import { getCurrentUserId, getAuthHeaders } from "@/lib/demo-auth";
 import { getUserApiKey, getPreferredModel } from "@/lib/local-settings";
@@ -71,6 +71,9 @@ export function ExplorationExperiment({
       { ...experimentDomains.linear_system.empty },
       { ...experimentDomains.linear_system.empty },
     ]);
+  const [editorOpen, setEditorOpen] = useState(record.runs.length > 0);
+  const [notice, setNotice] = useState("");
+  const suggesting = useRef(false);
   const [plan, setPlan] = useState<PlanDraft>(blankPlan),
     [compare, setCompare] = useState(true),
     [prediction, setPrediction] = useState(""),
@@ -96,6 +99,7 @@ export function ExplorationExperiment({
       ),
     );
     setConfirmed(false);
+    setEditorOpen(true);
   }
   useEffect(() => {
     const latest = [...record.history]
@@ -126,6 +130,8 @@ export function ExplorationExperiment({
         typeof d.prediction === "string" &&
         typeof d.compare === "boolean"
       ) {
+        if (typeof d.editorOpen === "boolean") setEditorOpen(d.editorOpen);
+        else if (d.prediction.trim() || d.drafts.some((task: TaskDraft) => Object.entries(task).some(([k, v]) => v !== experimentDomains[d.domain as Domain].empty[k]))) setEditorOpen(true);
         setDomain(d.domain);
         setDrafts(d.drafts);
         setPrediction(d.prediction);
@@ -152,7 +158,7 @@ export function ExplorationExperiment({
     try {
       localStorage.setItem(
         key,
-        JSON.stringify({ domain, drafts, plan, compare, prediction, origin }),
+        JSON.stringify({ domain, drafts, plan, compare, prediction, origin, editorOpen }),
       );
     } catch {
       setError("草稿未能写入浏览器，请先保存实验或复制参数。");
@@ -161,7 +167,23 @@ export function ExplorationExperiment({
   function edit() {
     setConfirmed(false);
   }
+  async function recoverAdvice() {
+    if (suggesting.current) return;
+    suggesting.current = true; setBusy(true); setError("");
+    try {
+      const saved = await learningRequest<Exploration>(`/explorations/${encodeURIComponent(record.id)}`, undefined, AbortSignal.timeout(15000));
+      if (owner !== getCurrentUserId() || credential !== getAuthHeaders().Authorization) return;
+      const recoveredOwnAdvice = saved.revision === record.revision + 1 && saved.advice?.based_on_revision === record.revision;
+      if (saved.revision !== record.revision && !recoveredOwnAdvice) throw Error("探索版本已变化，请先重新读取已保存版本并核对草稿。");
+      onSaved(saved); setAdvice(saved.advice ?? null);
+      setNotice(saved.advice ? "已读取服务端保存的建议，本次没有请求模型。" : "尚无已保存建议。参数草稿仍保留，可以手工设计，或主动重新请求一次模型。");
+    } catch (e) { setError(`${e instanceof Error ? e.message : "读取未完成。"} 请保留参数；不会自动请求模型。`); }
+    finally { suggesting.current = false; setBusy(false); }
+  }
   async function suggest(template = false) {
+    if (suggesting.current) return;
+    suggesting.current = true;
+    setNotice("");
     setBusy(true);
     setError("");
     setConfirmed(false);
@@ -195,8 +217,9 @@ export function ExplorationExperiment({
         if (a.exploration) onSaved(a.exploration);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "建议暂不可用。");
+      setError(`${e instanceof Error ? e.message : "建议暂不可用。"} 参数草稿保留；先读取已保存建议，避免重复请求模型。`);
     } finally {
+      suggesting.current = false;
       setBusy(false);
     }
   }
@@ -262,6 +285,8 @@ export function ExplorationExperiment({
   }
   return (
     <section
+      id="exploration-experiment"
+      aria-label="设计受控对照实验"
       className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"
       onBlur={cache}
       onChange={edit}
@@ -289,8 +314,10 @@ export function ExplorationExperiment({
           采用 GS 默认示例
         </button>
       </div>
-      {busy && <p role="status">正在分析已保存的主张、关系和实验…</p>}
-      {error && <p role="alert">{error}</p>}
+      <button type="button" className={learningButtonSecondary} disabled={disabled || busy} onClick={() => setEditorOpen(true)}>手工设计实验（无需模型）</button>
+      {busy && <p role="status">正在处理本次请求…模型建议最多等待约 45 秒；不会自动重试，手工参数与已保存记录保留。</p>}
+      {notice && <p role="status" className="text-sm leading-7">{notice}</p>}
+      {error && <div role="alert" className="space-y-2 text-sm"><p>{error}</p><button type="button" className={learningButtonSecondary} disabled={disabled || busy} onClick={() => void recoverAdvice()}>重新读取已保存建议（不调用模型）</button></div>}
       {advice && (
         <div className="space-y-2 border-l-2 border-dai-600 pl-4 text-sm leading-7">
           <p className="font-semibold">
@@ -340,6 +367,9 @@ export function ExplorationExperiment({
           )}
         </div>
       )}
+      <details open={editorOpen} onToggle={e => setEditorOpen(e.currentTarget.open)}>
+        <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">编辑实验参数、写下预测并确认计算</summary>
+        <fieldset disabled={disabled || busy} className="min-w-0 space-y-4">
       <fieldset className="flex flex-wrap gap-4">
         <legend className="mb-2 text-sm">实验方法</legend>
         {(Object.keys(experimentDomains) as Domain[]).map((d) => (
@@ -473,14 +503,18 @@ export function ExplorationExperiment({
         />
         我已核对参数，确认运行参考计算
       </label>
+      <p id={`run-requirements-${record.id}`} role="status" className="text-xs leading-6">{!prediction.trim() ? "先写下运行前预测，再勾选核对参数；两项完成后才能计算。" : !confirmed ? "预测已填写，请核对参数并勾选确认后计算。" : "参数与预测准备就绪，计算后会保存本次证据。"}</p>
       <button
         type="button"
+        aria-describedby={`run-requirements-${record.id}`}
         className={learningButton}
         disabled={disabled || busy || !confirmed || !prediction.trim()}
         onClick={run}
       >
         确认执行受控实验
       </button>
+        </fieldset>
+      </details>
     </section>
   );
 }

@@ -28,6 +28,7 @@ export function TutorInput({
   value,
   onChange,
   disabled,
+  contextPending = false,
   onSubmit,
   hasReference=false,
   onChooseMaterial,
@@ -46,6 +47,7 @@ export function TutorInput({
   value: string;
   onChange: (val: string) => void;
   disabled: boolean;
+  contextPending?: boolean;
   onSubmit: (value: string, forcedMode?: "socratic" | "practice" | "direct", imageUrls?: string[]) => void;
   hasReference?:boolean;
   onChooseMaterial?: () => void;
@@ -267,6 +269,8 @@ export function TutorInput({
         <Textarea
           className={`min-h-[4rem] sm:min-h-[4.8rem] resize-none overflow-y-auto rounded-none border-0 bg-transparent px-4 sm:px-5 py-3 text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/70 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 leading-relaxed ${reading === "sans" ? "font-ui-sans" : "font-serif"}`}
           placeholder={placeholder || "写下问题或推导步骤，也可以上传草稿…"}
+          readOnly={contextPending}
+          aria-busy={contextPending}
           value={value}
           onChange={(event) => {
             onChange(event.target.value);

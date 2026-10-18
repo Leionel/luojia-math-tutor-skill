@@ -46,6 +46,41 @@ export function ChatWorkspaceBar({
           <BookOpen className="size-4" />
           {open && tab === "reading" ? "收起材料" : "选材料一起读"}
         </button>
+        <Link
+          aria-disabled={disabled}
+          onClick={(e) => {
+                if (disabled) {
+                  e.preventDefault();
+                  return;
+                }
+                if (!draftText?.trim()) return;
+                e.preventDefault();
+                try {
+                  const id = crypto.randomUUID();
+                  storeChatEntry(
+                    sessionStorage,
+                    getCurrentUserId(),
+                    id,
+                    draftText,
+                  );
+                  router.push(
+                    `/explore?draft=${id}${sessionId ? `&session=${encodeURIComponent(sessionId)}` : ""}`,
+                  );
+                } catch {
+                  setError(
+                    "问题草稿无法转交，请复制后再进入探索。输入仍保留。",
+                  );
+                }
+              }}
+              href={
+                sessionId
+                  ? `/explore?session=${encodeURIComponent(sessionId)}`
+                  : "/explore"
+              }
+              className="min-h-11 px-3 py-3 text-sm hover:underline"
+            >
+              围绕当前问题探索
+            </Link>
         <details className="relative">
           <summary className="min-h-11 cursor-pointer rounded-lg px-3 py-3 text-xs text-[var(--text-secondary)]">
             按需打开工具
@@ -83,40 +118,7 @@ export function ChatWorkspaceBar({
             >
               检查求根过程
             </button>
-            <Link
-              onClick={(e) => {
-                if (disabled) {
-                  e.preventDefault();
-                  return;
-                }
-                if (!draftText?.trim()) return;
-                e.preventDefault();
-                try {
-                  const id = crypto.randomUUID();
-                  storeChatEntry(
-                    sessionStorage,
-                    getCurrentUserId(),
-                    id,
-                    draftText,
-                  );
-                  router.push(
-                    `/explore?draft=${id}${sessionId ? `&session=${encodeURIComponent(sessionId)}` : ""}`,
-                  );
-                } catch {
-                  setError(
-                    "问题草稿无法转交，请复制后再进入探索。输入仍保留。",
-                  );
-                }
-              }}
-              href={
-                sessionId
-                  ? `/explore?session=${encodeURIComponent(sessionId)}`
-                  : "/explore"
-              }
-              className="min-h-11 px-3 py-3 text-sm hover:underline"
-            >
-              围绕当前问题探索
-            </Link>
+
             <Link
               href="/records"
               className="min-h-11 px-3 py-3 text-sm hover:underline"

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import type { Message, Subject, TutorMeta, TutorMode, WebSearchMode, RootSubmission, RootDiagnosis } from "@/lib/api";
 import type { ReviewData } from "./review-card";
 import { mergeAgentRun, type AgentRun } from "@/lib/agent-run";
-import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote, generateTitle } from "@/lib/api";
+import { getAgentRun, startRootProbe, createSession, listMessages, listMistakes, listSessions, listNotes, streamTutor, truncateSession, renameSession, generateNote, saveNote } from "@/lib/api";
 import { messageStatus } from "@/lib/message-status";
 import { FileText, X, Printer, Loader2, Maximize, Minimize, Target, PenTool, Sparkles, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useScrollPinning } from "@/lib/use-scroll-pinning";
@@ -223,7 +223,7 @@ export function TutorChat() {
   const [workspacePrediction,setWorkspacePrediction]=useState<string>();
   const [desktopWorkspace,setDesktopWorkspace]=useState(false);
   useEffect(()=>{const media=window.matchMedia("(min-width: 1280px)");const update=()=>setDesktopWorkspace(media.matches);update();media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
-  const [contextLoading, setContextLoading] = useState(false);
+  const [contextLoading, setContextLoading] = useState(true);
   const [contextError, setContextError] = useState("");
   const [visionDraft, setVisionDraft] = useState<string | null>(null);
   const searchQuery = "";
@@ -671,10 +671,10 @@ export function TutorChat() {
       setMeta(null);setThinkingChains({});setThinkingElapsed(0);activeRunRef.current=undefined;
       const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 0;
       if (isFirstUserMessage && !studyRequested(value)) {
-        generateTitle(value, getUserApiKey() || null, getPreferredModel() || null).then(async ({ title: autoTitle, label: autoLabel }) => {
-          if(!valid())return;
-          await renameSession(activeSession!, autoTitle, autoLabel).catch(() => {});
-          listSessions("demo-user", searchQuery).then((s) => {if(valid())setSessions(s);}).catch(() => {});
+        const autoTitle = Array.from(value.trim().split(/\r?\n/, 1)[0]).slice(0, 20).join("") || "数学讨论";
+        void renameSession(activeSession!, autoTitle, "综合").then(() => {
+          if (!valid()) return;
+          void listSessions("demo-user", searchQuery).then(s => { if (valid()) setSessions(s); }).catch(() => {});
         }).catch(() => {});
       }
 
@@ -1053,7 +1053,7 @@ export function TutorChat() {
         <main className={`flex min-w-0 flex-1 flex-col ${isZenMode ? "px-4 sm:px-20 lg:px-40" : ""}`}>
           {!isZenMode&&<>
           <div className="shrink-0 px-4">
-            {contextLoading && <p role="status" className="p-3">正在核对当前来源…</p>}
+            {contextLoading && <p role="status" className="p-3">正在恢复会话与核对来源…</p>}
             {contextError && <div role="alert" className="rounded-lg bg-cinnabar-500/5 p-4 leading-7"><p>{contextError}</p><button type="button" className="min-h-12 underline" onClick={() => {void validateAndBindReference(null);}}>移除失效引用，继续普通聊天</button></div>}
           </div></>}
           <div
@@ -1214,6 +1214,7 @@ export function TutorChat() {
             {learningContext&&<ContextBanner compact snapshot={learningContext} disabled={isStreaming} onRemove={()=>{void validateAndBindReference(null);}}/>}
             <TutorInput
               key={getCurrentUserId()}
+              contextPending={contextLoading}
               hasReference={!!learningContext}
               onChooseMaterial={()=>openWorkspace({},"reading")}
               onDocumentUploaded={id=>{const owner=getCurrentUserId(),credential=getAuthHeaders().Authorization;setContextLoading(true);void learningRequest<ReadingDocument>(`/reading/documents/${encodeURIComponent(id)}`).then(async doc=>{if(owner!==getCurrentUserId()||credential!==getAuthHeaders().Authorization)return;const section=doc.sections[0];if(!section)throw Error("此资料没有可用原文章节，已保存资料可在“我的资料”中检查。");const ref=readingSourceRef(doc,section.quote,section.id);await validateAndBindReference(ref);}).catch(e=>{if(owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization)setContextError(e instanceof Error?e.message:"引用核验失败，资料仍保留。");}).finally(()=>{if(owner===getCurrentUserId()&&credential===getAuthHeaders().Authorization)setContextLoading(false);});}}

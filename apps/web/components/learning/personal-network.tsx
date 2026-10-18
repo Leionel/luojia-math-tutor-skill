@@ -322,6 +322,11 @@ export function PersonalNetworkBrowser() {
       {!loading && !error && !items.length && (
         <p>还没有保存的探索。开始一个问题，逐步积累你的知识关系。</p>
       )}
+      {record && <div className="flex min-w-0 flex-wrap items-center gap-4 rounded-xl border border-[var(--border-primary)] p-4 text-sm">
+        <p className="w-full break-words">当前探索：{record.title} · 版本 {record.revision} · 私人判断，未经数学审核</p>
+        <Link className="inline-flex min-h-11 items-center underline" href={`/explore?id=${encodeURIComponent(record.id)}&revision=${record.revision}`}>回到这次探索与历史</Link>
+        <Link className="inline-flex min-h-11 items-center underline" href="/graph?view=course">查看课程知识网络（保留来源审核状态）</Link>
+      </div>}
       {record && <PersonalNetwork key={record.id} record={record} spacious />}
     </section>
   );

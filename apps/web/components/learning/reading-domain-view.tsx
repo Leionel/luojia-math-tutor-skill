@@ -375,11 +375,11 @@ function ReadingDomainContent({
   // Mode: "full"（独立阅读大厅完整视窗，带完整三栏与笔记管理）
   // -------------------------------------------------------------
   return (
-    <div className="grid gap-8 lg:grid-cols-12 items-start">
+    <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-12 items-start">
       <Notice error={error} />
 
       {/* 左栏：典籍大纲与文档源 (4 cols) */}
-      <aside className="lg:col-span-4 space-y-6">
+      <aside className="min-w-0 lg:col-span-4 space-y-6">
         <AtelierFolioCard title="课程知识包章节" badge="大纲预置" badgeVariant="olive">
           <p className="text-xs text-[var(--text-secondary)] mb-3">
             聚焦数值分析重点理论前提与收敛性分析：
@@ -482,7 +482,7 @@ function ReadingDomainContent({
       </aside>
 
       {/* 右侧：典籍正文与学者批注主舞台 (8 cols) */}
-      <section className="lg:col-span-8 space-y-6">
+      <section className="min-w-0 lg:col-span-8 space-y-6">
         {!(doc || unit) ? (
           <div className="p-12 text-center rounded-2xl border border-paper-300/70 bg-[var(--bg-card)] text-sm text-[var(--text-secondary)]">
             暂没有可用的课程材料，请在左侧选择。

@@ -28,6 +28,7 @@ import {
 } from "@/lib/explorations";
 import {ExplorationExperiment} from "@/components/learning/exploration-experiment";
 import {RelationCandidates} from "@/components/learning/relation-candidates";
+import {ExplorationGuide, ExplorationHistory} from "@/components/learning/exploration-guide";
 import {PersonalNetwork} from "@/components/learning/personal-network";
 
 type Catalog = {
@@ -183,6 +184,20 @@ function Explore() {
       );
     }
   }
+  const catalogRequest = useRef<Promise<void> | null>(null);
+  function loadCatalog() {
+    if (catalogRequest.current) return catalogRequest.current;
+    catalogRequest.current = learningRequest<Catalog>("/explorations/sources")
+      .then(value => { if (valid()) setCatalog(value); })
+      .catch(() => {
+        catalogRequest.current = null;
+        if (valid()) setError("来源目录暂不可读取；已有绑定保留，请重新打开来源编辑后重试。");
+      });
+    return catalogRequest.current;
+  }
+  function updateDirectory(saved: Exploration) {
+    setItems(current => [{id: saved.id, title: saved.title, revision: saved.revision}, ...current.filter(item => item.id !== saved.id)]);
+  }
   async function list() {
     const value = await learningRequest<{ items: typeof items }>(
       "/explorations",
@@ -234,13 +249,6 @@ function Explore() {
     void list().catch(() => {
       if (valid()) setError("探索目录暂不可读取；请重试，不代表没有保存记录。");
     });
-    void learningRequest<Catalog>("/explorations/sources")
-      .then((value) => {
-        if (valid()) setCatalog(value);
-      })
-      .catch(() => {
-        if (valid()) setError("来源目录暂不可读取；已有绑定保留，请稍后重试。");
-      });
     return () => {
       alive.current = false;
     };
@@ -315,7 +323,7 @@ function Explore() {
         "",
         `/explore?id=${encodeURIComponent(saved.id)}`,
       );
-      void list().catch(() => {});
+      updateDirectory(saved);
     } catch (e) {
       if (valid()) {
         setError(e instanceof Error ? e.message : "请求未确认，草稿保留。");
@@ -433,6 +441,8 @@ function Explore() {
           重新读取已保存版本
         </button>
       </div>
+      <ExplorationGuide record={record} originSession={originSession} />
+      {record && <ExplorationHistory key={record.id} record={record} />}
       {error && (
         <p
           role="alert"
@@ -525,6 +535,7 @@ function Explore() {
                   <label className="block text-sm">
                     修订理由
                     <textarea
+                      id="exploration-revision"
                       aria-label="修订理由"
                       maxLength={2000}
                       value={draft.reason}
@@ -593,7 +604,7 @@ function Explore() {
                   </p>
                 )}
                 <ExplorationExperiment key={record.id} record={record} disabled={disabled}
-                  onSaved={saved=>{setRecord(saved);change({base:saved.revision});}}
+                  onSaved={saved=>{setRecord(saved);change({base:saved.revision});updateDirectory(saved);}}
                   onRun={body=>mutate("runs",body)}/>
                 <RelationCandidates record={record} disabled={disabled} onDecide={body=>mutate("relations/decision",body)}/>
                 {!!runs.length && (
@@ -612,7 +623,7 @@ function Explore() {
                   <section className="mt-6 space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
                   <h2 className="font-serif text-xl">私人知识关联</h2>
                   <PersonalNetwork record={record}/>
-                  <details><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">编辑节点、来源与私人关系</summary>
+                  <details onToggle={e => { if (e.currentTarget.open) void loadCatalog(); }}><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">编辑节点、来源与私人关系</summary>
                   <p className="text-xs leading-6 text-[var(--text-secondary)]">
                     节点与关系由你编辑；这里的“支持、质疑、推出”表示你的想法，均未经数学审核。可引用课程节点、个人笔记或资料首个章节。
                   </p>
@@ -1036,7 +1047,7 @@ function Explore() {
 function RunView({ run, index,record }: { run: Run; index: number;record:Exploration }) {
   const evidence = run.matrix_evidence;
   return (
-    <article className="min-w-0 space-y-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
+    <article id={`exploration-run-${run.ref.record_id}`} className="scroll-mt-6 min-w-0 space-y-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
       <h3 className="font-serif text-lg">
         实验 {index + 1} · {(run.task.domain==="linear_system"?gsStatus(run.status):run.stop_detail)}
       </h3>

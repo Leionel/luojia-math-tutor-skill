@@ -158,3 +158,13 @@ test("code workshop reference enforces finding bounds and returns to code-worksh
  assert.equal(referenceHref({ref} as unknown as Parameters<typeof referenceHref>[0]), "/code-workshop?id=sub-123");
  assert.throws(() => codeContextRef(submission, 1));
 });
+
+
+test("original exploration navigation preserves revision and selected computation",()=>{
+ const snapshot={ref:{kind:"exploration",record_id:"saved/id",revision:3,selected_run_id:"run/one"}} as unknown as Parameters<typeof referenceHref>[0];
+ const link=new URL(referenceHref(snapshot),"http://local.test");
+ assert.equal(link.pathname,"/explore");
+ assert.equal(link.searchParams.get("id"),"saved/id");
+ assert.equal(link.searchParams.get("revision"),"3");
+ assert.equal(link.searchParams.get("run"),"run/one");
+});
