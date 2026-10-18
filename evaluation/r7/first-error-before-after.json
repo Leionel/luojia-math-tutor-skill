@@ -1,0 +1,373 @@
+{
+  "version": "r7-first-error-evidence-v1",
+  "scope": "deterministic real episode persistence; model requests zero; not E1",
+  "before_head": "15def45bf4a718b1bab5d3a95e10133ab0aea274",
+  "before_source_sha256": {
+    "apps/api/app/math_tools/root_finding.py": "19b2ca3bfb65c917042c4d0f5b4d788fd4c3a26997adff5e710beb989b5083eb",
+    "apps/api/app/tutor/root_diagnostics.py": "0851d06ccd2ad6c1465b0af0d3e41e19445376363f5998f1b9f2146156813522"
+  },
+  "after_source_sha256": {
+    "apps/api/app/math_tools/root_finding.py": "fe60428f5396924814618e5583cb48bb820151d10bd964772c0eb0c26082b859",
+    "apps/api/app/tutor/root_diagnostics.py": "0851d06ccd2ad6c1465b0af0d3e41e19445376363f5998f1b9f2146156813522"
+  },
+  "raw_receipts": [
+    {
+      "path": "results/r7/before-first-error.json",
+      "sha256": "eeeb5e2065f7fdccccea92d4f9720e849dab81640557cf37877f90851da9a327"
+    },
+    {
+      "path": "results/r7/after-first-error-v3.json",
+      "sha256": "05bb4342f4852fdb2d539fdf5c4deb3ade2be39935df35c2f3c6885c8a5c6fc9"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "newton-domain-tail",
+      "input": {
+        "method": "newton",
+        "function": "sqrt(x)-2",
+        "initial_value": 1,
+        "goal": "residual",
+        "iterates": [
+          1,
+          3,
+          4,
+          -1
+        ]
+      },
+      "before": {
+        "family": "numeric_nonfinite",
+        "error_step": 3,
+        "complete": false,
+        "oracle_version": "root-oracle-v1"
+      },
+      "before_feedback": "### 求根过程诊断：发现过程偏差\n\n此步无法在函数定义域内得到有限值。\n\n定位步骤：k=3（从0开始）。\n\n检查表达式定义域及该步输入。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "after": {
+        "family": "newton_formula",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.9282032302755097
+        }
+      },
+      "after_feedback": "### 求根过程诊断：发现过程偏差\n\nk=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。\n\n定位步骤：k=2（从0开始）。\n\n从 k=1→2 重新计算；如采用另一种方法，请明确声明。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "restored_after": {
+        "status": "contradicted",
+        "family": "newton_formula",
+        "summary": "k=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。",
+        "next_probe": "从 k=1→2 重新计算；如采用另一种方法，请明确声明。",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "tolerance_version": "root-tolerance-v1",
+        "tolerance": 1e-06,
+        "goal": "residual",
+        "trace": [
+          {
+            "k": 0,
+            "x_k": 1.0,
+            "f_x": -1.0,
+            "step_size": null,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 1,
+            "x_k": 3.0,
+            "f_x": -0.2679491924311228,
+            "step_size": 2.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 2,
+            "x_k": 4.0,
+            "f_x": 0.0,
+            "step_size": 1.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          }
+        ],
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.9282032302755097
+        },
+        "hypothesis": "newton_formula",
+        "action": "revise",
+        "case_hint": "CASE_NEWTON_CODE_UPDATE",
+        "episode_id": "02fb32c5e09a42fb80cc1cd70061ac3e",
+        "attempt_id": "newton-domain-tail",
+        "feedback_id": "40709452dff3411f8af004def3c684a0",
+        "case_id": "CASE_NEWTON_CODE_UPDATE",
+        "case_decision": "VARIANT_OF_CASE",
+        "unit_ids": [
+          "NA_NEWTON",
+          "NA_NEWTON_UPDATE",
+          "NA_STOPPING_CRITERIA"
+        ],
+        "kind": "practice",
+        "help_level": 1,
+        "remaining_help": 2,
+        "input": {
+          "method": "newton",
+          "function": "sqrt(x)-2",
+          "iterates": [
+            1.0,
+            3.0,
+            4.0,
+            -1.0
+          ],
+          "brackets": [],
+          "interval": null,
+          "initial_value": 1.0,
+          "phi": null,
+          "derivative": null,
+          "update": null,
+          "variant": "standard",
+          "damping": 1.0,
+          "multiplicity": 1,
+          "tolerance": 1e-06,
+          "goal": "residual",
+          "stop_reason": "none"
+        },
+        "delivery": "pending",
+        "outcome": "unknown",
+        "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+      }
+    },
+    {
+      "case_id": "newton-nonfinite-tail",
+      "input": {
+        "method": "newton",
+        "function": "sqrt(x)-2",
+        "initial_value": 1,
+        "goal": "residual",
+        "iterates": [
+          1,
+          3,
+          4,
+          "NaN"
+        ]
+      },
+      "before": {
+        "family": "numeric_nonfinite",
+        "error_step": 3,
+        "complete": false,
+        "oracle_version": "root-oracle-v1"
+      },
+      "before_feedback": "### 求根过程诊断：发现过程偏差\n\n轨迹出现非有限数值；这一轮没有有效的根近似。\n\n定位步骤：k=3（从0开始）。\n\n检查该步分母、定义域和溢出保护。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "after": {
+        "family": "newton_formula",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.9282032302755097
+        }
+      },
+      "after_feedback": "### 求根过程诊断：发现过程偏差\n\nk=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。\n\n定位步骤：k=2（从0开始）。\n\n从 k=1→2 重新计算；如采用另一种方法，请明确声明。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "restored_after": {
+        "status": "contradicted",
+        "family": "newton_formula",
+        "summary": "k=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。",
+        "next_probe": "从 k=1→2 重新计算；如采用另一种方法，请明确声明。",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "tolerance_version": "root-tolerance-v1",
+        "tolerance": 1e-06,
+        "goal": "residual",
+        "trace": [
+          {
+            "k": 0,
+            "x_k": 1.0,
+            "f_x": -1.0,
+            "step_size": null,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 1,
+            "x_k": 3.0,
+            "f_x": -0.2679491924311228,
+            "step_size": 2.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 2,
+            "x_k": 4.0,
+            "f_x": 0.0,
+            "step_size": 1.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          }
+        ],
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.9282032302755097
+        },
+        "hypothesis": "newton_formula",
+        "action": "revise",
+        "case_hint": "CASE_NEWTON_CODE_UPDATE",
+        "episode_id": "5e53941b8786465192f58064a165a259",
+        "attempt_id": "newton-nonfinite-tail",
+        "feedback_id": "4be99634a4f3462099d655c17bd3b2e6",
+        "case_id": "CASE_NEWTON_CODE_UPDATE",
+        "case_decision": "VARIANT_OF_CASE",
+        "unit_ids": [
+          "NA_NEWTON",
+          "NA_NEWTON_UPDATE",
+          "NA_STOPPING_CRITERIA"
+        ],
+        "kind": "practice",
+        "help_level": 1,
+        "remaining_help": 2,
+        "input": {
+          "method": "newton",
+          "function": "sqrt(x)-2",
+          "iterates": [
+            1.0,
+            3.0,
+            4.0,
+            "NaN"
+          ],
+          "brackets": [],
+          "interval": null,
+          "initial_value": 1.0,
+          "phi": null,
+          "derivative": null,
+          "update": null,
+          "variant": "standard",
+          "damping": 1.0,
+          "multiplicity": 1,
+          "tolerance": 1e-06,
+          "goal": "residual",
+          "stop_reason": "none"
+        },
+        "delivery": "pending",
+        "outcome": "unknown",
+        "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+      }
+    },
+    {
+      "case_id": "fixed-point-domain-tail",
+      "input": {
+        "method": "fixed_point",
+        "function": "sqrt(x)-2",
+        "initial_value": 0,
+        "goal": "residual",
+        "iterates": [
+          0,
+          2,
+          4,
+          -1
+        ],
+        "phi": "(x+4)/2"
+      },
+      "before": {
+        "family": "numeric_nonfinite",
+        "error_step": 3,
+        "complete": false,
+        "oracle_version": "root-oracle-v1"
+      },
+      "before_feedback": "### 求根过程诊断：发现过程偏差\n\n此步无法在函数定义域内得到有限值。\n\n定位步骤：k=3（从0开始）。\n\n检查表达式定义域及该步输入。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "after": {
+        "family": "fixed_point_update",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.0
+        }
+      },
+      "after_feedback": "### 求根过程诊断：发现过程偏差\n\nk=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。\n\n定位步骤：k=2（从0开始）。\n\n从 k=1→2 重新计算；如采用另一种方法，请明确声明。\n\n本反馈只核对受控表达式与已提交轨迹；数值支持不等同一般性数学证明。",
+      "restored_after": {
+        "status": "contradicted",
+        "family": "fixed_point_update",
+        "summary": "k=0 到 k=1 的已提交更新符合所声明规则；相邻迭代值不满足所声明的更新规则。",
+        "next_probe": "从 k=1→2 重新计算；如采用另一种方法，请明确声明。",
+        "error_step": 2,
+        "complete": false,
+        "oracle_version": "root-oracle-v2",
+        "tolerance_version": "root-tolerance-v1",
+        "tolerance": 1e-06,
+        "goal": "residual",
+        "trace": [
+          {
+            "k": 0,
+            "x_k": 0.0,
+            "f_x": -2.0,
+            "step_size": null,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 1,
+            "x_k": 2.0,
+            "f_x": -0.5857864376269049,
+            "step_size": 2.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          },
+          {
+            "k": 2,
+            "x_k": 4.0,
+            "f_x": 0.0,
+            "step_size": 2.0,
+            "finite_flag": true,
+            "stop_reason": "none"
+          }
+        ],
+        "evidence": {
+          "observed": 4.0,
+          "reference_step": 3.0
+        },
+        "hypothesis": "fixed_point_update",
+        "action": "revise",
+        "case_hint": "CASE_FIXED_POINT_DIVERGENCE",
+        "episode_id": "52571f8d777246fd8f140cdf9d919841",
+        "attempt_id": "fixed-point-domain-tail",
+        "feedback_id": "f057bbcc31694860829cf7f9e6164218",
+        "case_id": "CASE_FIXED_POINT_DIVERGENCE",
+        "case_decision": "VARIANT_OF_CASE",
+        "unit_ids": [
+          "NA_FIXED_POINT",
+          "NA_CONTRACTION_MAPPING"
+        ],
+        "kind": "practice",
+        "help_level": 1,
+        "remaining_help": 2,
+        "input": {
+          "method": "fixed_point",
+          "function": "sqrt(x)-2",
+          "iterates": [
+            0.0,
+            2.0,
+            4.0,
+            -1.0
+          ],
+          "brackets": [],
+          "interval": null,
+          "initial_value": 0.0,
+          "phi": "(x+4)/2",
+          "derivative": null,
+          "update": null,
+          "variant": "standard",
+          "damping": 1.0,
+          "multiplicity": 1,
+          "tolerance": 1e-06,
+          "goal": "residual",
+          "stop_reason": "none"
+        },
+        "delivery": "pending",
+        "outcome": "unknown",
+        "graph_revision": "seed:7cc6d187788a27865e0ac46863340bfcc6cfa11787002b0dda7f5029bf05800e"
+      }
+    }
+  ]
+}

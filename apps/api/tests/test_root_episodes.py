@@ -69,6 +69,21 @@ def test_pending_delivery_and_unknown_never_count_as_success(service):
     assert not any(u["failure_count"] for u in units(service).values())
 
 
+def test_first_error_feedback_preserves_prefix_after_reopen(service, tmp_path):
+    from app.tutor.root_diagnostics import feedback_text
+    result = submit(service, dict(method="newton", function="sqrt(x)-2", initial_value=1,
+                                  iterates=[1, 3, 4, -1], goal="residual"))
+    text = feedback_text(result)
+    assert "k=0 到 k=1" in text and "k=1→2" in text
+    assert result["error_step"] == 2 and result["family"] == "newton_formula"
+    # Persisted public feedback must retain the diagnosis, without counting success.
+    reopened = RootEpisodeService(CourseService(store=CourseStore(tmp_path / "course.db")))
+    saved = reopened.replay("student-1", "session-1", result["episode_id"])["attempts"][0]
+    assert feedback_text(saved) == text
+    assert not any(u["independent_evidence_count"] for u in units(reopened).values())
+    reopened.store.close()
+
+
 def test_server_probe_initial_value_no_guess_and_no_leaked_steps(service):
     practice = submit(service, newton())
     assert ack(service, practice)["outcome"] == "observed_success"

@@ -80,3 +80,31 @@ def test_missing_conditions_and_tool_failure_are_unknown(monkeypatch):
     assert report(method="newton",function="x^2-2")["status"] == "inconclusive"
     monkeypatch.setattr(RootExpression, "evaluate", lambda *args,**kwargs: (_ for _ in ()).throw(RuntimeError("offline failure")))
     assert report(method="newton",function="x^2-2",iterates=[1])["status"] == "tool_error"
+
+
+@pytest.mark.parametrize("tail", [-1, "NaN"])
+def test_first_wrong_update_precedes_later_invalid_observation(tail):
+    # Independently: Newton for sqrt(x)-2 maps x to 4*sqrt(x)-x.
+    # 1 -> 3 is right; 3 -> 4 is wrong, before the invalid x3.
+    expected = 4 * math.sqrt(3) - 3
+    assert not math.isclose(expected, 4, abs_tol=1e-8)
+    result = report(method="newton", function="sqrt(x)-2", initial_value=1,
+                    iterates=[1, 3, 4, tail], goal="residual", stop_reason="iteration_limit")
+    assert result["family"] == "newton_formula" and result["error_step"] == 2
+    assert result["evidence"]["reference_step"] == pytest.approx(expected)
+    assert all(row["stop_reason"] == "none" for row in result["trace"])
+    # A valid prefix must not cause a later domain error to disappear.
+    correct_prefix = report(method="newton", function="sqrt(x)-2", initial_value=1,
+                            iterates=[1, 3, expected, tail], goal="residual")
+    assert correct_prefix["family"] == "numeric_nonfinite" and correct_prefix["error_step"] == 3
+    assert not correct_prefix["complete"]
+
+
+def test_fixed_point_first_update_error_and_initial_value_precede_bad_tail():
+    result = report(method="fixed_point", function="sqrt(x)-2", phi="(x+4)/2",
+                    initial_value=0, iterates=[0, 2, 4, -1], goal="residual")
+    assert result["family"] == "fixed_point_update" and result["error_step"] == 2
+    assert result["evidence"]["reference_step"] == 3  # g(2)=(2+4)/2
+    initial = report(method="newton", function="sqrt(x)-2", initial_value=2,
+                     iterates=[1, 3, 4, -1])
+    assert initial["family"] == "initial_value" and initial["error_step"] == 0

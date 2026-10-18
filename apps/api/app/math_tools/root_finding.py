@@ -1,4 +1,4 @@
-"""root-oracle-v1: inspect submitted traces; never execute submitted programs."""
+"""Inspect submitted traces in causal order; never execute submitted programs."""
 import math
 from typing import Literal
 
@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.math_tools.root_expression import ExpressionError, Interval, RootExpression
 
-ORACLE_VERSION = "root-oracle-v1"
+ORACLE_VERSION = "root-oracle-v2"
 TOLERANCE_VERSION = "root-tolerance-v1"
 FAMILIES = {
     "newton_formula": "CASE_NEWTON_CODE_UPDATE",
@@ -72,18 +72,28 @@ def diagnose(attempt: RootAttempt) -> dict:
         f = RootExpression(attempt.function)
         if not attempt.iterates and not attempt.brackets:
             return result("inconclusive", "missing_trace", "尚未提交迭代轨迹，不能定位过程错误。", "补充至少两个相邻迭代值，或二分区间更新记录。")
-        if any(isinstance(v, str) for v in attempt.iterates):
-            index = next(i for i, v in enumerate(attempt.iterates) if isinstance(v, str))
-            return result("contradicted", "numeric_nonfinite", "轨迹出现非有限数值；这一轮没有有效的根近似。", "检查该步分母、定义域和溢出保护。", index, evidence={"observed": attempt.iterates[index]})
-        xs = [float(x) for x in attempt.iterates]
-        for k, x in enumerate(xs):
+        # A later invalid observation must not hide an earlier wrong update.
+        # Retain the evaluable prefix, check its transitions, then report the tail.
+        observation_failure = None
+        xs = []
+        for k, observed in enumerate(attempt.iterates):
+            if isinstance(observed, str):
+                observation_failure = result("contradicted", "numeric_nonfinite", "轨迹出现非有限数值；这一轮没有有效的根近似。", "检查该步分母、定义域和溢出保护。", k, evidence={"observed": observed})
+                break
+            x = float(observed)
             try:
                 fx = f.evaluate(x)
             except ExpressionError:
-                return result("contradicted", "numeric_nonfinite", "此步无法在函数定义域内得到有限值。", "检查表达式定义域及该步输入。", k, evidence={"x": x})
+                observation_failure = result("contradicted", "numeric_nonfinite", "此步无法在函数定义域内得到有限值。", "检查表达式定义域及该步输入。", k, evidence={"x": x})
+                break
+            xs.append(x)
             rows.append({"k": k, "x_k": x, "f_x": fx, "step_size": abs(x - xs[k - 1]) if k else None,
-                         "finite_flag": True, "stop_reason": attempt.stop_reason if k == len(xs) - 1 else "none"})
-        if attempt.initial_value is not None and (not xs or not _close(xs[0], attempt.initial_value)):
+                         "finite_flag": True, "stop_reason": attempt.stop_reason if k == len(attempt.iterates) - 1 else "none"})
+        if attempt.initial_value is not None and xs and not _close(xs[0], attempt.initial_value):
+            return result("contradicted", "initial_value", "轨迹初值与任务初值不一致。", "从任务规定的初值重新提交轨迹。", 0)
+        if observation_failure and (attempt.method == "bisection" or not xs):
+            return observation_failure
+        if attempt.initial_value is not None and not xs:
             return result("contradicted", "initial_value", "轨迹初值与任务初值不一致。", "从任务规定的初值重新提交轨迹。", 0)
         certified_interval = None
         if attempt.method == "bisection":
@@ -153,7 +163,10 @@ def diagnose(attempt: RootAttempt) -> dict:
                 else:
                     expected, family = phi.evaluate(x), "fixed_point_update"
                 if not _close(xs[k + 1], expected):
-                    return result("contradicted", family, "相邻迭代值不满足所声明的更新规则。", "从定位到的这一步重新计算；如采用另一种方法，请明确声明。", k + 1, evidence={"observed": xs[k + 1], "reference_step": expected})
+                    prefix = f"k=0 到 k={k} 的已提交更新符合所声明规则；" if k else ""
+                    return result("contradicted", family, prefix + "相邻迭代值不满足所声明的更新规则。", f"从 k={k}→{k+1} 重新计算；如采用另一种方法，请明确声明。", k + 1, evidence={"observed": xs[k + 1], "reference_step": expected})
+            if observation_failure:
+                return observation_failure
             if len(xs) >= 3 and _close(xs[-1], xs[-3]) and not _close(xs[-1], xs[-2]) and abs(rows[-1]["f_x"]) > attempt.tolerance:
                 return result("contradicted", "newton_cycle" if attempt.method == "newton" else "fixed_point_conditions", "轨迹在两个值之间循环，尚未收敛。", "检查初值或迭代格式，考虑带区间保护的方法。", len(xs) - 1)
             if attempt.method == "fixed_point" and attempt.interval:
