@@ -1,0 +1,22 @@
+{
+  "packet_sha256": null,
+  "authorization_ref": null,
+  "outbound_data_authorization_ref": null,
+  "author_review_ref": null,
+  "independent_math_review_ref": null,
+  "endpoint": null,
+  "model": null,
+  "model_version": null,
+  "max_requests": null,
+  "max_output_tokens": null,
+  "max_input_tokens": null,
+  "input_tokens_upper_by_messages_sha256": {},
+  "input_token_measurement_ref": null,
+  "timeout_seconds": 45,
+  "currency": null,
+  "max_cost": null,
+  "per_request_upper_cost": null,
+  "all_billable_items_bounded": false,
+  "all_billable_items_upper_bound_review_ref": null,
+  "price_source": null
+}

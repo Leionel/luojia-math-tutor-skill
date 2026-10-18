@@ -1,0 +1,311 @@
+{
+  "version": "r7-readiness-decision-v1",
+  "date": "2026-10-18",
+  "timezone": "America/Los_Angeles",
+  "starting_head": "15def45bf4a718b1bab5d3a95e10133ab0aea274",
+  "branch": "feature/course-graph-2.0",
+  "baseline_worktree_dirty": true,
+  "upstream_reference_only": true,
+  "upstream_ahead_commits": [
+    "15def45 docs: publish R6.5 task evidence and user guide",
+    "36ef451 fix: complete exploration navigation and recovery flows",
+    "268d9a1 docs: record R6.4 evidence and quality gates",
+    "db5c01f feat: add source-bound R6.4 exploration evaluation",
+    "4c3bf80 test: prune duplicate exploration fixture checks",
+    "fdbef06 docs: record personal recall and three-domain exploration evidence",
+    "ff8c318 feat: share editable exploration plans across three numerical domains",
+    "de03fd3 feat: recall confirmed personal evidence in new teaching turns",
+    "3aba7c8 feat: preserve R6.1 exploration and private network baseline"
+  ],
+  "primary_decision": "HOLD-QUALITY",
+  "R7_1": "not_started",
+  "R7_2": "GO-R7.2-PREP",
+  "proven": {
+    "r64_artifacts_verified": {
+      "legacy": 72,
+      "exploration_and_private": 33
+    },
+    "frozen_material_unchanged": true,
+    "r64_validation_logs_verified": 8,
+    "r64_browser_artifact_references_verified": 10,
+    "r64_E0": {
+      "legacy": 72,
+      "exploration": 15,
+      "private": 18,
+      "matched_private_pairs": 9,
+      "model": "fixed_fixture",
+      "quality": null
+    },
+    "r64_E2_automation": {
+      "completed": 5,
+      "participants": 0
+    },
+    "historical_tests": {
+      "r64_api": 1128,
+      "r64_web": 116,
+      "r65_api": 1128,
+      "r65_web": 117
+    },
+    "current_root_fix": {
+      "actual_deterministic_failures_reproduced": 3,
+      "earliest_error_before": 3,
+      "earliest_error_after": 2,
+      "oracle_before": "root-oracle-v1",
+      "oracle_after": "root-oracle-v2",
+      "evidence": "evaluation/r7/first-error-before-after.json"
+    },
+    "compiled_stream": {
+      "path": "results/r7/compiled-root.json",
+      "sha256": "b75e87bbe44c5c06bfd728791870df4488728e469a9129e71e66972b5d198ee2",
+      "error_step": 2,
+      "provider_requests": 0,
+      "saved_feedback_prefix_preserved": true
+    }
+  },
+  "snapshot_comparison": {
+    "E0_equal": true,
+    "E1_equal": true,
+    "E3_equal": true,
+    "E2_whole_object_equal": false,
+    "E2_difference": "snapshot compresses saved_record into persisted_record; raw tasks/receipts/artifacts separately verified"
+  },
+  "runtime_drift": {
+    "backend": [
+      "apps/api/app/math_tools/root_finding.py"
+    ],
+    "frontend": [
+      "apps/web/app/explore/page.tsx",
+      "apps/web/app/materials/page.tsx",
+      "apps/web/app/mistake-book/page.tsx",
+      "apps/web/app/notebook/page.tsx",
+      "apps/web/app/numerical-lab/page.tsx",
+      "apps/web/app/records/page.tsx",
+      "apps/web/components/learning/chat-workspace-bar.tsx",
+      "apps/web/components/learning/exploration-experiment.tsx",
+      "apps/web/components/learning/lab-workspace.tsx",
+      "apps/web/components/learning/personal-network.tsx",
+      "apps/web/components/learning/reading-domain-view.tsx",
+      "apps/web/components/learning/sidebar-navigation.tsx",
+      "apps/web/components/math-message.tsx",
+      "apps/web/components/sidebar.tsx",
+      "apps/web/components/tutor-chat.tsx",
+      "apps/web/components/tutor-input.tsx",
+      "apps/web/lib/learning-context.ts",
+      "apps/web/lib/reference-upgrade.test.ts"
+    ],
+    "historical_results_not_current_acceptance": true
+  },
+  "risks": [
+    {
+      "id": "C1",
+      "kind": "current_model_risk_not_observed_failure",
+      "issue": "estimate/residual/sufficient-condition evidence overclaim",
+      "mathematical_witnesses": [
+        "Simpson sin(8*pi*x)^2 grid aliasing",
+        "N04 residual 1e-12 vs root error 1",
+        "G03 rho=1/5 without strict row diagonal dominance"
+      ]
+    },
+    {
+      "id": "C2",
+      "kind": "current_deterministic_failure_repaired",
+      "issue": "later invalid observation masks earlier wrong update"
+    },
+    {
+      "id": "C3",
+      "kind": "historical_real_model_failure_current_status_unverified",
+      "issue": "invented residual comparison; incoherent proposal rejected; three earlier length truncations",
+      "evidence": "results/r61/real-model-attempt2.json"
+    }
+  ],
+  "E1": {
+    "scope": [
+      "final_teacher_input_replay_only",
+      "upstream_review_and_routing_are_offline_fixtures",
+      "D2_differs_in_prompt_and_evidence_not_single_factor",
+      "no_live_output_guard_or_persistence",
+      "public_development_agent_prepared_not_unseen"
+    ],
+    "planned": 45,
+    "completed": 0,
+    "human_reviewed": 0,
+    "quality": null,
+    "usage": null,
+    "actual_cost": null,
+    "provider": null,
+    "model": null,
+    "private_pair_delta": null,
+    "confidence_interval": null,
+    "review_packet": {
+      "path": "results/r7/e1-review-packet-final.json",
+      "sha256": "35cb69a749c7a5f08caf86501fb6321de7ec54750eee5333076509160a900cf9"
+    },
+    "full_native_live_capture": "not_implemented_this_round"
+  },
+  "E2_this_round": {
+    "browser": "not_run_backend_only_change",
+    "humans": 0
+  },
+  "E3": {
+    "execution": "not_run",
+    "quality": null
+  },
+  "provider_requests_this_round": 0,
+  "deleted_tests_audit": {
+    "removed_instances": 6,
+    "restored_mirror_tests": 0,
+    "protected": "three real runners, math counterexamples, owner, versions, stale sources, accept/reject receipts"
+  },
+  "validation": {
+    "npm_test": {
+      "API_passed": 1134,
+      "Web_passed": 117,
+      "API_warnings": 5
+    },
+    "initial_focused_passed": 126,
+    "final_focused_passed": 71,
+    "replay_contracts_passed": 2,
+    "typecheck": "passed",
+    "build": "passed_20_routes",
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 8
+    },
+    "reliability": {
+      "contracts_passed": 47,
+      "instances_passed": 128
+    },
+    "docs": {
+      "files": 18,
+      "broken_local_links": 0
+    },
+    "remote_CI": "not_run_at_pre_push_snapshot; see delivery receipt",
+    "logs": [
+      {
+        "path": "results/r7/npm-test.log",
+        "sha256": "b6c394101f8e64fe61f854dd00d7b6273050baa6059d9dbe1b74a063a41c14b7"
+      },
+      {
+        "path": "results/r7/focused-tests.log",
+        "sha256": "bc7aa2cff55d6b24ab5c17a01ad191dc972406576ad95c32c11d1a81ebddaafb"
+      },
+      {
+        "path": "results/r7/final-focused.log",
+        "sha256": "23c1af09b714eacd52d515d2e2cf51f1cef038875b4a35d87337f631252e1032"
+      },
+      {
+        "path": "results/r7/replay-tests-final.log",
+        "sha256": "906996a8244b87813cb7aebfc4585474add919438cd4dfb323246cd6acecef3a"
+      },
+      {
+        "path": "results/r7/current-r5.log",
+        "sha256": "8732cdc10ac98ce24969cbbd1a0ea850e8ca28b3a0ade05ef0a9a6a001481534"
+      },
+      {
+        "path": "results/r7/current-private.log",
+        "sha256": "122d96b7bdde0824188c5bc5e54d51e09be8fc05b290cf4575aec56a4f2d18a8"
+      },
+      {
+        "path": "results/r7/typecheck.log",
+        "sha256": "441a067004f4b17e81d37a42700af168081941f3d78eac188e8e01f9b50ee076"
+      },
+      {
+        "path": "results/r7/lint.log",
+        "sha256": "ea127ec2986d36fa2ca63d0da8fc4f2992be959faa844da225b1607c7e21e00b"
+      },
+      {
+        "path": "results/r7/build.log",
+        "sha256": "e5a7b0fffcd33665a12e4b7ce86e747abbc438c001e813146d146144226bac9a"
+      },
+      {
+        "path": "results/r7/docs.log",
+        "sha256": "59949ff34f5f4dbf8a18f489ab8a8204941d8abdd98d2603abd37e677166e25f"
+      },
+      {
+        "path": "results/r7/reliability.log",
+        "sha256": "6dab1657a85eac7be0c91032d9022e6d9e71273836ffbfe584471fc2ecf0cf7b"
+      },
+      {
+        "path": "results/r7/catalog.log",
+        "sha256": "725f5a71f25b5489493376707142d7f75611d72e833f4c66123543ce11d5f2ca"
+      }
+    ],
+    "release_logs": [
+      {
+        "path": "results/r7/npm-test-release.log",
+        "sha256": "4f6b5001f463d8c7db690d8823dbfe4bf562b813d7e4b1fdae1b5c7160f35fec"
+      },
+      {
+        "path": "results/r7/reliability-release.log",
+        "sha256": "6dab1657a85eac7be0c91032d9022e6d9e71273836ffbfe584471fc2ecf0cf7b"
+      },
+      {
+        "path": "results/r7/docs-release.log",
+        "sha256": "59949ff34f5f4dbf8a18f489ab8a8204941d8abdd98d2603abd37e677166e25f"
+      },
+      {
+        "path": "results/r7/current-r5-v2.log",
+        "sha256": "8732cdc10ac98ce24969cbbd1a0ea850e8ca28b3a0ade05ef0a9a6a001481534"
+      },
+      {
+        "path": "results/r7/current-private-v2.log",
+        "sha256": "c270f64d88fdf534074768cd3fdeee1e3d9c72211da086ebb989fcd8b1fdac41"
+      },
+      {
+        "path": "results/r7/compiled-root.log",
+        "sha256": "c9c8fc3bebe01a59821abb55105d69c72a171d8dcd993244442aca7276b62da7"
+      }
+    ]
+  },
+  "unexecuted": [
+    "real model calls",
+    "independent human math review",
+    "human tasks and consent",
+    "independent heldout and delayed transfer",
+    "new browser regression",
+    "production deployment"
+  ],
+  "preservation": {
+    "previous_protected_hashes_verified": 13,
+    "tsconfig_initial_byte_baseline": "unavailable; no manual edit; current git diff empty",
+    "next_env": "restored only verified generated path difference",
+    "reset": false,
+    "stash": false,
+    "cleanup": false,
+    "push": "authorized_after_validation"
+  },
+  "blockers": [
+    "current independently reviewed mathematical/teaching comparison absent",
+    "historical advice failures not real-retested and native live collection incomplete",
+    "independent holdout authors, human participants and transfer data absent"
+  ],
+  "next_domain_preference": "numerical linear algebra conditioning/error, only after quality admission; optimization deferred",
+  "git_delivery": {
+    "authorization": "user explicitly requested commit then push during review",
+    "branch": "feature/course-graph-2.0",
+    "remote_head_pre_push": "47d60bc1d1971e76f6337404fbb1f83b9345b9bf",
+    "status": "local_validation_passed_push_authorized_receipt_separate",
+    "receipt": "final delivery message and results/r7/git-delivery.json"
+  },
+  "E0_this_round": {
+    "selected_R5": {
+      "planned_legacy": 72,
+      "completed": 27,
+      "matched_cases": 9,
+      "exit_code": 1,
+      "scope": "intentional partial fixed-fixture collection"
+    },
+    "exploration": {
+      "planned": 15,
+      "completed": 15
+    },
+    "private": {
+      "planned": 18,
+      "completed": 18,
+      "input_control_matched_pairs": 9
+    },
+    "quality": null,
+    "provider_requests": 0
+  },
+  "implementation_commit": "5bea0755ff3cc1486d6daece10c574bda7c16471"
+}
