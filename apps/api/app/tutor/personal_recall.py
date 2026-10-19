@@ -11,6 +11,22 @@ TOPICS = (
     ("积分", "simpson", "梯形", "步长", "误差估计"),
 )
 
+# Small concept aliases, not a semantic truth classifier. A method name alone
+# cannot make a relation about initial values relevant to a derivative question.
+CONCEPT_ALIASES = {
+    "初值": ("初始值", "起始值", "出发点", "起点", "starting point", "initial value"),
+    "newton": ("牛顿",),
+}
+METHOD_WORDS = {"newton", "gauss", "simpson"}
+
+
+def concept_text(text):
+    text = text.lower()
+    for canonical, aliases in CONCEPT_ALIASES.items():
+        for alias in aliases:
+            text = text.replace(alias, canonical)
+    return text
+
 
 def topics(text):
     text = text.lower()
@@ -34,32 +50,34 @@ def select_personal_context(workspace, owner, question, *, limit=2):
             pair = [nodes[edge[k]] for k in ("source", "target")]
             text = " ".join([value["claim"], value["history"][0]["claim"], *(n["label"] for n in pair), edge["reason"]])
             # A topic match alone is insufficient; require an explicit concept overlap.
-            labels = [n["label"].strip().lower() for n in pair]
-            explicit = any(len(label) >= 2 and label in question.lower() for label in labels)
+            labels = [concept_text(n["label"].strip()) for n in pair]
+            explicit = any(len(label) >= 2 and label in concept_text(question) for label in labels)
             shared = query_topics & topics(text)
             if query_topics and topics(text) and not shared:
                 continue
             tokens = re.findall(r"[a-zA-Z]{3,}|[\u4e00-\u9fff]{2,}", question.lower())
-            overlap = sum(len(t) >= 3 and t in text.lower() for t in tokens)
+            overlap = sum(len(t) >= 3 and t not in METHOD_WORDS and t in text.lower() for t in tokens)
             if not explicit and not (shared and overlap):
                 continue
-            sources = []
-            try:
-                for node in pair:
-                    source = PersonalNode.model_validate(node).source_ref
-                    if source:
-                        bound = service.bind(owner, source)
-                        if source.kind == "course":
-                            saved = workspace.store.load_graph(workspace.course_id) or {}
-                            unit = next(u for u in saved.get("data", {}).get("units", []) if u["id"] == source.unit_id)
-                            bound["conditions"] = [str(c)[:300] for c in unit.get("conditions", [])[:3]]
-                        sources.append(bound)
-            except (ValueError, KeyError):
-                continue
-            ranked.append((int(explicit) * 4 + len(shared) + overlap, value["updated_at"], value, edge, pair, sources))
+            ranked.append((int(explicit) * 4 + len(shared) + overlap, value["updated_at"], value, edge, pair))
     seen = set()
-    for score, _, value, edge, pair, sources in sorted(ranked, key=lambda r: (r[0], r[1]), reverse=True):
+    for score, _, value, edge, pair in sorted(ranked, key=lambda r: (r[0], r[1]), reverse=True):
         if value["id"] in seen:
+            continue
+        # Validate in the same ranked order, stopping at the original limit.
+        # Invalid top candidates fall through; never cache or replace a source.
+        sources = []
+        try:
+            for node in pair:
+                source = PersonalNode.model_validate(node).source_ref
+                if source:
+                    bound = service.bind(owner, source)
+                    if source.kind == "course":
+                        saved = workspace.store.load_graph(workspace.course_id) or {}
+                        unit = next(u for u in saved.get("data", {}).get("units", []) if u["id"] == source.unit_id)
+                        bound["conditions"] = [str(c)[:300] for c in unit.get("conditions", [])[:3]]
+                    sources.append(bound)
+        except (ValueError, KeyError):
             continue
         experiments = []
         unavailable_experiments = []

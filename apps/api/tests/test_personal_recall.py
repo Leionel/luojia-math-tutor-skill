@@ -66,6 +66,37 @@ def test_changed_source_is_omitted_and_existing_selection_fails_closed(workspace
     with pytest.raises(ValueError):validate_personal_context(workspace,"alice",selected)
 
 
+def test_initial_value_paraphrase_and_same_method_different_concept(workspace):
+    seed(workspace)
+    paraphrase=select_personal_context(workspace,"alice","牛顿法换个出发点会怎样？")
+    assert len(paraphrase)==1 and paraphrase[0]["relation_id"]=="edge"
+    assert paraphrase[0]["authority"]=="student_confirmed_unreviewed"
+    # This stored 0<->1 trajectory has f'(0)=-2, not a zero derivative.
+    # Sharing the name Newton is insufficient for the division-by-zero question.
+    assert select_personal_context(workspace,"alice","Newton 导数为零时为什么不能更新？")==[]
+    assert select_personal_context(workspace,"bob","牛顿法换个出发点会怎样？")==[]
+
+
+def test_ranked_source_checks_stop_at_limit_but_skip_stale_top(workspace,monkeypatch):
+    from app.tutor.explorations import Create
+    workspace.repository.ensure_user('alice')
+    session=workspace.repository.create_session('alice','数学')['session_id']
+    notes=[]; service=Explorations(workspace)
+    for i in range(4):
+        note=workspace.repository.save_note('alice',session,'初值','原条件'+str(i));notes.append(note)
+        service.create('alice',Create(request_id=f'ranked-{i}',title='Newton初值',claim='Newton初值与收敛'))
+        graph=PersonalGraph(nodes=[{'id':'a','label':'初值','source_ref':{'kind':'note','note_id':note,'source_hash':digest('原条件'+str(i))}},
+                                  {'id':'b','label':'Newton收敛'}],edges=[{'id':'e','source':'a','target':'b','relation':'related','reason':'比较初值'}])
+        service.update('alice',f'ranked-{i}','graph',EditGraph(request_id='g',expected_revision=1,graph=graph))
+    with workspace.repository.connect() as conn:conn.execute('update notes set content=? where id=?',('旧来源失效',notes[-1]))
+    original=Explorations.bind; calls=[]
+    def counted(self,*args,**kwargs):calls.append(1);return original(self,*args,**kwargs)
+    monkeypatch.setattr(Explorations,'bind',counted)
+    selected=select_personal_context(workspace,'alice','Newton 换初值有什么影响？')
+    assert [r['exploration_id'] for r in selected]==['ranked-2','ranked-1']
+    assert len(calls)==3  # reject invalid top, validate exactly two lower candidates
+
+
 def test_changed_selected_run_does_not_fall_back_to_another_old_run(workspace):
     seed(workspace)
     s=Explorations(workspace)
