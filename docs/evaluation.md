@@ -70,3 +70,5 @@ R6 继续使用 R5 的原始三组与开发题；输入冻结、G03 的具体矩
 [R7 readiness review](../evaluation/r7/readiness-review.md)重新校验了 R6.4 的原始 artifacts 和冻结输入。当前判定为 **HOLD-QUALITY**，可开展 R7.2 研究准备。R7.0 修复了 Newton／不动点轨迹中较晚非法值遮住更早更新错误的问题；持久化 before/after 属于确定性数学与反馈修复，不能当作真实模型收益。
 
 [逐题审核与运行指南](../evaluation/r7/review-guide.md)复用九个 R5 开发题和九对私人上下文，提供45条未运行审核记录的生成入口及授权后的最终 Teacher 输入回放。回放不覆盖原生实时路由、工具选择或交付修复，不代表完整 Agent 的真实成绩。模型质量、私人增益和学习收益仍未评分；R5/R64 原失败及 gold 保留。
+
+[P0–P3 顺序执行](../evaluation/r7/p0-p3/README.md)补充原生 ASGI／客户端／工具／Guard／advice／保存采集入口，复现并修复同义表述漏召与仅方法名误召，测得有界来源验证的局部开销减少。原生模型计划仍为not_run，协议夹具不产生质量成绩。整体保持HOLD-QUALITY；P3因缺少符合启动条件的净收益假设作No-Go，未引入协作框架。

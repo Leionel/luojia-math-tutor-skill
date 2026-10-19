@@ -1,0 +1,664 @@
+{
+  "version": "r7-p0-p3-acceptance-v1",
+  "date": "2026-10-18",
+  "timezone": "America/Los_Angeles",
+  "version_and_scope": {
+    "start_head": "40b7a8c5f2539cb4132cf6444e7998558b73ca9a",
+    "branch": "feature/course-graph-2.0",
+    "prompt_path": "8FE78895E6BA8AE699_R7_P0-P388E582A0E591A7E592.md",
+    "prompt_sha256": "9a6c9f7d8fa1e23d0629828155170b1a7a6e9bdf7b4b0ae6a7e97ab991bee7de",
+    "user_wip_preserved": true,
+    "frozen_r5_r64_verified": true,
+    "previous_r7_reports_unchanged": true,
+    "implementation_commits": [
+      "ce341592e6d4ac564824315807c12773903758e7",
+      "1fe60e6a76c6f497abbf65f4b5dcedc0b35d11b8"
+    ]
+  },
+  "decision": {
+    "main": "HOLD-QUALITY",
+    "allowed": "GO-R7.2-PREP",
+    "all_phases_processed": true,
+    "live_model_observed": false,
+    "independent_math_reviewed": false,
+    "human_task_observed": false,
+    "learning_gain_supported": false,
+    "production_accepted": false
+  },
+  "p0": {
+    "engineering_verified": true,
+    "native_path": "ASGI -> native routing/review/context -> actual LLM client -> controlled math tools/Guard -> SSE/SQLite; transport-only wire fixture",
+    "smoke": {
+      "planned": 3,
+      "completed": 3,
+      "failed": 0,
+      "not_run": 0,
+      "provider_requests": 0,
+      "quality": null,
+      "usage": null,
+      "actual_cost": null
+    },
+    "smoke_cases": [
+      "native tool calls: actual derivative x^2 -> 2*x",
+      "native Guard violation -> one repair -> persisted message",
+      "native exploration advice -> revision2; no automatic experiment execution"
+    ],
+    "http_503_is_failure_even_when_router_safely_clarifies": true,
+    "manifest": {
+      "planned": 13,
+      "completed": 0,
+      "failed": 0,
+      "not_run": 13,
+      "split": "public_development_agent_prepared_only",
+      "independent_review": null,
+      "sha256": "760a085582380b314185fb32dd13b1b0a1eafc026446ade674d84959f634e135",
+      "source_sha256": {
+        "apps/api/app/auth.py": "18204f6456b3ebb0636f28369d6dfb8f8f703cb5e1b916d9859302b14a8c1000",
+        "apps/api/app/config.py": "d09c41659fe8104d8dcd9a5ed9a1459f24c108dfedf95c34b6612fb11a954c3c",
+        "apps/api/app/main.py": "f233ff2a2a91ddc886720082dbfa5907949018712b4391e205a9d2ebbd3d3ecd",
+        "apps/api/app/main_deps.py": "a85c0a5bf2c1853e73abfa82c68c6c65d809b6bc425b4a55db345d6ee13194d4",
+        "apps/api/app/observability.py": "1ea0336323625e843a0cf8a6d6a8ba85c18af34d56b1410ebd8136d9e3215d11",
+        "apps/api/app/text_preview.py": "0c25211624661633f0a0b25518e592f1e5c1466f62dcbdf36b99ba784f23bf61",
+        "apps/api/app/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/agents/code_executor.py": "83d82885b9bcae8152cc6f0b1e4b7dce74aaa1280c369ce06620c92dbbee1853",
+        "apps/api/app/agents/cron_agent.py": "bbaed73b62c88a0f2fe249438cd313d659abd973ff9c3293132d64d3cd7e9bdb",
+        "apps/api/app/agents/harness_evaluator.py": "76bccfd26a3284a3bf649da72a7389c0b504181114fd5e2ac78159a3818bd773",
+        "apps/api/app/agents/math_worker.py": "537ee6d22df5816852a854f9f7baf1562d34d2e14053dc66e710c454f8f39d37",
+        "apps/api/app/agents/multimodal.py": "bf3f445ab1041a021846142c6fc0a97fa4c4b4966cac04cdbbb602720209d4ec",
+        "apps/api/app/agents/tool_limits.py": "a33dbd704f00384cc78374e304ce928a6dae9256b8b5c6267036baa951d8e5e6",
+        "apps/api/app/agents/tool_result.py": "a0ed58df4c1d65739930b3dcd79a0e45da90f31de1e5183e09b52adcc8d701b7",
+        "apps/api/app/agents/typed_tools.py": "03a680cee76423306dcdf29cae5e6ae08b5acf87003dbc4ab0b53c070af995c5",
+        "apps/api/app/agents/vision_agent.py": "873fdd197b9e3a6cdb5acfb8afdbb7ccbc24274230f099b64e90331b073e1da0",
+        "apps/api/app/api/routes_admin_knowledge.py": "9851aefd0b50a01003f047feb994957a7aeaaf1a93f34ae5b12691ae29031546",
+        "apps/api/app/api/routes_auth.py": "ec827a620c9f259db685d19311e6247e83150d0a382900bb65f3e55f9677112e",
+        "apps/api/app/api/routes_courses.py": "35013e9dd00499ab9fa70ccffd6c7597a64269a62fc85e04cf357965b2d38cc2",
+        "apps/api/app/api/routes_cron.py": "f2982658f3934311285b1b21ff1c2ef25c5349a2045a77ecc2c590f2e63228f3",
+        "apps/api/app/api/routes_exercises.py": "d716ad71817020aa088d9c3165abda8aa10d0729a1cefbce523947bd8bf42c72",
+        "apps/api/app/api/routes_explorations.py": "7899d01a5d88af66c621f1e2d1914ae58cb7acbb60922829c77e82b9d0c3c515",
+        "apps/api/app/api/routes_knowledge.py": "30ad7beee37a36ed16bd4073b369e9a59c745ac89fbb3ed26fbcf52c6ac9271b",
+        "apps/api/app/api/routes_learning.py": "9961d5bc6277f79062cab69398026b167741ff84ffee94ce0f0aa84609c5cea8",
+        "apps/api/app/api/routes_mastery.py": "8702f1cf6f73ff2b4b71d1a005bcc83070a6e53702f4930f43c3bc9e66adb304",
+        "apps/api/app/api/routes_mistakes.py": "52725641577f801b51e589e6eba6434cd5d482595864c17a34c7fa3b4760a5e8",
+        "apps/api/app/api/routes_models.py": "79c5937ddfc70629e461bc65a4f5a5d19aff07ffed6e328d7756f55dc22703d7",
+        "apps/api/app/api/routes_notes.py": "727f790c18c2f9212c0c7bc38985fee610939ff4509deb4e6b50cb07b8a211b4",
+        "apps/api/app/api/routes_numerical_lab.py": "ce43a221f5fd931ede3e8d70467a71610257956c4053d337734e08fc078c2095",
+        "apps/api/app/api/routes_observability.py": "e321ac0925cec087011e7ea0f1ca278e13d0aba2482c5e38cf4dc1378a76ae37",
+        "apps/api/app/api/routes_resources.py": "b22415e1c7a4154d99de23ad3f125625896e3ad74725a6ab15c70e3d9eecc8f4",
+        "apps/api/app/api/routes_root_diagnostics.py": "a5d58335286dfcdbd9d91549b100d934c6d36dcdc28d46bae9ed4ee7d49ca839",
+        "apps/api/app/api/routes_search.py": "8de517729358e573277cbee33862eb0bf4ba21535db653753536b1060a7f8104",
+        "apps/api/app/api/routes_sessions.py": "c1d327ab14e38993bbbed38f83412b2d02728d5bdbc537cf235433a6db9fdc1d",
+        "apps/api/app/api/routes_tutor.py": "8642eb91389771c0ba172828006b3f41a19f5f766de1da0962c3b187b64608e6",
+        "apps/api/app/api/routes_uploads.py": "3d5d96bb9513847edfd3d871dedfd9f98f8263926e1ebdf531cfd46a171f357c",
+        "apps/api/app/api/routes_viz.py": "5a1277b8a07556bac36d1e4a936f2d6ea633cbf59446ff94f3283d7baf8f016f",
+        "apps/api/app/api/tutor_streaming.py": "b2dce4daa1a65843f9ec9a4e0ecd6553b603563174c560e56d3e24b28405cbe0",
+        "apps/api/app/api/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/knowledge/boundary.py": "7fcfd42cd7a8505cdbb5272fe1b1231abb9677362e4e02be2a19f8af0f874841",
+        "apps/api/app/knowledge/candidate_graph.py": "7a9aaab088261ab545ecb2a1b3a2ca3fec8dc26db155d9c6b7e9cb34db8b5715",
+        "apps/api/app/knowledge/candidate_pipeline.py": "041f899485d87b768b054692917fdc2980d0871a27727528984a30fbb0ed0c08",
+        "apps/api/app/knowledge/case_matcher.py": "c8e79b44f677e3b2cef5093187d8bf8c08f8e15b5cfacd6735d5cd828f24e225",
+        "apps/api/app/knowledge/case_repository.py": "917923b23fc26a3a0c0924f0088e477457343a50462bbfe12c9cc1b4e7010562",
+        "apps/api/app/knowledge/case_schema.py": "c8c496212e21e0d51d06c48f9f6ba0d33f1bdc6dd1ab7d0ecd8f6796f00cca89",
+        "apps/api/app/knowledge/concepts.py": "27ff953c05214ba0753eb978158b823167bc933a3644c4898dc919bfe94a3bc4",
+        "apps/api/app/knowledge/course_retrieval.py": "0d4299cef0735c70550ab01c408a215547e2c84e896e771a14f97cb6ec179a02",
+        "apps/api/app/knowledge/course_service.py": "5e6d9daa85a1caafd5c3f13442cd10879594fd3e00dffde71e7af71d4d79932d",
+        "apps/api/app/knowledge/course_store.py": "d27f6caa01f379fd48e5764aefc01bea0542ef94cfdc2e88a8a169230136c26b",
+        "apps/api/app/knowledge/document_chunking.py": "988e2d9b6b8222129fedf5880394e71e70eb4debf0c323df00fcc2f032cb8c1e",
+        "apps/api/app/knowledge/evidence_builder.py": "25842b6f5900b1230de2bd0012833f8e2e5ab93e5ee2c252f3851445d54f3606",
+        "apps/api/app/knowledge/graph_repository.py": "dc4b24867160b7e34edf360ca7d9a5920afef6c55c4ac067beefa3cbe59a0e52",
+        "apps/api/app/knowledge/graph_review.py": "064d0fc6638fa80d9a0bc62ed09217aa7135910f6de91030616a7a13bfe7702f",
+        "apps/api/app/knowledge/loader.py": "a821ab051aea00ac0de4ea9bd02b38247e5382138977482f60502bbe7f4b835f",
+        "apps/api/app/knowledge/review_schedule.py": "d9d12040a1713f77dbaabbfe91756a4b7e23a07673a4726e2ee9a090923cea0b",
+        "apps/api/app/knowledge/schema.py": "faca5f817fa09c7f88aa21becc53a8ca05c0d2c415d5baf478b999968a3cfce3",
+        "apps/api/app/knowledge/search.py": "4b2e889b3458a55e1fa27a2edfdd84b6ceb2dd1be2534c9ef61d8ba257a0d376",
+        "apps/api/app/knowledge/student_overlay.py": "b501d1a58a915f9aab1722ea59fe9f2097d3882e87cc2de445c2bce0d39ed4a1",
+        "apps/api/app/knowledge/targeted_retrieval.py": "b64e140d792400a3b9b238b3fc479021caf44dff7316f6ad2841b43a43643094",
+        "apps/api/app/knowledge/vector_store.py": "ede9dc18caf635f6dc9a6f336b3d77e3092f473096b4efa07b1e883a1c796dec",
+        "apps/api/app/knowledge/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/llm/call_observation.py": "fc4b31faa470abc72db0793b4b6d25ead93035022bf291c31a9c3c8f62ecc9f7",
+        "apps/api/app/llm/capabilities.py": "d43240a57ac37d5a95b667dac2bd0711833b6466d6f3e98da36049e870853e98",
+        "apps/api/app/llm/completion_protocol.py": "be00403bc993fcc5eb893bad5bbbe855f9e5e9fd1d3f5cec31211ed2529985da",
+        "apps/api/app/llm/model_turn.py": "b0c83a2c2e377c6378529ddfed922d7ff0c69ec5ff286abcc09cf98af8e6c260",
+        "apps/api/app/llm/openai_compatible.py": "647c33f3422335bee5d23ac8925e2a0428328a2cd47df8d677854790c6e12800",
+        "apps/api/app/llm/pricing.py": "f6ea186267d930f0fcf4bc2b35d047db98169b134bd192d09de45d739e2139b3",
+        "apps/api/app/llm/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/math_tools/exploration_tasks.py": "d85f7955c602eb52b97e00944cf76f2ba9d4417e0b7e9408132c21e22070bf69",
+        "apps/api/app/math_tools/numerical_lab.py": "9bc5e5919e7f5eae7aadcd3236030b91c2e00d0694a1ae00749b1cc8215be3e2",
+        "apps/api/app/math_tools/root_expression.py": "6bfe57272e22ba3a58c3c9571591ee3a82411a28c80abaedacf6de62d796075d",
+        "apps/api/app/math_tools/root_finding.py": "fe60428f5396924814618e5583cb48bb820151d10bd964772c0eb0c26082b859",
+        "apps/api/app/math_tools/root_runner.py": "77e6a3f752414b245e3f252f3eea9a37f8f75ec6ce4887129f8e8e5c830f2adb",
+        "apps/api/app/math_tools/safe_symbolic.py": "d090e965f0e369749f7d18d551453249c0d78816f906b31b665aa1aef0bdb206",
+        "apps/api/app/math_tools/step_checker.py": "e46e5b9459834f0f469a64bc740028b467d0b2101bb9368009676661add85af5",
+        "apps/api/app/math_tools/step_protocol.py": "53b7dac5bc5ae1e34699c5c247e8afb63c79a856610b9bb729f6029b52560a7a",
+        "apps/api/app/math_tools/step_runtime.py": "236e08029382c0da2d5538e3371fda684e17ba2bb4d1daa8414371b02b65937a",
+        "apps/api/app/math_tools/verifier.py": "5b567ed5f82c8ed3670b0c8038894f3c39ee2ad05bf23b7e8e277c243f578c4d",
+        "apps/api/app/math_tools/visualizer.py": "c775287db3d9721cc111a3c29ba72e4ae39f6804378f5c44b86c67f2d98d1b6e",
+        "apps/api/app/math_tools/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/memory/agent_runs.py": "9bed621c7d574df65f6ae24bf31a6b1484423084eed2be8ac2047a68aa0fed1b",
+        "apps/api/app/memory/mastery.py": "e25c47fc5f5b9f75d9c24e1174e9fbcb9e7e581305caccd1f44715c9c4bdceac",
+        "apps/api/app/memory/migrations.py": "ea5a0e69993d0493099f655202de670447eac0a2b54b2e4e135aa0161236961d",
+        "apps/api/app/memory/models.py": "b51d6768160d0ba794fb65cefd00b1ce0112600daeb54ea85af55ddbd67685f3",
+        "apps/api/app/memory/repository.py": "e6abda218c2d5864d9a8937cc34b6e916d1d48268302911cf391c2b955349974",
+        "apps/api/app/memory/text_index.py": "b603af2ce142742a0cf348ee76f7b7e54579ff09d3ca008ce9366635f07afc02",
+        "apps/api/app/memory/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/search/policy.py": "cd02cb05a795655c419bf2b1910fdebc38edf31d233889881412a1b75b0717c6",
+        "apps/api/app/search/web_search.py": "6d29def1a117fb15aff87df9b82847c8b553c052f326e24726589ea5414c17f1",
+        "apps/api/app/search/__init__.py": "d61c7d4c2fdb7777594d735f90235f6aa15f7aca394207237f186221d53d7006",
+        "apps/api/app/services/mineru_client.py": "14071f5019d682fddf4846d24bdbec6de6bfac7ffbc6f201acdc83e700d40f06",
+        "apps/api/app/tutor/answer_guard.py": "b2163e4550a5168d1c7718e07497d36ad57c3cd5fe7de35c083790d13da9c058",
+        "apps/api/app/tutor/exercise_generator.py": "31d037bdbf22c8cfbda550b10940f3b36c0d03233fc6fa59464aaca587adcbf8",
+        "apps/api/app/tutor/explorations.py": "7e93dd67cbc0439d4a7c576a2204669d515baf1849febb03f66f3b53d7ce9419",
+        "apps/api/app/tutor/exploration_advice.py": "b8ec1d82e106e6b96e0f4ec0c743740799e8e7415f6c97bf25672439fea5929f",
+        "apps/api/app/tutor/exploration_runner.py": "be820876f05b0c3afbd0e76c7a523e96d820f3b4bf7dbc7decd696fc708408f6",
+        "apps/api/app/tutor/fast_context.py": "75239101f6a7c5d2e0c93cbf9f38fc43fd66ef733f1c5a33fae5cd999878213a",
+        "apps/api/app/tutor/fast_path.py": "c6024454c1ab604a3215d9132c4aae326de247001589576cb4ebf78ad18b4a65",
+        "apps/api/app/tutor/graph.py": "93757e7081d801d4ce5f85206016788939c4fd315312ed33263ba626d19fce35",
+        "apps/api/app/tutor/help_boundary.py": "077058db301742329a1680a20590bb0724a63ab3120dd273ddbd70133a23472d",
+        "apps/api/app/tutor/hint_policy.py": "bdafbf4bb6786d185a238cada16a1e0b17b422cd8515239be789838bd2c2d98c",
+        "apps/api/app/tutor/intent_router.py": "e25b8ba99ab3241fd95da81683fc4a69357a2cc2700e7f35b373cbfdc75acf46",
+        "apps/api/app/tutor/learning_actions.py": "a3a9b32acf1850df337ac1e38d5f5b1c7e092355191b8018ae50b539279f070e",
+        "apps/api/app/tutor/learning_context.py": "a1886d8ea3abc9a9eb0a52db00e95490b2451890a4f8ceedb3efdd83c945afff",
+        "apps/api/app/tutor/learning_extensions.py": "6630128ba5941e18af888e60075bfb3ea1c9848af8d7dde821ebf8f0a7856eb6",
+        "apps/api/app/tutor/learning_resumption.py": "64e6261d1859b7dee99e29d2a563d70aef7307bf26aa8a32a64292a77a37d3a9",
+        "apps/api/app/tutor/learning_workspace.py": "e8efb174114abee471aff86194577e7bc8cf6e8aef8caa0f6c8d6780da9eaf00",
+        "apps/api/app/tutor/misconception.py": "1d270fe009f1f3c8480475de06066fec217b1df7abdc6a6e5d914e104723f1c4",
+        "apps/api/app/tutor/newton_activity.py": "8e1fe33d1a0d5bfc95c7a273ba2a269d1546871082dc244ad1db8abe9325938f",
+        "apps/api/app/tutor/orchestrator.py": "f5ef29f9a12b3896f24b3538ff2e9898865971a6f925697ac784d97ae3599062",
+        "apps/api/app/tutor/personal_recall.py": "9c9c614df7bacb4ad60163a2c85635ce000d0d274e7fa11bc0a9cfdce4bd185a",
+        "apps/api/app/tutor/policy_comparison.py": "9226bca11c02c6bd36fb171a754b037c47f18dd460f50ab7b26bc73aa24ee7f8",
+        "apps/api/app/tutor/policy_router.py": "79a2bd2e97b3c210d80dc048c757d41ffa599be5d7011a0438106159a370e46e",
+        "apps/api/app/tutor/prompt_builder.py": "e1dcb7e22f55b9d8a23a8934bdccd67b40bc2bbbabd8fa9bec24f65d399e5def",
+        "apps/api/app/tutor/prompt_policy.py": "6a483c260b23dc341ffe49cd70f5159deed81a459ce80051744bdc2da1a91d2c",
+        "apps/api/app/tutor/proof_tutor.py": "7bc7fd9adfc91f1b7bd22fb8d2b4dfc2de1150f796f7ee9389df85eda6953d0e",
+        "apps/api/app/tutor/reading_explanation.py": "6e04a4ddd92b544cda1b0a85c3f3a354c72f805597dfe130be394ac55159babe",
+        "apps/api/app/tutor/root_diagnostics.py": "0851d06ccd2ad6c1465b0af0d3e41e19445376363f5998f1b9f2146156813522",
+        "apps/api/app/tutor/run_trace.py": "f495cc4efab9f0239ca2c2d5470ec1d95811567bee59dfa2b3777b02f81853b7",
+        "apps/api/app/tutor/study_summary.py": "c7ce79ac0f3c561b2ba48c6ebce5d78b543856079263d95e8761a6b1efa84530",
+        "apps/api/app/tutor/teachback_evidence.py": "7f6b774c98c094b1326ce47c52e93fe517d440108c8a6d35d14dabe69cf89107",
+        "apps/api/app/tutor/teaching_decision.py": "1778ac8e92f27312ebed662f64f7b6fa4956b36757117b7cb79d8654089c59eb",
+        "apps/api/app/tutor/title_generator.py": "9dbd9cba200357314c6a1dfc61a9338eb9307657229143b1677a0897c730b011",
+        "apps/api/app/tutor/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+        "apps/api/app/knowledge/pipeline/extractor.py": "edda3a598599507b54eb6f51919d57f0a89ff7507b2016a83f28a37b2ff78ad6",
+        "apps/api/app/knowledge/pipeline/ingest.py": "3ad35af0135d789464e9fb86093178ba1347149008e439430baab928bb938683",
+        "apps/api/app/knowledge/pipeline/relations.py": "4177e0dc3aed64d04e1d828e6042414db37be9a8affcde38736f94dd4171b027",
+        "apps/api/app/knowledge/pipeline/runner.py": "0e9c65e5d265ffb25633a7f682d938c7ab43611cf1a6edffca0531ab32367f6e",
+        "apps/api/app/knowledge/pipeline/validator.py": "7db56a9be107f20ed4a7e47a4e3c15cefd3ddbc87dbb32ae23abdbd6b5bb331b",
+        "apps/api/app/knowledge/pipeline/__init__.py": "f454cafaa958da60e8fbde969b0939f93a28d74c83b828b7061994a92b5a37fa",
+        "scripts/r7_native_capture.py": "d8549e88c494b7263891e39f923341b387109f638bb1548acd79a25dd6e34a69",
+        "scripts/r7_quality.py": "bead8c6db809a1de280cd922109564d209ef4878a4376c9f2ed345801696799f",
+        "scripts/s5_budget.py": "942ebfe6d9e2696c79d272bbf94ca3accb2d251acc737806be4b91a8e8a4848a",
+        "scripts/r64_capture.py": "0b060c39fe3009256f4cf8a6e0fdc904b902db3a70fc200e1f0866f2e58456f7",
+        "evaluation/r63/cases.json": "ebcff278173cbf332dd1b68ec8272f780039fe4aed3ce694f44c6e9719a21914",
+        "evaluation/r5/cases-v1.json": "bc15c1dea7a85a7222b01a26ee71d1e519d3486daf75a25e32eb40b940f74760",
+        "evaluation/r64/rubric-v1.json": "daf10342c8f027ab1fe6139092390dbfce19e542ed45ff33f3eace402d0dace9"
+      }
+    },
+    "live_status": "external_blocked_specific_new_authorization_and_math_review",
+    "max_requests_per_case": 6,
+    "plan_requests_upper_bound": 78,
+    "requests_authorized": 0,
+    "new_planner_registry_or_critic": false
+  },
+  "p1": {
+    "engineering_verified": true,
+    "public_development_labels_independently_reviewed": false,
+    "before": [
+      {
+        "id": "literal",
+        "question": "Newton 换初值有什么影响？",
+        "expected": true,
+        "matched": true,
+        "selected_count": 1
+      },
+      {
+        "id": "synonym-cn",
+        "question": "牛顿法换个出发点会怎样？",
+        "expected": true,
+        "matched": false,
+        "selected_count": 0
+      },
+      {
+        "id": "same-method-other-concept",
+        "question": "Newton 导数为零时为什么不能更新？",
+        "expected": false,
+        "matched": false,
+        "selected_count": 1
+      },
+      {
+        "id": "other-domain",
+        "question": "Simpson 积分误差估计能当界吗？",
+        "expected": false,
+        "matched": true,
+        "selected_count": 0
+      }
+    ],
+    "after": [
+      {
+        "id": "literal",
+        "question": "Newton 换初值有什么影响？",
+        "expected": true,
+        "matched": true,
+        "selected_count": 1
+      },
+      {
+        "id": "synonym-cn",
+        "question": "牛顿法换个出发点会怎样？",
+        "expected": true,
+        "matched": true,
+        "selected_count": 1
+      },
+      {
+        "id": "same-method-other-concept",
+        "question": "Newton 导数为零时为什么不能更新？",
+        "expected": false,
+        "matched": true,
+        "selected_count": 0
+      },
+      {
+        "id": "other-domain",
+        "question": "Simpson 积分误差估计能当界吗？",
+        "expected": false,
+        "matched": true,
+        "selected_count": 0
+      }
+    ],
+    "feedback": {
+      "old_selection_rejected": true,
+      "pending_ids": [
+        "old-00"
+      ],
+      "rejected_ids": [
+        "old-00"
+      ],
+      "stale": [],
+      "other_owner": [],
+      "official_graph_unchanged": true,
+      "mastery": []
+    },
+    "correction": {
+      "original_claim": "Newton任意初值都收敛",
+      "current_claim": "Newton不是任意初值都收敛",
+      "relation": {
+        "id": "edge",
+        "source": "initial",
+        "target": "conclusion",
+        "relation": "challenges",
+        "reason": "学生修订：初值会影响轨迹，不能作全称保证"
+      },
+      "authority": "student_confirmed_unreviewed"
+    },
+    "paired_native_fixture": {
+      "planned_pairs": 3,
+      "completed_arms": 6,
+      "input_projection_matched_pairs": 3,
+      "controlled": "same shared memory rule; tools disabled both arms; native routing/client/retrieval/guard/save retained",
+      "records": [
+        {
+          "scenario": "paraphrase",
+          "arm": "off",
+          "status": "completed",
+          "history_sha256": "10f86aa5a192ec6b05f8c250581d380faba13d266e8adfa1d98b2fced15586f1",
+          "normalized_inputs_sha256": "48cbe399d0431be7ce714d82efc8e847a56898fcf48e82fbf7dd3d35f5cfaa35",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 32785,
+          "input_projection_matched": true,
+          "selected_count": 0
+        },
+        {
+          "scenario": "paraphrase",
+          "arm": "on",
+          "status": "completed",
+          "history_sha256": "10f86aa5a192ec6b05f8c250581d380faba13d266e8adfa1d98b2fced15586f1",
+          "normalized_inputs_sha256": "48cbe399d0431be7ce714d82efc8e847a56898fcf48e82fbf7dd3d35f5cfaa35",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 35830,
+          "input_projection_matched": true,
+          "selected_count": 1
+        },
+        {
+          "scenario": "same_method_unrelated",
+          "arm": "off",
+          "status": "completed",
+          "history_sha256": "10f86aa5a192ec6b05f8c250581d380faba13d266e8adfa1d98b2fced15586f1",
+          "normalized_inputs_sha256": "dfed7eb6a3df802c5eccf858ec3df7dd1dd6d10f33d6fde4b0463f0b294d0499",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 32942,
+          "input_projection_matched": true,
+          "selected_count": 0
+        },
+        {
+          "scenario": "same_method_unrelated",
+          "arm": "on",
+          "status": "completed",
+          "history_sha256": "10f86aa5a192ec6b05f8c250581d380faba13d266e8adfa1d98b2fced15586f1",
+          "normalized_inputs_sha256": "dfed7eb6a3df802c5eccf858ec3df7dd1dd6d10f33d6fde4b0463f0b294d0499",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 32942,
+          "input_projection_matched": true,
+          "selected_count": 0
+        },
+        {
+          "scenario": "stale_source",
+          "arm": "off",
+          "status": "completed",
+          "history_sha256": "b33e3b1e1393e3a324e3abf5222b7b151c057f626cc8b79b2305db37559719a4",
+          "normalized_inputs_sha256": "dacb2ea3b01e665dd7f1d9faabeb60a75dbba5e1be5b63ad1f310ac437bd4b64",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 31355,
+          "input_projection_matched": true,
+          "selected_count": 0
+        },
+        {
+          "scenario": "stale_source",
+          "arm": "on",
+          "status": "completed",
+          "history_sha256": "b33e3b1e1393e3a324e3abf5222b7b151c057f626cc8b79b2305db37559719a4",
+          "normalized_inputs_sha256": "dacb2ea3b01e665dd7f1d9faabeb60a75dbba5e1be5b63ad1f310ac437bd4b64",
+          "model_reply_sha256": "badf7fce689b7f898f5d2ea35e2fcdc8a7d40b67984a5fd282e05f8c76057bb6",
+          "input_utf8_bytes": 31355,
+          "input_projection_matched": true,
+          "selected_count": 0
+        }
+      ],
+      "quality_delta": null,
+      "confidence_interval": null,
+      "contaminated_reply_rate": null
+    },
+    "existing_context": [
+      {
+        "case_id": "long_session",
+        "status": "completed",
+        "model_payload_bytes": [
+          36791,
+          106062
+        ],
+        "local_warmup_ms": 598.201,
+        "actual_input_tokens": null,
+        "condition_completeness_rating": null,
+        "selected_count": 1
+      },
+      {
+        "case_id": "similar_concepts",
+        "status": "completed",
+        "model_payload_bytes": [
+          1330,
+          31612
+        ],
+        "local_warmup_ms": 65.735,
+        "actual_input_tokens": null,
+        "condition_completeness_rating": null,
+        "selected_count": 0
+      },
+      {
+        "case_id": "conflicting_sources",
+        "status": "completed",
+        "model_payload_bytes": [
+          1345,
+          32733
+        ],
+        "local_warmup_ms": 39.604,
+        "actual_input_tokens": null,
+        "condition_completeness_rating": null,
+        "selected_count": 1
+      }
+    ],
+    "no_contextplan_or_extra_rag_call": true
+  },
+  "p2": {
+    "engineering_verified": true,
+    "performance": {
+      "scope": "same persisted synthetic 30-record dataset, same query, limit=2",
+      "before": {
+        "samples": 7,
+        "duration_ms": [
+          1857.489,
+          80.711,
+          77.698,
+          77.385,
+          75.736,
+          74.461,
+          73.7
+        ],
+        "median_ms": 77.385,
+        "bind_calls": [
+          30,
+          30,
+          30,
+          30,
+          30,
+          30,
+          30
+        ],
+        "source_sha256": "cfbdd1c7f241c20ff8eed4938c3484642af41937ed2849af95f25269dbd08d37"
+      },
+      "after": {
+        "samples": 7,
+        "duration_ms": [
+          1452.654,
+          6.786,
+          6.098,
+          6.383,
+          6.252,
+          6.508,
+          6.399
+        ],
+        "median_ms": 6.399,
+        "bind_calls": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "source_sha256": "9c9c614df7bacb4ad60163a2c85635ce000d0d274e7fa11bc0a9cfdce4bd185a"
+      },
+      "all_14_context_hashes_identical": true,
+      "selected_sha256": "2cb58dc95bf3c0ca96257abfb30f66fa5e1b7ac48874f9ee3f4ab641892ef4d3",
+      "provider_latency": null,
+      "token_usage": null,
+      "mathematical_noninferiority": null
+    },
+    "browser": {
+      "version": "r7-memory-browser-v1",
+      "tasks": [
+        {
+          "task": "paraphrase recall, saved explanation, reload and keyboard source return",
+          "status": "completed",
+          "session": "sess_6590c8f509b2",
+          "href": "/explore?id=r7-browser-history&revision=4"
+        },
+        {
+          "task": "same-method unrelated history excluded, mobile and refresh",
+          "status": "completed",
+          "width": {
+            "client": 390,
+            "scroll": 390
+          }
+        }
+      ],
+      "provider_requests": 0,
+      "human_participants": 0,
+      "scope": "automated functionality with fixed model reply; no mathematical teaching-quality rating",
+      "screenshots": [
+        {
+          "path": "output/playwright/r7-p1-history-final.png",
+          "sha256": "4d6e07d4469abf2d660f455a768e64a37152e5f5ed7629a94f33f0d8459777ca"
+        },
+        {
+          "path": "output/playwright/r7-p1-source-final.png",
+          "sha256": "cf8aa3831bbf87bbc740eb9c2737504be573267b21393f907ca1659a8ce52e14"
+        },
+        {
+          "path": "output/playwright/r7-p2-mobile-final.png",
+          "sha256": "194f42964b70572b1584dfa14d11257351ba87f1e2481ffbcfcf63257d0eb351"
+        }
+      ],
+      "reproduction_fixture": {
+        "path": "scripts/r7_ui_fixture.py",
+        "sha256": "01e6fea7dab32ddd44960b3cfc9b437edf3c3008c1ed8960006dc62e2c1665c6",
+        "new_synthetic_store_seed": "passed_revision4_and_real_Newton_run"
+      }
+    },
+    "production_acceptance": "not_run_no_target_environment"
+  },
+  "p3": {
+    "reviewed_hypothesis": "Independent Solver/Critic diagnoses evidence-scope errors C1/C3 better than existing single Agent with bounded tools and one Guard repair",
+    "decision": "NO-GO",
+    "reason": "Prerequisites absent: no independently reviewed current live failures demonstrating need or net benefit",
+    "empirical_negative_result": false,
+    "prototype_runs": 0,
+    "quality_delta": null,
+    "extra_tokens": null,
+    "latency": null,
+    "cost": null,
+    "new_multiagent_mcp_a2a_sandbox_or_domain": false
+  },
+  "validation": {
+    "npm_test": {
+      "api_passed": 1139,
+      "api_warnings": 5,
+      "web_passed": 117,
+      "web_failed": 0,
+      "scope": "local working tree including original R2 test WIP; remote CI denominator may differ"
+    },
+    "build": "passed_20_static_routes",
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 8
+    },
+    "reliability": {
+      "contracts_passed": 47,
+      "contracts_planned": 47,
+      "instances_passed": 128,
+      "instances_planned": 128
+    },
+    "documentation_links": {
+      "files": 18,
+      "broken_links": 0
+    },
+    "commands": [
+      "npm.cmd test",
+      "npm.cmd --prefix apps/web run typecheck",
+      "npm.cmd --prefix apps/web run lint",
+      "npm.cmd --prefix apps/web run build",
+      "python scripts/eval_agent_reliability.py",
+      "python scripts/check_docs.py",
+      "python -c \"from r64_quality import load_material; load_material()\" (PYTHONPATH=scripts)"
+    ]
+  },
+  "preserved_diagnostic_batches": [
+    {
+      "path": "results/r7-p0-p3/p0-native-first.log",
+      "issue": "Temporary DB cleanup raced background semantic write; synthetic DB now retained with receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p0-native-debug.json",
+      "issue": "Untransmitted auxiliary embedding span incorrectly counted as primary generation failure; original spans retained"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-pairs-v2.json",
+      "issue": "Only 2/3 input projections match; first-arm cold retrieval timeout is confound; not a quality comparison"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-pairs-final.json",
+      "issue": "Predates imported course-service alias isolation fix; final release binds both entry points before warmup"
+    }
+  ],
+  "isolation": {
+    "final_course_binding_asserted_all_12_captures": true,
+    "default_course_db_created_utc": "2026-10-14T12:32:14Z",
+    "default_course_db_last_write_utc": "2026-10-14T12:32:14Z",
+    "default_course_db_bytes": 118784,
+    "default_course_db_untouched_this_round": true
+  },
+  "external_blockers": [
+    "Qualified author and independent mathematical reviewer for public development inputs and actual outputs",
+    "New explicit provider/model/data/token/all-billable-cost authorization for bounded native live collection",
+    "Independent sealed transfer tasks, participant consent and real user study resources"
+  ],
+  "raw_evidence": [
+    {
+      "path": "results/r7-p0-p3/p0-native-release.json",
+      "sha256": "c8d55308bf3ddf1911fc466cda9448ef6c4c98762dd47dca6486521c39e7e76c",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/native-plan-release.json",
+      "sha256": "760a085582380b314185fb32dd13b1b0a1eafc026446ade674d84959f634e135",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-before.json",
+      "sha256": "025f040be111d6843cfeda3c46cdc9242cd066cdb3ba2187d8e21329e829a907",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-after.json",
+      "sha256": "57cec6f7876e1cb4348564669733b4fba7d3f25892128b74b6c85b0b28afb350",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-feedback.json",
+      "sha256": "ce711045a24aea299c746b964b6b6031410fa36f23c735c40699e667bd3b1066",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-pairs-release.json",
+      "sha256": "811cc19041a871db2e7ee2fb431224f987f45b82a489dd448ab022685b5f24ec",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p1-context-release.json",
+      "sha256": "9115542b82436b1b7ac85ddaf7d7d6298a7fb61dea5b73ca103b240038760ffd",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p2-control-before.json",
+      "sha256": "0586d7be9227c76482e93b299720a8e642d05fcb26c3d2c2461d3a6a5c73a29e",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/p2-after.json",
+      "sha256": "27fd38f8d4868d42355b7e5daf57defb32504e4267af7747d412d4265a0b5e6e",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/browser-final.log",
+      "sha256": "208ad87edf154fe514e79a937e807aa135f2a2691e93d8d152b63bd40a6d601c",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/npm-test-release.log",
+      "sha256": "4949d7f7e6a11adc69ba3cefae49ba60d9ede8c44be9cfe5f5d8f3dd788513a7",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/build.log",
+      "sha256": "b3c0950da88eec6e0482e676b3fd5f5c29443d0ef0471e92c58717dfc7a80e8c",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/typecheck.log",
+      "sha256": "441a067004f4b17e81d37a42700af168081941f3d78eac188e8e01f9b50ee076",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/lint.log",
+      "sha256": "ea127ec2986d36fa2ca63d0da8fc4f2992be959faa844da225b1607c7e21e00b",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/reliability-release.log",
+      "sha256": "6dab1657a85eac7be0c91032d9022e6d9e71273836ffbfe584471fc2ecf0cf7b",
+      "availability": "local_ignored_raw_receipt"
+    },
+    {
+      "path": "results/r7-p0-p3/docs.log",
+      "sha256": "59949ff34f5f4dbf8a18f489ab8a8204941d8abdd98d2603abd37e677166e25f",
+      "availability": "local_ignored_raw_receipt"
+    }
+  ],
+  "reproduction": "See README.md commands; raw receipts/DB/screenshots are local ignored artifacts, not remotely published. Public scripts reconstruct engineering cases; fixture output cannot supply live model scores."
+}
